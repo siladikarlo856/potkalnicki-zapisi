@@ -2,7 +2,8 @@
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
-    '@nuxt/ui'
+    '@nuxt/ui',
+    '@nuxtjs/i18n'
   ],
 
   devtools: {
@@ -12,7 +13,12 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   routeRules: {
-    '/': { prerender: true }
+    '/': { prerender: true },
+    '/en': { prerender: true },
+    '/heritage': { prerender: true },
+    '/en/heritage': { prerender: true },
+    '/heritage/kartice': { prerender: true },
+    '/en/heritage/kartice': { prerender: true }
   },
 
   compatibilityDate: '2026-06-30',
@@ -24,5 +30,16 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  i18n: {
+    baseUrl: 'https://karlo-siladi.from.hr',
+    defaultLocale: 'hr',
+    strategy: 'prefix_except_default',
+    detectBrowserLanguage: false,
+    locales: [
+      { code: 'hr', language: 'hr-HR', name: 'Hrvatski', file: 'hr.json' },
+      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' }
+    ]
   }
 })

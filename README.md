@@ -1,41 +1,37 @@
-# Nuxt Starter Template
+# karlo-siladi.from.hr
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+Personal website of Karlo Siladi, built with [Nuxt](https://nuxt.com) and [Nuxt UI](https://ui.nuxt.com).
 
-Use this template to get started with [Nuxt UI](https://ui.nuxt.com) quickly.
+- **Homepage** (`/`): the local heritage project as the main feature (Coming Soon), Siladi Dizajn, three project cards and a contact section.
+- **Heritage project** (`/heritage`): Coming Soon page with the vision, what's coming and the early-contribution form. The form does not submit yet; storage and moderation come later.
+- **"Kaj to znači?"** (`/heritage/kartice`): a word-card game. See a local word, guess what it means, flip the card to reveal the meaning and the regional variants with the places they are used.
 
-- [Live demo](https://starter-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+## Languages
 
-<a href="https://starter-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png">
-    <img alt="Nuxt Starter Template" src="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png" width="830" height="466">
-  </picture>
-</a>
+The site is in Croatian and English via [`@nuxtjs/i18n`](https://i18n.nuxtjs.org): Croatian at `/`, English at `/en`. Texts live in `i18n/locales/hr.json` and `i18n/locales/en.json`. The word-card game is Croatian only.
 
-> The starter template for Vue is on https://github.com/nuxt-ui-templates/starter-vue.
+## Heritage data
 
-## Quick Start
+Words and places are static JSON in `content/heritage/`:
 
-```bash [Terminal]
-npm create nuxt@latest -- -t ui
-```
+- `words.json`: word entries. Each entry has a headword, meaning, word type, examples and its regional **variants**; every variant lists the areas where it is used (`usages`), so a usage map can be built later.
+- `areas.json`: the place hierarchy (settlement → municipality or town → county → country).
 
-## Deploy your own
+The types are in `app/types/heritage.ts`. The current words are **sample data** (`"status": "placeholder"`): they are shown with an "Uzorak" badge, and their variants and places are examples that still need to be checked. Replace them with verified entries before launch.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=starter&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fstarter&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fstarter-dark.png&demo-url=https%3A%2F%2Fstarter-template.nuxt.dev%2F&demo-title=Nuxt%20Starter%20Template&demo-description=A%20minimal%20template%20to%20get%20started%20with%20Nuxt%20UI.)
+Contact details, social links and the Siladi Dizajn link are set in `app/app.config.ts` (`site`); empty values are hidden.
+
+## Screenshots
+
+Desktop and mobile, light and dark: [`docs/screenshots/`](docs/screenshots).
 
 ## Setup
 
-Make sure to install the dependencies:
+Install the dependencies:
 
 ```bash
 pnpm install
 ```
-
-## Development Server
 
 Start the development server on `http://localhost:3000`:
 
@@ -43,22 +39,16 @@ Start the development server on `http://localhost:3000`:
 pnpm dev
 ```
 
-## Production
-
-Build the application for production:
+Build for production and preview the build:
 
 ```bash
 pnpm build
-```
-
-Locally preview production build:
-
-```bash
 pnpm preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Check the code:
 
-## Renovate integration
-
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
+```bash
+pnpm lint
+pnpm typecheck
+```

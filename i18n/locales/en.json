@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "description": "Karlo Siladi builds things — digital, physical, and everything in between. A local heritage project, Siladi Dizajn and selected projects."
+  },
+  "nav": {
+    "home": "Home",
+    "myStory": "My Story",
+    "projects": "Projects",
+    "siladiDizajn": "Siladi Dizajn",
+    "apps": "Apps & Experiences",
+    "contact": "Contact",
+    "soon": "Soon"
+  },
+  "language": {
+    "label": "Language"
+  },
+  "home": {
+    "hero": {
+      "headline": "Builder · maker · entrepreneur",
+      "title": "I build things. Digital, physical, and everything in between.",
+      "description": "I’m Karlo — an entrepreneur, maker and builder with a background in engineering. I like turning ideas into things people can use.",
+      "cta": "See what I’m building"
+    },
+    "heritage": {
+      "badge": "Coming soon",
+      "eyebrow": "Local Heritage Project · working title",
+      "title": "Local words, expressions and traditions, kept alive.",
+      "description": "A project to collect and share the words, expressions, memories and traditions of Sveti Petar Orehovec, Križevci and the wider region — with word games and quizzes on the way.",
+      "explore": "Explore the project",
+      "share": "Share a word",
+      "note": "In development — nothing is published without review."
+    },
+    "teaser": {
+      "flip": "Flip the card",
+      "flipBack": "Flip back",
+      "play": "Try the game"
+    },
+    "siladi": {
+      "line": "Small runs, careful details, personalized objects made with intention.",
+      "cta": "Visit Siladi Dizajn",
+      "photo": "Craft photo — coming soon"
+    },
+    "projects": {
+      "title": "Selected projects",
+      "description": "Software, hardware and experiments — a few things I have built.",
+      "all": "See all projects",
+      "soon": "Soon",
+      "community": {
+        "tag": "Community",
+        "title": "Project slot 1",
+        "description": "A community-related project — not chosen yet."
+      },
+      "professional": {
+        "tag": "Professional",
+        "title": "Project slot 2",
+        "description": "A publicly shareable professional example — not chosen yet."
+      },
+      "experiment": {
+        "tag": "Experiment",
+        "title": "Project slot 3",
+        "description": "A playful technical experiment — not chosen yet."
+      }
+    }
+  },
+  "contact": {
+    "title": "Let’s talk",
+    "description": "The easiest way to reach me is by email.",
+    "pending": "Contact details coming soon.",
+    "email": "Email me"
+  },
+  "footer": {
+    "copyright": "© {year} Karlo Siladi"
+  },
+  "heritage": {
+    "title": "Local Heritage Project",
+    "nameNote": "Working title — the final name is still open",
+    "description": "Protecting and sharing the local words, expressions, memories and traditions of Sveti Petar Orehovec, Križevci and the wider region.",
+    "badge": "Coming soon",
+    "status": "In development",
+    "share": "Share a word",
+    "coming": {
+      "title": "What’s coming",
+      "cards": {
+        "title": "Word cards",
+        "description": "See a local word, guess what it means, flip to reveal — with the spellings used in neighbouring villages."
+      },
+      "quizzes": {
+        "title": "Quizzes & games",
+        "description": "Play alone or with friends — official games and games made by the community."
+      },
+      "map": {
+        "title": "A map of words",
+        "description": "See where each variant of a word is used."
+      },
+      "stories": {
+        "title": "Stories & memories",
+        "description": "Local stories, memories and traditions, shared with permission."
+      },
+      "tryGame": "Try the word cards",
+      "gameNote": "The word-card game itself is in Croatian."
+    },
+    "form": {
+      "title": "Share a word, expression or memory",
+      "description": "Everything is reviewed before it appears anywhere. You don’t need an account.",
+      "reviewed": "Reviewed before anything is published",
+      "nameOptional": "Your name is optional",
+      "noSignIn": "No sign-in needed",
+      "text": "Your word, expression or memory",
+      "textPlaceholder": "e.g. a word your grandparents used, what it means and how it was said",
+      "type": "Type (optional)",
+      "types": {
+        "word": "Word",
+        "expression": "Expression",
+        "memory": "Memory or story",
+        "other": "Other"
+      },
+      "place": "Where is it used? (optional)",
+      "placePlaceholder": "Village or town",
+      "name": "Your name (optional)",
+      "nameHelp": "If you’d like to be credited",
+      "contact": "Contact (optional)",
+      "contactHelp": "Only if we may ask you a follow-up question",
+      "consent": "Submissions are reviewed and may appear in future heritage content or games. The privacy and permission notice will be published before the form goes live.",
+      "submit": "Send for review",
+      "notLive": "Sending is not switched on yet",
+      "notLiveDescription": "The form is ready, but we are not accepting submissions yet. Coming soon!"
+    }
+  },
+  "game": {
+    "languageNote": "This game is in Croatian."
+  }
+}

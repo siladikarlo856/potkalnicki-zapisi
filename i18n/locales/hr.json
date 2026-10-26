@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "description": "Karlo Siladi gradi stvari — digitalne, fizičke i sve između. Projekt lokalne baštine, Siladi Dizajn i odabrani projekti."
+  },
+  "nav": {
+    "home": "Početna",
+    "myStory": "Moja priča",
+    "projects": "Projekti",
+    "siladiDizajn": "Siladi Dizajn",
+    "apps": "Aplikacije i iskustva",
+    "contact": "Kontakt",
+    "soon": "Uskoro"
+  },
+  "language": {
+    "label": "Jezik"
+  },
+  "home": {
+    "hero": {
+      "headline": "Graditelj · stvaratelj · poduzetnik",
+      "title": "Gradim stvari. Digitalne, fizičke i sve između.",
+      "description": "Ja sam Karlo — poduzetnik i stvaratelj s inženjerskim iskustvom. Volim pretvarati ideje u stvari koje ljudi mogu koristiti.",
+      "cta": "Pogledaj što gradim"
+    },
+    "heritage": {
+      "badge": "Uskoro",
+      "eyebrow": "Projekt lokalne baštine · radni naziv",
+      "title": "Lokalne riječi, izrazi i običaji — da ne padnu u zaborav.",
+      "description": "Projekt koji prikuplja i dijeli riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i šireg kraja — uskoro i kroz igre s riječima i kvizove.",
+      "explore": "Saznaj više o projektu",
+      "share": "Podijeli riječ",
+      "note": "U izradi — ništa se ne objavljuje bez provjere."
+    },
+    "teaser": {
+      "flip": "Okreni karticu",
+      "flipBack": "Okreni natrag",
+      "play": "Isprobaj igru"
+    },
+    "siladi": {
+      "line": "Male serije, pažljivo izrađeni detalji, personalizirani predmeti napravljeni s namjerom.",
+      "cta": "Posjeti Siladi Dizajn",
+      "photo": "Fotografija rada — uskoro"
+    },
+    "projects": {
+      "title": "Odabrani projekti",
+      "description": "Softver, hardver i eksperimenti — nekoliko stvari koje sam napravio.",
+      "all": "Svi projekti",
+      "soon": "Uskoro",
+      "community": {
+        "tag": "Zajednica",
+        "title": "Mjesto za projekt 1",
+        "description": "Projekt vezan uz zajednicu — još nije odabran."
+      },
+      "professional": {
+        "tag": "Posao",
+        "title": "Mjesto za projekt 2",
+        "description": "Primjer iz posla koji se smije javno pokazati — još nije odabran."
+      },
+      "experiment": {
+        "tag": "Eksperiment",
+        "title": "Mjesto za projekt 3",
+        "description": "Razigrani tehnički eksperiment — još nije odabran."
+      }
+    }
+  },
+  "contact": {
+    "title": "Javi se",
+    "description": "Najlakše me je dobiti e-mailom.",
+    "pending": "Kontakt podaci uskoro.",
+    "email": "Pošalji e-mail"
+  },
+  "footer": {
+    "copyright": "© {year} Karlo Siladi"
+  },
+  "heritage": {
+    "title": "Projekt lokalne baštine",
+    "nameNote": "Radni naziv — konačno ime tek treba odabrati",
+    "description": "Čuvamo i dijelimo lokalne riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i šireg kraja.",
+    "badge": "Uskoro",
+    "status": "U izradi",
+    "share": "Podijeli riječ",
+    "coming": {
+      "title": "Što dolazi",
+      "cards": {
+        "title": "Kartice s riječima",
+        "description": "Vidiš lokalnu riječ, pogodiš što znači i okreneš karticu — uz inačice iz susjednih sela."
+      },
+      "quizzes": {
+        "title": "Kvizovi i igre",
+        "description": "Igraj sam ili s prijateljima — službene igre i igre koje izradi zajednica."
+      },
+      "map": {
+        "title": "Karta riječi",
+        "description": "Pogledaj gdje se koja inačica riječi koristi."
+      },
+      "stories": {
+        "title": "Priče i sjećanja",
+        "description": "Lokalne priče, sjećanja i običaji, objavljeni uz dopuštenje."
+      },
+      "tryGame": "Isprobaj kartice",
+      "gameNote": ""
+    },
+    "form": {
+      "title": "Podijeli riječ, izraz ili sjećanje",
+      "description": "Sve se pregledava prije nego što se igdje pojavi. Ne trebaš korisnički račun.",
+      "reviewed": "Pregledava se prije objave",
+      "nameOptional": "Ime nije obavezno",
+      "noSignIn": "Bez prijave",
+      "text": "Tvoja riječ, izraz ili sjećanje",
+      "textPlaceholder": "npr. riječ koju su koristili baka i djed, što znači i kako se izgovarala",
+      "type": "Vrsta (neobavezno)",
+      "types": {
+        "word": "Riječ",
+        "expression": "Izraz",
+        "memory": "Sjećanje ili priča",
+        "other": "Drugo"
+      },
+      "place": "Gdje se koristi? (neobavezno)",
+      "placePlaceholder": "Selo ili grad",
+      "name": "Tvoje ime (neobavezno)",
+      "nameHelp": "Ako želiš da te navedemo",
+      "contact": "Kontakt (neobavezno)",
+      "contactHelp": "Samo ako te smijemo nešto dodatno pitati",
+      "consent": "Prijave se pregledavaju i mogu se pojaviti u budućim sadržajima ili igrama o baštini. Obavijest o privatnosti i dopuštenju tek ćemo objaviti.",
+      "submit": "Pošalji na pregled",
+      "notLive": "Slanje još nije uključeno",
+      "notLiveDescription": "Obrazac je spreman, ali prijave još ne primamo. Uskoro!"
+    }
+  },
+  "game": {
+    "languageNote": ""
+  }
+}
