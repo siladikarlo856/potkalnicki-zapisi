@@ -36,9 +36,23 @@
       "play": "Try the game"
     },
     "siladi": {
-      "line": "Small runs, careful details, personalized objects made with intention.",
+      "title": "Personalised gifts from Križevci",
+      "description": "For baptisms, First Communions, weddings and other occasions I make gifts to order, with the name, date or message of your choice: gift sets, wooden money boxes, LED lamps, frames and cake toppers. Each piece is laser engraved, laser cut or 3D printed. I ship anywhere in Croatia, or you can pick your order up in Križevci.",
       "cta": "Visit Siladi Dizajn",
-      "photo": "Craft photo — coming soon"
+      "categoriesLabel": "Gifts by occasion",
+      "categories": {
+        "baptism": "Baptism",
+        "communion": "First Communion",
+        "wedding": "Wedding",
+        "lamps": "LED lamps",
+        "frames": "Frames",
+        "toppers": "Cake toppers"
+      },
+      "images": {
+        "communion": "White wooden First Communion box with an engraved message, a Bible with the child's name and a rosary",
+        "wedding": "Wooden wedding card with the couple's engraved names, the date and a satin bow",
+        "frame": "LED-lit 3D frame holding a newborn's hospital bracelets"
+      }
     },
     "projects": {
       "title": "Selected projects",

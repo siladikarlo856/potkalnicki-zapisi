@@ -36,9 +36,23 @@
       "play": "Isprobaj igru"
     },
     "siladi": {
-      "line": "Male serije, pažljivo izrađeni detalji, personalizirani predmeti napravljeni s namjerom.",
+      "title": "Personalizirani pokloni iz Križevaca",
+      "description": "Za krštenje, prvu pričest, vjenčanje i druge prigode izrađujem poklone po narudžbi, s imenom, datumom ili porukom po vašoj želji: setove, drvene kutijice za novac, LED lampe, okvire i topere za torte. Sve nastaje laserskim graviranjem i rezanjem te 3D printom. Šaljem na adresu bilo gdje u Hrvatskoj, a poklon možete preuzeti i osobno u Križevcima.",
       "cta": "Posjeti Siladi Dizajn",
-      "photo": "Fotografija rada — uskoro"
+      "categoriesLabel": "Pokloni po prigodi",
+      "categories": {
+        "baptism": "Krštenje",
+        "communion": "Prva pričest",
+        "wedding": "Vjenčanje",
+        "lamps": "LED lampe",
+        "frames": "Okviri",
+        "toppers": "Toperi za torte"
+      },
+      "images": {
+        "communion": "Bijela drvena kutija za prvu pričest s ugraviranom porukom, Biblijom s imenom i krunicom",
+        "wedding": "Drvena čestitka za vjenčanje s ugraviranim imenima, datumom i mašnom",
+        "frame": "3D okvir s LED rasvjetom i bolničkim narukvicama novorođenčeta"
+      }
     },
     "projects": {
       "title": "Odabrani projekti",

@@ -8,7 +8,7 @@ export default defineAppConfig({
   site: {
     // Still open in the project hub. Empty values are hidden on the site.
     email: '',
-    siladiDizajnUrl: '',
+    siladiDizajnUrl: 'https://siladi-dizajn.hr/',
     social: [] as { label: string, icon: string, to: string }[]
   }
 })
