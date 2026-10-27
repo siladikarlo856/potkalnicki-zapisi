@@ -8,7 +8,15 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "env:init": "[ -f .env ] || cp .env.example .env",
+    "db:up": "pnpm env:init && docker compose up -d --wait db",
+    "db:down": "docker compose --profile tools down",
+    "db:reset": "pnpm env:init && docker compose --profile tools down -v && docker compose up -d --wait db",
+    "db:logs": "docker compose logs -f db",
+    "db:shell": "docker compose exec db sh -c 'mariadb -u\"$MARIADB_USER\" -p\"$MARIADB_PASSWORD\" \"$MARIADB_DATABASE\"'",
+    "db:browser": "pnpm db:up && docker compose --profile tools up -d --wait adminer",
+    "dev:local": "pnpm db:up && nuxt dev"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.145",

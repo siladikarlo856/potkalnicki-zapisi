@@ -52,3 +52,44 @@ Check the code:
 pnpm lint
 pnpm typecheck
 ```
+
+## Local development
+
+The app runs on your machine with `pnpm dev`; only the database runs in Docker ([`compose.yaml`](compose.yaml)). It is MariaDB 10.11, the database Hostinger runs, on `127.0.0.1:3307` so it does not clash with a MySQL on 3306. Data lives in the named volume `ksh-local_db-data`. The `heritage_submissions` table is created by the app on first use, so a fresh database needs no setup.
+
+**Prerequisites:** Node.js 22.21+ (24 in CI), pnpm (`corepack enable`) and Docker Desktop running.
+
+**First run:**
+
+```bash
+pnpm install
+pnpm dev:local
+```
+
+`dev:local` creates `.env` from [`.env.example`](.env.example) if missing (local-only values, `.env` is gitignored), starts the database, waits until it is healthy and then runs `pnpm dev`. Run the same command every day. Plain `pnpm dev` also works once the database is up (`pnpm db:up`).
+
+| Command | What it does |
+| --- | --- |
+| `pnpm db:up` | Start the database and wait until it is healthy |
+| `pnpm db:down` | Stop everything; data is kept |
+| `pnpm db:reset` | Delete the data and start an empty database |
+| `pnpm db:logs` | Follow the database logs |
+| `pnpm db:shell` | Open a SQL shell in the container |
+| `pnpm db:browser` | Also start Adminer, the database browser |
+
+**Open it:**
+
+- Site: <http://localhost:3000> (English under `/en`).
+- Review page: <http://localhost:3000/review>. The password is `NUXT_REVIEW_SECRET` from `.env` (`local-review-password` by default). It exists once the submissions feature is on your branch.
+- Database browser: <http://localhost:8081> after `pnpm db:browser`. System `MySQL`, server `db`, user `ksh`, password `ksh_local_password`, database `ksh`.
+
+**Test someone's PR:**
+
+```bash
+gh pr checkout <number>
+pnpm install
+pnpm db:reset   # only if the PR changed the database schema
+pnpm dev:local
+```
+
+**Stop:** press Ctrl+C to stop the app, then `pnpm db:down`. To forget all local data, use `pnpm db:reset`. If you change a value in `.env` that the database container uses (user, password, name), run `pnpm db:reset` so it is applied.
