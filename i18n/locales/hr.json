@@ -135,13 +135,142 @@
       "nameHelp": "Ako želiš da te spomenemo kao izvor",
       "contact": "Kontakt (neobavezno)",
       "contactHelp": "Samo ako ti se smijemo javiti s dodatnim pitanjem",
-      "consent": "Sve što pošalješ prvo pročitamo, a može se naći u budućim igrama i objavama o našem kraju. Obavijest o privatnosti i dopuštenju objavit ćemo prije nego što obrazac proradi.",
+      "consent": "Ime i kontakt nisu obavezni. Ako upišeš ime, navest ćemo ga uz prilog. Što prikupljamo i kako se brinemo o podacima, pročitaj u {privacy}.",
       "submit": "Pošalji",
-      "notLive": "Slanje još ne radi",
-      "notLiveDescription": "Obrazac je spreman, ali poruke još ne primamo. Uskoro!"
+      "privacyLink": "obavijesti o privatnosti",
+      "consentLabel": "Slažem se da se moj prilog nakon pregleda objavi na ovoj stranici i u sadržajima i igrama o baštini.",
+      "successTitle": "Hvala, prilog je stigao!",
+      "successDescription": "Pregledat ćemo ga prije nego što se igdje pojavi.",
+      "sendAnother": "Pošalji još jedan",
+      "errorTitle": "Slanje nije uspjelo",
+      "errorGeneric": "Nešto je pošlo po zlu. Pokušaj ponovno malo kasnije.",
+      "errorTooMany": "Stiglo je puno prijava u kratkom vremenu. Pričekaj nekoliko minuta pa pokušaj ponovno.",
+      "errorInvalid": "Provjeri označena polja.",
+      "errors": {
+        "required": "Upiši riječ, izraz ili sjećanje.",
+        "tooShort": "Upiši barem {min} znaka.",
+        "tooLong": "Najviše {max} znakova.",
+        "consent": "Bez tvog pristanka prilog ne možemo poslati.",
+        "invalid": "Ova vrijednost nije ispravna."
+      }
     }
   },
   "game": {
     "languageNote": ""
+  },
+  "privacy": {
+    "title": "Obavijest o privatnosti",
+    "description": "Koje podatke prikuplja obrazac projekta lokalne baštine, zašto i kako se o njima brinemo.",
+    "updated": "Zadnja izmjena: {date}",
+    "intro": "Ova obavijest odnosi se na obrazac kojim šalješ riječi, izraze i sjećanja za projekt lokalne baštine. Ovdje piše koje podatke prikupljamo, zašto ih trebamo i što s njima radimo.",
+    "back": "Natrag na obrazac",
+    "sections": {
+      "controller": {
+        "title": "Tko se brine o podacima",
+        "text": [
+          "Voditelj obrade podataka je Karlo Siladi, koji vodi ovu stranicu i projekt. Za sva pitanja o privatnosti piši na {email}."
+        ]
+      },
+      "collected": {
+        "title": "Što prikupljamo",
+        "text": [
+          "Kad pošalješ obrazac, spremamo:"
+        ],
+        "items": [
+          "riječ, izraz ili sjećanje koje pošalješ",
+          "vrstu priloga i mjesto gdje se koristi, ako ih upišeš",
+          "ime, ako ga upišeš",
+          "kontakt, npr. e-mail ili broj telefona, ako ga upišeš",
+          "tvoj pristanak na objavu, jezik stranice i vrijeme slanja"
+        ],
+        "after": [
+          "IP adresu ne spremamo uz prilog. Server je kratko drži u memoriji samo da spriječi zlouporabu, npr. previše slanja u kratkom vremenu. Pružatelj hostinga može voditi uobičajene tehničke zapise o posjetima stranici."
+        ]
+      },
+      "purpose": {
+        "title": "Zašto",
+        "text": [
+          "Prilozi nam služe da sačuvamo i podijelimo lokalnu baštinu: riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i šireg kraja. Mogu se pojaviti na ovoj stranici te u sadržajima i igrama o baštini, poput kartica s riječima, kvizova, karte riječi i priča.",
+          "Kontakt koristimo samo ako te trebamo nešto dodatno pitati o tvom prilogu.",
+          "Podatke obrađujemo na temelju tvog pristanka (privole), koji daješ kvačicom na obrascu."
+        ]
+      },
+      "optional": {
+        "title": "Ime i kontakt nisu obavezni",
+        "text": [
+          "Prilog možeš poslati i bez imena i bez kontakta. Ako upišeš ime, možemo ga navesti uz prilog kad ga objavimo. Ako ne želiš da te navedemo, polje ostavi prazno. Kontakt nikad ne objavljujemo."
+        ]
+      },
+      "review": {
+        "title": "Pregled i objava",
+        "text": [
+          "Svaki prilog najprije pregledamo. Objavljujemo samo ono što smo pregledali i odobrili, i to samo uz pristanak koji daješ na obrascu. Prilog pritom smijemo malo urediti, npr. ispraviti tipfeler ili skratiti tekst, ali tako da mu ne mijenjamo smisao.",
+          "Priloge koje ne objavimo ne pokazujemo nikome."
+        ]
+      },
+      "retention": {
+        "title": "Koliko dugo čuvamo podatke",
+        "items": [
+          "Priloge pregledavamo ručno i s vremena na vrijeme brišemo one koje ne objavimo, uključujući i odbijene. Ništa se ne briše automatski, pa nema ni unaprijed određenog roka.",
+          "Objavljeni prilozi ostaju dok projekt postoji ili dok ne zatražiš da ih uklonimo.",
+          "Kontakt čuvamo samo dok bi nam mogao zatrebati za dodatna pitanja, a onda ga ručno brišemo. Ako zatražiš, ime ili kontakt obrisat ćemo i prije."
+        ]
+      },
+      "access": {
+        "title": "Tko vidi podatke",
+        "text": [
+          "Neobjavljene priloge, imena i kontakte vidi samo Karlo Siladi. Podaci se čuvaju u bazi podataka koju za ovu stranicu pruža Supabase, koji ih obrađuje isključivo u naše ime, kao naš izvršitelj obrade. [ZA PROVJERU: ovdje upiši regiju Supabase projekta prije objave.] Ne prodajemo ih i ne dajemo ih nikome drugome."
+        ]
+      },
+      "rights": {
+        "title": "Ispravak, brisanje i druga prava",
+        "text": [
+          "U svakom trenutku možeš tražiti da ti pokažemo koje podatke imamo, da ih ispravimo ili obrišemo, ili možeš povući pristanak za objavu. Dovoljno je pisati na {email} i opisati o kojem je prilogu riječ, npr. navesti tekst priloga i otprilike kad je poslan. Javit ćemo se najkasnije u roku od mjesec dana.",
+          "Ako povučeš pristanak, prilog ćemo ukloniti sa stranice i iz igara. To ne mijenja ono što je bilo objavljeno prije toga.",
+          "Ako misliš da s tvojim podacima ne postupamo kako treba, možeš se obratiti i Agenciji za zaštitu osobnih podataka (azop.hr)."
+        ]
+      },
+      "changes": {
+        "title": "Izmjene obavijesti",
+        "text": [
+          "Ako promijenimo ovu obavijest, novu ćemo objaviti na ovoj stranici s novim datumom."
+        ]
+      }
+    }
+  },
+  "review": {
+    "title": "Pregled prijava",
+    "password": "Lozinka",
+    "open": "Otvori",
+    "signOut": "Odjava",
+    "refresh": "Osvježi",
+    "wrongPassword": "Lozinka nije točna.",
+    "notConfigured": "Pregled nije postavljen na serveru: provjeri NUXT_REVIEW_SECRET i postavke baze podataka.",
+    "tooMany": "Previše pogrešnih pokušaja. Pokušaj ponovno za 15 minuta.",
+    "loadError": "Prijave se nisu mogle učitati.",
+    "actionError": "Promjena nije spremljena. Pokušaj ponovno.",
+    "empty": "Ovdje nema prijava.",
+    "statuses": {
+      "pending": "Na čekanju",
+      "approved": "Odobreno",
+      "rejected": "Odbijeno",
+      "all": "Sve"
+    },
+    "approve": "Odobri",
+    "reject": "Odbij",
+    "toPending": "Vrati na čekanje",
+    "delete": "Obriši",
+    "confirmDelete": "Trajno obrisati ovu prijavu?",
+    "fields": {
+      "type": "Vrsta",
+      "place": "Mjesto",
+      "name": "Ime",
+      "contact": "Kontakt",
+      "sent": "Poslano",
+      "language": "Jezik",
+      "consent": "Pristanak na objavu"
+    },
+    "anonymous": "bez imena",
+    "consentGiven": "da (obavijest od {version})"
   }
 }

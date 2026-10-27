@@ -1,9 +1,14 @@
 // @ts-check
+import { globalIgnores } from 'eslint/config'
 import withNuxt from './.nuxt/eslint.config.mjs'
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss'
 import { getDefaultAttributes } from 'eslint-plugin-better-tailwindcss/api/defaults'
 
 export default withNuxt(
+  globalIgnores([
+    // Agent harness runtime directory, injected locally; not part of the project sources.
+    '.opencode/**'
+  ]),
   betterTailwindcss.configs['correctness-error'],
   {
     settings: {

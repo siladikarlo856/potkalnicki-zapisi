@@ -135,13 +135,142 @@
       "nameHelp": "If you’d like to be credited",
       "contact": "Contact (optional)",
       "contactHelp": "Only if we may ask you a follow-up question",
-      "consent": "Submissions are reviewed and may appear in future heritage content or games. The privacy and permission notice will be published before the form goes live.",
+      "consent": "Your name and contact are optional. If you give your name, we will credit you. Read the {privacy} to see what we collect and how we look after it.",
       "submit": "Send for review",
-      "notLive": "Sending is not switched on yet",
-      "notLiveDescription": "The form is ready, but we are not accepting submissions yet. Coming soon!"
+      "privacyLink": "privacy notice",
+      "consentLabel": "I agree that, after review, my submission may be published on this site and in heritage content and games.",
+      "successTitle": "Thank you, it’s in!",
+      "successDescription": "We’ll review it before it appears anywhere.",
+      "sendAnother": "Send another",
+      "errorTitle": "Your submission wasn’t sent",
+      "errorGeneric": "Something went wrong. Please try again a little later.",
+      "errorTooMany": "We’ve had a lot of submissions in a short time. Please wait a few minutes and try again.",
+      "errorInvalid": "Please check the highlighted fields.",
+      "errors": {
+        "required": "Please enter a word, expression or memory.",
+        "tooShort": "Please enter at least {min} characters.",
+        "tooLong": "Please keep it to {max} characters or fewer.",
+        "consent": "We can only accept your submission with your permission.",
+        "invalid": "This value isn’t valid."
+      }
     }
   },
   "game": {
     "languageNote": "This game is in Croatian."
+  },
+  "privacy": {
+    "title": "Privacy notice",
+    "description": "What the Local Heritage Project form collects, why, and how we look after it.",
+    "updated": "Last updated: {date}",
+    "intro": "This notice covers the form you use to send words, expressions and memories to the Local Heritage Project. It explains what we collect, why we need it and what we do with it.",
+    "back": "Back to the form",
+    "sections": {
+      "controller": {
+        "title": "Who looks after your data",
+        "text": [
+          "The data controller is Karlo Siladi, who runs this site and the project. For any privacy question, email {email}."
+        ]
+      },
+      "collected": {
+        "title": "What we collect",
+        "text": [
+          "When you send the form, we store:"
+        ],
+        "items": [
+          "the word, expression or memory you wrote",
+          "the type of submission and the place where it is used, if you fill them in",
+          "your name, if you give it",
+          "a way to contact you, such as an email address or phone number, if you give one",
+          "your consent to publication, the language of the page and the time you sent it"
+        ],
+        "after": [
+          "We do not store your IP address with your submission. The server keeps it in memory briefly, only to prevent abuse such as too many submissions in a short time. Our hosting provider may keep standard technical logs of visits to the site."
+        ]
+      },
+      "purpose": {
+        "title": "Why",
+        "text": [
+          "We use submissions to preserve and share local heritage: the words, expressions, memories and traditions of Sveti Petar Orehovec, Križevci and the wider region. They may appear on this site and in heritage content and games, such as word cards, quizzes, a word map and stories.",
+          "We only use your contact details if we need to ask you a follow-up question about your submission.",
+          "We process your data on the basis of your consent, which you give by ticking the box on the form."
+        ]
+      },
+      "optional": {
+        "title": "Your name and contact are optional",
+        "text": [
+          "You can send a submission without a name or contact details. If you give your name, we may credit you with it when we publish your submission; leave it empty if you’d rather not be named. We never publish contact details."
+        ]
+      },
+      "review": {
+        "title": "Review and publication",
+        "text": [
+          "We review every submission first. We only publish what we have reviewed and approved, and only with the consent you give on the form. We may edit a submission lightly, for example to fix a typo or shorten it, without changing its meaning.",
+          "Submissions we don’t publish are not shown to anyone."
+        ]
+      },
+      "retention": {
+        "title": "How long we keep your data",
+        "items": [
+          "We go through submissions by hand and, from time to time, delete the ones we don’t publish, including rejected ones. Nothing is deleted automatically, so there is no fixed deadline.",
+          "Published submissions stay for as long as the project runs, or until you ask us to remove them.",
+          "We keep contact details only while we may need them for follow-up questions, and then delete them by hand. If you ask, we delete your name or contact details sooner."
+        ]
+      },
+      "access": {
+        "title": "Who can see your data",
+        "text": [
+          "Only Karlo Siladi can see unpublished submissions, names and contact details. The data is stored in a database provided for this site by Supabase, which processes it only on our behalf, as our processor. [TO CHECK: add the region of the Supabase project here before publishing.] We do not sell it or share it with anyone else."
+        ]
+      },
+      "rights": {
+        "title": "Correction, deletion and your other rights",
+        "text": [
+          "At any time you can ask to see the data we hold about you, to have it corrected or deleted, or to withdraw your consent to publication. Just email {email} and tell us which submission it is about, for example by quoting its text and roughly when you sent it. We will reply within one month.",
+          "If you withdraw your consent, we will remove your submission from the site and the games. This does not change anything published before then.",
+          "If you think we are not handling your data properly, you can also contact the Croatian data protection authority, the Personal Data Protection Agency (azop.hr)."
+        ]
+      },
+      "changes": {
+        "title": "Changes to this notice",
+        "text": [
+          "If we change this notice, we will publish the new version on this page with a new date."
+        ]
+      }
+    }
+  },
+  "review": {
+    "title": "Review submissions",
+    "password": "Password",
+    "open": "Open",
+    "signOut": "Sign out",
+    "refresh": "Refresh",
+    "wrongPassword": "That password is wrong.",
+    "notConfigured": "Review is not set up on the server: check NUXT_REVIEW_SECRET and the database settings.",
+    "tooMany": "Too many wrong attempts. Try again in 15 minutes.",
+    "loadError": "The submissions could not be loaded.",
+    "actionError": "The change was not saved. Please try again.",
+    "empty": "No submissions here.",
+    "statuses": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "all": "All"
+    },
+    "approve": "Approve",
+    "reject": "Reject",
+    "toPending": "Back to pending",
+    "delete": "Delete",
+    "confirmDelete": "Delete this submission for good?",
+    "fields": {
+      "type": "Type",
+      "place": "Place",
+      "name": "Name",
+      "contact": "Contact",
+      "sent": "Sent",
+      "language": "Language",
+      "consent": "Consent to publish"
+    },
+    "anonymous": "no name",
+    "consentGiven": "yes (notice of {version})"
   }
 }

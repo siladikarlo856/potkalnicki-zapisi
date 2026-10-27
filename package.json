@@ -10,19 +10,22 @@
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "env:init": "[ -f .env ] || cp .env.example .env",
-    "db:up": "pnpm env:init && docker compose up -d --wait db",
-    "db:down": "docker compose --profile tools down",
-    "db:reset": "pnpm env:init && docker compose --profile tools down -v && docker compose up -d --wait db",
-    "db:logs": "docker compose logs -f db",
-    "db:shell": "docker compose exec db sh -c 'mariadb -u\"$MARIADB_USER\" -p\"$MARIADB_PASSWORD\" \"$MARIADB_DATABASE\"'",
-    "db:browser": "pnpm db:up && docker compose --profile tools up -d --wait adminer",
-    "dev:local": "pnpm db:up && nuxt dev"
+    "db:up": "pnpm env:init && supabase start && node scripts/local.mjs env",
+    "db:down": "supabase stop",
+    "db:reset": "pnpm db:up && supabase db reset && node scripts/local.mjs env",
+    "db:logs": "docker logs -f supabase_db_ksh",
+    "db:shell": "docker exec -it supabase_db_ksh psql -U postgres",
+    "db:browser": "pnpm db:up && node scripts/local.mjs studio",
+    "dev:local": "pnpm db:up && nuxt dev",
+    "test": "vitest run",
+    "test:local-db": "node scripts/local.mjs test"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.145",
     "@iconify-json/simple-icons": "1.2.100",
     "@nuxt/ui": "^4.12.0",
     "@nuxtjs/i18n": "^10.6.0",
+    "@supabase/supabase-js": "^2.118.0",
     "nuxt": "^4.6.2",
     "tailwindcss": "^4.3.3"
   },
@@ -57,9 +60,11 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.3.4",
     "eslint": "^10.13.0",
     "eslint-plugin-better-tailwindcss": "^4.9.1",
     "typescript": "^6.0.3",
+    "vitest": "^5.0.5",
     "vue-tsc": "^3.3.13"
   },
   "packageManager": "pnpm@12.14.0"
