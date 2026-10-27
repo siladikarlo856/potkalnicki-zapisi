@@ -1,13 +1,13 @@
 {
   "meta": {
-    "description": "Karlo Siladi gradi stvari — digitalne, fizičke i sve između. Projekt lokalne baštine, Siladi Dizajn i odabrani projekti."
+    "description": "Karlo Siladi izrađuje stvari, digitalne i fizičke. Riječi i običaji našeg kraja, Siladi Dizajn i izbor projekata."
   },
   "nav": {
     "home": "Početna",
     "myStory": "Moja priča",
     "projects": "Projekti",
     "siladiDizajn": "Siladi Dizajn",
-    "apps": "Aplikacije i iskustva",
+    "apps": "Aplikacije i web",
     "contact": "Kontakt",
     "soon": "Uskoro"
   },
@@ -16,19 +16,19 @@
   },
   "home": {
     "hero": {
-      "headline": "Graditelj · stvaratelj · poduzetnik",
-      "title": "Gradim stvari. Digitalne, fizičke i sve između.",
-      "description": "Ja sam Karlo — poduzetnik i stvaratelj s inženjerskim iskustvom. Volim pretvarati ideje u stvari koje ljudi mogu koristiti.",
-      "cta": "Pogledaj što gradim"
+      "headline": "Ideje · izrada · poduzetništvo",
+      "title": "Volim izrađivati stvari — digitalne, fizičke i sve između.",
+      "description": "Ja sam Karlo, poduzetnik s inženjerskim iskustvom. Najdraže mi je kad ideja preraste u nešto što ljudi zaista koriste.",
+      "cta": "Pogledaj na čemu radim"
     },
     "heritage": {
       "badge": "Uskoro",
-      "eyebrow": "Projekt lokalne baštine · radni naziv",
-      "title": "Lokalne riječi, izrazi i običaji — da ne padnu u zaborav.",
-      "description": "Projekt koji prikuplja i dijeli riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i šireg kraja — uskoro i kroz igre s riječima i kvizove.",
+      "eyebrow": "Zavičajna baština · radni naziv",
+      "title": "Riječi, izrazi i običaji našeg kraja — da ne padnu u zaborav.",
+      "description": "Skupljamo riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i okolice — a uskoro i kroz kvizove i igre.",
       "explore": "Saznaj više o projektu",
-      "share": "Podijeli riječ",
-      "note": "U izradi — ništa se ne objavljuje bez provjere."
+      "share": "Pošalji riječ",
+      "note": "Projekt je tek u izradi. Sve što pošalješ prvo provjerimo."
     },
     "teaser": {
       "flip": "Okreni karticu",
@@ -36,8 +36,8 @@
       "play": "Isprobaj igru"
     },
     "siladi": {
-      "title": "Personalizirani pokloni iz Križevaca",
-      "description": "Za krštenje, prvu pričest, vjenčanje i druge prigode izrađujem poklone po narudžbi, s imenom, datumom ili porukom po vašoj želji: setove, drvene kutijice za novac, LED lampe, okvire i topere za torte. Sve nastaje laserskim graviranjem i rezanjem te 3D printom. Šaljem na adresu bilo gdje u Hrvatskoj, a poklon možete preuzeti i osobno u Križevcima.",
+      "title": "Pokloni po mjeri iz Križevaca",
+      "description": "Za krštenje, prvu pričest, vjenčanje i druge prigode izrađujem poklone po narudžbi, s imenom, datumom ili porukom po tvojoj želji: setove, drvene kutijice za novac, LED lampe, okvire i topere za torte. Sve nastaje laserskim graviranjem i rezanjem te 3D printom. Šaljem na adresu bilo gdje u Hrvatskoj, a poklon možeš preuzeti i osobno u Križevcima.",
       "cta": "Posjeti Siladi Dizajn",
       "categoriesLabel": "Pokloni po prigodi",
       "categories": {
@@ -55,89 +55,90 @@
       }
     },
     "projects": {
-      "title": "Odabrani projekti",
-      "description": "Softver, hardver i eksperimenti — nekoliko stvari koje sam napravio.",
+      "title": "Izbor projekata",
+      "description": "Softver, hardver i pokoji eksperiment — dio onoga što sam napravio.",
       "all": "Svi projekti",
       "soon": "Uskoro",
       "community": {
-        "tag": "Zajednica",
-        "title": "Mjesto za projekt 1",
-        "description": "Projekt vezan uz zajednicu — još nije odabran."
+        "tag": "Za zajednicu",
+        "title": "Projekt 1",
+        "description": "Ovdje dolazi projekt za zajednicu."
       },
       "professional": {
         "tag": "Posao",
-        "title": "Mjesto za projekt 2",
-        "description": "Primjer iz posla koji se smije javno pokazati — još nije odabran."
+        "title": "Projekt 2",
+        "description": "Ovdje dolazi projekt iz posla koji smijem pokazati."
       },
       "experiment": {
-        "tag": "Eksperiment",
-        "title": "Mjesto za projekt 3",
-        "description": "Razigrani tehnički eksperiment — još nije odabran."
+        "tag": "Iz zabave",
+        "title": "Projekt 3",
+        "description": "Ovdje dolazi tehnički eksperiment iz zabave."
       }
     }
   },
   "contact": {
     "title": "Javi se",
-    "description": "Najlakše me je dobiti e-mailom.",
-    "pending": "Kontakt podaci uskoro.",
+    "description": "Najlakše ćeš me dobiti e-mailom.",
+    "pending": "Kontakt uskoro.",
     "email": "Pošalji e-mail"
   },
   "footer": {
     "copyright": "© {year} Karlo Siladi"
   },
   "heritage": {
-    "title": "Projekt lokalne baštine",
-    "nameNote": "Radni naziv — konačno ime tek treba odabrati",
-    "description": "Čuvamo i dijelimo lokalne riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i šireg kraja.",
+    "title": "Zavičajna baština",
+    "nameNote": "Radni naziv — pravo ime još tražimo",
+    "description": "Čuvamo riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i okolice — i dijelimo ih dalje.",
     "badge": "Uskoro",
     "status": "U izradi",
-    "share": "Podijeli riječ",
+    "share": "Pošalji riječ",
     "coming": {
-      "title": "Što dolazi",
+      "title": "Što pripremamo",
+      "jump": "Pogledaj što pripremamo",
       "cards": {
         "title": "Kartice s riječima",
-        "description": "Vidiš lokalnu riječ, pogodiš što znači i okreneš karticu — uz inačice iz susjednih sela."
+        "description": "Pročitaš riječ, pogodiš što znači i okreneš karticu. Usput vidiš kako se ista riječ govori u susjednim selima."
       },
       "quizzes": {
         "title": "Kvizovi i igre",
-        "description": "Igraj sam ili s prijateljima — službene igre i igre koje izradi zajednica."
+        "description": "Igraj sam ili s društvom — naše igre i one koje osmisle drugi."
       },
       "map": {
         "title": "Karta riječi",
-        "description": "Pogledaj gdje se koja inačica riječi koristi."
+        "description": "Pogledaj u kojem se selu kako kaže."
       },
       "stories": {
         "title": "Priče i sjećanja",
-        "description": "Lokalne priče, sjećanja i običaji, objavljeni uz dopuštenje."
+        "description": "Priče, sjećanja i običaji iz kraja — objavljujemo ih samo uz dopuštenje."
       },
       "tryGame": "Isprobaj kartice",
       "gameNote": ""
     },
     "form": {
-      "title": "Podijeli riječ, izraz ili sjećanje",
-      "description": "Sve se pregledava prije nego što se igdje pojavi. Ne trebaš korisnički račun.",
-      "reviewed": "Pregledava se prije objave",
-      "nameOptional": "Ime nije obavezno",
-      "noSignIn": "Bez prijave",
+      "title": "Pošalji riječ, izraz ili sjećanje",
+      "description": "Sve pročitamo prije objave. Ne trebaš se registrirati.",
+      "reviewed": "Provjera prije objave",
+      "nameOptional": "Ime po želji",
+      "noSignIn": "Bez registracije",
       "text": "Tvoja riječ, izraz ili sjećanje",
-      "textPlaceholder": "npr. riječ koju su koristili baka i djed, što znači i kako se izgovarala",
-      "type": "Vrsta (neobavezno)",
+      "textPlaceholder": "npr. riječ koju su govorili baka i djed — što znači i kako se izgovara",
+      "type": "Što šalješ? (neobavezno)",
       "types": {
         "word": "Riječ",
         "expression": "Izraz",
-        "memory": "Sjećanje ili priča",
-        "other": "Drugo"
+        "memory": "Sjećanje ili priču",
+        "other": "Nešto drugo"
       },
-      "place": "Gdje se koristi? (neobavezno)",
+      "place": "Gdje se tako govori? (neobavezno)",
       "placePlaceholder": "Selo ili grad",
       "name": "Tvoje ime (neobavezno)",
-      "nameHelp": "Ako želiš da te navedemo",
+      "nameHelp": "Ako želiš da te spomenemo kao izvor",
       "contact": "Kontakt (neobavezno)",
-      "contactHelp": "Samo ako te smijemo nešto dodatno pitati",
-      "consent": "Prijave se pregledavaju i mogu se pojaviti u budućim sadržajima ili igrama o baštini. Obavijest o privatnosti i dopuštenju tek ćemo objaviti.",
-      "submit": "Pošalji na pregled",
-      "notLive": "Slanje još nije uključeno",
-      "notLiveDescription": "Obrazac je spreman, ali prijave još ne primamo. Uskoro!"
+      "contactHelp": "Samo ako ti se smijemo javiti s dodatnim pitanjem",
+      "consent": "Sve što pošalješ prvo pročitamo, a može se naći u budućim igrama i objavama o našem kraju. Obavijest o privatnosti i dopuštenju objavit ćemo prije nego što obrazac proradi.",
+      "submit": "Pošalji",
+      "notLive": "Slanje još ne radi",
+      "notLiveDescription": "Obrazac je spreman, ali poruke još ne primamo. Uskoro!"
     }
   },
   "game": {

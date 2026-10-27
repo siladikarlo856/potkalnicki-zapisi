@@ -12,7 +12,7 @@ const { areaById, areaTrail } = useHeritage()
 const name = computed(() => areaById.get(props.usage.areaId)?.name ?? props.usage.areaId)
 const title = computed(() => {
   const trail = areaTrail(props.usage.areaId).map(area => area.name).join(' › ')
-  return props.sample ? `${trail} — primjer, nije provjereno` : trail
+  return props.sample ? `${trail} — nije provjereno` : trail
 })
 </script>
 

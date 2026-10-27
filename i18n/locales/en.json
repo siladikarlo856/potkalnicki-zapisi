@@ -94,6 +94,7 @@
     "share": "Share a word",
     "coming": {
       "title": "What’s coming",
+      "jump": "See what’s coming",
       "cards": {
         "title": "Word cards",
         "description": "See a local word, guess what it means, flip to reveal — with the spellings used in neighbouring villages."

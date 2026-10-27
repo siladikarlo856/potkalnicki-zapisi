@@ -67,7 +67,7 @@ const example = computed(() => props.entry.examples?.[0])
             name="i-lucide-pointer"
             class="size-3.5 shrink-0"
           />
-          Dodirni karticu za otkrivanje
+          Dodirni karticu da vidiš značenje
         </p>
       </div>
 

@@ -17,7 +17,7 @@ Words and places are static JSON in `content/heritage/`:
 - `words.json`: word entries. Each entry has a headword, meaning, word type, examples and its regional **variants**; every variant lists the areas where it is used (`usages`), so a usage map can be built later.
 - `areas.json`: the place hierarchy (settlement → municipality or town → county → country).
 
-The types are in `app/types/heritage.ts`. The current words are **sample data** (`"status": "placeholder"`): they are shown with an "Uzorak" badge, and their variants and places are examples that still need to be checked. Replace them with verified entries before launch.
+The types are in `app/types/heritage.ts`. The current words are **sample data** (`"status": "placeholder"`): they are shown with a "Neprovjereno" (unverified) badge, and their variants and places are examples that still need to be checked. Replace them with verified entries before launch.
 
 Contact details, social links and the Siladi Dizajn link are set in `app/app.config.ts` (`site`); empty values are hidden.
 

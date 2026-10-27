@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { en, hr } from '@nuxt/ui/locale'
+import { en, hr as nuxtUiHr } from '@nuxt/ui/locale'
+
+const hr = extendLocale(nuxtUiHr, {
+  messages: {
+    colorMode: {
+      switchToDark: 'Uključi tamnu temu',
+      switchToLight: 'Uključi svijetlu temu'
+    }
+  }
+})
 
 const { locale, t } = useI18n()
 const i18nHead = useLocaleHead()
