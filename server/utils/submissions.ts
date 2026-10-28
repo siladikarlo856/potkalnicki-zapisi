@@ -41,10 +41,10 @@ function toSubmission(row: SubmissionRow): Submission {
   }
 }
 
-// Uses the public (anon) key. Status and created_at are not sent: the table defaults set them,
-// and the database only lets this role insert pending submissions with consent.
+// The route validates input before insertion. Status and created_at use table defaults;
+// the shared server-only secret key bypasses RLS, while check constraints still apply.
 export async function insertSubmission(input: SubmissionInput) {
-  const { error } = await useSubmissionClient().from(TABLE).insert({
+  const { error } = await useDatabaseClient().from(TABLE).insert({
     text: input.text,
     type: input.type,
     place: input.place,
@@ -58,7 +58,7 @@ export async function insertSubmission(input: SubmissionInput) {
 }
 
 export async function listSubmissions(status: SubmissionStatus | 'all') {
-  const client = useReviewClient()
+  const client = useDatabaseClient()
   const rows: SubmissionRow[] = []
   for (let from = 0; ; from += PAGE_SIZE) {
     let query = client.from(TABLE).select('*')
@@ -75,7 +75,7 @@ export async function listSubmissions(status: SubmissionStatus | 'all') {
 }
 
 export async function setSubmissionStatus(id: number, status: SubmissionStatus) {
-  const { data, error } = await useReviewClient()
+  const { data, error } = await useDatabaseClient()
     .from(TABLE)
     .update({ status, reviewed_at: status === 'pending' ? null : new Date().toISOString() })
     .eq('id', id)
@@ -85,7 +85,7 @@ export async function setSubmissionStatus(id: number, status: SubmissionStatus) 
 }
 
 export async function deleteSubmission(id: number) {
-  const { data, error } = await useReviewClient()
+  const { data, error } = await useDatabaseClient()
     .from(TABLE)
     .delete()
     .eq('id', id)

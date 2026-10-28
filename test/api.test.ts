@@ -1,24 +1,25 @@
 import { fileURLToPath } from 'node:url'
+import { readFile, readdir } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { fetch, getServerLogs, setup, startServer } from '@nuxt/test-utils/e2e'
-import { ANON_KEY, SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
+import { fetch, getServerLogs, setup, startServer, useTestContext } from '@nuxt/test-utils/e2e'
+import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
 
 const SECRET = 'test-review-secret-0123456789'
 const RATE_LIMIT_MAX = 3
 
 // By default the app talks to a small fake of Supabase's REST API (test/helpers/fakeSupabase.ts),
 // so this suite needs no Docker. To run it against the real local stack instead (after
-// `pnpm db:up`), set TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY and TEST_SUPABASE_SERVICE_ROLE_KEY,
+// `pnpm db:up`), set TEST_SUPABASE_URL and TEST_SUPABASE_SERVICE_ROLE_KEY,
 // which is what `pnpm test:local-db` does.
 const real = process.env.TEST_SUPABASE_URL
   ? {
       url: process.env.TEST_SUPABASE_URL,
-      anonKey: process.env.TEST_SUPABASE_ANON_KEY ?? '',
       serviceRoleKey: process.env.TEST_SUPABASE_SERVICE_ROLE_KEY ?? ''
     }
   : null
 const fake = real ? null : await startFakeSupabase()
-const supabase = real ?? { url: fake!.url, anonKey: ANON_KEY, serviceRoleKey: SERVICE_ROLE_KEY }
+const supabase = real ?? { url: fake!.url, serviceRoleKey: SERVICE_ROLE_KEY }
 
 afterAll(() => fake?.stop())
 
@@ -28,7 +29,6 @@ await setup({
   setupTimeout: 300_000,
   env: {
     NUXT_SUPABASE_URL: supabase.url,
-    NUXT_SUPABASE_ANON_KEY: supabase.anonKey,
     NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey,
     NUXT_REVIEW_SECRET: SECRET,
     NUXT_SUBMISSION_RATE_LIMIT_MAX: String(RATE_LIMIT_MAX)
@@ -84,6 +84,15 @@ describe('POST /api/submissions', () => {
       createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/),
       reviewedAt: null
     })
+  })
+
+  it('ignores client-supplied status, review metadata, id and consent version', async () => {
+    const response = await submit({ ...valid, text: 'server controlled fields', status: 'approved', reviewed_at: '2026-01-01', id: 999999, consent_version: 'forged' })
+    expect(response.status).toBe(201)
+    const stored = (await listAll()).find(row => row.text === 'server controlled fields')!
+    expect(stored).toMatchObject({ status: 'pending', reviewedAt: null })
+    expect(stored.id).not.toBe(999999)
+    expect(stored.consentVersion).not.toBe('forged')
   })
 
   it('rejects a submission without consent to publish and stores nothing', async () => {
@@ -237,63 +246,78 @@ describe('review API', () => {
 })
 
 describe.skipIf(!fake)('Supabase keys', () => {
-  it('submits with the anon key and reviews with the service-role key', () => {
+  it('submits and reviews with the same secret key', () => {
     const inserts = fake!.requests.filter(r => r.method === 'POST')
     const others = fake!.requests.filter(r => r.method !== 'POST')
     expect(inserts.length).toBeGreaterThan(0)
     expect(others.length).toBeGreaterThan(0)
-    expect(inserts.every(r => r.role === 'anon')).toBe(true)
+    expect(inserts.every(r => r.role === 'service_role')).toBe(true)
     expect(others.every(r => r.role === 'service_role')).toBe(true)
   })
 })
 
+describe('server-only credentials', () => {
+  it('does not publish the database key or review password in HTML or built public files', async () => {
+    const secrets = [supabase.serviceRoleKey, SECRET, process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY, process.env.SUPABASE_API_KEY].filter((value): value is string => Boolean(value))
+    for (const path of ['/heritage', '/en/heritage', '/review']) {
+      const html = await (await fetch(path)).text()
+      for (const secret of secrets) expect(html).not.toContain(secret)
+    }
+    const publicDir = resolve(useTestContext().nuxt!.options.nitro.output.dir!, 'public')
+    const files = await readdir(publicDir, { recursive: true, withFileTypes: true })
+    expect(files.filter(file => file.isFile()).length).toBeGreaterThan(0)
+    for (const file of files.filter(file => file.isFile())) {
+      const output = await readFile(`${file.parentPath}/${file.name}`)
+      for (const secret of secrets) expect(output.includes(Buffer.from(secret)), file.name).toBe(false)
+    }
+  })
+})
+
 // These restart the server with other settings, so they come last.
-const blank = { NUXT_SUPABASE_URL: '', NUXT_SUPABASE_ANON_KEY: '', NUXT_SUPABASE_SERVICE_ROLE_KEY: '' }
+const blank = { NUXT_SUPABASE_URL: '', NUXT_SUPABASE_SERVICE_ROLE_KEY: '', SUPABASE_URL: '', SUPABASE_API_KEY: '' }
+const reviewRoutes = [
+  { method: 'GET', path: '/api/review/submissions' },
+  { method: 'PATCH', path: '/api/review/submissions/1', body: { status: 'approved' } },
+  { method: 'DELETE', path: '/api/review/submissions/1' }
+]
 
 describe('Supabase settings', () => {
-  it('reads the plain SUPABASE_* names that Hostinger injects', async () => {
-    await startServer({
-      env: {
-        ...blank,
-        SUPABASE_URL: supabase.url,
-        SUPABASE_ANON_KEY: supabase.anonKey,
-        NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey
-      }
-    })
-
+  it('submits and reviews using only the names Hostinger injects', async () => {
+    await startServer({ env: { ...blank, SUPABASE_URL: supabase.url, SUPABASE_API_KEY: supabase.serviceRoleKey } })
     expect((await submit({ ...valid, text: 'plain names' })).status).toBe(201)
     expect((await listAll()).some(row => row.text === 'plain names')).toBe(true)
   })
 
-  it('takes the anon key from SUPABASE_KEY too', async () => {
-    await startServer({
-      env: { ...blank, SUPABASE_URL: supabase.url, SUPABASE_KEY: supabase.anonKey, NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey }
-    })
-
-    expect((await submit({ ...valid, text: 'supabase key' })).status).toBe(201)
+  it('prefers the NUXT overrides when both naming styles are set', async () => {
+    await startServer({ env: {
+      ...blank,
+      NUXT_SUPABASE_URL: supabase.url,
+      NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey,
+      SUPABASE_URL: 'http://127.0.0.1:1',
+      SUPABASE_API_KEY: 'invalid-fallback'
+    } })
+    expect((await submit({ ...valid, text: 'override names' })).status).toBe(201)
+    expect((await listAll()).some(row => row.text === 'override names')).toBe(true)
   })
 
-  it('keeps taking submissions but switches review off without the service-role key', async () => {
-    await startServer({ env: { ...blank, NUXT_SUPABASE_URL: supabase.url, NUXT_SUPABASE_ANON_KEY: supabase.anonKey } })
-
-    expect((await submit({ ...valid, text: 'anon only' })).status).toBe(201)
-    expect((await request('/api/review/submissions', { secret: SECRET })).status).toBe(503)
-    expect((await request('/api/review/submissions/1', { method: 'PATCH', body: { status: 'approved' }, secret: SECRET })).status).toBe(503)
-    expect((await request('/api/review/submissions/1', { method: 'DELETE', secret: SECRET })).status).toBe(503)
-    // The password is still checked first.
-    expect((await request('/api/review/submissions', { secret: 'wrong-secret-0123456789' })).status).toBe(401)
-
-    expect(getServerLogs().join('\n')).toContain('NUXT_SUPABASE_SERVICE_ROLE_KEY is not set')
-  })
-
-  it('refuses submissions and review with 503 and logs an error when Supabase is not configured', async () => {
-    await startServer({ env: blank })
-
+  it.each([
+    { name: 'secret key', settings: { NUXT_SUPABASE_URL: supabase.url }, missing: 'NUXT_SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_API_KEY)' },
+    { name: 'URL', settings: { SUPABASE_API_KEY: supabase.serviceRoleKey }, missing: 'NUXT_SUPABASE_URL (or SUPABASE_URL)' }
+  ])('refuses submissions and all review routes without the $name and logs the missing variable', async ({ settings, missing }) => {
+    await startServer({ env: { ...blank, ...settings } })
     expect((await submit({ ...valid, text: 'no database' })).status).toBe(503)
-    expect((await request('/api/review/submissions', { secret: SECRET })).status).toBe(503)
-    expect((await request('/api/review/submissions/1', { method: 'PATCH', body: { status: 'approved' }, secret: SECRET })).status).toBe(503)
-    expect((await request('/api/review/submissions/1', { method: 'DELETE', secret: SECRET })).status).toBe(503)
+    for (const route of reviewRoutes) {
+      expect((await request(route.path, { ...route, secret: SECRET })).status).toBe(503)
+    }
+    expect((await request('/api/review/submissions', { secret: 'wrong-secret-0123456789' })).status).toBe(401)
+    expect(getServerLogs().join('\n')).toContain(`${missing} is not set`)
+  })
 
-    expect(getServerLogs().join('\n')).toContain('NUXT_SUPABASE_URL (or SUPABASE_URL) is not set')
+  it.each(['', 'too-short'])('keeps review disabled with an invalid review password (%s)', async (reviewSecret) => {
+    await startServer({ env: { ...blank, SUPABASE_URL: supabase.url, SUPABASE_API_KEY: supabase.serviceRoleKey, NUXT_REVIEW_SECRET: reviewSecret } })
+    expect((await submit({ ...valid, text: 'password disabled' })).status).toBe(201)
+    for (const route of reviewRoutes) {
+      expect((await request(route.path, { ...route, secret: SECRET })).status).toBe(503)
+    }
   })
 })

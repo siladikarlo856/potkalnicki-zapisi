@@ -17,9 +17,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     supabase: {
       url: '',
-      // Public (anon) key: the form uses it, and the database only lets it insert.
-      anonKey: '',
-      // Secret key for the /review routes. Server only, never expose it to the browser.
+      // Secret key for all database access. Server only, never expose it to the browser.
       serviceRoleKey: ''
     },
     reviewSecret: '',

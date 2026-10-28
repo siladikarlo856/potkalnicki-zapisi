@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "env:init": "[ -f .env ] || cp .env.example .env",
-    "db:up": "pnpm env:init && supabase start && node scripts/local.mjs env",
+    "db:up": "pnpm env:init && supabase start && supabase migration up --local && node scripts/local.mjs env",
     "db:down": "supabase stop",
     "db:reset": "pnpm db:up && supabase db reset && node scripts/local.mjs env",
     "db:logs": "docker logs -f supabase_db_ksh",

@@ -4,15 +4,12 @@ import type { AddressInfo } from 'node:net'
 
 // A small stand-in for Supabase's REST API (PostgREST) for the heritage_submissions table, so the
 // API tests run in CI without Docker. The real supabase-js client talks to it, and it enforces the
-// same access rules as supabase/migrations: the anon key can only insert, the service-role key can
+// same access rules as supabase/migrations: public keys have no access; the secret key can
 // do everything. supabase.local.test.ts checks those rules against the real local stack.
 
-export const ANON_KEY = 'test-anon-key'
-export const SERVICE_ROLE_KEY = 'test-service-role-key'
+export const SERVICE_ROLE_KEY = 'sb_secret_test-server-only-0123456789'
 
 type Row = Record<string, unknown>
-
-const INSERT_COLUMNS = ['text', 'type', 'place', 'name', 'contact', 'consent_publish', 'consent_version', 'locale']
 
 function reply(response: ServerResponse, status: number, body?: unknown) {
   response.writeHead(status, { 'content-type': 'application/json' })
@@ -41,7 +38,7 @@ export async function startFakeSupabase() {
   const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost')
     const key = String(request.headers.apikey ?? '')
-    const role = key === SERVICE_ROLE_KEY ? 'service_role' : key === ANON_KEY ? 'anon' : 'none'
+    const role = key === SERVICE_ROLE_KEY ? 'service_role' : 'none'
     requests.push({ method: request.method ?? '', role, path: url.pathname })
 
     if (url.pathname !== '/rest/v1/heritage_submissions' || role === 'none') {
@@ -50,14 +47,11 @@ export async function startFakeSupabase() {
 
     if (request.method === 'POST') {
       const body = await readJson(request) as Row
-      const invalid = !body || Object.keys(body).some(column => !INSERT_COLUMNS.includes(column)) || body.consent_publish !== true
-      if (role === 'anon' && invalid) return reply(response, 401, { message: 'new row violates row-level security policy' })
       rows.push({ ...body, id: nextId++, status: 'pending', created_at: new Date().toISOString(), reviewed_at: null })
       return reply(response, 201)
     }
 
-    // Everything below needs the service role, like the table's RLS: anon sees no rows.
-    const visible = role === 'service_role' ? rows.filter(row => matches(row, url.searchParams)) : []
+    const visible = rows.filter(row => matches(row, url.searchParams))
 
     if (request.method === 'GET') {
       const offset = Number(url.searchParams.get('offset') ?? 0)

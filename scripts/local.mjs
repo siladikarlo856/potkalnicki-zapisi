@@ -1,5 +1,5 @@
 // Helpers for the local Supabase stack. Used by the db:* scripts in package.json.
-//   node scripts/local.mjs env     write the local API URL and keys into .env
+//   node scripts/local.mjs env     write the local API URL and secret key into .env
 //   node scripts/local.mjs studio  open Supabase Studio in the browser
 //   node scripts/local.mjs test    run the tests against the local stack (it must be running)
 import { execFileSync } from 'node:child_process'
@@ -21,8 +21,7 @@ if (command === 'env') {
   const values = status()
   const wanted = {
     NUXT_SUPABASE_URL: values.API_URL,
-    NUXT_SUPABASE_ANON_KEY: values.ANON_KEY,
-    NUXT_SUPABASE_SERVICE_ROLE_KEY: values.SERVICE_ROLE_KEY
+    NUXT_SUPABASE_SERVICE_ROLE_KEY: values.SECRET_KEY || values.SERVICE_ROLE_KEY
   }
   for (const [name, value] of Object.entries(wanted)) {
     if (!value) throw new Error(`supabase status did not print a value for ${name}`)
@@ -37,7 +36,7 @@ if (command === 'env') {
     else lines[index] = line
   }
   writeFileSync(file, `${lines.join('\n').replace(/\n+$/, '')}\n`)
-  console.log('Local Supabase URL and keys written to .env')
+  console.log('Local Supabase URL and secret key written to .env')
 } else if (command === 'studio') {
   const url = status().STUDIO_URL
   console.log(`Supabase Studio: ${url}`)
@@ -55,8 +54,8 @@ if (command === 'env') {
       env: {
         ...process.env,
         TEST_SUPABASE_URL: values.API_URL,
-        TEST_SUPABASE_ANON_KEY: values.ANON_KEY,
-        TEST_SUPABASE_SERVICE_ROLE_KEY: values.SERVICE_ROLE_KEY
+        TEST_PUBLIC_KEY: values.PUBLISHABLE_KEY || values.ANON_KEY,
+        TEST_SUPABASE_SERVICE_ROLE_KEY: values.SECRET_KEY || values.SERVICE_ROLE_KEY
       }
     })
   } catch {

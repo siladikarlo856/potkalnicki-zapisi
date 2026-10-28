@@ -41,15 +41,11 @@ Approved submissions are not yet published into the word cards or other content;
 
 ### Database
 
-Submissions are stored in [Supabase](https://supabase.com) (Postgres) through [`@supabase/supabase-js`](https://github.com/supabase/supabase-js), used only in server code (`server/utils/db.ts`): no Supabase key is ever sent to the browser. Everything is configured with environment variables, and the table is created by the migration in `supabase/migrations/`.
+Submissions are stored in [Supabase](https://supabase.com) (Postgres) through [`@supabase/supabase-js`](https://github.com/supabase/supabase-js), used only in server code (`server/utils/db.ts`): no Supabase key is ever sent to the browser. Everything is configured with environment variables, and the table and its access rules are managed by migrations in `supabase/migrations/`.
 
-The table `heritage_submissions` has Row Level Security turned on, and the public API cannot read it:
+The table `heritage_submissions` has Row Level Security enabled. The public key and authenticated users have no access to it: the server uses **one secret key** for both `POST /api/submissions` and `/api/review/*`. That key bypasses RLS by design, so the form relies on its server validation, consent check, honeypot, rate limit and body-size cap. The table's check constraints (lengths, allowed values, consent must be true) still apply. Review routes also check the review password before accessing the database.
 
-- the **anon** (public) key can only insert a new `pending` submission with consent, and only the form columns; it cannot read, update or delete anything, or choose the status;
-- the **service-role** (secret) key is used only by the `/api/review/*` routes, after the review password is checked, to list, approve, reject and delete;
-- the table also has check constraints (lengths, allowed values, consent must be true) as a second line of defence.
-
-Without the Supabase URL, `POST /api/submissions` answers 503 and stores nothing; without the service-role key the review routes answer 503 and log which variable is missing, while submissions keep working. `/review` still uses its own password (`NUXT_REVIEW_SECRET`), not Supabase Auth.
+Without the Supabase URL or secret key, both submissions and review answer 503 and log which variable is missing. `/review` still uses its own password (`NUXT_REVIEW_SECRET`), not Supabase Auth.
 
 ### Environment variables
 
@@ -58,32 +54,29 @@ Copy `.env.example` to `.env` for local development (`pnpm dev:local` does it fo
 | Variable | What it is |
 | --- | --- |
 | `NUXT_SUPABASE_URL` | Supabase project URL, e.g. `https://<ref>.supabase.co`. Also read as `SUPABASE_URL`. |
-| `NUXT_SUPABASE_ANON_KEY` | Public (anon) key, used by the form. Also read as `SUPABASE_ANON_KEY` or `SUPABASE_KEY`. |
-| `NUXT_SUPABASE_SERVICE_ROLE_KEY` | Secret service-role key, used only by `/review`. Server only. Hostinger's integration does not add it: set it by hand. |
+| `SUPABASE_API_KEY` | One server-only Supabase secret key (`sb_secret_...`, or the legacy `service_role` key), used for submissions and review. Hostinger supplies it. |
+| `NUXT_SUPABASE_SERVICE_ROLE_KEY` | Optional server-only override for `SUPABASE_API_KEY`. No duplicate key is needed. Local setup fills this automatically. |
 | `NUXT_REVIEW_SECRET` | Password for the review page, at least 16 characters. Generate one with `openssl rand -base64 24`. |
 | `NUXT_SUBMISSION_RATE_LIMIT_MAX` | Optional. Submissions per IP per window, default `10`. |
 | `NUXT_SUBMISSION_RATE_LIMIT_WINDOW_SECONDS` | Optional. Rate limit window in seconds, default `600`. |
 
-The `NUXT_` names win when both styles are set. The plain `SUPABASE_*` names are read so that whatever Hostinger's Supabase integration injects keeps working. If `NUXT_SUPABASE_*` values were set while building, they are baked into the build as defaults, so build without them.
+Nonempty `NUXT_` overrides win over `SUPABASE_URL` and `SUPABASE_API_KEY`. Keep the key in server environment variables; never put it in public runtime config or browser code. The runtime config defaults are empty, so production credentials can be supplied when the server starts.
 
 ## Deploying on Hostinger
 
 The pages are still prerendered to static HTML at build time, but the form and the review page need the API, so the site has to run as a **Node.js app**, not as static files. The build output is a Node server in `.output/` that serves both the prerendered pages and the API.
 
 1. **Create the Supabase project.** On [supabase.com](https://supabase.com), create a project and note its region. Put the region into the privacy notice, where `[ZA PROVJERU: ...]` / `[TO CHECK: ...]` marks the spot in `i18n/locales/hr.json` and `en.json`. Free projects pause after about a week without activity, so check the form now and then.
-2. **Create the table.** In the Supabase dashboard open **SQL Editor**, paste the contents of `supabase/migrations/20261027000000_heritage_submissions.sql` and run it. (Or, with the Supabase CLI: `supabase link --project-ref <ref>` and `supabase db push`.) Check in **Table Editor** that `heritage_submissions` exists with RLS enabled.
+2. **Create the table.** In the Supabase dashboard open **SQL Editor**, run all files in `supabase/migrations/` in filename order. For an existing database that already has the table, run only the new `20261027010000_server_only_submissions.sql` migration to remove public access. (Or, with the Supabase CLI: `supabase link --project-ref <ref>` and `supabase db push`.) Check in **Table Editor** that `heritage_submissions` exists with RLS enabled.
 3. **Create the Node.js app.** In hPanel, add a Node.js app for the domain and connect this repository (or upload the code). Use:
    - Node.js version: 24 (or at least 22.21);
    - install and build: `pnpm install` and `pnpm build` (or `npm install` and `npm run build` if pnpm is not offered);
    - start command: `node .output/server/index.mjs` (entry file `.output/server/index.mjs`).
    Hostinger sets the port; the server reads it from `PORT`.
-4. **Connect Supabase.** In the Node.js app's settings use **Connect a database** and choose Supabase. Hostinger adds the Supabase variables to the app and redeploys. Open the app's **Environment variables** and check that the project URL and the anon key are there; if one is missing, add it as `NUXT_SUPABASE_URL` or `NUXT_SUPABASE_ANON_KEY`. The URL is under Supabase **Project Settings > API**.
-5. **Add the secrets by hand** in the same Environment variables list:
-   - `NUXT_SUPABASE_SERVICE_ROLE_KEY`: the `service_role` key from Supabase **Project Settings > API Keys** (the "secret" key in newer projects). Hostinger's integration does not provide it, and `/review` stays switched off without it.
-   - `NUXT_REVIEW_SECRET`: a password of at least 16 characters for `/review`.
-   Never paste either of them into the repository, a chat or a `NEXT_PUBLIC`/browser-visible setting.
-6. **Redeploy** (or restart) the app: variables are read when the server starts.
-7. **Check it.** Send a test entry from `/heritage`, open `/review`, sign in with `NUXT_REVIEW_SECRET`, check that the entry is there and delete it. If the form answers with an error and the server log says `NUXT_SUPABASE_URL ... is not set`, the Supabase variables are missing; if `/review` says it is not set up and the log names `NUXT_SUPABASE_SERVICE_ROLE_KEY`, add that one. Nothing is stored until Supabase is configured.
+4. **Connect Supabase.** In the Node.js app's settings use **Connect a database** and choose Supabase. The integration adds `SUPABASE_API_KEY` (the secret key) and the project URL (`SUPABASE_URL`). No second database key is needed. [Hostinger's connection guide](https://www.hostinger.com/support/connecting-a-supabase-database-to-a-hostinger-node-js-application/) describes the wizard and automatic environment setup; it does not document another URL variable name.
+5. **Add `NUXT_REVIEW_SECRET`** in the app's Environment variables: a password of at least 16 characters for `/review`. `NUXT_SUPABASE_SERVICE_ROLE_KEY` is an optional override only; leave it unset to use Hostinger's key.
+6. **Redeploy** the app after adding the review password: variables are read when the server starts.
+7. **Check it.** Send a test entry from `/heritage`, open `/review`, sign in with `NUXT_REVIEW_SECRET`, check that the entry is there and delete it. If either API answers 503, check the server log for the missing URL or secret-key variable and check the integration's Environment variables. Nothing is stored until Supabase is configured.
 
 ## Screenshots
 
@@ -133,11 +126,11 @@ pnpm install
 pnpm dev:local
 ```
 
-`dev:local` creates `.env` from [`.env.example`](.env.example) if missing (`.env` is gitignored), starts the Supabase stack (the first start pulls the images, which takes a few minutes), writes its local URL and keys into `.env` and then runs `pnpm dev`. Run the same command every day. Plain `pnpm dev` also works once the stack is up (`pnpm db:up`).
+`dev:local` creates `.env` from [`.env.example`](.env.example) if missing (`.env` is gitignored), starts the Supabase stack (the first start pulls the images, which takes a few minutes), writes its local URL and secret key into `.env` and then runs `pnpm dev`. Run the same command every day. Plain `pnpm dev` also works once the stack is up (`pnpm db:up`).
 
 | Command | What it does |
 | --- | --- |
-| `pnpm db:up` | Start the Supabase stack, apply new migrations and write the local URL and keys to `.env` |
+| `pnpm db:up` | Start the Supabase stack, apply new migrations and write the local URL and secret key to `.env` |
 | `pnpm db:down` | Stop the stack; data is kept |
 | `pnpm db:reset` | Delete the data and re-apply all migrations to an empty database |
 | `pnpm db:logs` | Follow the database logs |
@@ -165,4 +158,4 @@ pnpm dev:local
 
 **Stop:** press Ctrl+C to stop the app, then `pnpm db:down`. The data is kept in Docker volumes until you reset it.
 
-The keys in `.env` are the local stack's own demo keys, regenerated by `pnpm db:up`; they work only against your machine.
+The secret key in `.env` is the local stack's own demo key, refreshed by `pnpm db:up`; it works only against your machine.
