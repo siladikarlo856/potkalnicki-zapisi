@@ -9,7 +9,7 @@ const props = defineProps<{
 
 const { areaById, areaTrail } = useHeritage()
 
-const name = computed(() => areaById.get(props.usage.areaId)?.name ?? props.usage.areaId)
+const name = computed(() => areaById.value.get(props.usage.areaId)?.name ?? props.usage.areaId)
 const title = computed(() => {
   const trail = areaTrail(props.usage.areaId).map(area => area.name).join(' › ')
   return props.sample ? `${trail} — nije provjereno` : trail

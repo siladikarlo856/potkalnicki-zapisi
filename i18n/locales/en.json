@@ -260,7 +260,8 @@
     "reject": "Reject",
     "toPending": "Back to pending",
     "delete": "Delete",
-    "confirmDelete": "Delete this submission for good?",
+    "confirmDelete": "Delete this submission for good? Any word created from it will be deactivated and lose its contributor credit.",
+    "confirmReject": "Reject this submission? Any word created from it will be deactivated.",
     "fields": {
       "type": "Type",
       "place": "Place",

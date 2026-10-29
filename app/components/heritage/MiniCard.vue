@@ -1,10 +1,11 @@
 <script setup lang="ts">
-const { words } = useHeritage()
+const { words, status, error, refresh } = useHeritage()
 const { locale, t } = useI18n()
 const localePath = useLocalePath()
 
-const entry = words[0]
-const [behindLeft, behindRight] = words.slice(1, 3)
+const entry = computed(() => words.value[0])
+const behindLeft = computed(() => words.value[1])
+const behindRight = computed(() => words.value[2])
 const flipped = ref(false)
 </script>
 
@@ -48,5 +49,18 @@ const flipped = ref(false)
         size="sm"
       />
     </div>
+  </div>
+  <div
+    v-else
+    class="text-center text-sm text-muted"
+    role="status"
+  >
+    <p>{{ error ? (locale === 'hr' ? 'Kartice trenutačno nisu dostupne.' : 'Cards are currently unavailable.') : (status === 'pending' || status === 'idle') ? (locale === 'hr' ? 'Učitavam kartice…' : 'Loading cards…') : (locale === 'hr' ? 'Nove kartice stižu uskoro.' : 'New cards coming soon.') }}</p>
+    <UButton
+      v-if="error"
+      :label="locale === 'hr' ? 'Pokušaj opet' : 'Try again'"
+      variant="link"
+      @click="refresh()"
+    />
   </div>
 </template>

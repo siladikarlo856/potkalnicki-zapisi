@@ -2,10 +2,11 @@ import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 
-// A small stand-in for Supabase's REST API (PostgREST) for the heritage_submissions table, so the
+// A small stand-in for Supabase's REST API (PostgREST) for submissions and words, so the
 // API tests run in CI without Docker. The real supabase-js client talks to it, and it enforces the
-// same access rules as supabase/migrations: public keys have no access; the secret key can
-// do everything. supabase.local.test.ts checks those rules against the real local stack.
+// same role boundary as supabase/migrations: public keys have no access. It also models word
+// activation's approval side effect. supabase.local.test.ts and the real-stack API run check
+// actual RLS, constraints, seed data and transactional approval against Postgres.
 
 export const SERVICE_ROLE_KEY = 'sb_secret_test-server-only-0123456789'
 
@@ -25,13 +26,14 @@ async function readJson(request: IncomingMessage) {
 function matches(row: Row, params: URLSearchParams) {
   for (const [column, filter] of params) {
     const eq = filter.match(/^eq\.(.*)$/)
-    if (eq && ['id', 'status'].includes(column) && String(row[column]) !== eq[1]) return false
+    if (eq && String(row[column]) !== eq[1]) return false
   }
   return true
 }
 
 export async function startFakeSupabase() {
   const rows: Row[] = []
+  const words: Row[] = []
   let nextId = 1
   const requests: Array<{ method: string, role: string, path: string }> = []
 
@@ -41,17 +43,33 @@ export async function startFakeSupabase() {
     const role = key === SERVICE_ROLE_KEY ? 'service_role' : 'none'
     requests.push({ method: request.method ?? '', role, path: url.pathname })
 
-    if (url.pathname !== '/rest/v1/heritage_submissions' || role === 'none') {
+    const isWords = url.pathname === '/rest/v1/heritage_words'
+    if ((!isWords && url.pathname !== '/rest/v1/heritage_submissions') || role === 'none') {
       return reply(response, 401, { message: 'Invalid API key' })
     }
 
+    const table = isWords ? words : rows
+    function project(row: Row) {
+      const select = url.searchParams.get('select') ?? '*'
+      return select === '*' ? row : Object.fromEntries(select.split(',').map(key => [key, row[key]]))
+    }
+    function activate(row: Row) {
+      const submission = rows.find(s => s.id === row.submission_id)
+      if (row.active && submission) Object.assign(submission, { status: 'approved', reviewed_at: new Date().toISOString() })
+    }
     if (request.method === 'POST') {
       const body = await readJson(request) as Row
-      rows.push({ ...body, id: nextId++, status: 'pending', created_at: new Date().toISOString(), reviewed_at: null })
-      return reply(response, 201)
+      if (isWords && body.submission_id && words.some(w => w.submission_id === body.submission_id)) return reply(response, 409, { code: '23505', message: 'duplicate submission' })
+      const now = new Date().toISOString()
+      const row = isWords
+        ? { submission_id: null, submission_place: null, ...body, created_at: now, updated_at: now }
+        : { ...body, id: nextId++, status: 'pending', created_at: now, reviewed_at: null }
+      table.push(row)
+      if (isWords) activate(row)
+      return reply(response, 201, request.headers.prefer?.includes('return=representation') ? [project(row)] : undefined)
     }
 
-    const visible = rows.filter(row => matches(row, url.searchParams))
+    const visible = table.filter(row => matches(row, url.searchParams))
 
     if (request.method === 'GET') {
       const offset = Number(url.searchParams.get('offset') ?? 0)
@@ -60,17 +78,27 @@ export async function startFakeSupabase() {
       const [from, to] = range ? [Number(range[1]), Math.min(Number(range[2]), Number(range[1]) + 999)] : [offset, offset + limit - 1]
       const sorted = [...visible].sort((a, b) =>
         String(b.created_at).localeCompare(String(a.created_at)) || Number(b.id) - Number(a.id))
-      return reply(response, 200, sorted.slice(from, to + 1))
+      return reply(response, 200, sorted.slice(from, to + 1).map(project))
     }
 
     if (request.method === 'PATCH') {
       const body = await readJson(request) as Row
-      for (const row of visible) Object.assign(row, body)
-      return reply(response, 200, visible.map(row => ({ id: row.id })))
+      for (const row of visible) {
+        const wasActive = row.active
+        Object.assign(row, body)
+        if (isWords) {
+          row.updated_at = new Date().toISOString()
+          if (!wasActive) activate(row)
+        }
+      }
+      return reply(response, 200, visible.map(project))
     }
 
     if (request.method === 'DELETE') {
-      for (const row of visible) rows.splice(rows.indexOf(row), 1)
+      for (const row of visible) {
+        table.splice(table.indexOf(row), 1)
+        if (!isWords) for (const word of words) if (word.submission_id === row.id) word.submission_id = null
+      }
       return reply(response, 200, visible.map(row => ({ id: row.id })))
     }
 

@@ -4,6 +4,8 @@ import { resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { fetch, getServerLogs, setup, startServer, useTestContext } from '@nuxt/test-utils/e2e'
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
+import { createClient } from '@supabase/supabase-js'
+import type { AdminWord, PublicWords, WordInput } from '../shared/utils/word'
 
 const SECRET = 'test-review-secret-0123456789'
 const RATE_LIMIT_MAX = 3
@@ -64,6 +66,143 @@ async function listAll() {
 }
 
 const valid = { text: 'Kaj to znači?', type: 'expression', place: 'Sveti Petar Orehovec', name: 'Ana', contact: 'ana@example.com', consentPublish: true, locale: 'hr' }
+
+const db = createClient(supabase.url, supabase.serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
+const wordIds: string[] = []
+afterAll(async () => {
+  for (const id of wordIds) await db.from('heritage_words').delete().eq('id', id)
+})
+
+function wordInput(active = false): WordInput {
+  return {
+    entry: {
+      id: 'client-id-is-ignored', headword: 'testna riječ', meaning: { hr: 'testno značenje', en: 'test meaning' }, partOfSpeech: 'imenica',
+      status: 'community', sources: [{ id: 'editor', kind: 'editor', credit: 'Local test' }],
+      examples: [{ text: 'Primjer riječi.', translation: 'Example.' }],
+      variants: [{ id: 'test-variant', form: 'testna riječ', status: 'community', usages: [{ areaId: 'test-area', confidence: 'reported', sourceId: 'editor' }] }]
+    },
+    areas: [{ id: 'test-area', name: 'Testno područje', kind: 'settlement', parentId: null }], active
+  }
+}
+
+async function createWord(body: unknown = wordInput()) {
+  const response = await request('/api/review/words', { method: 'POST', secret: SECRET, body })
+  expect(response.status).toBe(201)
+  const word = await response.json() as AdminWord
+  wordIds.push(word.entry.id)
+  return word
+}
+async function readPublic(limit?: number) {
+  const response = await request(`/api/heritage/words${limit ? `?limit=${limit}` : ''}`)
+  expect(response.status).toBe(200)
+  expect(response.headers.get('cache-control')).toContain('max-age=30')
+  return await response.json() as PublicWords
+}
+
+describe('word admin and public word APIs', () => {
+  it('renders loading copy for client-fetched cards in both prerendered pages', async () => {
+    for (const path of ['/', '/heritage/kartice']) {
+      const response = await request(path)
+      expect(response.status).toBe(200)
+      expect(await response.text()).toContain('Učitavam kartice…')
+    }
+  })
+
+  it.each([
+    { method: 'GET', path: '/api/review/words' },
+    { method: 'POST', path: '/api/review/words', body: wordInput() },
+    { method: 'PUT', path: '/api/review/words/anything', body: wordInput() },
+    { method: 'POST', path: '/api/review/submissions/1/word' }
+  ])('$method $path rejects unauthenticated access before doing any work', async ({ method, path, body }) => {
+    expect((await request(path, { method, body })).status).toBe(401)
+    expect((await request(path, { method, body, secret: 'wrong' })).status).toBe(401)
+  })
+
+  it('creates, edits, activates and deactivates, preserving all WordEntry parameters', async () => {
+    const word = await createWord()
+    expect(word.entry.id).not.toBe('client-id-is-ignored')
+    expect(word).toMatchObject({ active: false, submissionId: null, createdAt: expect.any(String), updatedAt: expect.any(String) })
+    expect((await readPublic()).words.some(w => w.id === word.entry.id)).toBe(false)
+    const path = `/api/review/words/${word.entry.id}`
+    expect((await request(path, { method: 'PUT', secret: SECRET, body: { ...word, active: true, entry: { ...word.entry, meaning: { hr: 'novo značenje' } } } })).status).toBe(200)
+    const published = (await readPublic()).words.find(w => w.id === word.entry.id)
+    expect(published).toMatchObject({ meaning: { hr: 'novo značenje' }, examples: word.entry.examples, variants: word.entry.variants, sources: word.entry.sources })
+    expect((await request(path, { method: 'PUT', secret: SECRET, body: { ...word, active: false } })).status).toBe(200)
+    expect((await readPublic()).words.some(w => w.id === word.entry.id)).toBe(false)
+    const list = await (await request('/api/review/words', { secret: SECRET })).json() as AdminWord[]
+    expect(list.find(w => w.entry.id === word.entry.id)?.active).toBe(false)
+  })
+
+  it('promotes a submission once into a linked inactive draft without approving or publishing it', async () => {
+    await submit({ ...valid, text: 'promotion test word', type: 'word' })
+    const submission = (await listAll()).find(s => s.text === 'promotion test word')!
+    const path = `/api/review/submissions/${submission.id}/word`
+    const promoted = await request(path, { method: 'POST', secret: SECRET })
+    expect(promoted.status).toBe(201)
+    const word = await promoted.json() as AdminWord
+    wordIds.push(word.entry.id)
+    expect(word).toMatchObject({ active: false, submissionId: submission.id, submissionPlace: valid.place, entry: { headword: 'promotion test word', meaning: { hr: '' }, status: 'community', sources: [{ kind: 'contribution', credit: 'Ana' }] } })
+    expect(word.entry.variants[0]?.usages).toMatchObject([{ areaId: 'hr-kkz-sveti-petar-orehovec', confidence: 'reported' }])
+    expect(JSON.stringify(word)).not.toContain(valid.contact)
+    const repeat = await (await request(path, { method: 'POST', secret: SECRET })).json() as AdminWord
+    expect(repeat.entry.id).toBe(word.entry.id)
+    expect((await listAll()).find(s => s.id === submission.id)?.status).toBe('pending')
+    expect((await readPublic()).words.some(w => w.id === word.entry.id)).toBe(false)
+    expect((await request(`/api/review/words/${word.entry.id}`, { method: 'PUT', secret: SECRET, body: { ...word, active: true } })).status).toBe(400)
+    expect((await listAll()).find(s => s.id === submission.id)?.status).toBe('pending')
+    const completed = { ...word, active: true, entry: { ...word.entry, meaning: { hr: 'dovršeno značenje' }, partOfSpeech: 'imenica' } }
+    expect((await request(`/api/review/words/${word.entry.id}`, { method: 'PUT', secret: SECRET, body: completed })).status).toBe(200)
+    expect((await listAll()).find(s => s.id === submission.id)).toMatchObject({ status: 'approved', reviewedAt: expect.any(String) })
+    expect((await readPublic()).words.find(w => w.id === word.entry.id)?.headword).toBe('promotion test word')
+  })
+
+  it('uses memories as examples and never invents a contributor credit', async () => {
+    await submit({ ...valid, text: 'promotion memory test', type: 'memory', name: '', place: 'Nepoznato mjesto' })
+    const submission = (await listAll()).find(s => s.text === 'promotion memory test')!
+    const response = await request(`/api/review/submissions/${submission.id}/word`, { method: 'POST', secret: SECRET })
+    const word = await response.json() as AdminWord
+    wordIds.push(word.entry.id)
+    expect(word.entry.headword).toBe('')
+    expect(word.entry.examples).toEqual([{ text: 'promotion memory test' }])
+    expect(word.entry.sources[0]).not.toHaveProperty('credit')
+    expect(word.submissionPlace).toBe('Nepoznato mjesto')
+    expect(word.active).toBe(false)
+  })
+
+  it('only returns active words and whitelisted public fields, even after a direct database write', async () => {
+    const word = await createWord(wordInput(true))
+    const rawEntry = { ...word.entry, contact: 'private@example.com', submissionId: 42, privateNote: 'secret', meaning: { ...word.entry.meaning, private: 'secret' }, sources: [{ ...word.entry.sources[0], contact: 'hidden' }] }
+    const { error } = await db.from('heritage_words').update({ entry: rawEntry, submission_place: 'private place' }).eq('id', word.entry.id)
+    expect(error).toBeNull()
+    const result = await readPublic()
+    const publicWord = result.words.find(w => w.id === word.entry.id)!
+    expect(publicWord).toBeDefined()
+    expect(publicWord).not.toHaveProperty('active')
+    expect(publicWord).not.toHaveProperty('submissionId')
+    expect(publicWord).not.toHaveProperty('contact')
+    expect(publicWord).not.toHaveProperty('privateNote')
+    expect(publicWord.meaning).not.toHaveProperty('private')
+    expect(publicWord.sources[0]).not.toHaveProperty('contact')
+    expect(result).not.toHaveProperty('submissionPlace')
+    expect((await readPublic(1)).words.length).toBeLessThanOrEqual(1)
+  })
+
+  it('validates required active fields, nested types, references, lengths, and bounded queries', async () => {
+    const good = wordInput(true)
+    const invalid = [
+      {}, { ...good, active: 'true' },
+      ...[{ headword: '' }, { headword: 'x'.repeat(201) }, { meaning: { hr: '' } }, { partOfSpeech: '' }, { sources: [] }, { variants: [] }, { status: 'published' }, { examples: [{ text: 42 }] }, { variants: [{ ...good.entry.variants[0], usages: [{ areaId: 'unknown', confidence: 'reported' }] }] }].map(entry => ({ ...good, entry: { ...good.entry, ...entry } })),
+      { ...good, areas: [{ id: 'test-area', name: 'bad', kind: 'settlement', parentId: 'test-area' }] },
+      { ...good, entry: { ...good.entry, tags: Array.from({ length: 21 }, () => 'tag') } }
+    ]
+    for (const body of invalid) expect((await request('/api/review/words', { method: 'POST', body, secret: SECRET })).status).toBe(400)
+    expect((await request('/api/review/words', { method: 'POST', body: { ...good, extra: 'x'.repeat(140000) }, secret: SECRET })).status).toBe(413)
+    for (const limit of ['0', '101', '1.5', 'nope']) expect((await request(`/api/heritage/words?limit=${limit}`)).status).toBe(400)
+    expect((await request('/api/review/words?offset=-1', { secret: SECRET })).status).toBe(400)
+    expect((await request('/api/review/words/missing', { method: 'PUT', secret: SECRET, body: good })).status).toBe(404)
+    expect((await request('/api/review/submissions/999999999/word', { method: 'POST', secret: SECRET })).status).toBe(404)
+  })
+})
 
 describe('POST /api/submissions', () => {
   it('stores a valid submission as pending, with the consent recorded', async () => {
@@ -297,7 +436,11 @@ const blank = { NUXT_SUPABASE_URL: '', NUXT_SUPABASE_SERVICE_ROLE_KEY: '', SUPAB
 const reviewRoutes = [
   { method: 'GET', path: '/api/review/submissions' },
   { method: 'PATCH', path: '/api/review/submissions/1', body: { status: 'approved' } },
-  { method: 'DELETE', path: '/api/review/submissions/1' }
+  { method: 'DELETE', path: '/api/review/submissions/1' },
+  { method: 'GET', path: '/api/review/words' },
+  { method: 'POST', path: '/api/review/words', body: wordInput() },
+  { method: 'PUT', path: '/api/review/words/missing', body: wordInput() },
+  { method: 'POST', path: '/api/review/submissions/1/word' }
 ]
 
 describe('Supabase settings', () => {
@@ -325,6 +468,7 @@ describe('Supabase settings', () => {
   ])('refuses submissions and all review routes without the $name and logs the missing variable', async ({ settings, missing }) => {
     await startServer({ env: { ...blank, ...settings } })
     expect((await submit({ ...valid, text: 'no database' })).status).toBe(503)
+    expect((await request('/api/heritage/words')).status).toBe(503)
     for (const route of reviewRoutes) {
       expect((await request(route.path, { ...route, secret: SECRET })).status).toBe(503)
     }

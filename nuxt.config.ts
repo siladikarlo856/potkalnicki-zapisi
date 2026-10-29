@@ -41,6 +41,8 @@ export default defineNuxtConfig({
     '/en/privacy': { prerender: true },
     '/review': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     '/en/review': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    '/review-words': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    '/en/review-words': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     '/api/**': { headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }
   },
 

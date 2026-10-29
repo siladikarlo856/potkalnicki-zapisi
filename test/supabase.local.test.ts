@@ -14,15 +14,19 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
   const anon = createClient(url || 'http://localhost', publicKey || 'public', options)
   const admin = createClient(url || 'http://localhost', serviceRoleKey || 'service', options)
   let id = 0
+  const wordId = `rls-word-${Date.now()}`
+  const wordRow = { id: wordId, entry: { id: wordId, headword: '', meaning: { hr: '' }, status: 'community', variants: [], sources: [] }, areas: [], active: false }
 
   beforeAll(async () => {
     const { data, error } = await admin.from('heritage_submissions').insert(row).select('id').single()
     expect(error).toBeNull()
     id = data!.id
+    expect((await admin.from('heritage_words').insert({ ...wordRow, submission_id: id })).error).toBeNull()
   })
 
   afterAll(async () => {
     await admin.from('heritage_submissions').delete().eq('text', row.text)
+    await admin.from('heritage_words').delete().eq('id', wordId)
     if (userId) await admin.auth.admin.deleteUser(userId)
   })
 
@@ -47,6 +51,15 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
       expect(update.error).not.toBeNull()
       const remove = await client.from('heritage_submissions').delete().eq('id', id)
       expect(remove.error).not.toBeNull()
+      const wordInsert = await client.from('heritage_words').insert({ ...wordRow, id: `${wordId}-public` })
+      expect(wordInsert.error).not.toBeNull()
+      const wordRead = await client.from('heritage_words').select('*')
+      expect(wordRead.error).not.toBeNull()
+      expect(wordRead.data).toBeNull()
+      const wordUpdate = await client.from('heritage_words').update({ active: true }).eq('id', wordId)
+      expect(wordUpdate.error).not.toBeNull()
+      const wordRemove = await client.from('heritage_words').delete().eq('id', wordId)
+      expect(wordRemove.error).not.toBeNull()
     }
     const { data } = await admin.from('heritage_submissions').select('status').eq('id', id).single()
     expect(data).toEqual({ status: 'pending' })
@@ -55,10 +68,51 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
   })
 
   it('keeps check constraints effective even for the secret key', async () => {
+    expect((await admin.from('heritage_words').update({ active: true }).eq('id', wordId)).error).not.toBeNull()
+    // The BEFORE trigger tried to approve the linked submission, but the failed word
+    // constraint must roll that side effect back in the same transaction.
+    const submission = await admin.from('heritage_submissions').select('status').eq('id', id).single()
+    expect(submission.data).toEqual({ status: 'pending' })
+    expect((await admin.from('heritage_words').update({ entry: { id: wordId } }).eq('id', wordId)).error).not.toBeNull()
     for (const bad of [{ consent_publish: false }, { type: 'poem' }, { locale: 'de' }, { text: 'x' }, { text: 'x'.repeat(2001) }, { place: 'x'.repeat(121) }, { name: 'x'.repeat(101) }, { contact: 'x'.repeat(201) }, { consent_version: 'x'.repeat(21) }, { status: 'published' }]) {
       const { error } = await admin.from('heritage_submissions').insert({ ...row, text: 'rls bad', ...bad })
       expect(error).not.toBeNull()
     }
+  })
+
+  it('seeds only the existing nine placeholder samples as active words', async () => {
+    const ids = ['hiza', 'kaj', 'vura', 'zdenec', 'fertun', 'lajbek', 'skrlak', 'cuker', 'denes']
+    const { data, error } = await admin.from('heritage_words').select('entry,active,submission_id').in('id', ids)
+    expect(error).toBeNull()
+    expect(data).toHaveLength(9)
+    for (const row of data!) {
+      expect(row).toMatchObject({ active: true, submission_id: null, entry: { status: 'placeholder' } })
+      expect(row.entry.variants.every((v: { status: string }) => v.status === 'placeholder')).toBe(true)
+    }
+  })
+
+  it('deactivates the linked word when its submission is rejected or deleted, and removes the credit', async () => {
+    const make = async (suffix: string) => {
+      const sub = await admin.from('heritage_submissions').insert({ ...row, text: `rls withdraw ${suffix}`, name: 'Ana' }).select('id').single()
+      expect(sub.error).toBeNull()
+      const wid = `${wordId}-${suffix}`
+      const entry = { id: wid, headword: 'x', meaning: { hr: 'y' }, partOfSpeech: 'imenica', status: 'community', variants: [{ id: `${wid}~x`, form: 'x', status: 'community', usages: [] }], sources: [{ id: 's1', kind: 'contribution', credit: 'Ana' }] }
+      expect((await admin.from('heritage_words').insert({ id: wid, entry, areas: [], active: true, submission_id: sub.data!.id })).error).toBeNull()
+      return { sid: sub.data!.id as number, wid }
+    }
+    const rejectCase = await make('reject')
+    expect((await admin.from('heritage_submissions').select('status').eq('id', rejectCase.sid).single()).data).toEqual({ status: 'approved' })
+    expect((await admin.from('heritage_submissions').update({ status: 'rejected' }).eq('id', rejectCase.sid)).error).toBeNull()
+    expect((await admin.from('heritage_words').select('active').eq('id', rejectCase.wid).single()).data).toEqual({ active: false })
+
+    const deleteCase = await make('delete')
+    expect((await admin.from('heritage_submissions').delete().eq('id', deleteCase.sid)).error).toBeNull()
+    const word = await admin.from('heritage_words').select('active,submission_id,entry').eq('id', deleteCase.wid).single()
+    expect(word.data).toMatchObject({ active: false, submission_id: null })
+    expect(word.data!.entry.sources).toEqual([{ id: 's1', kind: 'contribution' }])
+
+    await admin.from('heritage_submissions').delete().eq('id', rejectCase.sid)
+    await admin.from('heritage_words').delete().in('id', [rejectCase.wid, deleteCase.wid])
   })
 
   it('lets the service-role key list, approve, reject and delete', async () => {

@@ -6,6 +6,7 @@ Personal website of Karlo Siladi, built with [Nuxt](https://nuxt.com) and [Nuxt 
 - **Heritage project** (`/heritage`): Coming Soon page with the vision, what's coming and the contribution form. Submissions are stored in a database and reviewed before anything is published.
 - **Privacy notice** (`/privacy`): what the form collects, why, how long it is kept and how to ask for correction or deletion. Linked from the form.
 - **Review page** (`/review`): private page where submissions are approved, rejected or deleted. Not linked from the site, not indexed, and protected by a password.
+- **Word admin** (`/review-words`): private word list and editor, using the same review password. Create drafts, promote submissions, edit every word parameter and explicitly activate or deactivate cards.
 - **"Kaj to znači?"** (`/heritage/kartice`): a word-card game. See a local word, guess what it means, flip the card to reveal the meaning and the regional variants with the places they are used.
 - **Multiple choice** (`/heritage/kviz`, `/en/heritage/kviz`): choose a meaning, see correct/wrong feedback and the variants, then continue to a scored result and replay.
 
@@ -15,12 +16,12 @@ The site is in Croatian and English via [`@nuxtjs/i18n`](https://i18n.nuxtjs.org
 
 ## Heritage data
 
-Words and places are static JSON in `content/heritage/`:
+The games read active words and their area definitions from `GET /api/heritage/words`. `content/heritage/` holds the original sample seed:
 
 - `words.json`: word entries. Each entry has a headword, meaning, word type, examples and its regional **variants**; every variant lists the areas where it is used (`usages`), so a usage map can be built later.
 - `areas.json`: the place hierarchy (settlement → municipality or town → county → country).
 
-The types are in `app/types/heritage.ts`. The current words are **sample data** (`"status": "placeholder"`): they are shown with a "Neprovjereno" (unverified) badge, and their variants and places are examples that still need to be checked. Replace them with verified entries before launch.
+The types are in `app/types/heritage.ts`. The current words are **sample data** (`"status": "placeholder"`): they are shown with an "Uzorak" (sample) badge, and their variants and places are examples that still need to be checked. Replace them with verified entries before launch.
 
 The multiple-choice game consumes `useHeritage()` without adding distractor fields to `WordEntry`. `app/utils/multipleChoice.ts` generates questions and handles answer checking and scoring, with seedable shuffling for reproducible tests. It prefers wrong meanings from the same part of speech, ignoring gender qualifiers, then fills from other words. Meanings are deduplicated after whitespace/case normalization in both the display language and Croatian. With two or three distinct meanings it offers fewer choices; with fewer than two it shows an explanatory empty state. Examples appear when supplied by the entry. Placeholder questions retain an explicit “Uzorak” / “Sample” label and notice.
 
@@ -42,7 +43,7 @@ The per-IP limits take the client address from the rightmost `X-Forwarded-For` e
 
 The review page `/review` asks for the review password (`NUXT_REVIEW_SECRET`) and keeps it in the browser tab only. Every `/api/review/*` route checks the password itself, so the API stays closed even without the page, and a client address is locked out for 15 minutes after 10 wrong passwords (with the single-proxy setup described above). If `NUXT_REVIEW_SECRET` is not set, or shorter than 16 characters, review is switched off.
 
-Approved submissions are not yet published into the word cards or other content; that comes later. Nothing is deleted automatically, and the privacy notice says so: it promises only that unpublished and rejected submissions are deleted by hand from time to time, and names or contact details when they are no longer needed or when someone asks. Delete whole submissions from the review page; to remove only a name or contact from a published one, clear it in the table in Supabase (Table Editor). The review page lists every submission, with no cap. When the notice changes, bump `PRIVACY_NOTICE_VERSION`: the notice shows it as its date.
+Approving a submission alone does not publish it. Use “Dodaj u riječi / otvori skicu” to create a linked **inactive** word draft. Complete and explicitly activate it in `/review-words` before it can appear in the cards. Nothing is deleted automatically, and the privacy notice says so: it promises only that unpublished and rejected submissions are deleted by hand from time to time, and names or contact details when they are no longer needed or when someone asks. Delete whole submissions from the review page; to remove only a name or contact from a published one, clear it in the table in Supabase (Table Editor), and remove any public credit separately in the word editor. Deleting a submission deactivates every word created from it and removes its contributor credit from the word; the word row is kept for re-review in `/review-words`. The review page lists every submission, with no cap. When the notice changes, bump `PRIVACY_NOTICE_VERSION`: the notice shows it as its date.
 
 ### Database
 
@@ -158,7 +159,7 @@ pnpm dev:local
 ```bash
 gh pr checkout <number>
 pnpm install
-pnpm db:reset   # only if the PR added or changed a migration
+supabase migration up --local   # apply additive changes without deleting local data
 pnpm dev:local
 ```
 
@@ -167,3 +168,32 @@ pnpm dev:local
 **Stop:** press Ctrl+C to stop the app, then `pnpm db:down`. The data is kept in Docker volumes until you reset it.
 
 The secret key in `.env` is the local stack's own demo key, refreshed by `pnpm db:up`; it works only against your machine.
+
+## Word administration and rollout
+
+`heritage_words` stores a bounded JSONB `entry` in the existing `WordEntry -> Variant -> AreaUsage` shape, plus a JSONB array of `Area` definitions. This keeps nested edits atomic and avoids separate variant/usage save operations in this first editor. `active`, `submission_id`, `submission_place`, `created_at` and `updated_at` are separate moderation columns. Area IDs are stable across entries; reuse the same definition for the same ID. New settlements can be added in the editor's advanced area definitions, with their parent chain. This is not a settlement importer or catalog.
+
+The additive migration `20261028010000_heritage_words.sql` enables RLS with no anon/authenticated grants, and seeds the nine existing examples as active `placeholder` entries. They retain the visible “Uzorak” labels. Only the server's existing service-role key accesses the table. There are **no new environment variables**.
+
+Editorial rules:
+
+- Promotion is idempotent per submission: repeated clicks open the same word. Word/expression text becomes the headword (with the full text also retained as an example when longer than 200 characters); memory/other text becomes an example. Place is retained as a private draft note; known area names prefill a reported usage. Unrecognized free-text places need an editor-selected area. Only an explicitly supplied contributor name becomes a public credit. Contact is never copied.
+- Drafts may have missing fields. Activation requires a headword, Croatian meaning, part of speech, a first variant matching the headword, an area for each variant and at least one source. The server validates all nested types, statuses, references and limits, even when the browser is bypassed. Requests are capped at 128 KiB; variants at 30, usages per variant at 30, areas at 50, examples/sources/tags at 20 each. Headwords/forms are at most 200 characters, meanings/examples 2000, credits 300, usage notes 500. Audio must be an HTTPS URL.
+- A database trigger marks the linked submission approved **in the same transaction when a word becomes active**. Saving an inactive draft never approves it. Deactivation preserves the word, its sources and the submission's approval history. Rejecting or deleting a submission deactivates its linked words (migration `20261029000000_heritage_submission_withdrawal.sql`, so direct database edits behave the same); deletion also strips the contribution credit. Words stay in the admin for re-review.
+- The admin list loads 50 words per page, with “Učitaj još 50”. Search/filter apply to loaded entries. The list shows the entire entry, area definitions, public credit, private originating submission/place and timestamps. No hard-delete API is provided.
+- Public GET returns `{ words, areas }`, defaults to 100 entries and accepts `limit=1..100`. It selects active rows and explicitly projects the public `WordEntry`/`Area` fields; malformed direct database edits are omitted. Submission IDs/places, activation flags, timestamps and arbitrary extra keys are never included. The browser and shared cache may retain an entry for up to **30 seconds** after deactivation. Already-open games retain their loaded deck until reload. The homepage and flip-card page fetch after mounting, including when their HTML was prerendered, and show loading/empty/error states without falling back to static words.
+
+Migration-first production sequence (operator action, **not performed by the app or this change**):
+
+1. Back up the database and inspect the target and applied migration history.
+2. Apply the new migration, verify the nine placeholder rows, RLS and missing anon/authenticated grants. Existing app code remains compatible with the added table.
+3. Deploy the app with the existing server URL/key and review secret. Verify unauthenticated word-admin requests fail, a promoted fixture remains private until explicit activation, and deactivation removes it from a fresh public GET after the cache window. Remove the fixture afterward.
+4. Roll back app code first if needed. Leave the additive table, data and trigger in place; the old app ignores them and continues reading its bundled static samples. That older app does not reflect word-admin deactivations. Do not drop the table to roll back code, and do not delete production submissions or reset the database. If the migration is missing, new word APIs fail closed with a database error and the cards show unavailable; they do not publish a fallback deck.
+
+Local verification: use `supabase migration up --local` on an already running local stack, then `pnpm test:local-db`; this runs real HTTP API tests and RLS tests with both anonymous and authenticated clients. `pnpm test` runs the same API behavior against the PostgREST fake without Docker. Run `pnpm lint`, `pnpm typecheck` and `pnpm build` as well. Never reset/stop a local stack shared with other worktrees.
+
+Follow-up TODOs:
+
+- Generalize the card-game engine to support games beyond this particular word model, after the first simple version.
+- Add catalog-backed area selection and conflict handling for shared area definitions; coordinate with the separate settlement-picker work.
+- Add deck pagination/selection if more than 100 active words are curated. The current game consumes the first bounded deck, ordered by stable ID.
