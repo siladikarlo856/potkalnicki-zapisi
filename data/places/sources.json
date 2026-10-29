@@ -1,0 +1,38 @@
+{
+  "version": "hr-geonames-2026-10-28-dgu-2026-10-25-v1",
+  "sources": {
+    "geonames": {
+      "url": "https://download.geonames.org/export/dump/HR.zip",
+      "retrievedAt": "2026-10-28",
+      "sourceDate": "2026-10-28T02:51:19Z",
+      "sha256": "f03fc531e9d42a200ff5a9b6065ecd82dd7395f3008d6be7d52e59961ccf827b",
+      "license": "CC BY 4.0",
+      "terms": "https://download.geonames.org/export/dump/readme.txt"
+    },
+    "aliases": {
+      "url": "https://download.geonames.org/export/dump/alternatenames/HR.zip",
+      "retrievedAt": "2026-10-28",
+      "sourceDate": "2026-10-28T03:00:00Z",
+      "sha256": "b4252543bcd667303db9c5337d39c6018b182f3d9a5e6d99b4aeaeb84a91e824",
+      "license": "CC BY 4.0",
+      "terms": "https://download.geonames.org/export/dump/readme.txt"
+    },
+    "dgu": {
+      "url": "https://geoportal.dgu.hr/services/atom/INSPIRE_Administrative_Units_(AU).zip",
+      "retrievedAt": "2026-10-28",
+      "sourceDate": "2026-10-25T06:36:01+01:00",
+      "sha256": "535bf30f4070e8e7233dab8282fa77cb8d99a6991d1d78fe06a28d855a7739ee",
+      "license": "Croatian Open Licence",
+      "terms": "https://dgu.gov.hr/proizvodi-i-usluge/otvoreni-podaci/6596",
+      "rightsNotice": "The ATOM feed also carries a generic INSPIRE Article 13(1)(e) access notice. DGU’s Open Data page expressly lists this exact AU download among open high-value datasets and states Open Licence reuse terms. No authentication was used."
+    }
+  },
+  "gistReview": {
+    "url": "https://gist.github.com/hrvojesimic/2139c154ba76756b190e085782a70a84",
+    "revision": "edf296fd58707aba30c6649733e42898b8e82681",
+    "createdAt": "2019-11-20",
+    "records": 556,
+    "license": "No license or upstream source stated; not imported or used for eligibility, labels, parents, aliases or coordinates. Inspection only.",
+    "comparison": "City list rather than full settlement reference; lacks municipality relationships and canonical source IDs. DGU reference contains 6759 settlements. County wording differs (e.g. Zagreb, Grad versus Grad Zagreb). No bulk cross-check derived from unlicensed contents."
+  }
+}

@@ -63,7 +63,7 @@ export async function startFakeSupabase() {
       const now = new Date().toISOString()
       const row = isWords
         ? { submission_id: null, submission_place: null, ...body, created_at: now, updated_at: now }
-        : { ...body, id: nextId++, status: 'pending', created_at: now, reviewed_at: null }
+        : { place_id: null, place_catalog_version: null, ...body, id: nextId++, status: 'pending', created_at: now, reviewed_at: null }
       table.push(row)
       if (isWords) activate(row)
       return reply(response, 201, request.headers.prefer?.includes('return=representation') ? [project(row)] : undefined)
@@ -111,6 +111,7 @@ export async function startFakeSupabase() {
   return {
     url: `http://127.0.0.1:${port}`,
     requests,
+    seed: (row: Row) => rows.push({ ...row, id: nextId++, status: 'pending', created_at: new Date().toISOString(), reviewed_at: null }),
     stop: () => new Promise<void>(resolve => server.close(() => resolve()))
   }
 }

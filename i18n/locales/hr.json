@@ -130,7 +130,7 @@
         "other": "Nešto drugo"
       },
       "place": "Gdje se tako govori? (neobavezno)",
-      "placePlaceholder": "Selo ili grad",
+      "placePlaceholder": "Pretraži sela i gradove u Hrvatskoj",
       "name": "Tvoje ime (neobavezno)",
       "nameHelp": "Ako želiš da te spomenemo kao izvor",
       "contact": "Kontakt (neobavezno)",
@@ -153,6 +153,24 @@
         "consent": "Bez tvog pristanka prilog ne možemo poslati.",
         "invalid": "Ova vrijednost nije ispravna."
       }
+    },
+    "places": {
+      "help": "Odaberi jedno selo ili grad u Hrvatskoj gdje se riječ ili izraz koristi. Ne mora biti mjesto u kojem živiš.",
+      "loading": "Tražimo mjesta u Hrvatskoj…",
+      "error": "Pretraživanje mjesta nije dostupno. Pokušaj ponovno ili nastavi bez mjesta.",
+      "minimum": "Upiši barem dva znaka.",
+      "empty": "Nema pronađenog naselja. Provjeri naziv ili nastavi bez mjesta.",
+      "selected": "Odabrano mjesto",
+      "results": "Pronađeno mjesta: {count}. Odaberi strelicama na tipkovnici.",
+      "retry": "Pokušaj ponovno",
+      "clear": "Obriši / nastavi bez mjesta",
+      "data": "Podaci o mjestima:",
+      "license": "Otvorena dozvola",
+      "adapted": "Prilagođeni podaci: GeoNames 28. listopada 2026.; DGU 25. listopada 2026.",
+      "refresh": "Osvježi obrazac i ponovno odaberi naselje u Hrvatskoj. Prije osvježavanja sačuvaj svoj prilog.",
+      "choose": "Odaberi mjesto s popisa ili obriši upisani naziv za nastavak bez mjesta.",
+      "invalid": "To mjesto nije dostupno. Ponovno odaberi naselje u Hrvatskoj ili obriši odabir.",
+      "listLabel": "Naselja u Hrvatskoj"
     }
   },
   "game": {
@@ -272,7 +290,9 @@
       "consent": "Pristanak na objavu"
     },
     "anonymous": "bez imena",
-    "consentGiven": "da (obavijest od {version})"
+    "consentGiven": "da (obavijest od {version})",
+    "legacyPlace": "Stari zapis / neprovjereno mjesto",
+    "catalogPlace": "Provjereno naselje · katalog {version}; kontekst iz trenutačnog kataloga"
   },
   "quiz": {
     "loading": "Učitavam pitanja…",

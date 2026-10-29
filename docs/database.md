@@ -69,6 +69,18 @@ With Hostinger tracking `production`, a failed or skipped migration cannot advan
 
 Branch promotion reports that deployment was requested; Actions does not wait for Hostinger's build or verify the live site. Check Hostinger for build failure or a missing GitHub App event. Even a successful migration may leave the old app running if promotion or the Hostinger build fails, so changes must remain compatible with it. CI concurrency covers this workflow, not manual SQL or another external migration tool; do not run those concurrently with it.
 
+## Croatian settlement picker rollout
+
+`20261030000000_submission_places.sql` adds nullable `place_id` and `place_catalog_version` columns to `heritage_submissions`. It sorts after the word and submission-withdrawal migrations and does not change their tables or triggers. The new picker migration has not been applied to production; do not record it as already applied during baseline history repair.
+
+The normal configured workflow applies this pending migration on a push to `main`, before fast-forwarding `production` and triggering Hostinger's app build. No separate manual picker-migration step is required. Keep the catalog, ID validation and form in the same promoted commit. The migration leaves existing free-text locations untouched, keeps the original 120-character place constraint and RLS, and does not backfill IDs or geocode legacy text. The app's environment variables do not change.
+
+Before production rollout, verify on staging that selected HR IDs store a canonical label snapshot and catalog version, omitted places remain null, invalid/foreign/inactive IDs and old-client free text are rejected, and legacy rows remain readable as unverified. After rollout, verify both new columns are nullable, the original length constraint and public-access restrictions remain, and the HR/EN form and private review work using an approved synthetic entry. Remove the test entry after verification. Check the actual deployed SHA in Hostinger as well as the Actions result.
+
+If automation is unavailable, use the [manual fallback](#manual-fallback) with auto-deployment disabled and apply all pending migrations before deploying the exact verified commit. Do not bypass history validation or mark the pending picker migration applied without executing it. If migration or promotion fails, follow [failure and recovery](#failure-and-recovery); leave the old compatible app running until the workflow or fallback succeeds.
+
+For an app rollback, retain the nullable columns, catalog references and all stored place strings. Older app code ignores the additions and can still write null IDs; the picker version treats those free-text rows as legacy/unverified when restored. Do not drop the columns or destructively backfill locations as part of rollback. The workflow does not automatically revert the schema or deployed app.
+
 ## Failure and recovery
 
 Open **GitHub → Actions → Production database and deploy → failing run → Migrate then promote production branch**. The history step shows version numbers, and the Supabase CLI reports the failed migration and database error. Missing baseline entries, unknown remote migrations, missing earlier versions, authentication/connection errors, SQL errors, branch divergence, or branch protection failures stop the job. Subsequent branch promotion is skipped on migration failure; `production` remains at its last promoted commit.

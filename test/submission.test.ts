@@ -13,12 +13,12 @@ describe('validateSubmission', () => {
     const result = validateSubmission({ ...valid, text: '  kaj  ', type: '', place: '  ', name: 'Ana ', contact: undefined })
     expect(result).toEqual({
       ok: true,
-      value: { text: 'kaj', type: null, place: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
+      value: { text: 'kaj', type: null, placeId: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
     })
   })
 
   it('accepts every field filled in', () => {
-    const result = validateSubmission({ ...valid, type: 'expression', place: 'Orehovec', name: 'Ana', contact: 'ana@example.com', locale: 'en' })
+    const result = validateSubmission({ ...valid, type: 'expression', placeId: 'geonames:3194024', name: 'Ana', contact: 'ana@example.com', locale: 'en' })
     expect(result.ok).toBe(true)
   })
 
@@ -44,7 +44,7 @@ describe('validateSubmission', () => {
       contact: 'a'.repeat(SUBMISSION_LIMITS.contact.max + 1)
     })).toEqual([
       { field: 'text', code: 'tooLong' },
-      { field: 'place', code: 'tooLong' },
+      { field: 'place', code: 'refreshPlace' },
       { field: 'name', code: 'tooLong' },
       { field: 'contact', code: 'tooLong' }
     ])

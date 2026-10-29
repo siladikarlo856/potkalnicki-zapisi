@@ -5,6 +5,12 @@ import { validateWord, WORD_BODY_LIMIT } from '../../shared/utils/word'
 import baseAreas from '../../content/heritage/areas.json'
 
 const WORD_TABLE = 'heritage_words'
+// Explicit bridge to the existing sample areas; other catalog places need editorial mapping.
+// Never infer a structured settlement's area from its possibly duplicated display name.
+const PLACE_AREA_IDS: Record<string, string> = {
+  'geonames:3197230': 'hr-kkz-krizevci',
+  'geonames:3194024': 'hr-kkz-sveti-petar-orehovec'
+}
 interface WordRow {
   id: string
   entry: WordInput['entry']
@@ -66,7 +72,7 @@ export async function promoteSubmission(id: number) {
 
   // Only the fields needed for a draft are read. Contact never enters the word store.
   const { data, error } = await client.from('heritage_submissions')
-    .select('id,text,type,place,name,consent_publish').eq('id', id)
+    .select('id,text,type,place,place_id,name,consent_publish').eq('id', id)
   if (error) databaseError(error)
   const submission = data[0]
   if (!submission) throw createError({ statusCode: 404, statusMessage: 'Submission not found' })
@@ -74,7 +80,9 @@ export async function promoteSubmission(id: number) {
   const wordId = randomUUID()
   const isWord = submission.type === 'word' || submission.type === 'expression'
   const headword = isWord ? submission.text.slice(0, 200) : ''
-  const area = baseAreas.find(a => a.name.toLocaleLowerCase('hr') === submission.place?.toLocaleLowerCase('hr'))
+  const area = submission.place_id
+    ? baseAreas.find(a => a.id === PLACE_AREA_IDS[submission.place_id])
+    : baseAreas.find(a => a.name.toLocaleLowerCase('hr') === submission.place?.toLocaleLowerCase('hr'))
   const draft = validateWord({
     active: false,
     areas: baseAreas,

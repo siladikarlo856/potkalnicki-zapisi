@@ -21,7 +21,7 @@ export type SubmissionLocale = typeof SUBMISSION_LOCALES[number]
 export interface SubmissionInput {
   text: string
   type: SubmissionType | null
-  place: string | null
+  placeId: string | null
   name: string | null
   contact: string | null
   consentPublish: true
@@ -30,6 +30,9 @@ export interface SubmissionInput {
 
 export interface Submission extends Omit<SubmissionInput, 'consentPublish'> {
   id: number
+  place: string | null
+  placeCatalogVersion: string | null
+  placeContext: string | null
   consentPublish: boolean
   consentVersion: string
   status: SubmissionStatus
@@ -38,7 +41,7 @@ export interface Submission extends Omit<SubmissionInput, 'consentPublish'> {
 }
 
 export type SubmissionField = 'text' | 'type' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
-export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid'
+export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid' | 'selectPlace' | 'refreshPlace'
 
 export interface SubmissionIssue {
   field: SubmissionField
@@ -83,7 +86,12 @@ export function validateSubmission(input: unknown): SubmissionValidation {
     else issues.push({ field: 'type', code: 'invalid' })
   }
 
-  const place = optionalText(body.place, 'place', SUBMISSION_LIMITS.place.max, issues)
+  // Cached old clients must refresh/reselect instead of submitting arbitrary location text.
+  if (body.place !== undefined && body.place !== null && body.place !== '') {
+    if (typeof body.place !== 'string' || body.place.trim()) issues.push({ field: 'place', code: 'refreshPlace' })
+  }
+  const placeId = optionalText(body.placeId, 'place', 40, issues)
+  if (placeId && !/^geonames:[0-9]{1,10}$/.test(placeId)) issues.push({ field: 'place', code: 'invalid' })
   const name = optionalText(body.name, 'name', SUBMISSION_LIMITS.name.max, issues)
   const contact = optionalText(body.contact, 'contact', SUBMISSION_LIMITS.contact.max, issues)
 
@@ -94,5 +102,5 @@ export function validateSubmission(input: unknown): SubmissionValidation {
 
   if (issues.length || !locale) return { ok: false, issues }
 
-  return { ok: true, value: { text, type, place, name, contact, consentPublish: true, locale } }
+  return { ok: true, value: { text, type, placeId, name, contact, consentPublish: true, locale } }
 }

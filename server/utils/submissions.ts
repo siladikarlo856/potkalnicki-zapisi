@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3'
+import { placeById } from './places'
 
 const TABLE = 'heritage_submissions'
 // Supabase's API returns at most 1000 rows per request (max_rows), so the list is read in pages.
@@ -9,6 +10,8 @@ interface SubmissionRow {
   text: string
   type: SubmissionType | null
   place: string | null
+  place_id: string | null
+  place_catalog_version: string | null
   name: string | null
   contact: string | null
   consent_publish: boolean
@@ -17,6 +20,16 @@ interface SubmissionRow {
   status: SubmissionStatus
   created_at: string
   reviewed_at: string | null
+}
+
+function placeContext(id: string) {
+  const place = placeById(id)
+  return place ? `${place.municipality} · ${place.county}` : null
+}
+
+export interface ResolvedSubmissionInput extends SubmissionInput {
+  place: string | null
+  placeCatalogVersion: string | null
 }
 
 // Postgres returns ISO timestamps; the review page expects UTC "YYYY-MM-DD HH:MM:SS".
@@ -30,6 +43,9 @@ function toSubmission(row: SubmissionRow): Submission {
     text: row.text,
     type: row.type,
     place: row.place,
+    placeId: row.place_id ?? null,
+    placeCatalogVersion: row.place_catalog_version ?? null,
+    placeContext: row.place_id ? placeContext(row.place_id) : null,
     name: row.name,
     contact: row.contact,
     consentPublish: row.consent_publish,
@@ -43,11 +59,13 @@ function toSubmission(row: SubmissionRow): Submission {
 
 // The route validates input before insertion. Status and created_at use table defaults;
 // the shared server-only secret key bypasses RLS, while check constraints still apply.
-export async function insertSubmission(input: SubmissionInput) {
+export async function insertSubmission(input: ResolvedSubmissionInput) {
   const { error } = await useDatabaseClient().from(TABLE).insert({
     text: input.text,
     type: input.type,
     place: input.place,
+    place_id: input.placeId,
+    place_catalog_version: input.placeCatalogVersion,
     name: input.name,
     contact: input.contact,
     consent_publish: input.consentPublish,

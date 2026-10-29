@@ -1,0 +1,8 @@
+# Place data attribution and terms
+
+The application code’s license does not replace the following data terms.
+
+- **GeoNames**: contains information from [GeoNames](https://www.geonames.org/), country HR and HR alternate-name extracts, source snapshot 28 October 2026. [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/); [source format/license](https://download.geonames.org/export/dump/readme.txt). Adaptations: settlement filtering, namespaced IDs, canonical label/parent corrections, alias filtering and duplicate consolidation. GeoNames does not guarantee accuracy, timeliness or completeness.
+- **Državna geodetska uprava (DGU)**: Sadrži informacije Državne geodetske uprave u skladu s [Otvorenom dozvolom](https://data.gov.hr/otvorena-dozvola). [Administrative-unit source feed](https://geoportal.dgu.hr/services/atom/au/xml), dataset updated 25 October 2026, retrieved 28 October 2026. [Provider’s exact dataset and reuse terms](https://dgu.gov.hr/proizvodi-i-usluge/otvoreni-podaci/6596). Adaptations: normalized settlement labels and municipal/county parent relationships, names/point-in-polygon cross-check with GeoNames, exclusion/duplicate decisions. No official endorsement is implied. The Open Licence permits reproduction, distribution, adaptation and combination for commercial and noncommercial use, requiring source attribution, source update date/URI and identification of changes.
+
+Exact downloaded-file checksums and dates are in `sources.json`. Derived JSON and audit decisions retain these attributions. The 2019 user-supplied gist has no stated source/license; its contents are not part of the redistributed catalog.

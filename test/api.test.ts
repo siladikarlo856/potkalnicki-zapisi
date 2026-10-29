@@ -65,7 +65,7 @@ async function listAll() {
   return await response.json() as Array<Record<string, unknown>>
 }
 
-const valid = { text: 'Kaj to znači?', type: 'expression', place: 'Sveti Petar Orehovec', name: 'Ana', contact: 'ana@example.com', consentPublish: true, locale: 'hr' }
+const valid = { text: 'Kaj to znači?', type: 'expression', placeId: 'geonames:3194024', name: 'Ana', contact: 'ana@example.com', consentPublish: true, locale: 'hr' }
 
 const db = createClient(supabase.url, supabase.serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
 const wordIds: string[] = []
@@ -141,7 +141,7 @@ describe('word admin and public word APIs', () => {
     expect(promoted.status).toBe(201)
     const word = await promoted.json() as AdminWord
     wordIds.push(word.entry.id)
-    expect(word).toMatchObject({ active: false, submissionId: submission.id, submissionPlace: valid.place, entry: { headword: 'promotion test word', meaning: { hr: '' }, status: 'community', sources: [{ kind: 'contribution', credit: 'Ana' }] } })
+    expect(word).toMatchObject({ active: false, submissionId: submission.id, submissionPlace: 'Sveti Petar Orehovec (geonames:3194024)', entry: { headword: 'promotion test word', meaning: { hr: '' }, status: 'community', sources: [{ kind: 'contribution', credit: 'Ana' }] } })
     expect(word.entry.variants[0]?.usages).toMatchObject([{ areaId: 'hr-kkz-sveti-petar-orehovec', confidence: 'reported' }])
     expect(JSON.stringify(word)).not.toContain(valid.contact)
     const repeat = await (await request(path, { method: 'POST', secret: SECRET })).json() as AdminWord
@@ -156,8 +156,20 @@ describe('word admin and public word APIs', () => {
     expect((await readPublic()).words.find(w => w.id === word.entry.id)?.headword).toBe('promotion test word')
   })
 
+  it('retains an unmapped canonical place as a private note without guessing a sample area', async () => {
+    expect((await submit({ ...valid, text: 'unmapped catalog promotion', placeId: 'geonames:3194379' })).status).toBe(201)
+    const submission = (await listAll()).find(s => s.text === 'unmapped catalog promotion')!
+    const response = await request(`/api/review/submissions/${submission.id}/word`, { method: 'POST', secret: SECRET })
+    expect(response.status).toBe(201)
+    const word = await response.json() as AdminWord
+    wordIds.push(word.entry.id)
+    expect(word.submissionPlace).toBe('Novigrad - Cittanova (geonames:3194379)')
+    expect(word.entry.variants[0]?.usages).toEqual([])
+    expect(word.active).toBe(false)
+  })
+
   it('uses memories as examples and never invents a contributor credit', async () => {
-    await submit({ ...valid, text: 'promotion memory test', type: 'memory', name: '', place: 'Nepoznato mjesto' })
+    await submit({ ...valid, text: 'promotion memory test', type: 'memory', name: '', placeId: null })
     const submission = (await listAll()).find(s => s.text === 'promotion memory test')!
     const response = await request(`/api/review/submissions/${submission.id}/word`, { method: 'POST', secret: SECRET })
     const word = await response.json() as AdminWord
@@ -165,7 +177,7 @@ describe('word admin and public word APIs', () => {
     expect(word.entry.headword).toBe('')
     expect(word.entry.examples).toEqual([{ text: 'promotion memory test' }])
     expect(word.entry.sources[0]).not.toHaveProperty('credit')
-    expect(word.submissionPlace).toBe('Nepoznato mjesto')
+    expect(word.submissionPlace).toBeNull()
     expect(word.active).toBe(false)
   })
 
@@ -213,7 +225,10 @@ describe('POST /api/submissions', () => {
     const stored = (await listAll()).find(row => row.text === 'stored submission')
     expect(stored).toMatchObject({
       type: 'expression',
-      place: 'Sveti Petar Orehovec',
+      place: 'Sveti Petar Orehovec (geonames:3194024)',
+      placeId: 'geonames:3194024',
+      placeCatalogVersion: expect.any(String),
+      placeContext: 'Sveti Petar Orehovec · Koprivničko-križevačka županija',
       name: 'Ana',
       contact: 'ana@example.com',
       consentPublish: true,
@@ -298,6 +313,84 @@ describe('POST /api/submissions', () => {
       expect((await submit({ ...valid, text: `spoofed ${i}` }, `198.51.100.${i}, ${ip}`)).status).toBe(201)
     }
     expect((await submit({ ...valid, text: 'spoofed over' }, `198.51.100.99, ${ip}`)).status).toBe(429)
+  })
+})
+
+describe('Croatian place search and selection API', () => {
+  it('searches without diacritics, preserves labels, and distinguishes duplicate names', async () => {
+    const response = await request('/api/places?q=krizevci')
+    expect(response.status).toBe(200)
+    const found = await response.json()
+    expect(found.places[0]).toMatchObject({ id: 'geonames:3197230', name: 'Križevci' })
+    expect(found.version).toMatch(/^hr-geonames-/)
+    const duplicates = await (await request('/api/places?q=novigrad')).json()
+    const counties = new Set(duplicates.places.map((p: { county: string }) => p.county))
+    expect(counties.has('Istarska županija')).toBe(true)
+    expect(counties.has('Zadarska županija')).toBe(true)
+    expect((await (await request('/api/places?q=cakovec')).json()).places[0].name).toBe('Čakovec')
+    expect((await (await request('/api/places?q=djakovo')).json()).places[0].name).toBe('Đakovo')
+  })
+
+  it('bounds query length, result count and short searches; does not return the catalog', async () => {
+    expect((await (await request('/api/places?q=a')).json()).places).toEqual([])
+    expect((await request(`/api/places?q=${'a'.repeat(81)}`)).status).toBe(400)
+    expect((await request('/api/places?q=kr&q=za')).status).toBe(400)
+    const response = await (await request('/api/places?q=gr')).json()
+    expect(response.places.length).toBeLessThanOrEqual(8)
+    expect(response.places.length).toBeGreaterThan(0)
+    expect(Object.keys(response.places[0]).sort()).toEqual(['county', 'id', 'municipality', 'name'])
+    const ignored = await (await request('/api/places?q=gr&limit=1')).json()
+    expect(ignored.places).toHaveLength(response.places.length)
+  })
+
+  it('limits search abuse independently from submissions', async () => {
+    const ip = newClient()
+    for (let i = 0; i < 120; i++) expect((await request('/api/places?q=kr', { ip })).status).toBe(200)
+    expect((await request('/api/places?q=kr', { ip })).status).toBe(429)
+    expect((await submit({ ...valid, text: 'search independent' }, ip)).status).toBe(201)
+  })
+
+  it('allows omitted and explicitly empty locations', async () => {
+    for (const value of [{}, { placeId: null }, { place: '' }]) {
+      const response = await submit({ text: 'optional location', consentPublish: true, locale: 'hr', ...value })
+      expect(response.status).toBe(201)
+    }
+    const stored = (await listAll()).filter(row => row.text === 'optional location')
+    expect(stored).toHaveLength(3)
+    expect(stored.every(row => row.place === null && row.placeId === null && row.placeCatalogVersion === null)).toBe(true)
+  })
+
+  it('rejects unknown, foreign, forged and inactive IDs with a localized place-field issue', async () => {
+    const { default: catalog } = await import('../server/data/places/hr.json')
+    const inactive = catalog.places.find(place => !place.active)!.id
+    for (const placeId of ['geonames:9999999999', 'geonames:2988507', 'paris', inactive]) {
+      const response = await submit({ ...valid, text: 'bad place choice', placeId, locale: 'en', countryCode: 'HR' })
+      expect(response.status).toBe(400)
+      const issue = (await response.json()).data.issues[0]
+      expect(issue).toMatchObject({ field: 'place', code: 'invalid', message: expect.stringContaining('Croatian settlement') })
+    }
+    expect((await listAll()).some(row => row.text === 'bad place choice')).toBe(false)
+  })
+
+  it('requires cached free-text clients to refresh and reselect, even alongside an ID', async () => {
+    for (const placeId of [null, valid.placeId]) {
+      const response = await submit({ ...valid, text: 'legacy text rejected', placeId, place: 'Paris', locale: 'en' })
+      expect(response.status).toBe(400)
+      expect((await response.json()).data.issues).toContainEqual({ field: 'place', code: 'refreshPlace', message: expect.stringContaining('Refresh this form') })
+    }
+    expect((await listAll()).some(row => row.text === 'legacy text rejected')).toBe(false)
+  })
+
+  it('ignores spoofed labels, country, coordinates and catalog version', async () => {
+    expect((await submit({ ...valid, text: 'trusted place metadata', placeName: 'Paris', countryCode: 'FR', latitude: 0, longitude: 0, placeCatalogVersion: 'forged' })).status).toBe(201)
+    const stored = (await listAll()).find(row => row.text === 'trusted place metadata')!
+    expect(stored.place).toBe('Sveti Petar Orehovec (geonames:3194024)')
+    expect(stored.placeCatalogVersion).not.toBe('forged')
+  })
+
+  it.skipIf(!fake)('keeps legacy free-text review rows readable and unassigned', async () => {
+    fake!.seed({ text: 'legacy location row', place: 'Somewhere near Orehovec', locale: 'hr', type: null, name: null, contact: null, consent_publish: true, consent_version: '2026-10-27' })
+    expect((await listAll()).find(row => row.text === 'legacy location row')).toMatchObject({ place: 'Somewhere near Orehovec', placeId: null, placeCatalogVersion: null, placeContext: null })
   })
 })
 
@@ -408,6 +501,7 @@ describe('server-only credentials', () => {
     for (const file of files.filter(file => file.isFile())) {
       const output = await readFile(`${file.parentPath}/${file.name}`)
       for (const secret of secrets) expect(output.includes(Buffer.from(secret)), file.name).toBe(false)
+      expect(output.includes(Buffer.from('centroidOutsideOfficialBoundary')), file.name).toBe(false)
     }
   })
 })

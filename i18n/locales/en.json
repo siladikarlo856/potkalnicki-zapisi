@@ -130,7 +130,7 @@
         "other": "Other"
       },
       "place": "Where is it used? (optional)",
-      "placePlaceholder": "Village or town",
+      "placePlaceholder": "Search villages and towns in Croatia",
       "name": "Your name (optional)",
       "nameHelp": "If you’d like to be credited",
       "contact": "Contact (optional)",
@@ -153,6 +153,24 @@
         "consent": "We can only accept your submission with your permission.",
         "invalid": "This value isn’t valid."
       }
+    },
+    "places": {
+      "help": "Choose one village or town in Croatia where the word or expression is used. It need not be where you live.",
+      "loading": "Searching Croatian places…",
+      "error": "Place search is unavailable. Retry or explicitly continue without a location.",
+      "minimum": "Type at least two characters.",
+      "empty": "No matching settlement. Check the spelling or continue without a location.",
+      "selected": "Selected place",
+      "results": "{count} places found. Use the arrow keys to choose.",
+      "retry": "Retry search",
+      "clear": "Clear / continue without location",
+      "data": "Place data:",
+      "license": "Open Licence",
+      "adapted": "Adapted data: GeoNames 28 October 2026; DGU 25 October 2026.",
+      "refresh": "Refresh this form and select a Croatian settlement again. Keep a copy of your contribution before refreshing.",
+      "choose": "Select a place from the list, or clear the location to continue without it.",
+      "invalid": "This place is unavailable. Select a Croatian settlement again, or clear the location.",
+      "listLabel": "Croatian settlements"
     }
   },
   "game": {
@@ -272,7 +290,9 @@
       "consent": "Consent to publish"
     },
     "anonymous": "no name",
-    "consentGiven": "yes (notice of {version})"
+    "consentGiven": "yes (notice of {version})",
+    "legacyPlace": "Legacy / unverified location",
+    "catalogPlace": "Validated settlement · catalog {version}; context from current catalog"
   },
   "quiz": {
     "loading": "Loading questions…",
