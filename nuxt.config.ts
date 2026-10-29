@@ -35,6 +35,8 @@ export default defineNuxtConfig({
     '/en/heritage': { prerender: true },
     '/heritage/kartice': { prerender: true },
     '/en/heritage/kartice': { prerender: true },
+    '/heritage/kviz': { prerender: true },
+    '/en/heritage/kviz': { prerender: true },
     '/privacy': { prerender: true },
     '/en/privacy': { prerender: true },
     '/review': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },

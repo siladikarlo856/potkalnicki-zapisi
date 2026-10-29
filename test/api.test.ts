@@ -273,6 +273,25 @@ describe('server-only credentials', () => {
   })
 })
 
+describe('multiple-choice pages', () => {
+  it.each([
+    { path: '/heritage/kviz', lang: 'hr', title: 'Ponuđeni odgovori', prompt: 'Što znači ova riječ?', notice: 'Uzorak' },
+    { path: '/en/heritage/kviz', lang: 'en', title: 'Multiple choice', prompt: 'What does this word mean?', notice: 'Sample' }
+  ])('renders the playable $lang page from the production server', async ({ path, lang, title, prompt, notice }) => {
+    const response = await fetch(path)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toMatch(new RegExp(`<html[^>]+lang="${lang === 'hr' ? 'hr-HR' : 'en-US'}"`))
+    expect(html).toContain(`aria-label="${lang === 'hr' ? 'Odgovorena pitanja' : 'Questions answered'}"`)
+    expect(html).toContain(title)
+    expect(html).toContain(prompt)
+    expect(html).toContain(notice)
+    expect(html.match(/data-option-id="[^"]+"/g)).toHaveLength(4)
+    expect(html).toContain('role="status"')
+    expect(html).toContain(`${lang === 'en' ? '/en' : ''}/heritage/kartice`)
+  })
+})
+
 // These restart the server with other settings, so they come last.
 const blank = { NUXT_SUPABASE_URL: '', NUXT_SUPABASE_SERVICE_ROLE_KEY: '', SUPABASE_URL: '', SUPABASE_API_KEY: '' }
 const reviewRoutes = [

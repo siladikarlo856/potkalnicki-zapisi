@@ -7,10 +7,11 @@ Personal website of Karlo Siladi, built with [Nuxt](https://nuxt.com) and [Nuxt 
 - **Privacy notice** (`/privacy`): what the form collects, why, how long it is kept and how to ask for correction or deletion. Linked from the form.
 - **Review page** (`/review`): private page where submissions are approved, rejected or deleted. Not linked from the site, not indexed, and protected by a password.
 - **"Kaj to znači?"** (`/heritage/kartice`): a word-card game. See a local word, guess what it means, flip the card to reveal the meaning and the regional variants with the places they are used.
+- **Multiple choice** (`/heritage/kviz`, `/en/heritage/kviz`): choose a meaning, see correct/wrong feedback and the variants, then continue to a scored result and replay.
 
 ## Languages
 
-The site is in Croatian and English via [`@nuxtjs/i18n`](https://i18n.nuxtjs.org): Croatian at `/`, English at `/en`. Texts live in `i18n/locales/hr.json` and `i18n/locales/en.json`. The word-card game is Croatian only.
+The site is in Croatian and English via [`@nuxtjs/i18n`](https://i18n.nuxtjs.org): Croatian at `/`, English at `/en`. Texts live in `i18n/locales/hr.json` and `i18n/locales/en.json`. The flip-card game is Croatian only. Multiple choice has a translated interface and uses English meanings where available, falling back to Croatian; headwords, word types, examples and regional variants retain their original language.
 
 ## Heritage data
 
@@ -20,6 +21,10 @@ Words and places are static JSON in `content/heritage/`:
 - `areas.json`: the place hierarchy (settlement → municipality or town → county → country).
 
 The types are in `app/types/heritage.ts`. The current words are **sample data** (`"status": "placeholder"`): they are shown with a "Neprovjereno" (unverified) badge, and their variants and places are examples that still need to be checked. Replace them with verified entries before launch.
+
+The multiple-choice game consumes `useHeritage()` without adding distractor fields to `WordEntry`. `app/utils/multipleChoice.ts` generates questions and handles answer checking and scoring, with seedable shuffling for reproducible tests. It prefers wrong meanings from the same part of speech, ignoring gender qualifiers, then fills from other words. Meanings are deduplicated after whitespace/case normalization in both the display language and Croatian. With two or three distinct meanings it offers fewer choices; with fewer than two it shows an explanatory empty state. Examples appear when supplied by the entry. Placeholder questions retain an explicit “Uzorak” / “Sample” label and notice.
+
+Follow-up: replace generated distractors with editorially authored choices when the quiz platform supports them. Random meanings are a simple first step and do not guarantee equally plausible choices.
 
 Contact details, social links and the Siladi Dizajn link are set in `app/app.config.ts` (`site`); empty values are hidden.
 
