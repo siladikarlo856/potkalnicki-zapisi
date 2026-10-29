@@ -275,6 +275,9 @@
     "consentGiven": "da (obavijest od {version})"
   },
   "quiz": {
+    "loading": "Učitavam pitanja…",
+    "loadError": "Pitanja trenutačno nisu dostupna.",
+    "retry": "Pokušaj opet",
     "title": "Ponuđeni odgovori",
     "description": "Pročitaj riječ i odaberi njezino značenje. Za svaki točan odgovor dobivaš bod.",
     "sample": "Uzorak",

@@ -23,7 +23,7 @@ The games read active words and their area definitions from `GET /api/heritage/w
 
 The types are in `app/types/heritage.ts`. The current words are **sample data** (`"status": "placeholder"`): they are shown with an "Uzorak" (sample) badge, and their variants and places are examples that still need to be checked. Replace them with verified entries before launch.
 
-The multiple-choice game consumes `useHeritage()` without adding distractor fields to `WordEntry`. `app/utils/multipleChoice.ts` generates questions and handles answer checking and scoring, with seedable shuffling for reproducible tests. It prefers wrong meanings from the same part of speech, ignoring gender qualifiers, then fills from other words. Meanings are deduplicated after whitespace/case normalization in both the display language and Croatian. With two or three distinct meanings it offers fewer choices; with fewer than two it shows an explanatory empty state. Examples appear when supplied by the entry. Placeholder questions retain an explicit “Uzorak” / “Sample” label and notice.
+The multiple-choice game consumes `useHeritage()` without adding distractor fields to `WordEntry`. Like the flip cards, its prerendered HTML shows loading copy; the browser fetches active words at runtime, so activation does not require a rebuild. Failed requests show a retry control. `app/utils/multipleChoice.ts` generates questions and handles answer checking and scoring, with seedable shuffling for reproducible tests. It prefers wrong meanings from the same part of speech, ignoring gender qualifiers, then fills from other words. Meanings are deduplicated after whitespace/case normalization in both the display language and Croatian. With two or three distinct meanings it offers fewer choices; with fewer than two it shows an explanatory empty state. Examples appear when supplied by the entry. Placeholder questions retain an explicit “Uzorak” / “Sample” label and notice.
 
 Follow-up: replace generated distractors with editorially authored choices when the quiz platform supports them. Random meanings are a simple first step and do not guarantee equally plausible choices.
 
@@ -120,7 +120,7 @@ pnpm typecheck
 pnpm test
 ```
 
-`pnpm test` runs the API tests against a small fake of Supabase's REST API (`test/helpers/fakeSupabase.ts`), so it needs no Docker and runs in CI. `pnpm test:local-db` runs the same API tests, plus `test/supabase.local.test.ts` (which checks the Row Level Security rules in the migration), against the real local Supabase stack; start it first with `pnpm db:up`.
+`pnpm test` runs the API tests against a small fake of Supabase's REST API (`test/helpers/fakeSupabase.ts`), so it needs no Docker and runs in CI. It also mounts the quiz in a Nuxt component environment with active words seeded through that fake, checking HR/EN questions, four choices, progress, loading, error/retry and limited-word states without a browser in CI. `pnpm test:local-db` runs the same API tests, plus `test/supabase.local.test.ts` (which checks the Row Level Security rules in the migration), against the real local Supabase stack; start it first with `pnpm db:up`.
 
 ## Local development
 

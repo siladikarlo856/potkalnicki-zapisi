@@ -275,6 +275,9 @@
     "consentGiven": "yes (notice of {version})"
   },
   "quiz": {
+    "loading": "Loading questions…",
+    "loadError": "Questions are currently unavailable.",
+    "retry": "Try again",
     "title": "Multiple choice",
     "description": "Read the word and choose its meaning. Each correct answer earns one point.",
     "sample": "Sample",
