@@ -5,14 +5,23 @@ const props = defineProps<{
   usage: AreaUsage
   /** Sample data: the link between this form and the area is only an example. */
   sample?: boolean
+  /** Adds an English gloss to the sample note, for /en visitors. */
+  english?: boolean
 }>()
 
 const { areaById, areaTrail } = useHeritage()
 
 const name = computed(() => areaById.value.get(props.usage.areaId)?.name ?? props.usage.areaId)
+const trail = computed(() => areaTrail(props.usage.areaId).map(area => area.name))
 const title = computed(() => {
-  const trail = areaTrail(props.usage.areaId).map(area => area.name).join(' › ')
-  return props.sample ? `${trail} — nije provjereno` : trail
+  const text = trail.value.join(' › ')
+  if (!props.sample) return text
+  return props.english ? `${text} — nije provjereno (not verified)` : `${text} — nije provjereno`
+})
+// The title tooltip is hover-only, so screen readers get the same details as hidden text.
+const srDetails = computed(() => {
+  const parents = trail.value.slice(1).map(name => `, ${name}`).join('')
+  return props.sample ? `${parents} (nije provjereno)` : parents
 })
 </script>
 
@@ -26,6 +35,13 @@ const title = computed(() => {
       name="i-lucide-map-pin"
       class="size-3 shrink-0"
     />
-    {{ name }}
+    {{ name }}<span
+      v-if="srDetails"
+      class="sr-only"
+    >{{ srDetails }}</span><span
+      v-if="sample && english"
+      class="sr-only"
+      lang="en"
+    > (not verified)</span>
   </span>
 </template>

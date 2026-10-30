@@ -34,7 +34,7 @@ try {
   sql('create role anon; create role authenticated; create role service_role nologin bypassrls; grant usage on schema public to anon, authenticated, service_role; alter default privileges in schema public grant all on tables to service_role; alter default privileges in schema public grant all on sequences to service_role;')
   const migrations = new URL('../supabase/migrations/', import.meta.url)
   for (const file of readdirSync(migrations).filter(f => f.endsWith('.sql')).sort()) sql(readFileSync(new URL(file, migrations), 'utf8'))
-  docker(['run', '-d', '--name', rest, '--network', `container:${name}`, '-e', `PGRST_DB_URI=postgres://postgres:${password}@127.0.0.1:5432/postgres`, '-e', 'PGRST_DB_ANON_ROLE=anon', '-e', `PGRST_JWT_SECRET=${secret}`, 'public.ecr.aws/supabase/postgrest:v16.5'])
+  docker(['run', '-d', '--name', rest, '--network', `container:${name}`, '-e', `PGRST_DB_URI=postgres://postgres:${password}@127.0.0.1:5432/postgres`, '-e', 'PGRST_DB_ANON_ROLE=anon', '-e', `PGRST_JWT_SECRET=${secret}`, 'postgrest/postgrest:v16.5'])
   const port = docker(['port', name, '3000/tcp']).split(':').at(-1)
   const url = `http://127.0.0.1:${port}`
   for (let i = 0; i < 100; i++) {

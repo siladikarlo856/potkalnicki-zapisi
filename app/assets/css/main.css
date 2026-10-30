@@ -16,3 +16,108 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+/*
+ * Nuxt UI uses green-500 in light mode, which is only 2.4:1 against white,
+ * both as text and behind white button labels. green-700 reaches 5.1:1.
+ * These rules are unlayered, so they override Nuxt UI's layered defaults,
+ * and .dark has to restate the dark-mode shade.
+ */
+:root {
+  --ui-primary: var(--ui-color-primary-700);
+}
+
+.dark {
+  --ui-primary: var(--ui-color-primary-400);
+}
+
+/*
+ * Nuxt UI's dimmed text, used for form placeholders such as "Odaberi vrstu",
+ * is only 2.6:1 in light mode and 3.7:1 in dark mode. No lighter shade than
+ * the muted one reaches 4.5:1 on white, so dimmed text matches muted text.
+ * .dark sits on <html> too, so this resolves to the dark muted shade there.
+ */
+:root {
+  --ui-text-dimmed: var(--ui-text-muted);
+}
+
+/*
+ * Windows High Contrast and other forced-colours modes drop box-shadow, which
+ * is how Nuxt UI draws the edges of inputs, outline buttons, alerts and cards
+ * (ring, ring-2), and solid buttons lose their filled background. They also
+ * paint the CSS-mask icons' currentColor background as Canvas, so the form
+ * fields lost their edges and every icon vanished. The outline sits in the
+ * base layer, so the 3px focus-visible outlines still win.
+ */
+@layer base {
+  @media (forced-colors: active) {
+    .ring,
+    .ring-2,
+    :is(a, button):is(.bg-primary, .bg-inverted) {
+      outline: 1px solid;
+      outline-offset: -1px;
+    }
+  }
+}
+
+/* Icons take the system colour of their link, button or text, not their own text-* colour. */
+@media (forced-colors: active) {
+  .iconify {
+    forced-color-adjust: preserve-parent-color;
+    color: inherit;
+  }
+
+  /* The word game's progress bar is background-only, so give it an edge and a filled part. */
+  [role='progressbar'] {
+    outline: 1px solid;
+    outline-offset: -1px;
+  }
+
+  [role='progressbar'] > [data-slot='indicator'] {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
+
+/*
+ * Paper is white and browsers drop backgrounds when printing, so dark mode's
+ * white headings and light-grey text printed faint or not at all. Print uses
+ * the light palette (Nuxt UI's :root values) whatever the screen mode.
+ */
+@media print {
+  .dark {
+    color-scheme: light;
+    --ui-primary: var(--ui-color-primary-700);
+    --ui-text-dimmed: var(--ui-color-neutral-500);
+    --ui-text-muted: var(--ui-color-neutral-500);
+    --ui-text-toned: var(--ui-color-neutral-600);
+    --ui-text: var(--ui-color-neutral-700);
+    --ui-text-highlighted: var(--ui-color-neutral-900);
+    --ui-text-inverted: #fff;
+    --ui-bg: #fff;
+    --ui-bg-muted: var(--ui-color-neutral-50);
+    --ui-bg-elevated: var(--ui-color-neutral-100);
+    --ui-bg-accented: var(--ui-color-neutral-200);
+    --ui-bg-inverted: var(--ui-color-neutral-900);
+    --ui-border: var(--ui-color-neutral-200);
+    --ui-border-muted: var(--ui-color-neutral-200);
+    --ui-border-accented: var(--ui-color-neutral-300);
+    --ui-border-inverted: var(--ui-color-neutral-900);
+  }
+
+  /* White labels on solid buttons and the KS monogram need their fill, or they print white on white. */
+  .bg-primary,
+  .bg-inverted {
+    print-color-adjust: exact;
+  }
+
+  /* Icons are masks filled with background-color, which printing drops, so every icon vanished. */
+  .iconify {
+    print-color-adjust: exact;
+  }
+
+  /* The Siladi Dizajn button prints its address, since a link can't be followed on paper. */
+  [data-print-url]::after {
+    content: '(' attr(data-print-url) ')';
+  }
+}

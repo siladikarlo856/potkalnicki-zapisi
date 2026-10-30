@@ -20,19 +20,19 @@ const flipped = ref(false)
         :key="behind?.id ?? index"
         aria-hidden="true"
         class="absolute inset-0 flex scale-95 items-start rounded-xl bg-default p-3 shadow-sm ring ring-default"
-        :class="index === 0 ? '-translate-x-14 -rotate-9 justify-start' : 'translate-x-14 rotate-8 justify-end'"
+        :class="index === 0 ? '-translate-x-10 -rotate-8 justify-start sm:-translate-x-14 sm:-rotate-9' : 'translate-x-10 rotate-7 justify-end sm:translate-x-14 sm:rotate-8'"
       >
         <span class="text-lg font-bold text-dimmed">{{ behind?.headword }}</span>
       </div>
       <HeritageWordFlipCard
         v-model:flipped="flipped"
         :entry="entry"
-        :gloss="locale === 'en' ? entry.meaning.en : undefined"
+        :english="locale === 'en'"
         compact
         class="relative"
       />
     </div>
-    <div class="flex flex-wrap items-center justify-center gap-2">
+    <div class="flex flex-wrap items-center justify-center gap-2 print:hidden">
       <UButton
         :label="flipped ? t('home.teaser.flipBack') : t('home.teaser.flip')"
         icon="i-lucide-rotate-3d"

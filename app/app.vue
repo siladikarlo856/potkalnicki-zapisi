@@ -12,6 +12,8 @@ const hr = extendLocale(nuxtUiHr, {
 
 const { locale, t } = useI18n()
 const i18nHead = useLocaleHead()
+const baseUrl = useRuntimeConfig().public.i18n.baseUrl
+useThemeColor()
 
 useHead({
   titleTemplate: title => title ? `${title} · Karlo Siladi` : 'Karlo Siladi',
@@ -33,15 +35,31 @@ useHead(() => ({
 
 useSeoMeta({
   description: () => t('meta.description'),
-  ogDescription: () => t('meta.description')
+  ogTitle: 'Karlo Siladi',
+  ogDescription: () => t('meta.description'),
+  ogSiteName: 'Karlo Siladi',
+  ogType: 'website',
+  ogImage: () => `${baseUrl}/images/og/share-${locale.value}.jpg`,
+  ogImageType: 'image/jpeg',
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
+  ogImageAlt: () => t('meta.imageAlt'),
+  twitterCard: 'summary_large_image',
+  twitterImageAlt: () => t('meta.imageAlt')
 })
 </script>
 
 <template>
   <UApp :locale="locale === 'hr' ? hr : en">
+    <NuxtRouteAnnouncer />
+    <SkipLink />
     <AppHeader />
 
-    <UMain>
+    <UMain
+      id="main-content"
+      tabindex="-1"
+      class="focus:outline-none"
+    >
       <NuxtPage />
     </UMain>
 

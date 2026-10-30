@@ -12,6 +12,13 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  ui: {
+    experimental: {
+      // Generate styles only for Nuxt UI components found in the current application.
+      componentDetection: true
+    }
+  },
+
   // Server-only settings. Set them with environment variables on the server, never in the repo
   // (NUXT_SUPABASE_URL, NUXT_REVIEW_SECRET, ...). See the README.
   runtimeConfig: {
@@ -70,7 +77,7 @@ export default defineNuxtConfig({
     detectBrowserLanguage: false,
     locales: [
       { code: 'hr', language: 'hr-HR', name: 'Hrvatski', file: 'hr.json' },
-      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' }
+      { code: 'en', language: 'en-GB', name: 'English', file: 'en.json' }
     ]
   }
 })

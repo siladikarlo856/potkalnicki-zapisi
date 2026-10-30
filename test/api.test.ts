@@ -538,12 +538,77 @@ describe('multiple-choice pages', () => {
     const response = await fetch(path)
     expect(response.status).toBe(200)
     const html = await response.text()
-    expect(html).toMatch(new RegExp(`<html[^>]+lang="${lang === 'hr' ? 'hr-HR' : 'en-US'}"`))
+    expect(html).toMatch(new RegExp(`<html[^>]+lang="${lang === 'hr' ? 'hr-HR' : 'en-GB'}"`))
     expect(html).toContain(title)
     expect(html).toContain(loading)
     expect(html).not.toContain(empty)
     expect(html).toContain('role="status"')
     expect(html).toContain(`${lang === 'en' ? '/en' : ''}/heritage/kartice`)
+  })
+})
+
+function metaContent(html: string, key: string) {
+  const tag = html.match(new RegExp(`<meta[^>]+(?:name|property)="${key}"[^>]*>`))?.[0]
+  return tag?.match(/content="([^"]*)"/)?.[1]
+}
+
+describe('public discovery, sharing metadata and error pages', () => {
+  it('publishes only public localized routes in the sitemap and blocks private routes in robots.txt', async () => {
+    const sitemap = await (await fetch('/sitemap.xml')).text()
+    const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
+    expect(urls).toEqual([
+      'https://karlo-siladi.from.hr/',
+      'https://karlo-siladi.from.hr/en',
+      'https://karlo-siladi.from.hr/heritage',
+      'https://karlo-siladi.from.hr/en/heritage',
+      'https://karlo-siladi.from.hr/heritage/kartice',
+      'https://karlo-siladi.from.hr/en/heritage/kartice',
+      'https://karlo-siladi.from.hr/heritage/kviz',
+      'https://karlo-siladi.from.hr/en/heritage/kviz',
+      'https://karlo-siladi.from.hr/privacy',
+      'https://karlo-siladi.from.hr/en/privacy'
+    ])
+    expect(sitemap).not.toContain('/review')
+
+    const robots = await (await fetch('/robots.txt')).text()
+    for (const path of ['/review', '/en/review', '/review-words', '/en/review-words', '/api/']) {
+      expect(robots).toContain(`Disallow: ${path}`)
+    }
+    expect(robots).toContain('Sitemap: https://karlo-siladi.from.hr/sitemap.xml')
+  })
+
+  it.each([
+    { path: '/', title: 'Karlo Siladi', description: 'Karlo Siladi izrađuje stvari', image: 'share-hr.jpg' },
+    { path: '/en', title: 'Karlo Siladi', description: 'Karlo Siladi builds things', image: 'share-en.jpg' },
+    { path: '/heritage', title: 'Zavičajna baština · Karlo Siladi', description: 'Čuvamo riječi', image: 'share-hr.jpg' },
+    { path: '/en/heritage', title: 'Local Heritage Project · Karlo Siladi', description: 'Preserving and sharing', image: 'share-en.jpg' },
+    { path: '/heritage/kartice', title: 'Kaj to znači? · Karlo Siladi', description: 'Kartice s riječima', image: 'share-hr.jpg' },
+    { path: '/en/heritage/kartice', title: 'Kaj to znači? · Karlo Siladi', description: 'Local word cards', image: 'share-en.jpg' },
+    { path: '/heritage/kviz', title: 'Ponuđeni odgovori · Karlo Siladi', description: 'Pročitaj riječ', image: 'share-hr.jpg' },
+    { path: '/en/heritage/kviz', title: 'Multiple choice · Karlo Siladi', description: 'Read the word', image: 'share-en.jpg' },
+    { path: '/privacy', title: 'Obavijest o privatnosti · Karlo Siladi', description: 'Koje podatke', image: 'share-hr.jpg' },
+    { path: '/en/privacy', title: 'Privacy notice · Karlo Siladi', description: 'What the Local Heritage Project', image: 'share-en.jpg' }
+  ])('sets localized sharing metadata on $path', async ({ path, title, description, image }) => {
+    const response = await fetch(path)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(metaContent(html, 'og:title')).toBe(title)
+    expect(metaContent(html, 'og:description')).toContain(description)
+    expect(metaContent(html, 'og:image')).toContain(image)
+    expect(metaContent(html, 'twitter:card')).toBe('summary_large_image')
+  })
+
+  it.each([
+    { path: '/missing-page', lang: 'hr-HR', title: 'Stranica nije pronađena', home: 'Na početnu' },
+    { path: '/en/missing-page', lang: 'en-GB', title: 'Page not found', home: 'Back to home' }
+  ])('returns a localized, non-indexable 404 for $path', async ({ path, lang, title, home }) => {
+    const response = await fetch(path, { headers: { accept: 'text/html' } })
+    expect(response.status).toBe(404)
+    const html = await response.text()
+    expect(html).toMatch(new RegExp(`<html[^>]+lang="${lang}"`))
+    expect(html).toContain(title)
+    expect(html).toContain(home)
+    expect(metaContent(html, 'robots')).toBe('noindex')
   })
 })
 

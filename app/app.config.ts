@@ -3,6 +3,9 @@ export default defineAppConfig({
     colors: {
       primary: 'green',
       neutral: 'slate'
+    },
+    badge: {
+      compoundVariants: [{ color: 'primary', variant: 'subtle', class: 'text-(--ui-color-primary-800) dark:text-primary' }]
     }
   },
   site: {

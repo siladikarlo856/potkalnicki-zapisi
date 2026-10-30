@@ -1,6 +1,7 @@
 {
   "meta": {
-    "description": "Karlo Siladi izrađuje stvari, digitalne i fizičke. Riječi i običaji našeg kraja, Siladi Dizajn i izbor projekata."
+    "description": "Karlo Siladi izrađuje stvari, digitalne i fizičke. Riječi i običaji našeg kraja, Siladi Dizajn i izbor projekata.",
+    "imageAlt": "Karlo Siladi: Graditelj · stvaratelj · poduzetnik. Gradim stvari. Digitalne, fizičke i sve između."
   },
   "nav": {
     "home": "Početna",
@@ -39,7 +40,7 @@
       "title": "Pokloni po mjeri iz Križevaca",
       "description": "Za krštenje, prvu pričest, vjenčanje i druge prigode izrađujem poklone po narudžbi, s imenom, datumom ili porukom po tvojoj želji: setove, drvene kutijice za novac, LED lampe, okvire i topere za torte. Sve nastaje laserskim graviranjem i rezanjem te 3D printom. Šaljem na adresu bilo gdje u Hrvatskoj, a poklon možeš preuzeti i osobno u Križevcima.",
       "cta": "Posjeti Siladi Dizajn",
-      "categoriesLabel": "Pokloni po prigodi",
+      "categoriesLabel": "Pokloni po prigodi i vrsti",
       "categories": {
         "baptism": "Krštenje",
         "communion": "Prva pričest",
@@ -51,7 +52,7 @@
       "images": {
         "communion": "Bijela drvena kutija za prvu pričest s ugraviranom porukom, Biblijom s imenom i krunicom",
         "wedding": "Drvena čestitka za vjenčanje s ugraviranim imenima, datumom i mašnom",
-        "frame": "3D okvir s LED rasvjetom i bolničkim narukvicama novorođenčeta"
+        "frame": "3D okvir s LED rasvjetom, crtežom roditeljskih ruku koje drže bebinu ručicu i bolničkim narukvicama novorođenčeta"
       }
     },
     "projects": {
@@ -79,7 +80,7 @@
   "contact": {
     "title": "Javi se",
     "description": "Najlakše ćeš me dobiti e-mailom.",
-    "pending": "Kontakt uskoro.",
+    "pending": "Kontaktni podaci uskoro.",
     "email": "Pošalji e-mail"
   },
   "footer": {
@@ -152,7 +153,12 @@
         "tooLong": "Najviše {max} znakova.",
         "consent": "Bez tvog pristanka prilog ne možemo poslati.",
         "invalid": "Ova vrijednost nije ispravna."
-      }
+      },
+      "contactPlaceholder": "E-mail ili broj mobitela",
+      "typePlaceholder": "Odaberi vrstu",
+      "typeClear": "Ukloni",
+      "typeClearLabel": "Ukloni odabranu vrstu",
+      "prefill": "Umjesto „{word}“ kod nas se kaže: "
     },
     "places": {
       "help": "Odaberi jedno selo ili grad u Hrvatskoj gdje se riječ ili izraz koristi. Ne mora biti mjesto u kojem živiš.",
@@ -174,7 +180,37 @@
     }
   },
   "game": {
-    "languageNote": ""
+    "description": "Kartice s riječima našeg kraja: pročitaj riječ, pogodi što znači pa okreni karticu.",
+    "languageNote": "",
+    "sampleNote": {
+      "title": "Ove riječi još nisu provjerene",
+      "description": "Ovo su poznate kajkavske riječi, ali još nismo provjerili govore li se baš tako i kod nas. Ni inačice ni mjesta još nisu provjereni."
+    },
+    "intro": "Pročitaj riječ, u sebi pogodi što znači pa okreni karticu.",
+    "counter": "Kartica {current} od {total}",
+    "flip": "Okreni karticu",
+    "flipBack": "Okreni natrag",
+    "known": "Znam",
+    "unknown": "Ne znam",
+    "differently": "Kod nas se kaže drugačije",
+    "done": "Gotovo!",
+    "result": {
+      "one": "Znaš {known} od {total} riječi.",
+      "other": "Znaš {known} od {total} riječi."
+    },
+    "missed": {
+      "one": "Riječ koju ne znaš",
+      "other": "Riječi koje ne znaš"
+    },
+    "repeat": {
+      "one": "Ponovi riječ koju ne znaš ({n})",
+      "other": "Ponovi riječi koje ne znaš ({n})"
+    },
+    "playAgain": "Igraj opet",
+    "loading": "Učitavam kartice…",
+    "loadError": "Kartice trenutačno nisu dostupne.",
+    "empty": "Još nema aktivnih riječi. Navrati uskoro.",
+    "retry": "Pokušaj opet"
   },
   "privacy": {
     "title": "Obavijest o privatnosti",
@@ -327,6 +363,22 @@
     "share": "Kod nas se kaže drugačije",
     "tryQuiz": "Isprobaj ponuđene odgovore",
     "answeredProgress": "Odgovoreno {count} od {total} pitanja"
+  },
+  "a11y": {
+    "newTab": "otvara se u novoj kartici",
+    "skipToContent": "Preskoči na sadržaj"
+  },
+  "error": {
+    "notFound": {
+      "title": "Stranica nije pronađena",
+      "description": "Ova stranica ne postoji ili je premještena. Provjeri adresu ili kreni s početne stranice."
+    },
+    "generic": {
+      "title": "Nešto je pošlo po zlu",
+      "description": "Došlo je do neočekivane pogreške. Pokušaj ponovno malo kasnije."
+    },
+    "home": "Na početnu",
+    "heritage": "Projekt lokalne baštine"
   },
   "challenge": {
     "title": "Izazov zavičaja",

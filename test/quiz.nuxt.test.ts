@@ -3,6 +3,7 @@ import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createClient } from '@supabase/supabase-js'
 import { clearNuxtData, useNuxtApp } from '#imports'
 import Quiz from '../app/pages/heritage/kviz.vue'
+import Cards from '../app/pages/heritage/kartice.vue'
 import sampleWords from '../content/heritage/words.json'
 import sampleAreas from '../content/heritage/areas.json'
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
@@ -51,6 +52,12 @@ async function mountQuiz(lang: 'hr' | 'en') {
   return wrapper
 }
 
+async function mountCards(lang: 'hr' | 'en') {
+  await useNuxtApp().$i18n.setLocale(lang)
+  wrapper = await mountSuspended(Cards, { route: `${lang === 'en' ? '/en' : ''}/heritage/kartice` })
+  return wrapper
+}
+
 const locales = [
   { lang: 'hr' as const, loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi', prompt: 'Što znači ova riječ?', progress: 'Odgovorena pitanja', error: 'Pitanja trenutačno nisu dostupna.', retry: 'Pokušaj opet' },
   { lang: 'en' as const, loading: 'Loading questions…', empty: 'We need a few more words', prompt: 'What does this word mean?', progress: 'Questions answered', error: 'Questions are currently unavailable.', retry: 'Try again' }
@@ -78,6 +85,7 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, pr
     await page.get(`[data-option-id="${correctId}"]`).trigger('click')
     expect(page.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('1')
     expect(page.text()).toContain(lang === 'hr' ? 'Bodovi: 1 / 4' : 'Score: 1 / 4')
+    expect(page.get('[aria-live="polite"]').text()).toContain(lang === 'hr' ? 'Točno značenje:' : 'Correct meaning:')
     const next = page.findAll('button').find(button => button.text() === (lang === 'hr' ? 'Sljedeća riječ' : 'Next word'))!
     await next.trigger('click')
     expect(page.get('#question-word').text()).not.toBe(headword)
@@ -109,6 +117,26 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, pr
     await button.trigger('click')
     await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
     expect(page.text()).not.toContain(error)
+  })
+})
+
+describe.each([
+  { lang: 'hr' as const, counter: 'Kartica 1 od 4', flip: 'Okreni karticu', unknown: 'Ne znam', next: 'Kartica 2 od 4' },
+  { lang: 'en' as const, counter: 'Card 1 of 4', flip: 'Flip the card', unknown: 'I don’t know', next: 'Card 2 of 4' }
+])('$lang flip-card page', ({ lang, counter, flip, unknown, next }) => {
+  it('localizes controls and announces flips and the next card', async () => {
+    const page = await mountCards(lang)
+    await expect.poll(() => page.text()).toContain(counter)
+    const flipButton = page.findAll('button').find(button => button.text() === flip)!
+    await flipButton.trigger('click')
+    const spoken = page.findAll('[aria-live="polite"]').map(region => region.text()).find(Boolean)!
+    const current = seeds.find(word => spoken.includes(`${word.headword}: ${word.meaning.hr}`))
+    expect(current).toBeDefined()
+    if (lang === 'en') expect(spoken).toContain(`(${current!.meaning.en})`)
+
+    const unknownButton = page.findAll('button').find(button => button.text().includes(unknown))!
+    await unknownButton.trigger('click')
+    expect(page.findAll('[aria-live="polite"]').some(region => region.text().includes(next))).toBe(true)
   })
 })
 

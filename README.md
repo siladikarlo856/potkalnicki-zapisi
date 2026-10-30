@@ -66,7 +66,7 @@ Rollout uses the existing automatic [production database workflow](.github/workf
 
 ## Languages
 
-The site is in Croatian and English via [`@nuxtjs/i18n`](https://i18n.nuxtjs.org): Croatian at `/`, English at `/en`. Texts live in `i18n/locales/hr.json` and `i18n/locales/en.json`. The flip-card game is Croatian only. Multiple choice has a translated interface and uses English meanings where available, falling back to Croatian; headwords, word types, examples and regional variants retain their original language.
+The site is in Croatian and English via [`@nuxtjs/i18n`](https://i18n.nuxtjs.org): Croatian at `/`, English at `/en`. Texts live in `i18n/locales/hr.json` and `i18n/locales/en.json`. Both word games have a translated interface and use English meanings where available, falling back to Croatian; headwords, word types, examples and regional variants retain their original language.
 
 ## Heritage data
 

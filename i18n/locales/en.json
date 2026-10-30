@@ -1,6 +1,7 @@
 {
   "meta": {
-    "description": "Karlo Siladi builds things — digital, physical, and everything in between. A local heritage project, Siladi Dizajn and selected projects."
+    "description": "Karlo Siladi builds things — digital, physical, and everything in between. A local heritage project, Siladi Dizajn and selected projects.",
+    "imageAlt": "Karlo Siladi: Builder · maker · entrepreneur. I build things. Digital, physical, and everything in between."
   },
   "nav": {
     "home": "Home",
@@ -18,7 +19,7 @@
     "hero": {
       "headline": "Builder · maker · entrepreneur",
       "title": "I build things. Digital, physical, and everything in between.",
-      "description": "I’m Karlo — an entrepreneur, maker and builder with a background in engineering. I like turning ideas into things people can use.",
+      "description": "I’m Karlo — an entrepreneur and maker with a background in engineering. I like turning ideas into things people can use.",
       "cta": "See what I’m building"
     },
     "heritage": {
@@ -39,7 +40,7 @@
       "title": "Personalised gifts from Križevci",
       "description": "For baptisms, First Communions, weddings and other occasions I make gifts to order, with the name, date or message of your choice: gift sets, wooden money boxes, LED lamps, frames and cake toppers. Each piece is laser engraved, laser cut or 3D printed. I ship anywhere in Croatia, or you can pick your order up in Križevci.",
       "cta": "Visit Siladi Dizajn",
-      "categoriesLabel": "Gifts by occasion",
+      "categoriesLabel": "Gifts by occasion and type",
       "categories": {
         "baptism": "Baptism",
         "communion": "First Communion",
@@ -49,10 +50,11 @@
         "toppers": "Cake toppers"
       },
       "images": {
-        "communion": "White wooden First Communion box with an engraved message, a Bible with the child's name and a rosary",
-        "wedding": "Wooden wedding card with the couple's engraved names, the date and a satin bow",
-        "frame": "LED-lit 3D frame holding a newborn's hospital bracelets"
-      }
+        "communion": "White wooden First Communion box with an engraved message, a Bible with the child’s name and a rosary",
+        "wedding": "Wooden wedding card with the couple’s engraved names, the date and a satin bow",
+        "frame": "LED-lit 3D frame with a drawing of parents’ hands holding a baby’s hand, and the newborn’s hospital bracelets"
+      },
+      "shopLanguage": "The Siladi Dizajn shop is in Croatian."
     },
     "projects": {
       "title": "Selected projects",
@@ -88,7 +90,7 @@
   "heritage": {
     "title": "Local Heritage Project",
     "nameNote": "Working title — the final name is still open",
-    "description": "Protecting and sharing the local words, expressions, memories and traditions of Sveti Petar Orehovec, Križevci and the wider region.",
+    "description": "Preserving and sharing the local words, expressions, memories and traditions of Sveti Petar Orehovec, Križevci and the wider region.",
     "badge": "Coming soon",
     "status": "In development",
     "share": "Share a word",
@@ -97,7 +99,7 @@
       "jump": "See what’s coming",
       "cards": {
         "title": "Word cards",
-        "description": "See a local word, guess what it means, flip to reveal — with the spellings used in neighbouring villages."
+        "description": "See a local word, guess what it means, flip to reveal — with the variants used in neighbouring villages."
       },
       "quizzes": {
         "title": "Quizzes & games",
@@ -112,7 +114,7 @@
         "description": "Local stories, memories and traditions, shared with permission."
       },
       "tryGame": "Try the word cards",
-      "gameNote": "The word-card game itself is in Croatian."
+      "gameNote": "The word cards use Croatian words, with English meanings when available."
     },
     "form": {
       "title": "Share a word, expression or memory",
@@ -152,7 +154,12 @@
         "tooLong": "Please keep it to {max} characters or fewer.",
         "consent": "We can only accept your submission with your permission.",
         "invalid": "This value isn’t valid."
-      }
+      },
+      "contactPlaceholder": "Email or phone number",
+      "typePlaceholder": "Choose a type",
+      "typeClear": "Clear",
+      "typeClearLabel": "Clear the chosen type",
+      "prefill": "Instead of “{word}”, where I’m from we say: "
     },
     "places": {
       "help": "Choose one village or town in Croatia where the word or expression is used. It need not be where you live.",
@@ -174,7 +181,37 @@
     }
   },
   "game": {
-    "languageNote": "This game is in Croatian."
+    "description": "Local word cards in Croatian: guess the meaning, then flip the card. English meanings are included when available.",
+    "languageNote": "The words in this game are Croatian. English meanings are included when available.",
+    "sampleNote": {
+      "title": "These are sample words for testing",
+      "description": "They are well-known Kajkavian words, but they haven’t been checked for our area yet. The variants and places are examples until we collect the real words."
+    },
+    "intro": "Look at the word, guess to yourself what it means, then flip the card.",
+    "counter": "Card {current} of {total}",
+    "flip": "Flip the card",
+    "flipBack": "Flip back",
+    "known": "I know it",
+    "unknown": "I don’t know",
+    "differently": "Where I’m from, we say it differently",
+    "done": "Done!",
+    "result": {
+      "one": "You knew {known} of {total} word.",
+      "other": "You knew {known} of {total} words."
+    },
+    "missed": {
+      "one": "The word you didn’t know",
+      "other": "Words you didn’t know"
+    },
+    "repeat": {
+      "one": "Retry the missed word ({n})",
+      "other": "Retry the missed words ({n})"
+    },
+    "playAgain": "Play again",
+    "loading": "Loading cards…",
+    "loadError": "Cards are currently unavailable.",
+    "empty": "There are no active words yet. Come back soon.",
+    "retry": "Try again"
   },
   "privacy": {
     "title": "Privacy notice",
@@ -327,6 +364,22 @@
     "share": "We say it differently here",
     "tryQuiz": "Try multiple choice",
     "answeredProgress": "Answered {count} of {total} questions"
+  },
+  "a11y": {
+    "newTab": "opens in a new tab",
+    "skipToContent": "Skip to content"
+  },
+  "error": {
+    "notFound": {
+      "title": "Page not found",
+      "description": "This page doesn’t exist or has moved. Check the address or start from the homepage."
+    },
+    "generic": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Please try again in a little while."
+    },
+    "home": "Back to home",
+    "heritage": "Local Heritage Project"
   },
   "challenge": {
     "title": "Heritage challenge",

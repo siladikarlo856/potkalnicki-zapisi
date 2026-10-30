@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /review
+Disallow: /en/review
+Disallow: /review-words
+Disallow: /en/review-words
+Disallow: /api/
+
+Sitemap: https://karlo-siladi.from.hr/sitemap.xml
