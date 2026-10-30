@@ -10,6 +10,8 @@ const props = defineProps<{
 }>()
 
 const flipped = defineModel<boolean>('flipped', { default: false })
+const { t } = useI18n()
+const emit = defineEmits<{ contribute: [] }>()
 
 const sample = computed(() => props.entry.status === 'placeholder')
 const headVariant = computed(() => props.entry.variants[0])
@@ -186,6 +188,17 @@ const labels = computed(() => props.english
           <HeritageVariantList
             :entry="entry"
             :english="english"
+          />
+          <!-- The card is a click-to-flip surface, so this control must not flip it again. -->
+          <UButton
+            :label="t('game.differently')"
+            icon="i-lucide-message-square-plus"
+            color="neutral"
+            variant="link"
+            size="sm"
+            class="mt-2 -ms-2 px-2"
+            :lang="labelLang"
+            @click.stop="emit('contribute')"
           />
         </div>
       </div>

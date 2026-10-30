@@ -7,7 +7,7 @@ Personal website of Karlo Siladi, built with [Nuxt](https://nuxt.com) and [Nuxt 
 - **Privacy notice** (`/privacy`): what the form collects, why, how long it is kept and how to ask for correction or deletion. Linked from the form.
 - **Review page** (`/review`): private page where submissions are approved, rejected or deleted from an expandable table (click a row or its info icon for details and actions). Not linked from the site, not indexed, and protected by a password.
 - **Word admin** (`/review-words`): private word table (click a row or its info icon to expand the editor), using the same review password. Create drafts, promote submissions, edit every word parameter and explicitly activate or deactivate cards.
-- **"Kaj to znači?"** (`/heritage/kartice`): a word-card game. See a local word, guess what it means, flip the card to reveal the meaning and the regional variants with the places they are used.
+- **"Kaj to znači?"** (`/heritage/kartice`): a word-card game. See a local word, guess what it means, flip the card to reveal the meaning and the regional variants with the places they are used. "Kod nas se kaže drugačije" (on the card back and below the card) opens the contribution form inline, prefilled with the word, without leaving the page.
 - **Multiple choice** (`/heritage/kviz`, `/en/heritage/kviz`): choose a meaning, see correct/wrong feedback and the variants, then continue to a scored result and replay.
 - **Asynchronous challenge** (`/heritage/challenge`, `/en/heritage/challenge`): a fixed, shareable sample challenge with saved guest progress, three themed rounds, answer explanations and a public leaderboard.
 

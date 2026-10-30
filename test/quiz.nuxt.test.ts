@@ -140,6 +140,31 @@ describe.each([
   })
 })
 
+describe.each([
+  { lang: 'hr' as const, differently: 'Kod nas se kaže drugačije', close: 'Zatvori', prefill: 'Umjesto „{word}“ kod nas se kaže: ' },
+  { lang: 'en' as const, differently: 'Where I’m from, we say it differently', close: 'Close', prefill: 'Instead of “{word}”, where I’m from we say: ' }
+])('$lang card contribution form', ({ lang, differently, close, prefill }) => {
+  it('opens the prefilled variant form inline without leaving the cards', async () => {
+    const page = await mountCards(lang)
+    await expect.poll(() => page.text()).toContain(lang === 'hr' ? 'Kartica 1 od 4' : 'Card 1 of 4')
+    const headword = page.findAll('p').find(paragraph => paragraph.classes().includes('text-4xl'))!.text()
+    expect(seeds.map(word => word.headword)).toContain(headword)
+    const flip = page.findAll('button').find(button => button.text() === (lang === 'hr' ? 'Okreni karticu' : 'Flip the card'))!
+    await flip.trigger('click')
+    // The first matching control is the one on the card back, the second the page-level trigger.
+    const trigger = page.findAll('button').find(button => button.text() === differently)!
+    await trigger.trigger('click')
+    const textarea = page.find('textarea')
+    expect(textarea.exists()).toBe(true)
+    expect((textarea.element as HTMLTextAreaElement).value).toBe(prefill.replace('{word}', headword))
+    // Still on the card: its counter is visible and the form was not a navigation.
+    expect(page.text()).toContain(lang === 'hr' ? 'Kartica 1 od 4' : 'Card 1 of 4')
+    const closeButton = page.findAll('button').find(button => button.text() === close)!
+    await closeButton.trigger('click')
+    expect(page.find('textarea').exists()).toBe(false)
+  })
+})
+
 describe('limited active words', () => {
   it.each([0, 1, 2, 3])('handles %i active words after loading completes', async (count) => {
     for (const entry of seeds.slice(count)) await db.from('heritage_words').update({ active: false }).eq('id', entry.id)

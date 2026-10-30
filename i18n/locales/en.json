@@ -144,6 +144,7 @@
       "successTitle": "Thank you, it’s in!",
       "successDescription": "We’ll review it before it appears anywhere.",
       "sendAnother": "Send another",
+      "close": "Close",
       "errorTitle": "Your submission wasn’t sent",
       "errorGeneric": "Something went wrong. Please try again a little later.",
       "errorTooMany": "We’ve had a lot of submissions in a short time. Please wait a few minutes and try again.",

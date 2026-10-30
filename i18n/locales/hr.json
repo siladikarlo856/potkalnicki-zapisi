@@ -143,6 +143,7 @@
       "successTitle": "Hvala, prilog je stigao!",
       "successDescription": "Pregledat ćemo ga prije nego što se igdje pojavi.",
       "sendAnother": "Pošalji još jedan",
+      "close": "Zatvori",
       "errorTitle": "Slanje nije uspjelo",
       "errorGeneric": "Nešto je pošlo po zlu. Pokušaj ponovno malo kasnije.",
       "errorTooMany": "Stiglo je puno prijava u kratkom vremenu. Pričekaj nekoliko minuta pa pokušaj ponovno.",
