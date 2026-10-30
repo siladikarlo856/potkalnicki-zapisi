@@ -27,7 +27,7 @@ const labels = computed(() => props.english
 <template>
   <div
     class="cursor-pointer perspective-distant"
-    :class="compact ? 'h-64' : 'h-96'"
+    :class="compact ? 'h-64' : 'h-[clamp(15rem,46svh,24rem)] lg:h-[clamp(17rem,52svh,26rem)]'"
     lang="hr"
     @click="flipped = !flipped"
   >
@@ -51,7 +51,7 @@ const labels = computed(() => props.english
       :class="{ 'rotate-y-180': flipped }"
     >
       <div
-        class="absolute inset-0 flex flex-col overflow-y-auto rounded-xl bg-default p-5 shadow-sm ring ring-default backface-hidden print:aria-hidden:hidden"
+        class="absolute inset-0 flex flex-col overflow-y-auto rounded-xl bg-default p-4 shadow-sm ring ring-default backface-hidden sm:p-5 print:aria-hidden:hidden"
         :aria-hidden="flipped"
         :inert="flipped"
       >
@@ -65,7 +65,7 @@ const labels = computed(() => props.english
         <div class="flex flex-1 flex-col items-center justify-center gap-2 text-center">
           <p
             class="font-bold tracking-tight text-highlighted"
-            :class="compact ? 'text-4xl' : 'text-5xl'"
+            :class="compact ? 'text-4xl' : 'text-4xl sm:text-5xl'"
           >
             {{ entry.headword }}
           </p>
@@ -113,7 +113,7 @@ const labels = computed(() => props.english
       </div>
 
       <div
-        class="absolute inset-0 flex rotate-y-180 flex-col gap-3 overflow-y-auto rounded-xl bg-default p-5 shadow-sm ring-2 ring-primary/40 backface-hidden print:transform-none print:aria-hidden:hidden"
+        class="absolute inset-0 flex rotate-y-180 flex-col gap-2 overflow-y-auto rounded-xl bg-default p-4 shadow-sm ring-2 ring-primary/40 backface-hidden sm:p-5 print:transform-none print:aria-hidden:hidden"
         :aria-hidden="!flipped"
         :inert="!flipped"
       >
