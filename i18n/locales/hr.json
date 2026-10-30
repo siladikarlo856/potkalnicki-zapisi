@@ -304,6 +304,8 @@
     "loadError": "Prijave se nisu mogle učitati.",
     "actionError": "Promjena nije spremljena. Pokušaj ponovno.",
     "empty": "Ovdje nema prijava.",
+    "tableCaption": "Prijave",
+    "details": "Detalji prijave #{id}",
     "statuses": {
       "pending": "Na čekanju",
       "approved": "Odobreno",
@@ -322,6 +324,8 @@
       "name": "Ime",
       "contact": "Kontakt",
       "sent": "Poslano",
+      "text": "Prijava",
+      "status": "Status",
       "language": "Jezik",
       "consent": "Pristanak na objavu"
     },

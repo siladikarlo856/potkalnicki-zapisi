@@ -305,6 +305,8 @@
     "loadError": "The submissions could not be loaded.",
     "actionError": "The change was not saved. Please try again.",
     "empty": "No submissions here.",
+    "tableCaption": "Submissions",
+    "details": "Details of submission #{id}",
     "statuses": {
       "pending": "Pending",
       "approved": "Approved",
@@ -323,6 +325,8 @@
       "name": "Name",
       "contact": "Contact",
       "sent": "Sent",
+      "text": "Submission",
+      "status": "Status",
       "language": "Language",
       "consent": "Consent to publish"
     },
