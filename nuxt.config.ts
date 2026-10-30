@@ -21,6 +21,12 @@ export default defineNuxtConfig({
       serviceRoleKey: ''
     },
     reviewSecret: '',
+    challengeRateLimit: {
+      create: 5,
+      join: 20,
+      action: 240,
+      windowSeconds: 600
+    },
     submissionRateLimit: {
       max: 10,
       windowSeconds: 600

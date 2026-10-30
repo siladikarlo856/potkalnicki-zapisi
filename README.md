@@ -9,6 +9,60 @@ Personal website of Karlo Siladi, built with [Nuxt](https://nuxt.com) and [Nuxt 
 - **Word admin** (`/review-words`): private word list and editor, using the same review password. Create drafts, promote submissions, edit every word parameter and explicitly activate or deactivate cards.
 - **"Kaj to znači?"** (`/heritage/kartice`): a word-card game. See a local word, guess what it means, flip the card to reveal the meaning and the regional variants with the places they are used.
 - **Multiple choice** (`/heritage/kviz`, `/en/heritage/kviz`): choose a meaning, see correct/wrong feedback and the variants, then continue to a scored result and replay.
+- **Asynchronous challenge** (`/heritage/challenge`, `/en/heritage/challenge`): a fixed, shareable sample challenge with saved guest progress, three themed rounds, answer explanations and a public leaderboard.
+
+## Asynchronous heritage challenge
+
+Choose **Learning** or **Challenge** on `/heritage` (English: `/en/heritage`). Learning opens the existing quiz and flashcards. Challenge starts a new challenge of your own: each creation gets a separate link, deadline and scoreboard. Enter a nickname, then copy or natively share its link immediately, before or during play, with one or more people. Native sharing appears when the browser supports it; copy is always available. Everyone answers the same questions at their own pace. A shared link opens the challenge introduction and nickname entry; completed participants see their saved result. The leaderboard lives at `/heritage/challenge/<code>/leaderboard` (also under `/en`) and remains public after closure. Every participant appears with current total and per-round scores and an in-progress, finished or incomplete status. The scoreboard is reachable before joining, during play, at finish and after closure. The challenge close date is shown throughout these screens. Equal totals share a rank (1, 1, 3); there is no speed tiebreaker. Leaderboard pages load 50 entries at a time.
+
+The first content is explicitly **Uzorak / Sample**: 3 rounds × 5 multiple-choice questions with four choices, one correct choice and a short explanation. Word examples reuse the existing unverified sample seed. Other questions describe explicitly fictional places and stories, not factual claims about local heritage. Replace these before calling it a verified local quiz. There is no live host, game builder, timer, account, recovery or cross-device continuation.
+
+### Editing content
+
+Edit [`content/heritage/challenge.json`](content/heritage/challenge.json), then rebuild/deploy. Its documented format is:
+
+```json
+{
+  "version": 1,
+  "sample": true,
+  "title": { "hr": "Naslov", "en": "Title" },
+  "rounds": [{
+    "id": "stable-topic-id",
+    "topic": { "hr": "Tema", "en": "Topic" },
+    "questions": [{
+      "id": "globally-unique-question-id",
+      "mechanic": "multiple-choice",
+      "prompt": { "hr": "Pitanje?", "en": "Question?" },
+      "options": [
+        { "hr": "A", "en": "A" }, { "hr": "B", "en": "B" },
+        { "hr": "C", "en": "C" }, { "hr": "D", "en": "D" }
+      ],
+      "correct": 0,
+      "explanation": { "hr": "Objašnjenje.", "en": "Explanation." }
+    }]
+  }]
+}
+```
+
+`correct` is a zero-based option index, not a letter. Topics and mechanics are separate. The validator requires both languages, four distinct nonempty choices, unique question IDs, 1–10 rounds, 1–20 questions per round and at most 256 KB total. Bump `version` when editing; keep `sample: true` until every question has been curated and verified. There is no admin content editor and this slice does not dynamically substitute active dictionary words. A challenge stores a complete immutable snapshot at creation: later file edits affect only newly created challenges.
+
+### Progress, privacy and expiry
+
+The server issues a random 256-bit participant token in an HttpOnly, SameSite=Lax cookie scoped to that challenge's API, lasting one year (Secure over HTTPS). Only its SHA-256 hash is stored in Supabase. Keep using the same browser; a nickname cannot claim another device's attempt. Clearing cookies loses access. Nicknames, progress and scores are public as soon as someone joins. Nicknames are display names, unique case-insensitively within a challenge, not verified identities. This does not prevent someone clearing cookies and joining as a different person. Do not put private information in a nickname. IP addresses are used for in-memory rate limiting and are not saved in challenge tables.
+
+Each question is revealed separately by the server. Correct choices and explanations are withheld until that participant submits the answer or explicitly skips it. A correct answer earns 100, an incorrect answer or skip earns 0. Submitted answers are immutable; there is one scored attempt per participant token per challenge, and no restart/back operation. Running total and per-answer points appear during play, and per-round totals at each round end. The scoreboard is available at any time. Continue is explicit; feedback never auto-advances.
+
+A revealed unanswered question stays current across reconnects, including closing a tab. There is no timer or browser-close detection. Seeing the same question again cannot preview future questions or reset progress. Server progress is saved after every reveal, answer and Continue, so breaks between rounds and accidental disconnects are supported.
+
+Creation sets closure to exactly seven days later. Only submitting the final answer of a newly completed attempt can extend it: `min(created + 30 days, max(current closure, completion + 3 days))`. Visits, joins, incomplete rounds and repeat requests do not extend it. After closure the server refuses joining, revealing or answering; saved completed results, feedback navigation and the final leaderboard remain readable. There is no manual-close endpoint.
+
+All transitions run through one server-only Postgres RPC (`heritage_challenge_action`); mutating actions take a challenge row lock, which serializes concurrent tabs and completions. State reads and the separate set-based `heritage_challenge_scoreboard` RPC are lock-free, so shared-link traffic never blocks active players. RLS is enabled; anon/authenticated roles have no table or function access. Creation and joins use the existing per-IP rate limiter (5 creates and 20 joins per 600 seconds); read/play requests allow 240 per 600 seconds. Override via `NUXT_CHALLENGE_RATE_LIMIT_CREATE`, `_JOIN`, `_ACTION`, `_WINDOW_SECONDS`. The existing single-proxy and process-local rate-limit limitations apply. Mutation bodies require JSON, Content-Length and at most 2 KB; cross-origin browser writes are refused.
+
+### Verification and rollout
+
+`node scripts/test-challenges.mjs` creates uniquely named disposable Postgres/PostgREST containers, applies all migrations in order, runs the real Nuxt HTTP/RPC behavior suite, and removes only those containers. Docker is required; it never resets or migrates the shared local Supabase stack. CI runs this in addition to the regular tests. Coverage includes pre-answer secrecy, immutable submissions, concurrent answers, reconnects, progress ordering, skip scoring, token/nickname separation, ranks, snapshot isolation, expiry extension/cap, closed reads/refusals, public-role denial, validation and rate limits.
+
+Rollout uses the existing automatic [production database workflow](.github/workflows/production.yml), which applies `20261031000000_heritage_challenges.sql` and the additive `20261101000000_challenge_scoreboard.sql` before advancing the deployment branch. Both versions are strictly later than the pending `20261030000000_submission_places.sql`. Follow the [baseline, secrets and recovery instructions](docs/database.md); do not apply this manually to production or deploy ahead of migration. The server uses the existing server-only Supabase key and returns 503 when it is unconfigured. No production migration or deployment is part of this change.
 
 ## Languages
 

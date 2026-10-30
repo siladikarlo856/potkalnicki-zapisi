@@ -99,6 +99,30 @@ async function readPublic(limit?: number) {
   return await response.json() as PublicWords
 }
 
+describe('heritage learning and challenge choice', () => {
+  it.each([
+    { prefix: '', learning: 'Učenje', challenge: 'Izazov', start: 'Pokreni novi izazov' },
+    { prefix: '/en', learning: 'Learning', challenge: 'Challenge', start: 'Start a new challenge' }
+  ])('serves both modes and their real destinations at $prefix/heritage', async ({ prefix, learning, challenge, start }) => {
+    const response = await request(`${prefix}/heritage`)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    const { Window } = await import('happy-dom')
+    const window = new Window()
+    window.document.body.innerHTML = html
+    const choice = window.document.querySelector('[data-testid="heritage-mode-choice"]')!
+    expect(choice).not.toBeNull()
+    expect([...choice.querySelectorAll('h2')].map(h => h.textContent)).toEqual([learning, challenge])
+    expect([...choice.querySelectorAll('a')].map(a => a.getAttribute('href'))).toEqual([
+      `${prefix}/heritage/kviz`, `${prefix}/heritage/kartice`, `${prefix}/heritage/challenge`
+    ])
+    expect(choice.textContent).toContain(start)
+    expect(window.document.querySelector('#doprinos form')).not.toBeNull()
+    expect(window.document.querySelector('#uskoro')).not.toBeNull()
+    await window.happyDOM.close()
+  })
+})
+
 describe('word admin and public word APIs', () => {
   it('renders loading copy for client-fetched cards in both prerendered pages', async () => {
     for (const path of ['/', '/heritage/kartice']) {
