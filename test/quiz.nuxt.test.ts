@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createClient } from '@supabase/supabase-js'
 import { clearNuxtData, useNuxtApp } from '#imports'
@@ -177,6 +177,82 @@ describe('limited active words', () => {
       await expect.poll(() => page.findAll('[data-option-id]').length).toBe(count)
       expect(page.text()).toContain(`This word has ${count} distinct answer choices available.`)
       expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe('Questions answered')
+    }
+  })
+})
+
+describe.each([
+  { lang: 'hr' as const, next: 'Sljedeća riječ', results: 'Pogledaj rezultat', review: 'Riječi za ponavljanje', summary: 'Kaj to znači? 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 / 1', copy: 'Kopiraj rezultat', copied: 'Kopirano!', path: '/heritage/kviz' },
+  { lang: 'en' as const, next: 'Next word', results: 'See your score', review: 'Words to review', summary: 'Kaj to znači? 3/4', replay: 'Replay missed (1)', noMisses: 'No misses', counter: 'Question 1 / 1', copy: 'Copy result', copied: 'Copied!', path: '/en/heritage/kviz' }
+])('$lang quiz result', ({ lang, next, results, review, summary, replay, noMisses, counter, copy, copied, path }) => {
+  async function answerCurrent(page: Awaited<ReturnType<typeof mountQuiz>>, correct: boolean) {
+    const headword = page.get('#question-word').text()
+    const entry = seeds.find(word => word.headword === headword)!
+    const pick = correct ? entry.id : seeds.find(word => word.id !== entry.id)!.id
+    await page.get(`[data-option-id="${pick}"]`).trigger('click')
+    await page.findAll('button').find(button => [next, results].includes(button.text()))!.trigger('click')
+    return headword
+  }
+
+  it('reviews the missed word, replays only it, and shares a spoiler-free result', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    const page = await mountQuiz(lang)
+    await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
+    const missedWord = await answerCurrent(page, false)
+    for (let i = 0; i < 3; i++) await answerCurrent(page, true)
+
+    await expect.poll(() => page.find('[data-testid="quiz-review"]').exists()).toBe(true)
+    const reviewBox = page.get('[data-testid="quiz-review"]')
+    expect(reviewBox.text()).toContain(review)
+    const rows = reviewBox.findAll('li')
+    expect(rows).toHaveLength(1)
+    const entry = seeds.find(word => word.headword === missedWord)!
+    expect(rows[0]!.text()).toContain(missedWord)
+    expect(rows[0]!.text()).toContain(entry.meaning[lang])
+
+    // The shared text shows the score and one square per question, never a word.
+    const shared = page.get('[data-testid="quiz-share-text"]').text()
+    expect(shared).toContain(summary)
+    expect(shared).toContain('🟥🟩🟩🟩')
+    for (const word of seeds) expect(shared).not.toContain(word.headword)
+    await page.get('[data-testid="quiz-copy"]').trigger('click')
+    await expect.poll(() => writeText.mock.calls.length).toBe(1)
+    const copiedText = writeText.mock.calls[0]![0] as string
+    expect(copiedText).toContain(`${summary}\n🟥🟩🟩🟩\n`)
+    expect(copiedText.endsWith(path)).toBe(true)
+    await expect.poll(() => page.get('[data-testid="quiz-copy"]').text()).toBe(copied)
+    expect(copy).not.toBe(copied)
+
+    // Replaying the misses asks only that word, and a practice round is not shared.
+    const replayButton = page.get('[data-testid="quiz-replay-missed"]')
+    expect(replayButton.text()).toBe(replay)
+    await replayButton.trigger('click')
+    expect(page.text()).toContain(counter)
+    expect(page.get('#question-word').text()).toBe(missedWord)
+    await answerCurrent(page, true)
+    await expect.poll(() => page.find('[data-testid="quiz-review"]').exists()).toBe(true)
+    expect(page.get('[data-testid="quiz-review"]').text()).toContain(noMisses)
+    expect(page.find('[data-testid="quiz-replay-missed"]').exists()).toBe(false)
+    expect(page.find('[data-testid="quiz-share"]').exists()).toBe(false)
+  })
+
+  it('caps a round at ten questions however many words are active', async () => {
+    const extras = Array.from({ length: 9 }, (_, index) => ({
+      ...seeds[0]!, id: `extra-${index}`, headword: `extra-${index}`, meaning: { hr: `značenje ${index}`, en: `meaning ${index}` }, partOfSpeech: 'imenica', variants: []
+    }))
+    for (const entry of extras) {
+      const { error } = await db.from('heritage_words').insert({ id: entry.id, entry, areas: sampleAreas, active: true })
+      expect(error).toBeNull()
+    }
+    try {
+      const page = await mountQuiz(lang)
+      await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
+      // 13 active words, one round of ten.
+      expect(page.text()).toContain(lang === 'hr' ? 'Pitanje 1 / 10' : 'Question 1 / 10')
+      expect(page.text()).toContain(lang === 'hr' ? 'Bodovi: 0 / 10' : 'Score: 0 / 10')
+    } finally {
+      for (const entry of extras) await db.from('heritage_words').delete().eq('id', entry.id)
     }
   })
 })

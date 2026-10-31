@@ -368,7 +368,17 @@
     "flipCards": "Okreni karticu",
     "share": "Kod nas se kaže drugačije",
     "tryQuiz": "Isprobaj ponuđene odgovore",
-    "answeredProgress": "Odgovoreno {count} od {total} pitanja"
+    "answeredProgress": "Odgovoreno {count} od {total} pitanja",
+    "reviewTitle": "Riječi za ponavljanje",
+    "noMisses": "Bez pogreške — svi odgovori su točni.",
+    "replayMissed": "Ponovi pogrešne ({count})",
+    "shareTitle": "Podijeli rezultat",
+    "shareText": "Kaj to znači? {score}/{total}",
+    "copyResult": "Kopiraj rezultat",
+    "copied": "Kopirano!",
+    "nativeShare": "Podijeli",
+    "copyError": "Kopiranje nije uspjelo. Označi i kopiraj rezultat iz okvira.",
+    "shareError": "Dijeljenje nije uspjelo. Kopiraj rezultat i pošalji ga ekipi."
   },
   "a11y": {
     "newTab": "otvara se u novoj kartici",

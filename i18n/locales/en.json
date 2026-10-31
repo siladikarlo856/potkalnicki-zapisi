@@ -369,7 +369,17 @@
     "flipCards": "Try the flip cards",
     "share": "We say it differently here",
     "tryQuiz": "Try multiple choice",
-    "answeredProgress": "Answered {count} of {total} questions"
+    "answeredProgress": "Answered {count} of {total} questions",
+    "reviewTitle": "Words to review",
+    "noMisses": "No misses — every answer was right.",
+    "replayMissed": "Replay missed ({count})",
+    "shareTitle": "Share your result",
+    "shareText": "Kaj to znači? {score}/{total}",
+    "copyResult": "Copy result",
+    "copied": "Copied!",
+    "nativeShare": "Share",
+    "copyError": "Could not copy. Select and copy the result from the box.",
+    "shareError": "Sharing failed. Copy the result and send it to your friends."
   },
   "a11y": {
     "newTab": "opens in a new tab",
