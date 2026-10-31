@@ -79,6 +79,39 @@ async function complete(player: Player, game: ChallengeState, skip = true) {
 }
 
 describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
+  it('creates a challenge from the played quiz round and records the creator score immediately', async () => {
+    const player = client()
+    const response = await player.request('/api/challenges', {
+      nickname: 'Ana',
+      quiz: {
+        questions: [
+          { id: 'hiza', optionIds: ['vura', 'hiza', 'zdenec'] },
+          { id: 'zdenec', optionIds: ['zdenec', 'hiza', 'vura'] }
+        ],
+        results: [true, false]
+      }
+    })
+    const game = await state(response, 201)
+    expect(game).toMatchObject({
+      title: { hr: 'Kaj to znači? — izazov', en: 'Kaj to znači? — challenge' },
+      questionCount: 2,
+      maxScore: 200,
+      targetScore: 100,
+      participant: { nickname: 'Ana', phase: 'finished', total: 100, completedAt: expect.any(String) }
+    })
+    expect(game.participant!.rounds).toEqual([{ topic: { hr: 'Riječi', en: 'Words' }, count: 2, answered: 2, score: 100 }])
+
+    const guest = client()
+    const landing = await state(await guest.request(path(game)))
+    expect(landing).toMatchObject({ participant: null, targetScore: 100, questionCount: 2 })
+    const joined = await state(await guest.request(path(game, 'join'), { nickname: 'Iva' }))
+    const revealed = await state(await guest.request(path(joined, 'reveal'), {}))
+    expect(revealed.question).toMatchObject({
+      id: 'quiz-hiza',
+      options: [{ hr: 'sat', en: 'clock' }, { hr: 'kuća', en: 'house' }, { hr: 'bunar', en: 'well' }]
+    })
+  })
+
   it('lets any browser start separate challenges and share their independent links before play', async () => {
     const player = client()
     const first = (await create(player)).game
@@ -244,7 +277,7 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     const joiner = client()
     for (let i = 0; i < 3; i++) expect((await joiner.request(path(game, 'join'), { nickname: '<x>' })).status).toBe(400)
     expect((await joiner.request(path(game, 'join'), { nickname: 'Ana' })).status).toBe(429)
-    expect((await client().request('/api/challenges', { nickname: 'a'.repeat(3000) })).status).toBe(413)
+    expect((await client().request('/api/challenges', { nickname: 'a'.repeat(9000) })).status).toBe(413)
     const q = await state(await player.request(path(game, 'reveal'), {}))
     expect((await player.request(path(game, 'answer'), { questionId: q.question!.id, selected: 4 })).status).toBe(400)
     expect((await fetch(path(game, 'answer'), { method: 'POST', headers: { 'origin': 'https://other.example', 'content-type': 'application/json', 'cookie': player.cookie }, body: JSON.stringify({ questionId: q.question!.id, selected: 0 }) })).status).toBe(403)

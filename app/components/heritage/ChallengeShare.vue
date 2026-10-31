@@ -1,12 +1,43 @@
 <script setup lang="ts">
-const props = defineProps<{ code: string }>()
+import type { ChallengeState, QuizChallengeInput } from '../../../shared/utils/challenge'
+
+const props = defineProps<{ code?: string, quiz?: QuizChallengeInput }>()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const origin = ref('')
+const createdCode = ref(props.code ?? '')
 const copied = ref(false)
 const error = ref('')
 const nativeShare = ref(false)
-const link = computed(() => origin.value + localePath(`/heritage/challenge/${props.code}`))
+const nickname = ref('')
+const creating = ref(false)
+const link = computed(() => createdCode.value ? origin.value + localePath(`/heritage/challenge/${createdCode.value}`) : '')
+const shareText = computed(() => `${t('challenge.shareMessage')} ${link.value}`)
+const whatsapp = computed(() => `https://wa.me/?text=${encodeURIComponent(shareText.value)}`)
+const viber = computed(() => `viber://forward?text=${encodeURIComponent(shareText.value)}`)
+
+async function create() {
+  const name = challengeNickname(nickname.value)
+  if (!name) {
+    error.value = t('challenge.invalidNickname')
+    return
+  }
+  if (!props.quiz || creating.value) return
+  creating.value = true
+  error.value = ''
+  try {
+    const state = await $fetch<ChallengeState>('/api/challenges', {
+      method: 'POST',
+      body: { nickname: name, quiz: props.quiz }
+    })
+    createdCode.value = state.code
+  } catch (cause) {
+    const failure = cause as { status?: number, statusCode?: number }
+    error.value = (failure.status ?? failure.statusCode) === 429 ? t('challenge.limited') : t('challenge.createError')
+  } finally {
+    creating.value = false
+  }
+}
 
 async function copy() {
   error.value = ''
@@ -34,7 +65,55 @@ onMounted(() => {
 </script>
 
 <template>
-  <UCard data-testid="challenge-share">
+  <UCard
+    v-if="quiz && !createdCode"
+    data-testid="challenge-create"
+  >
+    <form
+      class="space-y-4"
+      @submit.prevent="create"
+    >
+      <div>
+        <h2 class="text-xl font-semibold">
+          {{ t('challenge.friendTitle') }}
+        </h2>
+        <p class="mt-2 text-sm text-muted">
+          {{ t('challenge.friendHelp') }}
+        </p>
+      </div>
+      <UFormField
+        :label="t('challenge.nickname')"
+        :help="t('challenge.nicknameHelp')"
+        required
+      >
+        <UInput
+          v-model="nickname"
+          name="nickname"
+          autocomplete="nickname"
+          :maxlength="24"
+          class="w-full"
+        />
+      </UFormField>
+      <UButton
+        type="submit"
+        icon="i-lucide-swords"
+        :loading="creating"
+      >
+        {{ t('challenge.friendCreate') }}
+      </UButton>
+      <p
+        v-if="error"
+        role="alert"
+        class="text-sm text-error"
+      >
+        {{ error }}
+      </p>
+    </form>
+  </UCard>
+  <UCard
+    v-else-if="createdCode"
+    data-testid="challenge-share"
+  >
     <div class="space-y-4">
       <h2 class="text-xl font-semibold">
         {{ t('challenge.share') }}
@@ -69,6 +148,27 @@ onMounted(() => {
           @click="share"
         >
           {{ t('challenge.nativeShare') }}
+        </UButton>
+        <UButton
+          :to="whatsapp"
+          target="_blank"
+          external
+          color="neutral"
+          variant="outline"
+          icon="i-simple-icons-whatsapp"
+          data-testid="challenge-whatsapp"
+        >
+          {{ t('challenge.whatsapp') }}
+        </UButton>
+        <UButton
+          :to="viber"
+          external
+          color="neutral"
+          variant="outline"
+          icon="i-simple-icons-viber"
+          data-testid="challenge-viber"
+        >
+          {{ t('challenge.viber') }}
         </UButton>
       </div>
       <p

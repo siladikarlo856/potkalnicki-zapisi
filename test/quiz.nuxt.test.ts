@@ -223,6 +223,7 @@ describe.each([
     expect(copiedText.endsWith(path)).toBe(true)
     await expect.poll(() => page.get('[data-testid="quiz-copy"]').text()).toBe(copied)
     expect(copy).not.toBe(copied)
+    expect(page.find('[data-testid="challenge-create"]').exists()).toBe(true)
 
     // Replaying the misses asks only that word, and a practice round is not shared.
     const replayButton = page.get('[data-testid="quiz-replay-missed"]')
@@ -235,6 +236,7 @@ describe.each([
     expect(page.get('[data-testid="quiz-review"]').text()).toContain(noMisses)
     expect(page.find('[data-testid="quiz-replay-missed"]').exists()).toBe(false)
     expect(page.find('[data-testid="quiz-share"]').exists()).toBe(false)
+    expect(page.find('[data-testid="challenge-create"]').exists()).toBe(false)
   })
 
   it('caps a round at ten questions however many words are active', async () => {

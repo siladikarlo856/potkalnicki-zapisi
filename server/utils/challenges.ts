@@ -1,10 +1,10 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { H3Event } from 'h3'
-import type { ChallengeState } from '../../shared/utils/challenge'
+import type { ChallengeContent, ChallengeState, QuizChallengeInput } from '../../shared/utils/challenge'
 import { challengeNickname } from '../../shared/utils/challenge'
-import { currentChallengeContent } from './challengeContent'
+import { currentChallengeContent, quizChallengeContent } from './challengeContent'
 
-const BODY_LIMIT = 2048
+const BODY_LIMIT = 8192
 
 export function challengeCode(event: H3Event) {
   const code = getRouterParam(event, 'code') ?? ''
@@ -65,18 +65,54 @@ export async function enterChallenge(event: H3Event, create: boolean) {
   const body = await challengeBody(event)
   const nickname = challengeNickname(body.nickname)
   if (!nickname) throw createError({ statusCode: 400, statusMessage: 'Invalid nickname' })
+  let content: ChallengeContent = currentChallengeContent
+  let quiz: QuizChallengeInput | null = null
+  if (create && body.quiz !== undefined) {
+    quiz = body.quiz as QuizChallengeInput
+    try {
+      content = quizChallengeContent(quiz, (await publicWords(100)).words)
+    } catch {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid quiz challenge' })
+    }
+  }
   const code = create ? randomBytes(12).toString('base64url') : challengeCode(event)
   const existing = participantHash(event, code)
   const token = existing ? null : randomBytes(32).toString('base64url')
-  const state = await challengeRpc(create ? 'create' : 'join', code, existing ?? tokenHash(token!), {
-    nickname, ...(create ? { content: currentChallengeContent } : {})
+  const hash = existing ?? tokenHash(token!)
+  let state = await challengeRpc(create ? 'create' : 'join', code, hash, {
+    nickname, ...(create ? { content } : {})
   })
+  if (quiz) state = await completeQuizChallenge(code, hash, content, quiz.results)
   if (token) setCookie(event, `heritage_${code}`, token, {
     httpOnly: true, secure: !import.meta.dev && getRequestURL(event).protocol === 'https:',
     sameSite: 'lax', path: `/api/challenges/${code}`, maxAge: 365 * 86400
   })
   setResponseStatus(event, create ? 201 : 200)
   return state
+}
+
+async function completeQuizChallenge(code: string, hash: string, content: ChallengeContent, results: boolean[]) {
+  let completed: ChallengeState | undefined
+  const questions = content.rounds.flatMap(round => round.questions)
+  for (const [index, question] of questions.entries()) {
+    await challengeRpc('reveal', code, hash)
+    let state = await challengeRpc('answer', code, hash, {
+      questionId: question.id,
+      selected: results[index] ? question.correct : (question.correct + 1) % question.options.length
+    })
+    state = await challengeRpc('continue', code, hash, {
+      phase: state.participant!.phase,
+      index: state.participant!.index
+    })
+    if (state.participant?.phase === 'round') {
+      state = await challengeRpc('continue', code, hash, {
+        phase: state.participant.phase,
+        index: state.participant.index
+      })
+    }
+    completed = state
+  }
+  return completed!
 }
 
 export async function readChallenge(event: H3Event) {

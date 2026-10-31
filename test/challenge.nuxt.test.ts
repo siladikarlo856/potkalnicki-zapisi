@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { useNuxtApp } from '#imports'
 import Challenge from '../app/components/heritage/ChallengeExperience.vue'
+import ChallengeShare from '../app/components/heritage/ChallengeShare.vue'
 import type { ChallengeState } from '../shared/utils/challenge'
 
 const code = 'componentproof1234'
@@ -16,6 +17,10 @@ const snapshot = (): ChallengeState => ({
   feedback: null
 })
 registerEndpoint(`/api/challenges/${code}`, () => snapshot())
+registerEndpoint('/api/challenges', () => ({
+  ...snapshot(),
+  participant: { nickname: 'Ana', phase: 'finished', index: 2, total: 100, completedAt: '2026-10-30T12:01:00Z', rounds: [{ topic: { hr: 'Riječi', en: 'Words' }, count: 2, answered: 2, score: 100 }] }
+}))
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
 const shareDescriptor = Object.getOwnPropertyDescriptor(navigator, 'share')
@@ -50,5 +55,36 @@ describe.each(['hr', 'en'] as const)('%s early challenge sharing', (locale) => {
     expect(copy).toHaveBeenCalledWith(link.value)
     await wrapper.get('[data-testid="challenge-native-share"]').trigger('click')
     expect(share).toHaveBeenCalledWith({ title: locale === 'hr' ? 'Izazov zavičaja' : 'Heritage challenge', url: link.value })
+    expect(wrapper.get('[data-testid="challenge-whatsapp"]').attributes('href')).toContain('https://wa.me/?text=')
+    expect(wrapper.get('[data-testid="challenge-viber"]').attributes('href')).toContain('viber://forward?text=')
+  })
+})
+
+describe.each([
+  { locale: 'hr' as const, create: 'Stvori izazov za prijatelja' },
+  { locale: 'en' as const, create: 'Create a friend challenge' }
+])('$locale quiz challenge creation', ({ locale, create }) => {
+  it('creates a completed challenge from the played round before offering every share action', async () => {
+    await useNuxtApp().$i18n.setLocale(locale)
+    wrapper = await mountSuspended(ChallengeShare, {
+      props: {
+        quiz: {
+          questions: [
+            { id: 'hiza', optionIds: ['hiza', 'vura'] },
+            { id: 'vura', optionIds: ['hiza', 'vura'] }
+          ],
+          results: [true, false]
+        }
+      } as never,
+      route: `${locale === 'en' ? '/en' : ''}/heritage/kviz`
+    })
+    expect(wrapper.get('[data-testid="challenge-create"]').text()).toContain(create)
+    await wrapper.get('input[name="nickname"]').setValue('Ana')
+    await wrapper.get('[data-testid="challenge-create"] form').trigger('submit')
+    await expect.poll(() => wrapper!.find('[data-testid="challenge-share-link"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="challenge-copy"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="challenge-native-share"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="challenge-whatsapp"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="challenge-viber"]').exists()).toBe(true)
   })
 })

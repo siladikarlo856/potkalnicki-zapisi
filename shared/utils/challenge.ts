@@ -13,6 +13,10 @@ export interface ChallengeContent {
   title: ChallengeText
   rounds: { id: string, topic: ChallengeText, questions: ChallengeQuestion[] }[]
 }
+export interface QuizChallengeInput {
+  questions: { id: string, optionIds: string[] }[]
+  results: boolean[]
+}
 export interface ChallengeRound {
   topic: ChallengeText
   count: number
