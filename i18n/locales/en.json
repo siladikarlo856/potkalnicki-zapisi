@@ -117,6 +117,80 @@
       "tryGame": "Try the word cards",
       "gameNote": "The word cards use Croatian words, with English meanings when available."
     },
+    "games": {
+      "title": "Games by topic",
+      "description": "Choose what you want to explore, then pick a game mechanic.",
+      "heroEyebrow": "Flagship game",
+      "heroTitle": "Words",
+      "heroDescription": "Read a local word, choose its meaning and learn something from the language of our region.",
+      "playHero": "Play Words",
+      "topicsTitle": "Choose a topic",
+      "topicsDescription": "More topics and mechanics are on the way.",
+      "openTopic": "See games",
+      "backToGames": "Back to all games",
+      "quizListTitle": "{topic} games",
+      "play": "Play",
+      "comingSoon": "Coming soon",
+      "notPlayable": "Not playable yet",
+      "emptyTopic": "There are no games in this topic yet.",
+      "mechanics": {
+        "multipleChoice": "Multiple choice",
+        "matching": "Matching",
+        "mapPin": "Map"
+      },
+      "topics": {
+        "words": {
+          "title": "Words",
+          "description": "Local words and expressions"
+        },
+        "churches": {
+          "title": "Churches",
+          "description": "Churches, names and saints"
+        },
+        "history": {
+          "title": "History",
+          "description": "People and events from the region"
+        },
+        "legends": {
+          "title": "Legends",
+          "description": "Stories that have been passed down"
+        },
+        "geography": {
+          "title": "Geography",
+          "description": "Places, villages and maps"
+        },
+        "famousPeople": {
+          "title": "Famous people",
+          "description": "People connected to our region"
+        },
+        "sport": {
+          "title": "Sport",
+          "description": "Clubs, players and local rivalries"
+        }
+      },
+      "quizzes": {
+        "wordsMultipleChoice": {
+          "title": "What does this word mean?",
+          "description": "Choose the English meaning of a Croatian local word."
+        },
+        "churchesMatching": {
+          "title": "Churches and their names",
+          "description": "Match each church with its name or patron saint."
+        },
+        "geographyMapPin": {
+          "title": "Find the village",
+          "description": "Locate a village on the county map."
+        },
+        "geographyMatching": {
+          "title": "Villages and municipalities",
+          "description": "Match each village with its municipality."
+        },
+        "sportMatching": {
+          "title": "Football clubs and villages",
+          "description": "Match each football club with its village."
+        }
+      }
+    },
     "form": {
       "title": "Share a word, expression or memory",
       "description": "Everything is reviewed before it appears anywhere. You don’t need an account.",

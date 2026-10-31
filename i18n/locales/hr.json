@@ -116,6 +116,80 @@
       "tryGame": "Isprobaj kartice",
       "gameNote": ""
     },
+    "games": {
+      "title": "Igre po temama",
+      "description": "Odaberi što želiš istražiti, a zatim način igranja.",
+      "heroEyebrow": "Glavna igra",
+      "heroTitle": "Riječi",
+      "heroDescription": "Pročitaj riječ našeg kraja, odaberi njezino značenje i nauči nešto iz jezika naše okolice.",
+      "playHero": "Igraj s riječima",
+      "topicsTitle": "Odaberi temu",
+      "topicsDescription": "Još tema i načina igranja tek pripremamo.",
+      "openTopic": "Pogledaj igre",
+      "backToGames": "Natrag na sve igre",
+      "quizListTitle": "Igre: {topic}",
+      "play": "Igraj",
+      "comingSoon": "Uskoro",
+      "notPlayable": "Još nije moguće igrati",
+      "emptyTopic": "U ovoj temi još nema igara.",
+      "mechanics": {
+        "multipleChoice": "Ponuđeni odgovori",
+        "matching": "Spajanje",
+        "mapPin": "Karta"
+      },
+      "topics": {
+        "words": {
+          "title": "Riječi",
+          "description": "Riječi i izrazi našeg kraja"
+        },
+        "churches": {
+          "title": "Crkve",
+          "description": "Crkve, imena i sveci"
+        },
+        "history": {
+          "title": "Povijest",
+          "description": "Ljudi i događaji iz kraja"
+        },
+        "legends": {
+          "title": "Legende",
+          "description": "Priče koje se prenose generacijama"
+        },
+        "geography": {
+          "title": "Geografija",
+          "description": "Mjesta, sela i karte"
+        },
+        "famousPeople": {
+          "title": "Poznati ljudi",
+          "description": "Ljudi povezani s našim krajem"
+        },
+        "sport": {
+          "title": "Sport",
+          "description": "Klubovi, igrači i lokalna rivalstva"
+        }
+      },
+      "quizzes": {
+        "wordsMultipleChoice": {
+          "title": "Što znači ova riječ?",
+          "description": "Odaberi značenje hrvatske lokalne riječi na engleskom."
+        },
+        "churchesMatching": {
+          "title": "Crkve i njihova imena",
+          "description": "Spoji crkvu s njezinim imenom ili zaštitnikom."
+        },
+        "geographyMapPin": {
+          "title": "Pronađi selo",
+          "description": "Pronađi selo na županijskoj karti."
+        },
+        "geographyMatching": {
+          "title": "Sela i općine",
+          "description": "Spoji svako selo s njegovom općinom."
+        },
+        "sportMatching": {
+          "title": "Nogometni klubovi i sela",
+          "description": "Spoji nogometni klub s njegovim selom."
+        }
+      }
+    },
     "form": {
       "title": "Pošalji riječ, izraz ili sjećanje",
       "description": "Sve pročitamo prije objave. Ne trebaš se registrirati.",

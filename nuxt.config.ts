@@ -50,6 +50,8 @@ export default defineNuxtConfig({
     '/en/heritage/kartice': { prerender: true },
     '/heritage/kviz': { prerender: true },
     '/en/heritage/kviz': { prerender: true },
+    '/heritage/igre/**': { prerender: true },
+    '/en/heritage/igre/**': { prerender: true },
     '/privacy': { prerender: true },
     '/en/privacy': { prerender: true },
     '/review': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },

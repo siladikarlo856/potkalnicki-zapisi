@@ -140,6 +140,42 @@ describe('heritage learning and challenge choice', () => {
   })
 })
 
+describe('heritage quiz catalog', () => {
+  it.each([
+    { prefix: '', hero: 'Riječi', play: 'Igraj s riječima', topic: 'Crkve', mechanic: 'Spajanje' },
+    { prefix: '/en', hero: 'Words', play: 'Play Words', topic: 'Churches', mechanic: 'Matching' }
+  ])('renders the localized catalog at $prefix/heritage', async ({ prefix, hero, play, topic, mechanic }) => {
+    const response = await request(`${prefix}/heritage`)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    const { Window } = await import('happy-dom')
+    const window = new Window()
+    window.document.body.innerHTML = html
+    const catalog = window.document.querySelector('[data-testid="quiz-catalog"]')!
+    expect(catalog).not.toBeNull()
+    expect(catalog.querySelector('[data-testid="quiz-hero"] h2')?.textContent).toBe(hero)
+    expect(catalog.querySelector('[data-testid="quiz-hero"] a')?.getAttribute('href')).toBe(`${prefix}/heritage/kviz`)
+    expect(catalog.querySelector('[data-testid="quiz-hero"]')?.textContent).toContain(play)
+    const churchCard = catalog.querySelector('[data-testid="topic-card-churches"]')!
+    expect(churchCard).not.toBeNull()
+    const churchLink = churchCard.matches('a') ? churchCard : churchCard.querySelector('a')
+    expect(churchLink?.getAttribute('href')).toBe(`${prefix}/heritage/igre/churches`)
+    expect(catalog.textContent).toContain(topic)
+
+    const topicResponse = await request(`${prefix}/heritage/igre/churches`)
+    expect(topicResponse.status).toBe(200)
+    const topicHtml = await topicResponse.text()
+    const topicWindow = new Window()
+    topicWindow.document.body.innerHTML = topicHtml
+    const quizList = topicWindow.document.querySelector('[data-testid="topic-quiz-list"]')!
+    expect(quizList).not.toBeNull()
+    expect(quizList.textContent).toContain(mechanic)
+    expect(quizList.querySelector('button[disabled]')).not.toBeNull()
+    await window.happyDOM.close()
+    await topicWindow.happyDOM.close()
+  })
+})
+
 describe('word admin and public word APIs', () => {
   it('renders loading copy for client-fetched cards in both prerendered pages', async () => {
     for (const path of ['/', '/heritage/kartice']) {
