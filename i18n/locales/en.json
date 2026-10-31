@@ -82,7 +82,8 @@
     "title": "Let’s talk",
     "description": "The easiest way to reach me is by email.",
     "pending": "Contact details coming soon.",
-    "email": "Email me"
+    "email": "Email me",
+    "social": "Find me on GitHub and LinkedIn."
   },
   "footer": {
     "copyright": "© {year} Karlo Siladi"

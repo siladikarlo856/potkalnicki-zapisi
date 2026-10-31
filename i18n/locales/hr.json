@@ -81,7 +81,8 @@
     "title": "Javi se",
     "description": "Najlakše ćeš me dobiti e-mailom.",
     "pending": "Kontaktni podaci uskoro.",
-    "email": "Pošalji e-mail"
+    "email": "Pošalji e-mail",
+    "social": "Pronađi me na GitHubu i LinkedInu."
   },
   "footer": {
     "copyright": "© {year} Karlo Siladi"
