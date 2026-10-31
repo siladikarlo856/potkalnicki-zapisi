@@ -101,9 +101,9 @@ async function readPublic(limit?: number) {
 
 describe('heritage learning and challenge choice', () => {
   it.each([
-    { prefix: '', learning: 'Uči', challenge: 'Izazov', startLearning: 'Počni učiti', startChallenge: 'Pokreni izazov' },
-    { prefix: '/en', learning: 'Learn', challenge: 'Challenge', startLearning: 'Start learning', startChallenge: 'Start challenge' }
-  ])('serves the separate learning and challenge destinations at $prefix/heritage', async ({ prefix, learning, challenge, startLearning, startChallenge }) => {
+    { prefix: '', learning: 'Uči', challenge: 'Izazov', startLearning: 'Počni učiti', quick: 'Brzi izazov', custom: 'Prilagođeni izazov', comingSoon: 'Uskoro' },
+    { prefix: '/en', learning: 'Learn', challenge: 'Challenge', startLearning: 'Start learning', quick: 'Quick challenge', custom: 'Custom challenge', comingSoon: 'Coming soon' }
+  ])('serves the separate learning and challenge destinations at $prefix/heritage', async ({ prefix, learning, challenge, startLearning, quick, custom, comingSoon }) => {
     const response = await request(`${prefix}/heritage`)
     expect(response.status).toBe(200)
     const html = await response.text()
@@ -117,7 +117,11 @@ describe('heritage learning and challenge choice', () => {
       `${prefix}/heritage/kartice`, `${prefix}/heritage/kviz`
     ])
     expect(choice.textContent).toContain(startLearning)
-    expect(choice.textContent).toContain(startChallenge)
+    const challengeChoice = choice.querySelector('[data-testid="challenge-mode-choice"]')!
+    expect(challengeChoice).not.toBeNull()
+    expect(challengeChoice.querySelector(`a[href="${prefix}/heritage/kviz"]`)?.textContent).toContain(quick)
+    expect(challengeChoice.textContent).toContain(custom)
+    expect(challengeChoice.querySelector('button[disabled]')?.textContent).toContain(comingSoon)
     expect(window.document.querySelector('#doprinos form')).not.toBeNull()
     expect(window.document.querySelector('#uskoro')).not.toBeNull()
     await window.happyDOM.close()
