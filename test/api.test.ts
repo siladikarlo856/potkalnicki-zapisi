@@ -101,9 +101,9 @@ async function readPublic(limit?: number) {
 
 describe('heritage learning and challenge choice', () => {
   it.each([
-    { prefix: '', learning: 'Učenje', challenge: 'Izazov', start: 'Pokreni novi izazov' },
-    { prefix: '/en', learning: 'Learning', challenge: 'Challenge', start: 'Start a new challenge' }
-  ])('serves both modes and their real destinations at $prefix/heritage', async ({ prefix, learning, challenge, start }) => {
+    { prefix: '', learning: 'Uči', challenge: 'Izazov', startLearning: 'Počni učiti', startChallenge: 'Pokreni izazov' },
+    { prefix: '/en', learning: 'Learn', challenge: 'Challenge', startLearning: 'Start learning', startChallenge: 'Start challenge' }
+  ])('serves the separate learning and challenge destinations at $prefix/heritage', async ({ prefix, learning, challenge, startLearning, startChallenge }) => {
     const response = await request(`${prefix}/heritage`)
     expect(response.status).toBe(200)
     const html = await response.text()
@@ -114,11 +114,28 @@ describe('heritage learning and challenge choice', () => {
     expect(choice).not.toBeNull()
     expect([...choice.querySelectorAll('h2')].map(h => h.textContent)).toEqual([learning, challenge])
     expect([...choice.querySelectorAll('a')].map(a => a.getAttribute('href'))).toEqual([
-      `${prefix}/heritage/kviz`, `${prefix}/heritage/kartice`, `${prefix}/heritage/challenge`
+      `${prefix}/heritage/kartice`, `${prefix}/heritage/kviz`
     ])
-    expect(choice.textContent).toContain(start)
+    expect(choice.textContent).toContain(startLearning)
+    expect(choice.textContent).toContain(startChallenge)
     expect(window.document.querySelector('#doprinos form')).not.toBeNull()
     expect(window.document.querySelector('#uskoro')).not.toBeNull()
+    await window.happyDOM.close()
+  })
+
+  it.each([
+    { prefix: '', label: 'Isprobaj izazov' },
+    { prefix: '/en', label: 'Try a challenge' }
+  ])('keeps the deliberate learning-to-challenge jump at $prefix/heritage/kartice', async ({ prefix, label }) => {
+    const response = await request(`${prefix}/heritage/kartice`)
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    const { Window } = await import('happy-dom')
+    const window = new Window()
+    window.document.body.innerHTML = html
+    const challengeLink = [...window.document.querySelectorAll('a')]
+      .find(link => link.getAttribute('href') === `${prefix}/heritage/kviz`)
+    expect(challengeLink?.textContent).toContain(label)
     await window.happyDOM.close()
   })
 })
@@ -543,7 +560,7 @@ describe('multiple-choice pages', () => {
     expect(html).toContain(loading)
     expect(html).not.toContain(empty)
     expect(html).toContain('role="status"')
-    expect(html).toContain(`${lang === 'en' ? '/en' : ''}/heritage/kartice`)
+    expect(html).not.toContain(`${lang === 'en' ? '/en' : ''}/heritage/kartice`)
   })
 })
 
