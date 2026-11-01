@@ -146,6 +146,10 @@ Copy `.env.example` to `.env` for local development (`pnpm dev:local` does it fo
 
 Nonempty `NUXT_` overrides win over `SUPABASE_URL` and `SUPABASE_API_KEY`. Keep the key in server environment variables; never put it in public runtime config or browser code. The runtime config defaults are empty, so production credentials can be supplied when the server starts.
 
+### Analytics
+
+Analytics use the [`nuxt-umami`](https://nuxt.com/modules/umami) module, configured in `nuxt.config.ts` with Umami Cloud (`https://cloud.umami.is`) and website ID `c554cf77-732f-4f2d-bfbc-5f0b78492f4c`. It runs in `cloak` proxy mode: the browser only talks to our own `/api/savory` route, which forwards to Umami, so ad blockers are less likely to drop events and the ID stays out of the client bundle. Tracking is limited to `karlo-siladi.from.hr` and ignores `localhost`. The module auto-tracks page views; `app/plugins/umami.client.ts` sets Umami's `umami.disabled` localStorage flag on `/admin` routes (see `shouldTrackPath`) so they are not counted. `NUXT_UMAMI_ID` and `NUXT_UMAMI_HOST` override the config. The site sets no Content-Security-Policy, so nothing needs allowing.
+
 ## Deploying on Hostinger
 
 The pages are still prerendered to static HTML at build time, but the form and the review page need the API, so the site has to run as a **Node.js app**, not as static files. The build output is a Node server in `.output/` that serves both the prerendered pages and the API.

@@ -3,7 +3,8 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@nuxtjs/i18n'
+    '@nuxtjs/i18n',
+    'nuxt-umami'
   ],
 
   devtools: {
@@ -74,5 +75,15 @@ export default defineNuxtConfig({
       { code: 'hr', language: 'hr-HR', name: 'Hrvatski', file: 'hr.json' },
       { code: 'en', language: 'en-GB', name: 'English', file: 'en.json' }
     ]
+  },
+
+  // Umami Cloud analytics, proxied through our own /api/savory route so ad blockers don't
+  // drop it. The module auto-tracks; app/plugins/umami.client.ts disables it on /admin.
+  umami: {
+    id: 'c554cf77-732f-4f2d-bfbc-5f0b78492f4c',
+    host: 'https://cloud.umami.is',
+    proxy: 'cloak',
+    domains: ['karlo-siladi.from.hr'],
+    ignoreLocalhost: true
   }
 })

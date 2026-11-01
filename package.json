@@ -30,6 +30,7 @@
     "@nuxtjs/i18n": "^10.6.0",
     "@supabase/supabase-js": "^2.118.0",
     "nuxt": "^4.6.2",
+    "nuxt-umami": "^3.2.1",
     "tailwindcss": "^4.3.3"
   },
   "pnpm": {

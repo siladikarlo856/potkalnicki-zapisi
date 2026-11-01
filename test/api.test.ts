@@ -738,3 +738,13 @@ describe('Supabase settings', () => {
     }
   })
 })
+
+describe('Umami analytics', () => {
+  for (const path of ['/', '/potkalnicko-prigorje', '/admin/prijava']) {
+    it(`serves ${path} without any third-party analytics script or website ID`, async () => {
+      const html = await (await fetch(path)).text()
+      expect(html).not.toContain('cloud.umami.is')
+      expect(html).not.toContain('c554cf77-732f-4f2d-bfbc-5f0b78492f4c')
+    })
+  }
+})
