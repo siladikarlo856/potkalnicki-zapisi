@@ -137,6 +137,10 @@ Copy `.env.example` to `.env` for local development (`pnpm dev:local` does it fo
 | `SUPABASE_API_KEY` | One server-only Supabase secret key (`sb_secret_...`, or the legacy `service_role` key), used for submissions and review. Hostinger supplies it. |
 | `NUXT_SUPABASE_SERVICE_ROLE_KEY` | Optional server-only override for `SUPABASE_API_KEY`. No duplicate key is needed. Local setup fills this automatically. |
 | `NUXT_REVIEW_SECRET` | Password for the review page, at least 16 characters. Generate one with `openssl rand -base64 24`. |
+| `NUXT_CHALLENGE_RATE_LIMIT_CREATE` | Optional. Challenge creations per IP per window, default `5`. |
+| `NUXT_CHALLENGE_RATE_LIMIT_JOIN` | Optional. Challenge joins per IP per window, default `20`. |
+| `NUXT_CHALLENGE_RATE_LIMIT_ACTION` | Optional. Challenge read/play requests per IP per window, default `240`. |
+| `NUXT_CHALLENGE_RATE_LIMIT_WINDOW_SECONDS` | Optional. Challenge rate-limit window in seconds, default `600`. |
 | `NUXT_SUBMISSION_RATE_LIMIT_MAX` | Optional. Submissions per IP per window, default `10`. |
 | `NUXT_SUBMISSION_RATE_LIMIT_WINDOW_SECONDS` | Optional. Rate limit window in seconds, default `600`. |
 
@@ -149,7 +153,7 @@ The pages are still prerendered to static HTML at build time, but the form and t
 1. **Create the Supabase project.** On [supabase.com](https://supabase.com), create a project and note its region. Put the region into the privacy notice, where `[ZA PROVJERU: ...]` / `[TO CHECK: ...]` marks the spot in `i18n/locales/hr.json` and `en.json`. Free projects pause after about a week without activity, so check the form now and then.
 2. **Set up migration history and automatic rollout.** Follow [the one-time database setup](docs/database.md#one-time-production-setup-owner): disable the existing app's auto-deploy from `main`, verify the schema, and record only already-applied migrations with `supabase migration repair --status applied`. Add `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_REF` in **GitHub → Settings → Secrets and variables → Actions**. For an empty new database, bootstrap with the CLI as described there. Never re-run all SQL files against an existing database with empty CLI history.
 3. **Create the Node.js app.** In hPanel, add a Node.js app for the domain and connect this repository (or upload the code). Use:
-   - Node.js version: 24 (or at least 22.21);
+   - Node.js version: `^22.21.0 || ^24.11.0 || >=26.0.0`;
    - install and build: `pnpm install` and `pnpm build` (or `npm install` and `npm run build` if pnpm is not offered);
    - start command: `node .output/server/index.mjs` (entry file `.output/server/index.mjs`).
    Hostinger sets the port; the server reads it from `PORT`. For an existing app, keep its current runtime/build settings.
@@ -198,7 +202,7 @@ pnpm test
 
 The app runs on your machine with `pnpm dev`; the database is the local [Supabase](https://supabase.com/docs/guides/local-development) stack (Postgres, the REST API and Studio), run in Docker by the Supabase CLI. Its configuration is in [`supabase/config.toml`](supabase/config.toml), and `supabase start` applies the migrations in `supabase/migrations/` to a fresh database. Only the services the site needs are enabled.
 
-**Prerequisites:** Node.js 22.21+ (24 in CI), pnpm (`corepack enable`), Docker Desktop running, and the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) (`brew install supabase/tap/supabase`).
+**Prerequisites:** Node.js `^22.21.0 || ^24.11.0 || >=26.0.0`, pnpm (`corepack enable`), Docker Desktop running, and the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) (`brew install supabase/tap/supabase`).
 
 **First run:**
 
