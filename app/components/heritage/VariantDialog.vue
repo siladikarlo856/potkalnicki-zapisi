@@ -60,11 +60,16 @@ function validate(): FormError[] {
   else if (state.variant.trim().length > VARIANT_REPORT_LIMITS.variant.max) errors.push({ name: 'variant', message: t('heritage.form.errors.tooLong', { max: VARIANT_REPORT_LIMITS.variant.max }) })
   if (state.example.trim().length > VARIANT_REPORT_LIMITS.example.max) errors.push({ name: 'example', message: t('heritage.form.errors.tooLong', { max: VARIANT_REPORT_LIMITS.example.max }) })
 
-  // The shared rules decide place, contact and consent; the sentence is built from the two fields above.
-  const result = validateSubmission({ text: text.value || 'xx', type: 'word', placeId: state.placeId, name: state.name, contact: state.contact, consentPublish: state.consentPublish, locale: locale.value })
-  if (!result.ok) errors.push(...toFormErrors(result.issues.filter(issue => issue.field !== 'text' && issue.field !== 'type')))
-  if (placeQuery.value.trim() && !state.placeId) errors.push({ name: 'place', message: t('heritage.places.choose') })
+  // The shared rules require a place for variant reports and check contact and consent; the sentence is built from the two fields above.
+  const result = validateSubmission({ text: text.value || 'xx', type: 'word', reportKind: 'variant', placeId: state.placeId, name: state.name, contact: state.contact, consentPublish: state.consentPublish, locale: locale.value })
+  if (!result.ok) errors.push(...dialogErrors(result.issues.filter(issue => issue.field !== 'text' && issue.field !== 'type')))
   return errors
+}
+
+function dialogErrors(issues: Parameters<typeof toFormErrors>[0]): FormError[] {
+  return issues.map(issue => issue.field === 'place'
+    ? { name: 'place', message: t('heritage.variantDialog.errors.placeRequired') }
+    : toFormErrors([issue])[0]!)
 }
 
 async function send() {
@@ -73,6 +78,7 @@ async function send() {
   const outcome = await submit({
     text: text.value,
     type: 'word',
+    reportKind: 'variant',
     placeId: state.placeId,
     name: state.name,
     contact: state.contact,
@@ -85,7 +91,7 @@ async function send() {
     closeButton.value?.$el.focus()
     return
   }
-  if (outcome.issues) form.value?.setErrors(toFormErrors(outcome.issues.filter(issue => issue.field !== 'text' && issue.field !== 'type')))
+  if (outcome.issues) form.value?.setErrors(dialogErrors(outcome.issues.filter(issue => issue.field !== 'text' && issue.field !== 'type')))
   sendError.value = outcome.message
   sendState.value = 'error'
 }
@@ -178,12 +184,14 @@ async function send() {
 
           <UFormField
             name="place"
-            :label="t('heritage.form.place')"
+            :label="t('heritage.variantDialog.place')"
             :help="t('heritage.places.help')"
+            required
           >
             <HeritagePlacePicker
               v-model="state.placeId"
               v-model:query="placeQuery"
+              required
               @selection="form?.clear('place')"
             />
           </UFormField>

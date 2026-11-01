@@ -18,6 +18,15 @@ describe('validateSubmission', () => {
     })
   })
 
+  it('requires a place only for variant reports', () => {
+    for (const placeId of [undefined, null, '', '   ']) {
+      expect(issuesOf({ ...valid, reportKind: 'variant', placeId })).toEqual([{ field: 'place', code: 'required' }])
+      expect(issuesOf({ ...valid, placeId })).toEqual([])
+    }
+    expect(issuesOf({ ...valid, reportKind: 'variant', placeId: 'geonames:3194024' })).toEqual([])
+    expect(issuesOf({ ...valid, reportKind: 'variant', placeId: 'forged' })).toContainEqual({ field: 'place', code: 'invalid' })
+  })
+
   it('accepts every field filled in', () => {
     const result = validateSubmission({ ...valid, type: 'expression', placeId: 'geonames:3194024', name: 'Ana', contact: 'ana@example.com', locale: 'en' })
     expect(result.ok).toBe(true)

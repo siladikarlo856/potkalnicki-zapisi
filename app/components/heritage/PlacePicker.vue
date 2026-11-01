@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { PlaceOption, PlaceSearchResponse } from '../../../shared/types/place'
 
+const props = defineProps<{ required?: boolean }>()
 const placeId = defineModel<string | null>({ required: true })
 const query = defineModel<string>('query', { required: true })
 const emit = defineEmits<{ selection: [id: string | null] }>()
 const { t } = useI18n()
+const placeText = (key: 'error' | 'empty' | 'clear') => t(`heritage.${props.required ? 'variantDialog.places' : 'places'}.${key}`)
 const input = useTemplateRef('input')
 const listboxId = `places-${useId()}`
 const selected = ref<PlaceOption | null>(null)
@@ -182,7 +184,7 @@ onScopeDispose(cancel)
           v-if="!results.length"
           class="px-3 py-2 text-sm text-muted"
         >
-          {{ loading ? t('heritage.places.loading') : failed ? t('heritage.places.error') : query.trim().length < 2 ? t('heritage.places.minimum') : t('heritage.places.empty') }}
+          {{ loading ? t('heritage.places.loading') : failed ? placeText('error') : query.trim().length < 2 ? t('heritage.places.minimum') : placeText('empty') }}
         </p>
         <div
           v-for="(place, index) in results"
@@ -222,13 +224,13 @@ onScopeDispose(cancel)
         v-else-if="failed"
         class="text-error"
       >
-        {{ t('heritage.places.error') }}
+        {{ placeText('error') }}
       </p>
       <p
         v-else-if="searched && !results.length"
         class="text-muted"
       >
-        {{ t('heritage.places.empty') }}
+        {{ placeText('empty') }}
       </p>
       <span
         v-else-if="searched"
@@ -248,7 +250,7 @@ onScopeDispose(cancel)
         @click="retry"
       />
       <UButton
-        :label="t('heritage.places.clear')"
+        :label="placeText('clear')"
         color="neutral"
         variant="ghost"
         size="xs"

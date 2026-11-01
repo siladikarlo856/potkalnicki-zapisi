@@ -91,6 +91,8 @@ export function validateSubmission(input: unknown): SubmissionValidation {
     if (typeof body.place !== 'string' || body.place.trim()) issues.push({ field: 'place', code: 'refreshPlace' })
   }
   const placeId = optionalText(body.placeId, 'place', 40, issues)
+  // Variant reports need a location; ordinary contributions may still omit it.
+  if (body.reportKind === 'variant' && !placeId && !issues.some(issue => issue.field === 'place')) issues.push({ field: 'place', code: 'required' })
   if (placeId && !/^geonames:[0-9]{1,10}$/.test(placeId)) issues.push({ field: 'place', code: 'invalid' })
   const name = optionalText(body.name, 'name', SUBMISSION_LIMITS.name.max, issues)
   const contact = optionalText(body.contact, 'contact', SUBMISSION_LIMITS.contact.max, issues)

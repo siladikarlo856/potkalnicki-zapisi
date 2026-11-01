@@ -240,12 +240,19 @@
       "meaning": "Značenje",
       "variant": "Kako se to kaže kod vas?",
       "variantHelp": "Riječ ili izraz onako kako ga ti govoriš",
+      "place": "Gdje se tako govori?",
+      "places": {
+        "error": "Pretraživanje mjesta nije dostupno. Pokušaj ponovno.",
+        "empty": "Nema pronađenog naselja. Provjeri naziv i pokušaj ponovno.",
+        "clear": "Obriši odabrano mjesto"
+      },
       "example": "Primjer rečenice (neobavezno)",
       "examplePlaceholder": "npr. rečenica u kojoj se ta riječ koristi",
       "exampleLine": "Primjer:",
       "cancel": "Odustani",
       "errors": {
-        "variantRequired": "Upiši kako se ova riječ kaže kod vas."
+        "variantRequired": "Upiši kako se ova riječ kaže kod vas.",
+        "placeRequired": "Odaberi mjesto gdje se tako govori."
       }
     },
     "places": {

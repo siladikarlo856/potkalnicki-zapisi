@@ -45,7 +45,16 @@ async function open(props: { open?: boolean } = {}) {
   return wrapper
 }
 
+async function choosePlace() {
+  field<HTMLInputElement>('[role="combobox"]').focus()
+  await type(field<HTMLInputElement>('[role="combobox"]'), 'Zag')
+  await vi.waitFor(() => expect(dialog()!.querySelector('[role="option"]')).not.toBeNull())
+  dialog()!.querySelector<HTMLElement>('[role="option"]')!.click()
+  await nextTick()
+}
+
 async function fillRequired() {
+  await choosePlace()
   await type(field<HTMLInputElement>('input[name="variant"]'), 'kruh')
   field<HTMLInputElement>('[role="checkbox"], input[type="checkbox"]').click()
   await nextTick()
@@ -62,7 +71,7 @@ describe('variant dialog', () => {
     expect(shown.textContent).toContain(word.meaning.hr)
     expect(shown.querySelector('input, textarea')).toBeNull()
     await vi.waitFor(() => expect(document.activeElement).toBe(field('input[name="variant"]')))
-    for (const label of ['Kako se to kaže kod vas?', 'Gdje se tako govori? (neobavezno)', 'Primjer rečenice (neobavezno)', 'Tvoje ime (neobavezno)', 'Kontakt (neobavezno)']) {
+    for (const label of ['Kako se to kaže kod vas?', 'Gdje se tako govori?', 'Primjer rečenice (neobavezno)', 'Tvoje ime (neobavezno)', 'Kontakt (neobavezno)']) {
       expect(root.textContent).toContain(label)
     }
   })
@@ -82,21 +91,33 @@ describe('variant dialog', () => {
     expect(posted).toHaveLength(0)
   })
 
+  it('requires a selected place even when the variant and consent are given', async () => {
+    await open()
+    await type(field<HTMLInputElement>('input[name="variant"]'), 'kruh')
+    field<HTMLInputElement>('[role="checkbox"], input[type="checkbox"]').click()
+    button('Pošalji').click()
+    await vi.waitFor(() => expect(dialog()!.textContent).toContain('Odaberi mjesto gdje se tako govori.'))
+    expect(field('[role="combobox"]').getAttribute('aria-invalid')).toBe('true')
+    expect(dialog()!.textContent).not.toContain('Gdje se tako govori? (neobavezno)')
+    expect(dialog()!.textContent).not.toContain('nastavi bez mjesta')
+    expect(posted).toHaveLength(0)
+    await choosePlace()
+    expect(dialog()!.textContent).not.toContain('Odaberi mjesto gdje se tako govori.')
+    button('Pošalji').click()
+    await vi.waitFor(() => expect(posted).toHaveLength(1))
+  })
+
   it('sends the word-referencing payload and then thanks the visitor', async () => {
     await open()
     await fillRequired()
     await type(field<HTMLTextAreaElement>('textarea'), 'Daj mi kruh.')
     await type(field<HTMLInputElement>('input[name="name"], input[autocomplete="name"]'), 'Ana')
-    field<HTMLInputElement>('[role="combobox"]').focus()
-    await type(field<HTMLInputElement>('[role="combobox"]'), 'Zag')
-    await vi.waitFor(() => expect(dialog()!.querySelector('[role="option"]')).not.toBeNull())
-    dialog()!.querySelector<HTMLElement>('[role="option"]')!.click()
-    await nextTick()
     button('Pošalji').click()
     await vi.waitFor(() => expect(posted).toHaveLength(1))
     expect(posted[0]).toMatchObject({
       text: `Umjesto „${word.headword}“ kod nas se kaže: kruh\nPrimjer: Daj mi kruh.`,
       type: 'word',
+      reportKind: 'variant',
       placeId: 'geonames:3186886',
       name: 'Ana',
       consentPublish: true,

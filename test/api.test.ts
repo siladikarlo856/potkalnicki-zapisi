@@ -329,6 +329,18 @@ describe('admin session', () => {
 })
 
 describe('POST /api/submissions', () => {
+  it('requires a valid place for variant reports while ordinary word contributions may omit it', async () => {
+    const text = 'variant place validation test'
+    for (const placeId of [undefined, null, '', '   ', 'forged', 'geonames:9999999999', 'geonames:3194379']) {
+      const response = await submit({ ...valid, type: 'word', reportKind: 'variant', text, placeId })
+      expect(response.status).toBe(400)
+      expect((await response.json()).data.issues).toContainEqual(expect.objectContaining({ field: 'place', code: !placeId?.trim() ? 'required' : placeId === 'geonames:3194379' ? 'outOfScope' : 'invalid' }))
+    }
+    expect((await listAll()).some(row => row.text === text)).toBe(false)
+    expect((await submit({ ...valid, type: 'word', text: 'general word without place', placeId: null })).status).toBe(201)
+    expect((await submit({ ...valid, type: 'word', reportKind: 'variant', text: 'variant with valid place' })).status).toBe(201)
+  })
+
   it('stores a valid submission as pending, with the consent recorded', async () => {
     const response = await submit({ ...valid, text: 'stored submission' })
     expect(response.status).toBe(201)
