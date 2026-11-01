@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import atlasPrerenderRoutes from './content/atlas/prerender-routes.json'
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
@@ -53,11 +55,24 @@ export default defineNuxtConfig({
     '/potkalnicko-prigorje/doprinesi': { prerender: true },
     '/potkalnicko-prigorje/o-projektu': { prerender: true },
     '/potkalnicko-prigorje/privatnost': { prerender: true },
+    '/potkalnicko-prigorje/istrazi': { prerender: true },
+    '/potkalnicko-prigorje/istrazi/**': { prerender: true },
+    '/potkalnicko-prigorje/naselja/**': { prerender: true },
+    '/potkalnicko-prigorje/bastina': { prerender: true },
+    '/potkalnicko-prigorje/bastina/**': { prerender: true },
     '/admin/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
     '/api/**': { headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }
   },
 
   compatibilityDate: '2026-06-30',
+
+  hooks: {
+    'nitro:config'(nitroConfig) {
+      nitroConfig.prerender = nitroConfig.prerender ?? {}
+      const existing = nitroConfig.prerender.routes ?? []
+      nitroConfig.prerender.routes = [...existing, ...atlasPrerenderRoutes]
+    }
+  },
 
   eslint: {
     config: {

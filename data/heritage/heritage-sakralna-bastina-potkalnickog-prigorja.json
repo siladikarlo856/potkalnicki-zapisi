@@ -1,0 +1,2702 @@
+{
+  "schemaVersion": "1.0.0",
+  "title": "Sakralna baština Potkalničkog prigorja",
+  "language": "hr",
+  "generatedAt": "2026-11-01",
+  "scope": {
+    "description": "Radni administrativni obuhvat za digitalni katalog; ne predstavlja konačnu znanstvenu granicu Potkalničkog prigorja.",
+    "municipalities": [
+      "Grad Križevci",
+      "Općina Kalnik",
+      "Općina Gornja Rijeka",
+      "Općina Sveti Petar Orehovec",
+      "Općina Sveti Ivan Žabno"
+    ]
+  },
+  "methodology": {
+    "importantNotice": "Ovo je početni istraživački inventar sastavljen iz prethodno prikupljenih popisa i prostornih/konzervatorskih navoda. Nije službeni ni iscrpan inventar. Nazive, lokacije, postojanje objekata, registarske oznake i aktualni status treba provjeriti u primarnim izvorima i na terenu.",
+    "statusDefinitions": {
+      "protected": "Predloženi status za dobra za koja je u početnom popisu navedena registarska oznaka; aktualni upis još treba provjeriti.",
+      "needs_verification": "Objekt je naveden u izvoru ili početnom popisu, ali status nije potvrđen.",
+      "historical_site": "Povijesni ili arheološki lokalitet; ne podrazumijeva postojanje sačuvane građevine."
+    },
+    "researchStatusDefinitions": {
+      "unverified": "Potrebna provjera primarnog izvora, točnog naziva, položaja i današnjeg stanja.",
+      "partially_verified": "Postoje povijesni navodi, ali zapis nije potpuno provjeren."
+    }
+  },
+  "categories": [
+    "church",
+    "cathedral",
+    "chapel",
+    "chapel-shrine",
+    "wayside-shrine",
+    "cross",
+    "statue",
+    "monastery",
+    "archaeological-site",
+    "historical-site"
+  ],
+  "sources": [
+    {
+      "id": "registar-kulturnih-dobara",
+      "title": "Registar kulturnih dobara Republike Hrvatske",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/"
+    },
+    {
+      "id": "konzervatorska-studija-kkz-1999",
+      "title": "Konzervatorska studija Koprivničko-križevačke županije (1999.)",
+      "type": "conservation_study",
+      "url": null
+    },
+    {
+      "id": "izvjesce-grad-krizevci",
+      "title": "Izvješće o stanju u prostoru Grada Križevaca",
+      "type": "planning_document",
+      "url": null
+    },
+    {
+      "id": "grad-krizevci-sakralni-objekti",
+      "title": "Službene stranice Grada Križevaca – sakralni objekti",
+      "type": "municipal_source",
+      "url": "https://www.krizevci.hr/"
+    },
+    {
+      "id": "prostorni-plan-opcine-kalnik",
+      "title": "Prostorni plan uređenja Općine Kalnik",
+      "type": "planning_document",
+      "url": null
+    },
+    {
+      "id": "strateski-program-opcine-kalnik",
+      "title": "Strateški razvojni program Općine Kalnik",
+      "type": "development_document",
+      "url": null
+    },
+    {
+      "id": "prostorni-plan-opcine-gornja-rijeka",
+      "title": "Prostorni plan uređenja Općine Gornja Rijeka",
+      "type": "planning_document",
+      "url": null
+    },
+    {
+      "id": "prostorni-plan-opcine-sveti-petar-orehovec",
+      "title": "Prostorni plan uređenja Općine Sveti Petar Orehovec",
+      "type": "planning_document",
+      "url": null
+    },
+    {
+      "id": "prostorni-plan-opcine-sveti-ivan-zabno",
+      "title": "Prostorni plan uređenja Općine Sveti Ivan Žabno – prijedlog izmjena 2025.",
+      "type": "planning_document",
+      "url": null
+    },
+    {
+      "id": "hrz-vojakovac",
+      "title": "Hrvatski restauratorski zavod – dokumentacija o ikonostasu u Vojakovcu",
+      "type": "conservation_document",
+      "url": "https://www.hrz.hr/"
+    }
+  ],
+  "items": [
+    {
+      "id": "križevci-crkva-sv-ane",
+      "slug": "crkva-sv-ane",
+      "name": "Crkva sv. Ane",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Križevci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "grad-krizevci-sakralni-objekti"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pavlinski samostanski sklop; povijesni podaci o pavlinima i župnom statusu trebaju izvorno potvrđivanje."
+    },
+    {
+      "id": "križevci-crkva-sv-kriza",
+      "slug": "crkva-sv-kriza",
+      "name": "Crkva sv. Križa",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Križevci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "grad-krizevci-sakralni-objekti"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "U literaturi se navodi 1232. godina; provjeriti kronologiju i inventar."
+    },
+    {
+      "id": "križevci-katedrala-presvetog-trojstva",
+      "slug": "katedrala-presvetog-trojstva",
+      "name": "Katedrala Presvetog Trojstva",
+      "category": "cathedral",
+      "municipality": "Grad Križevci",
+      "settlement": "Križevci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "grad-krizevci-sakralni-objekti"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Sjedište grkokatoličke eparhije; zasebno obraditi grkokatoličku baštinu."
+    },
+    {
+      "id": "križevci-crkva-majke-bozje-koruske",
+      "slug": "crkva-majke-bozje-koruske",
+      "name": "Crkva Majke Božje Koruške",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Križevci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "grad-krizevci-sakralni-objekti"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni sakralni objekt Križevaca."
+    },
+    {
+      "id": "križevci-crkva-sv-florijana",
+      "slug": "crkva-sv-florijana",
+      "name": "Crkva sv. Florijana",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Križevci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "grad-krizevci-sakralni-objekti"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Manji sakralni objekt; provjeriti službeni naziv i status."
+    },
+    {
+      "id": "križevci-kapela-sv-marka-krizevcanina",
+      "slug": "kapela-sv-marka-krizevcanina",
+      "name": "Kapela sv. Marka Križevčanina",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Križevci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "grad-krizevci-sakralni-objekti"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Provjeriti točan naziv, lokaciju i status."
+    },
+    {
+      "id": "križevci-crkva-sv-save",
+      "slug": "crkva-sv-save",
+      "name": "Crkva sv. Save",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Križevci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "grad-krizevci-sakralni-objekti"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pravoslavna sakralna baština; provjeriti titular i status."
+    },
+    {
+      "id": "križevci-kapela-sv-roka",
+      "slug": "kapela-sv-roka",
+      "name": "Kapela sv. Roka",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Križevci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "grad-krizevci-sakralni-objekti"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Provjeriti lokaciju i je li riječ o samostalnom objektu ili povijesnom lokalitetu."
+    },
+    {
+      "id": "apatovec-crkva-sv-petra",
+      "slug": "crkva-sv-petra",
+      "name": "Crkva sv. Petra",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Apatovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-1781",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Registarsku oznaku i aktualni status provjeriti u Registru kulturnih dobara RH."
+    },
+    {
+      "id": "carevdar-crkva-sv-barbare",
+      "slug": "crkva-sv-barbare",
+      "name": "Crkva sv. Barbare",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Carevdar",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-7511",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Registarsku oznaku i aktualni status provjeriti u Registru kulturnih dobara RH."
+    },
+    {
+      "id": "donja-glogovnica-crkva-uznesenja-blazene-djevice-marije",
+      "slug": "crkva-uznesenja-blazene-djevice-marije",
+      "name": "Crkva Uznesenja Blažene Djevice Marije",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Donja Glogovnica",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-2215",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Srednjovjekovni sakralni sklop; istražiti sepulkralce i starije arhitektonske faze."
+    },
+    {
+      "id": "đurđic-crkva-sv-jurja",
+      "slug": "crkva-sv-jurja",
+      "name": "Crkva sv. Jurja",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Đurđic",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-7540",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Registarsku oznaku i aktualni status provjeriti u Registru kulturnih dobara RH."
+    },
+    {
+      "id": "erdovec-crkva-sv-katarine",
+      "slug": "crkva-sv-katarine",
+      "name": "Crkva sv. Katarine",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Erdovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-1899",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "U izvorima se spominje starija drvena kapela; razlučiti povijest starije i današnje građevine."
+    },
+    {
+      "id": "gornji-dubovec-crkva-sv-margarete",
+      "slug": "crkva-sv-margarete",
+      "name": "Crkva sv. Margarete",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Gornji Dubovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-3369",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Registarsku oznaku i aktualni status provjeriti u Registru kulturnih dobara RH."
+    },
+    {
+      "id": "mali-raven-zupna-crkva-presvetog-srca-isusova-i-sv-ladislava",
+      "slug": "zupna-crkva-presvetog-srca-isusova-i-sv-ladislava",
+      "name": "Župna crkva Presvetog Srca Isusova i sv. Ladislava",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Mali Raven",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-7559",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Provjeriti titular i povijesne faze; u ranijim bilješkama spominje se sv. Ladislav."
+    },
+    {
+      "id": "osijek-vojakovački-crkva-sv-nikolaja",
+      "slug": "crkva-sv-nikolaja",
+      "name": "Crkva sv. Nikolaja",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Osijek Vojakovački",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-1782",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pravoslavna crkva; u ranijem opisu navodi se gradnja 1763."
+    },
+    {
+      "id": "sveta-helena-kapela-sv-helene",
+      "slug": "kapela-sv-helene",
+      "name": "Kapela sv. Helene",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Sveta Helena",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-7539",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Registarsku oznaku i aktualni status provjeriti u Registru kulturnih dobara RH."
+    },
+    {
+      "id": "vojakovac-crkva-sv-velikomucenika-georgija",
+      "slug": "crkva-sv-velikomucenika-georgija",
+      "name": "Crkva sv. Velikomučenika Georgija",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Vojakovac",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-2500",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pravoslavna crkva; istražiti ikonostas i restauratorsku dokumentaciju."
+    },
+    {
+      "id": "ruševac-crkva-predragocjene-krvi-kristove",
+      "slug": "crkva-predragocjene-krvi-kristove",
+      "name": "Crkva Predragocjene Krvi Kristove",
+      "category": "church",
+      "municipality": "Grad Križevci",
+      "settlement": "Ruševac",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "P-4821",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999",
+        "izvjesce-grad-krizevci"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Oznaku P-4821 tretirati kao preliminarnu; provjeriti aktualni status."
+    },
+    {
+      "id": "apatovec-kapela-sv-petra-starija-kapela-sv-helene",
+      "slug": "kapela-sv-petra-starija-kapela-sv-helene",
+      "name": "Kapela sv. Petra (starija kapela sv. Helene)",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Apatovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Naziv i odnos prema današnjoj crkvi sv. Petra zahtijevaju razjašnjenje."
+    },
+    {
+      "id": "bojnikovec-kapela-uzasasca-gospodinova",
+      "slug": "kapela-uzasasca-gospodinova",
+      "name": "Kapela Uzašašća Gospodinova",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Bojnikovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "carevdar-kapela-na-groblju",
+      "slug": "kapela-na-groblju",
+      "name": "Kapela na groblju",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Carevdar",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "donja-brckovština-kapela-sv-brcka-sv-elizabete",
+      "slug": "kapela-sv-brcka-sv-elizabete",
+      "name": "Kapela sv. Brcka (sv. Elizabete)",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Donja Brckovština",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Provjeriti titular jer se u ranijem popisu pojavljuju dvije varijante."
+    },
+    {
+      "id": "đurđic-kapela-kalvarije",
+      "slug": "kapela-kalvarije",
+      "name": "Kapela Kalvarije",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Đurđic",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "erdovec-stara-drvena-kapela-sv-katarine",
+      "slug": "stara-drvena-kapela-sv-katarine",
+      "name": "Stara drvena kapela sv. Katarine",
+      "category": "historical-site",
+      "municipality": "Grad Križevci",
+      "settlement": "Erdovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Prema ranijem navodu srušena oko 1935.; evidentirati kao nestali objekt, ne kao postojeću kapelu."
+    },
+    {
+      "id": "greberanec-kapela-sv-vurija",
+      "slug": "kapela-sv-vurija",
+      "name": "Kapela sv. Vurija",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Greberanec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Lokalni naziv titulara treba provjeriti."
+    },
+    {
+      "id": "kloštar-vojakovački-kapela-sv-vida",
+      "slug": "kapela-sv-vida",
+      "name": "Kapela sv. Vida",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Kloštar Vojakovački",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "majurec-kapela-sv-leopolda-mandica",
+      "slug": "kapela-sv-leopolda-mandica",
+      "name": "Kapela sv. Leopolda Mandića",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Majurec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "mali-potočec-kapela-sv-benedikta",
+      "slug": "kapela-sv-benedikta",
+      "name": "Kapela sv. Benedikta",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Mali Potočec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "novi-bošnjani-kapela-sv-nikole",
+      "slug": "kapela-sv-nikole",
+      "name": "Kapela sv. Nikole",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Novi Bošnjani",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "poljana-kapela-sv-mihaela",
+      "slug": "kapela-sv-mihaela",
+      "name": "Kapela sv. Mihaela",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Poljana",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "povelič-kapela-sv-duha",
+      "slug": "kapela-sv-duha",
+      "name": "Kapela sv. Duha",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Povelič",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "povelič-poklonac-presvetog-trojstva",
+      "slug": "poklonac-presvetog-trojstva",
+      "name": "Poklonac Presvetog Trojstva",
+      "category": "wayside-shrine",
+      "municipality": "Grad Križevci",
+      "settlement": "Povelič",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "prikraj-križevački-kapela-presvetog-srca-isusova",
+      "slug": "kapela-presvetog-srca-isusova",
+      "name": "Kapela Presvetog Srca Isusova",
+      "category": "chapel",
+      "municipality": "Grad Križevci",
+      "settlement": "Prikraj Križevački",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "kalnik-crkva-sv-brcka",
+      "slug": "crkva-sv-brcka",
+      "name": "Crkva sv. Brcka",
+      "category": "church",
+      "municipality": "Općina Kalnik",
+      "settlement": "Kalnik",
+      "period": "14. stoljeće i kasnije",
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-kalnik",
+        "strateski-program-opcine-kalnik",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Srednjovjekovna crkva podno utvrde Veliki Kalnik; poznata po zidnim oslicima. Razlikovati dataciju gradnje, župni status i posvete."
+    },
+    {
+      "id": "kamešnica-crkva-sv-andrije",
+      "slug": "crkva-sv-andrije",
+      "name": "Crkva sv. Andrije",
+      "category": "church",
+      "municipality": "Općina Kalnik",
+      "settlement": "Kamešnica",
+      "period": "1377. i kasnije",
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-kalnik",
+        "strateski-program-opcine-kalnik",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "U literaturi se navodi gradnja kamene crkve 1377. na mjestu starije građevine."
+    },
+    {
+      "id": "vojnovec-kalnički-kapela-sv-martina-s-grobljem",
+      "slug": "kapela-sv-martina-s-grobljem",
+      "name": "Kapela sv. Martina s grobljem",
+      "category": "chapel",
+      "municipality": "Općina Kalnik",
+      "settlement": "Vojnovec Kalnički",
+      "period": "1888. (navod)",
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-kalnik",
+        "strateski-program-opcine-kalnik",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Godinu i današnje stanje provjeriti terenski i u župnim izvorima."
+    },
+    {
+      "id": "igrišće-crkva-sv-martina",
+      "slug": "crkva-sv-martina",
+      "name": "Crkva sv. Martina",
+      "category": "historical-site",
+      "municipality": "Općina Kalnik",
+      "settlement": "Igrišće",
+      "period": "14. stoljeće (navod)",
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-kalnik",
+        "strateski-program-opcine-kalnik",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Stariji prostorno-planski navod; provjeriti postoji li građevina, lokalitet ili samo povijesni spomen."
+    },
+    {
+      "id": "kalnik-kapela-sv-katarine",
+      "slug": "kapela-sv-katarine",
+      "name": "Kapela sv. Katarine",
+      "category": "historical-site",
+      "municipality": "Općina Kalnik",
+      "settlement": "Kalnik",
+      "period": "15. stoljeće (navod)",
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-kalnik",
+        "strateski-program-opcine-kalnik",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni navod; lokaciju i fizičko postojanje potrebno potvrditi."
+    },
+    {
+      "id": "veliki-kalnik-sakralni-lokalitet-unutar-utvrde",
+      "slug": "sakralni-lokalitet-unutar-utvrde",
+      "name": "Sakralni lokalitet unutar utvrde",
+      "category": "archaeological-site",
+      "municipality": "Općina Kalnik",
+      "settlement": "Veliki Kalnik",
+      "period": "srednji vijek",
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-kalnik",
+        "strateski-program-opcine-kalnik",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Ostaci kapele unutar utvrde; tretirati kao arheološki lokalitet dok se ne potvrdi točan naziv i opseg."
+    },
+    {
+      "id": "gornja-rijeka-crkva-uznesenja-blazene-djevice-marije",
+      "slug": "crkva-uznesenja-blazene-djevice-marije",
+      "name": "Crkva Uznesenja Blažene Djevice Marije",
+      "category": "church",
+      "municipality": "Općina Gornja Rijeka",
+      "settlement": "Gornja Rijeka",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-2073",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-gornja-rijeka",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "dropkovec-crkva-sv-franje-ksaverskog",
+      "slug": "crkva-sv-franje-ksaverskog",
+      "name": "Crkva sv. Franje Ksaverskog",
+      "category": "church",
+      "municipality": "Općina Gornja Rijeka",
+      "settlement": "Dropkovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-2077",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-gornja-rijeka",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Uz crkvu su u ranijim izvorima navedena i zaštićena pokretna dobra: orgulje i inventar; provjeriti zasebne registarske jedinice."
+    },
+    {
+      "id": "fodrovec-riječki-kapela-sv-kriza",
+      "slug": "kapela-sv-kriza",
+      "name": "Kapela sv. Križa",
+      "category": "chapel",
+      "municipality": "Općina Gornja Rijeka",
+      "settlement": "Fodrovec Riječki",
+      "period": "1938. (navod)",
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-gornja-rijeka",
+        "konzervatorska-studija-kkz-1999"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Evidentirana u prostorno-planskoj dokumentaciji; provjeriti današnje stanje."
+    },
+    {
+      "id": "sveti-petar-orehovec-crkva-sv-petra",
+      "slug": "crkva-sv-petra",
+      "name": "Crkva sv. Petra",
+      "category": "church",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Sveti Petar Orehovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-1900",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Župna crkva; u ranijem opisu navedena barokna građevina s dijelovima starijeg sloja i oštećenjima nakon potresa 2020."
+    },
+    {
+      "id": "guščerovec-crkva-sv-antuna",
+      "slug": "crkva-sv-antuna",
+      "name": "Crkva sv. Antuna",
+      "category": "church",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Guščerovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-3379",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povezana s ostacima nekadašnjeg kaštela i gospodarskog posjeda."
+    },
+    {
+      "id": "miholec-crkva-sv-mihaela-arkanela",
+      "slug": "crkva-sv-mihaela-arkanela",
+      "name": "Crkva sv. Mihaela Arkanđela",
+      "category": "church",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Miholec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-3165",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "guščerovec-ostaci-nekadasnjeg-kastela-uz-crkvu-sv-antuna",
+      "slug": "ostaci-nekadasnjeg-kastela-uz-crkvu-sv-antuna",
+      "name": "Ostaci nekadašnjeg kaštela uz crkvu sv. Antuna",
+      "category": "historical-site",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Guščerovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povezani povijesni sklop; provjeriti granice i službeni naziv dobra."
+    },
+    {
+      "id": "sveti-petar-orehovec-kapela-na-groblju",
+      "slug": "kapela-na-groblju",
+      "name": "Kapela na groblju",
+      "category": "chapel",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Sveti Petar Orehovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "sveti-petar-orehovec-poklonac-na-kraju-naselja",
+      "slug": "poklonac-na-kraju-naselja",
+      "name": "Poklonac na kraju naselja",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Sveti Petar Orehovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "brežani-pil-majke-bozje",
+      "slug": "pil-majke-bozje",
+      "name": "Pil Majke Božje",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Brežani",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "brdo-orehovečko-poklonac-na-ulazu-u-naselje",
+      "slug": "poklonac-na-ulazu-u-naselje",
+      "name": "Poklonac na ulazu u naselje",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Brdo Orehovečko",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "donji-fodrovec-poklonac-uz-cestu",
+      "slug": "poklonac-uz-cestu",
+      "name": "Poklonac uz cestu",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Donji Fodrovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "gornji-fodrovec-kapela-poklonac-na-ulazu-u-naselje",
+      "slug": "kapela-poklonac-na-ulazu-u-naselje",
+      "name": "Kapela-poklonac na ulazu u naselje",
+      "category": "chapel-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Gornji Fodrovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "gornji-črnčevec-poklonac",
+      "slug": "poklonac",
+      "name": "Poklonac",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Gornji Črnčevec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "guščerovec-poklonac-manki",
+      "slug": "poklonac-manki",
+      "name": "Poklonac Manki",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Guščerovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Naziv 'Manki' prenesen iz prostornog popisa; provjeriti značenje i službeni naziv."
+    },
+    {
+      "id": "gregurovec-kapela-blazene-djevice-marije-pomocnice",
+      "slug": "kapela-blazene-djevice-marije-pomocnice",
+      "name": "Kapela Blažene Djevice Marije Pomoćnice",
+      "category": "chapel",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Gregurovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "miholec-pil-ispred-crkve-sv-mihaela",
+      "slug": "pil-ispred-crkve-sv-mihaela",
+      "name": "Pil ispred crkve sv. Mihaela",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Miholec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "miholec-poklonac-juzno-od-zupne-crkve",
+      "slug": "poklonac-juzno-od-zupne-crkve",
+      "name": "Poklonac južno od župne crkve",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Miholec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "mokrice-miholečke-kapela-krista-kralja",
+      "slug": "kapela-krista-kralja",
+      "name": "Kapela Krista Kralja",
+      "category": "chapel",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Mokrice Miholečke",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "orehovec-kapela-poklonac",
+      "slug": "kapela-poklonac",
+      "name": "Kapela-poklonac",
+      "category": "chapel-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Orehovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "šalamunovec-poklonac-na-ulazu-u-naselje",
+      "slug": "poklonac-na-ulazu-u-naselje",
+      "name": "Poklonac na ulazu u naselje",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Šalamunovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "šalamunovec-poklonac-na-pocetku-poteza-klijeti",
+      "slug": "poklonac-na-pocetku-poteza-klijeti",
+      "name": "Poklonac na početku poteza klijeti",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Šalamunovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "zaistovec-–-bregi-kapela-na-istocnom-ulazu",
+      "slug": "kapela-na-istocnom-ulazu",
+      "name": "Kapela na istočnom ulazu",
+      "category": "chapel",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Zaistovec – Bregi",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "zaistovec-–-dubravci-poklonac-na-ulazu",
+      "slug": "poklonac-na-ulazu",
+      "name": "Poklonac na ulazu",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Petar Orehovec",
+      "settlement": "Zaistovec – Dubravci",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-petar-orehovec"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "sveti-ivan-žabno-zupna-crkva-sv-ivana-krstitelja",
+      "slug": "zupna-crkva-sv-ivana-krstitelja",
+      "name": "Župna crkva sv. Ivana Krstitelja",
+      "category": "church",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Sveti Ivan Žabno",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno",
+        "registar-kulturnih-dobara"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Glavna župna crkva; provjeriti registarski status i povijesnu dataciju."
+    },
+    {
+      "id": "cirkvena-crkva-sv-marije-od-pohoda",
+      "slug": "crkva-sv-marije-od-pohoda",
+      "name": "Crkva sv. Marije od Pohoda",
+      "category": "church",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cirkvena",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-3115",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno",
+        "registar-kulturnih-dobara"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "sveti-petar-čvrstec-crkva-sv-petra-i-pavla",
+      "slug": "crkva-sv-petra-i-pavla",
+      "name": "Crkva sv. Petra i Pavla",
+      "category": "church",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Sveti Petar Čvrstec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "Z-2311",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno",
+        "registar-kulturnih-dobara"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Objekt je preuzet iz početnog istraživačkog popisa. Potrebno je provjeriti naziv, lokaciju, postojanje objekta i aktualni status u primarnom izvoru."
+    },
+    {
+      "id": "trema-crkva-sv-julijane",
+      "slug": "crkva-sv-julijane",
+      "name": "Crkva sv. Julijane",
+      "category": "church",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Trema",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": "RZG-0522-1969",
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno",
+        "registar-kulturnih-dobara"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Oznaka je iz ranijeg popisa; provjeriti današnju klasifikaciju i status."
+    },
+    {
+      "id": "brdo-cirkvensko-kapela-sv-duha",
+      "slug": "kapela-sv-duha",
+      "name": "Kapela sv. Duha",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Brdo Cirkvensko",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "brezovljani-kapela-majke-bozje-fatimske",
+      "slug": "kapela-majke-bozje-fatimske",
+      "name": "Kapela Majke Božje Fatimske",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Brezovljani",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "cepidlak-kapela-majke-bozje-bistricke",
+      "slug": "kapela-majke-bozje-bistricke",
+      "name": "Kapela Majke Božje Bistričke",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cepidlak",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "cirkvena-kapela-sv-ane",
+      "slug": "kapela-sv-ane",
+      "name": "Kapela sv. Ane",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cirkvena",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "hrsovo-kapela-sv-jurja",
+      "slug": "kapela-sv-jurja",
+      "name": "Kapela sv. Jurja",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Hrsovo",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "kenđelovec-kapela-sv-florijana",
+      "slug": "kapela-sv-florijana",
+      "name": "Kapela sv. Florijana",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Kenđelovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "ladinec-kapela-sv-ilije",
+      "slug": "kapela-sv-ilije",
+      "name": "Kapela sv. Ilije",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Ladinec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "novi-glog-kapela-sv-antuna-padovanskog",
+      "slug": "kapela-sv-antuna-padovanskog",
+      "name": "Kapela sv. Antuna Padovanskog",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Novi Glog",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "raščani-kapela-sv-roka",
+      "slug": "kapela-sv-roka",
+      "name": "Kapela sv. Roka",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Raščani",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "lanišće-kapela-sv-vida",
+      "slug": "kapela-sv-vida",
+      "name": "Kapela sv. Vida",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Lanišće",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "sveti-ivan-žabno-kapela-sv-jovana",
+      "slug": "kapela-sv-jovana",
+      "name": "Kapela sv. Jovana",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Sveti Ivan Žabno",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "osuđevo-kapela-majke-bozje-snjezne",
+      "slug": "kapela-majke-bozje-snjezne",
+      "name": "Kapela Majke Božje Snježne",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Osuđevo",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "medačevo-kapela-male-gospe",
+      "slug": "kapela-male-gospe",
+      "name": "Kapela Male Gospe",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Medačevo",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "budilovo-kapela-u-budilovu",
+      "slug": "kapela-u-budilovu",
+      "name": "Kapela u Budilovu",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Budilovo",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "grabrovec-kapela-sv-antuna",
+      "slug": "kapela-sv-antuna",
+      "name": "Kapela sv. Antuna",
+      "category": "chapel",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Grabrovec",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Preuzeto iz prostorno-planske dokumentacije (prijedlog plana 2025.); provjeriti konačno usvojeni plan, današnje postojanje i točan naziv."
+    },
+    {
+      "id": "cirkvena-raspelo-1",
+      "slug": "raspelo-1",
+      "name": "Raspelo 1",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cirkvena",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "cirkvena-raspelo-2",
+      "slug": "raspelo-2",
+      "name": "Raspelo 2",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cirkvena",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "cirkvena-raspelo-3",
+      "slug": "raspelo-3",
+      "name": "Raspelo 3",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cirkvena",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "cirkvena-poklonac-majke-bozje",
+      "slug": "poklonac-majke-bozje",
+      "name": "Poklonac Majke Božje",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cirkvena",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "markovac-križevački-raspelo",
+      "slug": "raspelo",
+      "name": "Raspelo",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Markovac Križevački",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "kuštani-raspelo",
+      "slug": "raspelo",
+      "name": "Raspelo",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Kuštani",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "predavec-križevački-poklonac",
+      "slug": "poklonac",
+      "name": "Poklonac",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Predavec Križevački",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "sveti-ivan-žabno-poklonac-sv-roka",
+      "slug": "poklonac-sv-roka",
+      "name": "Poklonac sv. Roka",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Sveti Ivan Žabno",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "sveti-ivan-žabno-kip-sv-ivana-nepomuka",
+      "slug": "kip-sv-ivana-nepomuka",
+      "name": "Kip sv. Ivana Nepomuka",
+      "category": "statue",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Sveti Ivan Žabno",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "sveti-ivan-žabno-raspelo-ispred-crkve",
+      "slug": "raspelo-ispred-crkve",
+      "name": "Raspelo ispred crkve",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Sveti Ivan Žabno",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "škrinjari-raspelo",
+      "slug": "raspelo",
+      "name": "Raspelo",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Škrinjari",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "brezovljani-raspelo-1",
+      "slug": "raspelo-1",
+      "name": "Raspelo 1",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Brezovljani",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "brezovljani-raspelo-2",
+      "slug": "raspelo-2",
+      "name": "Raspelo 2",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Brezovljani",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "dvorišće-raspelo",
+      "slug": "raspelo",
+      "name": "Raspelo",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Dvorišće",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "carevići-raspelo",
+      "slug": "raspelo",
+      "name": "Raspelo",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Carevići",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "bušići-raspelo",
+      "slug": "raspelo",
+      "name": "Raspelo",
+      "category": "cross",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Bušići",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "kaniža-poklonac-majke-bogorodice",
+      "slug": "poklonac-majke-bogorodice",
+      "name": "Poklonac Majke Bogorodice",
+      "category": "wayside-shrine",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Kaniža",
+      "period": null,
+      "heritageStatus": "needs_verification",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Pojedinačni objekt evidentiran u prostorno-planskom popisu; potrebno terenski potvrditi točnu lokaciju i stanje."
+    },
+    {
+      "id": "brdo-cirkvensko-lokalitet-kapele-sv-duha",
+      "slug": "lokalitet-kapele-sv-duha",
+      "name": "Lokalitet kapele sv. Duha",
+      "category": "archaeological-site",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Brdo Cirkvensko",
+      "period": null,
+      "heritageStatus": "historical_site",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni lokalitet; u ranijem popisu naveden srednji vijek."
+    },
+    {
+      "id": "cepidlak-lokalitet-kapele-sv-jurja",
+      "slug": "lokalitet-kapele-sv-jurja",
+      "name": "Lokalitet kapele sv. Jurja",
+      "category": "archaeological-site",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cepidlak",
+      "period": null,
+      "heritageStatus": "historical_site",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni lokalitet iz prostorno-planske dokumentacije; ne predstavljati kao sačuvanu građevinu bez arheološke potvrde."
+    },
+    {
+      "id": "cirkvena-lokalitet-srednjovjekovne-zupne-crkve-sv-marije",
+      "slug": "lokalitet-srednjovjekovne-zupne-crkve-sv-marije",
+      "name": "Lokalitet srednjovjekovne župne crkve sv. Marije",
+      "category": "archaeological-site",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Cirkvena",
+      "period": null,
+      "heritageStatus": "historical_site",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni lokalitet iz prostorno-planske dokumentacije; ne predstavljati kao sačuvanu građevinu bez arheološke potvrde."
+    },
+    {
+      "id": "markovac-križevački-lokalitet-kapele-sv-nikole",
+      "slug": "lokalitet-kapele-sv-nikole",
+      "name": "Lokalitet kapele sv. Nikole",
+      "category": "archaeological-site",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Markovac Križevački",
+      "period": null,
+      "heritageStatus": "historical_site",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni lokalitet iz prostorno-planske dokumentacije; ne predstavljati kao sačuvanu građevinu bez arheološke potvrde."
+    },
+    {
+      "id": "trema-lokalitet-kapele-sv-roka",
+      "slug": "lokalitet-kapele-sv-roka",
+      "name": "Lokalitet kapele sv. Roka",
+      "category": "archaeological-site",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Trema",
+      "period": null,
+      "heritageStatus": "historical_site",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni lokalitet iz prostorno-planske dokumentacije; ne predstavljati kao sačuvanu građevinu bez arheološke potvrde."
+    },
+    {
+      "id": "trema-lokalitet-stare-crkve-sv-fabijana",
+      "slug": "lokalitet-stare-crkve-sv-fabijana",
+      "name": "Lokalitet stare crkve sv. Fabijana",
+      "category": "archaeological-site",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Trema",
+      "period": null,
+      "heritageStatus": "historical_site",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni lokalitet iz prostorno-planske dokumentacije; ne predstavljati kao sačuvanu građevinu bez arheološke potvrde."
+    },
+    {
+      "id": "sveti-petar-čvrstec-lokalitet-sv-marije-u-damjanima",
+      "slug": "lokalitet-sv-marije-u-damjanima",
+      "name": "Lokalitet sv. Marije u Damjanima",
+      "category": "archaeological-site",
+      "municipality": "Općina Sveti Ivan Žabno",
+      "settlement": "Sveti Petar Čvrstec",
+      "period": null,
+      "heritageStatus": "historical_site",
+      "registryNumber": null,
+      "description": null,
+      "historicalNotes": [],
+      "architecturalStyles": [],
+      "location": {
+        "latitude": null,
+        "longitude": null
+      },
+      "images": [],
+      "sources": [
+        "prostorni-plan-opcine-sveti-ivan-zabno"
+      ],
+      "researchStatus": "unverified",
+      "researchNotes": "Povijesni lokalitet iz prostorno-planske dokumentacije; ne predstavljati kao sačuvanu građevinu bez arheološke potvrde."
+    }
+  ]
+}

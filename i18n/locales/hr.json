@@ -606,6 +606,7 @@
       "heroTitle": "Otkrij priče koje čine Potkalničko prigorje.",
       "heroDescription": "Istraži mjesta, upoznaj ljude, nauči lokalne riječi i otkrij baštinu kraja pod Kalnikom.",
       "playCta": "Igraj s riječima",
+      "exploreCta": "Istraži kraj",
       "discoveryTitle": "Što ovdje pronalaziš",
       "dailyWord": "Riječ dana",
       "soon": "uskoro",
@@ -634,6 +635,34 @@
       "contributeTitle": "Znaš riječ, priču ili staru fotografiju?",
       "contributeDescription": "Pošalji je — prije objave sve pregledamo.",
       "contributeCta": "Doprinesi"
+    },
+    "explore": {
+      "seoTitle": "Istraži kraj",
+      "title": "Pet općina Potkalničkoga prigorja",
+      "intro": "Pregledaj naselja i zapise sakralne baštine u radnom obuhvatu projekta.",
+      "allRegions": "Sva područja",
+      "municipalityDescription": "{settlements} naselja · {items} zapisa baštine",
+      "categoriesTitle": "Kategorije u zapisima",
+      "settlementsTitle": "Naselja",
+      "settlementItemCount": "{count} zapisa",
+      "settlementPageDescription": "{name} ({municipality}) · {count} zapisa u inventaru"
+    },
+    "heritage": {
+      "listTitle": "Sakralna baština",
+      "listIntro": "Početni istraživački inventar — svaki zapis označen je kao u provjeri dok ga ne potvrdimo u izvorima.",
+      "filterMunicipality": "Općina",
+      "filterCategory": "Kategorija",
+      "filterAll": "Sve",
+      "statusUnverified": "U provjeri",
+      "fieldLocation": "Naselje",
+      "fieldMunicipality": "Općina",
+      "researchTitle": "Što još provjeravamo",
+      "sourcesTitle": "Izvori",
+      "noDescriptionYet": "Opis još nije napisan.",
+      "backToSettlement": "← Natrag na {name}",
+      "settlementItemsTitle": "Zapisi baštine",
+      "emptySettlement": "Za ovo naselje još nema zapisa povezanih s officialnom kartom.",
+      "locationPending": "Lokacija se još povezuje s naseljem"
     },
     "games": {
       "hubTitle": "Igre i kvizovi",

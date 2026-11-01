@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PZ_MUNICIPALITY_IDS, PZ_MUNICIPALITY_STATS } from '~~/shared/data/pzMunicipalities'
+import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -14,16 +14,21 @@ useSeoMeta({
   description: () => t('pz.home.heroDescription')
 })
 
-const discoveryCards = computed(() => [
-  { key: 'speech', icon: 'i-lucide-message-circle', soon: true },
-  { key: 'heritage', icon: 'i-lucide-landmark', soon: true },
-  { key: 'places', icon: 'i-lucide-users', soon: true },
-  { key: 'stories', icon: 'i-lucide-book-heart', soon: true }
-] as const)
+const { municipalityName, municipalityPath, municipalityStats, atlas } = useAtlas()
 
-const regions = computed(() => PZ_MUNICIPALITY_IDS.map(id => ({
-  id,
-  ...PZ_MUNICIPALITY_STATS[id]
+const discoveryCards = computed(() => [
+  { key: 'speech' as const, icon: 'i-lucide-message-circle', soon: true, to: undefined },
+  { key: 'heritage' as const, icon: 'i-lucide-landmark', soon: false, to: localePath(pzRoutes.heritage) },
+  { key: 'places' as const, icon: 'i-lucide-users', soon: false, to: localePath(pzRoutes.explore) },
+  { key: 'stories' as const, icon: 'i-lucide-book-heart', soon: true, to: undefined }
+])
+
+const regions = computed(() => atlas.value.municipalities.map(m => ({
+  id: m.id,
+  slug: m.slug,
+  ...municipalityStats(m.id),
+  to: municipalityPath(m.slug),
+  label: municipalityName(m.id)
 })))
 </script>
 
@@ -33,7 +38,8 @@ const regions = computed(() => PZ_MUNICIPALITY_IDS.map(id => ({
       :title="t('pz.home.heroTitle')"
       :links="[
         { label: t('pz.home.playCta'), to: localePath('/potkalnicko-prigorje/igre'), trailingIcon: 'i-lucide-arrow-right', color: 'primary', variant: 'solid', size: 'xl' },
-        { label: t('challenge.friendTitle'), to: localePath('/potkalnicko-prigorje/izazov'), icon: 'i-lucide-swords', color: 'neutral', variant: 'outline', size: 'xl' }
+        { label: t('pz.home.exploreCta'), to: localePath(pzRoutes.explore), icon: 'i-lucide-map', color: 'neutral', variant: 'outline', size: 'xl' },
+        { label: t('challenge.friendTitle'), to: localePath('/potkalnicko-prigorje/izazov'), icon: 'i-lucide-swords', color: 'neutral', variant: 'ghost', size: 'lg' }
       ]"
       :ui="{ container: 'py-16 sm:py-24 lg:py-28', title: 'text-4xl sm:text-5xl lg:text-6xl', footer: 'print:hidden' }"
     >
@@ -79,8 +85,14 @@ const regions = computed(() => PZ_MUNICIPALITY_IDS.map(id => ({
           v-for="card in discoveryCards"
           :key="card.key"
           variant="outline"
+          :class="card.to ? 'hover:ring-primary/30' : ''"
         >
-          <div class="flex items-start justify-between gap-3">
+          <component
+            :is="card.to ? 'ULink' : 'div'"
+            :to="card.to"
+            class="flex items-start justify-between gap-3"
+            :class="card.to ? 'block' : ''"
+          >
             <div class="space-y-2">
               <UIcon
                 :name="card.icon"
@@ -94,11 +106,17 @@ const regions = computed(() => PZ_MUNICIPALITY_IDS.map(id => ({
               </p>
             </div>
             <UBadge
+              v-if="card.soon"
               :label="t('pz.home.soon')"
               color="neutral"
               variant="subtle"
             />
-          </div>
+            <UIcon
+              v-else-if="card.to"
+              name="i-lucide-arrow-right"
+              class="size-5 shrink-0 text-muted"
+            />
+          </component>
         </UCard>
       </div>
     </UPageSection>
@@ -113,10 +131,14 @@ const regions = computed(() => PZ_MUNICIPALITY_IDS.map(id => ({
         <li
           v-for="region in regions"
           :key="region.id"
-          class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm"
         >
-          <span class="font-medium text-highlighted">{{ t(`pz.municipalities.${region.id}`) }}</span>
-          <span class="text-muted tabular-nums">{{ t('pz.home.regionCounts', { settlements: region.settlements, items: region.items }) }}</span>
+          <ULink
+            :to="region.to"
+            class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
+          >
+            <span class="font-medium text-highlighted">{{ region.label }}</span>
+            <span class="text-muted tabular-nums">{{ t('pz.home.regionCounts', { settlements: region.settlements, items: region.items }) }}</span>
+          </ULink>
         </li>
       </ul>
     </UPageSection>

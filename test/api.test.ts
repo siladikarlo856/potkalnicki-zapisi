@@ -6,6 +6,8 @@ import { fetch, getServerLogs, setup, startServer, useTestContext } from '@nuxt/
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
 import { createClient } from '@supabase/supabase-js'
 import type { AdminWord, PublicWords, WordInput } from '../shared/utils/word'
+import atlasPrerenderRoutes from '../content/atlas/prerender-routes.json'
+import { getAtlas, settlementByCode } from '../shared/utils/atlasData'
 
 const SECRET = 'test-review-secret-0123456789'
 const SESSION_PASSWORD = 'test-admin-session-password-0123456789'
@@ -719,16 +721,13 @@ describe('public discovery, sharing metadata and error pages', () => {
   it('publishes only public localized routes in the sitemap and blocks private routes in robots.txt', async () => {
     const sitemap = await (await fetch('/sitemap.xml')).text()
     const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
+    const noindexPaths = new Set(getAtlas().heritage
+      .filter(item => item.noindex && item.settlementCode)
+      .map(item => `/potkalnicko-prigorje/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`))
     expect(urls).toEqual([
       'https://karlo-siladi.from.hr/',
       'https://karlo-siladi.from.hr/en',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/doprinesi',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/o-projektu',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre/kartice',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre/kviz',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/privatnost'
+      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
     ])
     expect(sitemap).not.toContain('/heritage')
     expect(sitemap).not.toContain('/en/potkalnicko-prigorje')
