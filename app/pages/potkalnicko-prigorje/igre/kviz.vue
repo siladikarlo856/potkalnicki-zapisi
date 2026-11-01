@@ -5,7 +5,6 @@ definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
 
 const { locale, t } = useI18n()
-const localePath = useLocalePath()
 const { words, status, error, refresh } = useHeritage()
 // Nuxt carries the seed to the client, keeping server rendering and hydration identical.
 const seed = useState('heritage-quiz-seed', () => Math.floor(Math.random() * 4294967296))
@@ -15,6 +14,7 @@ const newGame = () => startMeaningGame(limitQuestions(createMeaningQuestions(wor
 const game = ref(newGame())
 // A round of only the missed questions is practice: it is not shared as a result.
 const replayingMissed = ref(false)
+const variantOpen = ref(false)
 const question = computed(() => game.value.questions[game.value.index])
 const answered = computed(() => game.value.selectedOptionId !== null)
 const correct = computed(() => question.value && game.value.selectedOptionId !== null && isCorrectAnswer(question.value, game.value.selectedOptionId))
@@ -275,6 +275,25 @@ async function replayMissed() {
               @click="next"
             />
           </div>
+
+          <!-- Only once answered: the report is about this question's word, not a way to peek. -->
+          <UButton
+            v-if="answered"
+            :label="t('game.differently')"
+            icon="i-lucide-message-square-plus"
+            color="neutral"
+            variant="link"
+            size="sm"
+            class="self-start px-0 print:hidden"
+            aria-haspopup="dialog"
+            data-testid="quiz-differently"
+            @click="variantOpen = true"
+          />
+
+          <HeritageVariantDialog
+            v-model:open="variantOpen"
+            :entry="question.entry"
+          />
         </template>
 
         <div
@@ -379,17 +398,6 @@ async function replayMissed() {
           variant="outline"
           :ui="{ icon: 'text-warning' }"
         />
-        <div class="flex flex-wrap gap-x-4 gap-y-2">
-          <UButton
-            :to="{ path: localePath('/potkalnicko-prigorje'), hash: '#doprinos' }"
-            :label="t('quiz.share')"
-            icon="i-lucide-message-square-plus"
-            color="neutral"
-            variant="link"
-            size="sm"
-            class="px-0"
-          />
-        </div>
       </div>
     </div>
   </UContainer>

@@ -23,7 +23,7 @@ const flipped = ref(false)
 const seen = ref(false)
 const known = ref(0)
 const unknown = ref(0)
-const contributing = ref(false)
+const variantOpen = ref(false)
 
 const flipControl = useTemplateRef<HTMLElement>('flipControl')
 const restartControl = useTemplateRef<HTMLElement>('restartControl')
@@ -75,7 +75,6 @@ async function score(knewIt: boolean) {
   index.value++
   flipped.value = false
   seen.value = false
-  contributing.value = false
   if (entry.value) announceCard()
   else announcement.value = { text: `${t('game.done')} ${resultText()}` }
   await nextTick()
@@ -83,9 +82,10 @@ async function score(knewIt: boolean) {
   next?.querySelector('button')?.focus()
 }
 
+// While the report dialog is open the arrow keys belong to it, not to the cards behind it.
 defineShortcuts(computed(() => ({
-  arrowleft: entry.value && seen.value ? () => score(false) : false,
-  arrowright: entry.value && seen.value ? () => score(true) : false
+  arrowleft: entry.value && seen.value && !variantOpen.value ? () => score(false) : false,
+  arrowright: entry.value && seen.value && !variantOpen.value ? () => score(true) : false
 })))
 
 function shuffled(cards: WordEntry[]) {
@@ -107,7 +107,6 @@ async function restart(cards: WordEntry[] = words.value) {
   unknown.value = 0
   flipped.value = false
   seen.value = false
-  contributing.value = false
   announceCard()
   await nextTick()
   flipControl.value?.querySelector('button')?.focus()
@@ -188,7 +187,7 @@ async function restart(cards: WordEntry[] = words.value) {
             v-model:flipped="flipped"
             :entry="entry"
             :english="locale === 'en'"
-            @contribute="contributing = true"
+            @contribute="variantOpen = true"
           />
 
           <div
@@ -252,16 +251,13 @@ async function restart(cards: WordEntry[] = words.value) {
             variant="link"
             size="sm"
             class="self-start px-0 print:hidden"
-            :aria-expanded="contributing"
-            @click="contributing = !contributing"
+            aria-haspopup="dialog"
+            @click="variantOpen = true"
           />
 
-          <HeritageSubmissionForm
-            v-if="contributing"
-            :word="entry.headword"
-            dismissible
-            class="print:hidden"
-            @close="contributing = false"
+          <HeritageVariantDialog
+            v-model:open="variantOpen"
+            :entry="entry"
           />
         </template>
 

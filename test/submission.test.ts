@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SUBMISSION_LIMITS, validateSubmission } from '../shared/utils/submission'
+import { VARIANT_REPORT_LIMITS, buildVariantReportText } from '../shared/utils/variantReport'
 
 const valid = { text: 'kaj', consentPublish: true, locale: 'hr' }
 
@@ -61,5 +62,23 @@ describe('validateSubmission', () => {
   it('rejects a body that is not an object', () => {
     expect(validateSubmission(null).ok).toBe(false)
     expect(validateSubmission('text').ok).toBe(false)
+  })
+})
+
+describe('variant report text', () => {
+  const intro = 'Umjesto „kruh“ kod nas se kaže: '
+
+  it('starts with the sentence naming the word and the local form', () => {
+    expect(buildVariantReportText({ headword: 'kruh', variant: ' kruv ' }, intro, 'Primjer:')).toBe(`${intro}kruv`)
+  })
+
+  it('adds the example on its own line only when there is one', () => {
+    expect(buildVariantReportText({ headword: 'kruh', variant: 'kruv', example: ' Daj kruv. ' }, intro, 'Primjer:')).toBe(`${intro}kruv\nPrimjer: Daj kruv.`)
+    expect(buildVariantReportText({ headword: 'kruh', variant: 'kruv', example: '  ' }, intro, 'Primjer:')).toBe(`${intro}kruv`)
+  })
+
+  it('stays within the submission text limit at the longest inputs', () => {
+    const text = buildVariantReportText({ headword: 'a'.repeat(200), variant: 'b'.repeat(VARIANT_REPORT_LIMITS.variant.max), example: 'c'.repeat(VARIANT_REPORT_LIMITS.example.max) }, `Umjesto „${'a'.repeat(200)}“ kod nas se kaže: `, 'Primjer:')
+    expect(text.length).toBeLessThanOrEqual(SUBMISSION_LIMITS.text.max)
   })
 })

@@ -137,27 +137,61 @@ describe.each([
   })
 })
 
-describe.each([
-  { lang: 'hr' as const, differently: 'Kod nas se kaže drugačije', close: 'Zatvori', prefill: 'Umjesto „{word}“ kod nas se kaže: ' }
-])('$lang card contribution form', ({ lang, differently, close, prefill }) => {
-  it('opens the prefilled variant form inline without leaving the cards', async () => {
-    const page = await mountCards(lang)
+const dialog = () => document.body.querySelector<HTMLElement>('[role="dialog"]')
+
+describe('card variant dialog', () => {
+  it('opens the report dialog for the current card from both triggers without leaving the cards', async () => {
+    const page = await mountCards()
     await expect.poll(() => page.text()).toContain('Kartica 1 od 4')
     const headword = page.findAll('p').find(paragraph => paragraph.classes().includes('text-4xl'))!.text()
-    expect(seeds.map(word => word.headword)).toContain(headword)
-    const flip = page.findAll('button').find(button => button.text() === 'Okreni karticu')!
-    await flip.trigger('click')
-    // The first matching control is the one on the card back, the second the page-level trigger.
-    const trigger = page.findAll('button').find(button => button.text() === differently)!
-    await trigger.trigger('click')
-    const textarea = page.find('textarea')
-    expect(textarea.exists()).toBe(true)
-    expect((textarea.element as HTMLTextAreaElement).value).toBe(prefill.replace('{word}', headword))
-    // Still on the card: its counter is visible and the form was not a navigation.
-    expect(page.text()).toContain('Kartica 1 od 4')
-    const closeButton = page.findAll('button').find(button => button.text() === close)!
-    await closeButton.trigger('click')
+    const word = seeds.find(entry => entry.headword === headword)!
+    expect(dialog()).toBeNull()
+    // The page-level trigger works before the card is flipped.
+    const pageTrigger = page.findAll('button').find(button => button.text() === 'Kod nas se kaže drugačije')!
+    await pageTrigger.trigger('click')
+    await vi.waitFor(() => expect(dialog()).not.toBeNull())
+    // The inline contribution form is gone: this is a dialog about this card's word.
     expect(page.find('textarea').exists()).toBe(false)
+    expect(dialog()!.querySelector('[data-testid="variant-dialog-word"]')!.textContent).toContain(word.headword)
+    expect(dialog()!.querySelector('[data-testid="variant-dialog-word"]')!.textContent).toContain(word.meaning.hr)
+    expect(page.text()).toContain('Kartica 1 od 4')
+    dialog()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await vi.waitFor(() => expect(dialog()).toBeNull())
+
+    // The control on the card back opens the same dialog without flipping the card again.
+    await page.findAll('button').find(button => button.text() === 'Okreni karticu')!.trigger('click')
+    const backTrigger = page.findAll('button').filter(button => button.text() === 'Kod nas se kaže drugačije')[0]!
+    await backTrigger.trigger('click')
+    await vi.waitFor(() => expect(dialog()).not.toBeNull())
+    expect(dialog()!.querySelector('[data-testid="variant-dialog-word"]')!.textContent).toContain(word.headword)
+  })
+})
+
+describe('quiz variant dialog', () => {
+  it('shows the report button only after an answer and reports that question\'s word', async () => {
+    const page = await mountQuiz()
+    await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
+    const headword = page.get('#question-word').text()
+    const entry = seeds.find(word => word.headword === headword)!
+    // Not before answering, and no generic link to the home page's contribution form either.
+    expect(page.find('[data-testid="quiz-differently"]').exists()).toBe(false)
+    expect(page.findAll('button, a').some(item => item.text() === 'Kod nas se kaže drugačije')).toBe(false)
+    expect(page.find('a[href*="doprinos"]').exists()).toBe(false)
+
+    await page.get(`[data-option-id="${entry.id}"]`).trigger('click')
+    const trigger = page.get('[data-testid="quiz-differently"]')
+    expect(trigger.text()).toBe('Kod nas se kaže drugačije')
+    expect(dialog()).toBeNull()
+    await trigger.trigger('click')
+    await vi.waitFor(() => expect(dialog()).not.toBeNull())
+    expect(dialog()!.querySelector('[data-testid="variant-dialog-word"]')!.textContent).toContain(entry.headword)
+
+    // Closing it keeps the answered question; the next question hides the button again.
+    dialog()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await vi.waitFor(() => expect(dialog()).toBeNull())
+    expect(page.get('#question-word').text()).toBe(headword)
+    await page.findAll('button').find(button => button.text() === 'Sljedeća riječ')!.trigger('click')
+    expect(page.find('[data-testid="quiz-differently"]').exists()).toBe(false)
   })
 })
 

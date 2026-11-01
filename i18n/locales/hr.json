@@ -233,6 +233,21 @@
       "typeClearLabel": "Ukloni odabranu vrstu",
       "prefill": "Umjesto „{word}“ kod nas se kaže: "
     },
+    "variantDialog": {
+      "title": "Kako se to kaže kod nas?",
+      "description": "Pomozi nam: upiši kako se ova riječ govori u tvom kraju. Sve pročitamo prije objave.",
+      "word": "Riječ iz igre",
+      "meaning": "Značenje",
+      "variant": "Kako se to kaže kod vas?",
+      "variantHelp": "Riječ ili izraz onako kako ga ti govoriš",
+      "example": "Primjer rečenice (neobavezno)",
+      "examplePlaceholder": "npr. rečenica u kojoj se ta riječ koristi",
+      "exampleLine": "Primjer:",
+      "cancel": "Odustani",
+      "errors": {
+        "variantRequired": "Upiši kako se ova riječ kaže kod vas."
+      }
+    },
     "places": {
       "help": "Odaberi jedno selo ili grad u Hrvatskoj gdje se riječ ili izraz koristi. Ne mora biti mjesto u kojem živiš.",
       "loading": "Tražimo mjesta u Hrvatskoj…",
@@ -443,7 +458,6 @@
     "replay": "Igraj opet",
     "emptyTitle": "Trebamo još riječi",
     "emptyDescription": "Za igru su potrebna barem dva različita značenja. U međuvremenu isprobaj kartice ili podijeli riječ.",
-    "share": "Kod nas se kaže drugačije",
     "tryQuiz": "Isprobaj izazov",
     "answeredProgress": "Odgovoreno {count} od {total} pitanja",
     "reviewTitle": "Riječi za ponavljanje",

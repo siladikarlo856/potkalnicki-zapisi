@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import type { FormError, SelectItem } from '@nuxt/ui'
 import { SUBMISSION_LIMITS, SUBMISSION_TYPES, validateSubmission } from '~~/shared/utils/submission'
+import type { SubmissionType } from '~~/shared/utils/submission'
 
 const props = defineProps<{
-  /** Headword to prefill "Instead of … we say:", e.g. the word on a game card. */
+  /** Headword to prefill "Instead of … we say:", e.g. the word a visitor came here about. */
   word?: string
-  /** Shows a close button, so the form can be dismissed when it is inline on a page. */
-  dismissible?: boolean
 }>()
-const emit = defineEmits<{ close: [] }>()
 
-const { locale, t } = useI18n()
-const localePath = useLocalePath()
+const { t } = useI18n()
+const { locale, toFormErrors, submit } = useSubmissionRequest()
 
 const typeItems = computed<SelectItem[]>(() => SUBMISSION_TYPES
   .map(type => ({ label: t(`heritage.form.types.${type}`), value: type })))
@@ -23,7 +21,6 @@ const state = reactive({
   name: '',
   contact: '',
   consentPublish: false,
-  // Honeypot, hidden from people: see server/api/submissions.post.ts.
   website: ''
 })
 
@@ -39,7 +36,7 @@ const textarea = useTemplateRef<{ textareaRef: HTMLTextAreaElement | null }>('te
 const sendState = ref<'idle' | 'sent' | 'error'>('idle')
 const sendError = ref('')
 
-// A card can hand in its word, so the sentence starts with the variant wording.
+// A visitor can arrive with a word, so the sentence starts with the variant wording.
 // Never overwrite anything the visitor has already typed.
 watch(() => props.word, (word) => {
   if (!word || state.text) return
@@ -51,22 +48,6 @@ watch(() => props.word, (word) => {
   })
 }, { immediate: true })
 
-function issueMessage({ field, code }: SubmissionIssue) {
-  if (field === 'place') return t(`heritage.places.${code === 'refreshPlace' ? 'refresh' : code === 'selectPlace' ? 'choose' : code === 'outOfScope' ? 'outOfScope' : 'invalid'}`)
-  if (field === 'consentPublish') return t('heritage.form.errors.consent')
-  if (code === 'required') return t('heritage.form.errors.required')
-  if (code === 'tooShort') return t('heritage.form.errors.tooShort', { min: SUBMISSION_LIMITS.text.min })
-  if (code === 'tooLong') {
-    const max = SUBMISSION_LIMITS[field as keyof typeof SUBMISSION_LIMITS]?.max
-    return t('heritage.form.errors.tooLong', { max })
-  }
-  return t('heritage.form.errors.invalid')
-}
-
-function toFormErrors(issues: SubmissionIssue[]): FormError[] {
-  return issues.map(issue => ({ name: issue.field, message: issueMessage(issue) }))
-}
-
 function validate(): FormError[] {
   const result = validateSubmission({ ...state, locale: locale.value })
   const errors = result.ok ? [] : toFormErrors(result.issues)
@@ -76,40 +57,24 @@ function validate(): FormError[] {
 
 async function send() {
   sendState.value = 'idle'
-  try {
-    await $fetch('/api/submissions', {
-      method: 'POST',
-      body: { ...state, locale: locale.value }
-    })
+  const outcome = await submit({ ...state })
+  if (outcome.ok) {
     Object.assign(state, { text: '', type: undefined, placeId: null, name: '', contact: '', consentPublish: false })
     placeQuery.value = ''
     sendState.value = 'sent'
-  } catch (error) {
-    const { statusCode, data } = error as { statusCode?: number, data?: { data?: { issues?: SubmissionIssue[] } } }
-    const issues = data?.data?.issues
-    if (statusCode === 400 && issues?.length) {
-      form.value?.setErrors(toFormErrors(issues))
-      sendError.value = t('heritage.form.errorInvalid')
-    } else if (statusCode === 429) {
-      sendError.value = t('heritage.form.errorTooMany')
-    } else {
-      sendError.value = t('heritage.form.errorGeneric')
-    }
-    sendState.value = 'error'
+    return
   }
+  if (outcome.issues) form.value?.setErrors(toFormErrors(outcome.issues))
+  sendError.value = outcome.message
+  sendState.value = 'error'
 }
 
 function sendAnother() {
   sendState.value = 'idle'
 }
-function closeForm() {
-  emit('close')
-}
-const successActions = computed(() => {
-  const sendAnotherAction = { label: t('heritage.form.sendAnother'), color: 'neutral' as const, variant: 'subtle' as const, onClick: sendAnother }
-  const closeAction = { label: t('heritage.form.close'), color: 'neutral' as const, variant: 'subtle' as const, onClick: closeForm }
-  return props.dismissible ? [sendAnotherAction, closeAction] : [sendAnotherAction]
-})
+const successActions = computed(() => [
+  { label: t('heritage.form.sendAnother'), color: 'neutral' as const, variant: 'subtle' as const, onClick: sendAnother }
+])
 </script>
 
 <template>
@@ -188,77 +153,14 @@ const successActions = computed(() => {
             @selection="form?.clear('place')"
           />
         </UFormField>
-        <UFormField
-          name="name"
-          :label="t('heritage.form.name')"
-          :help="t('heritage.form.nameHelp')"
-        >
-          <UInput
-            v-model="state.name"
-            :maxlength="SUBMISSION_LIMITS.name.max"
-            autocomplete="name"
-            autocapitalize="words"
-            spellcheck="false"
-            class="w-full"
-          />
-        </UFormField>
-        <UFormField
-          name="contact"
-          :label="t('heritage.form.contact')"
-          :help="t('heritage.form.contactHelp')"
-        >
-          <UInput
-            v-model="state.contact"
-            autocomplete="email"
-            autocapitalize="off"
-            autocorrect="off"
-            spellcheck="false"
-            :placeholder="t('heritage.form.contactPlaceholder')"
-            :maxlength="SUBMISSION_LIMITS.contact.max"
-            class="w-full"
-          />
-        </UFormField>
       </div>
 
-      <div
-        class="sr-only"
-        aria-hidden="true"
-      >
-        <label>
-          Website
-          <input
-            v-model="state.website"
-            type="text"
-            name="website"
-            tabindex="-1"
-            autocomplete="off"
-          >
-        </label>
-      </div>
-
-      <i18n-t
-        keypath="heritage.form.consent"
-        tag="p"
-        class="text-xs text-muted"
-        scope="global"
-      >
-        <template #privacy>
-          <ULink
-            :to="localePath('/potkalnicko-prigorje/privatnost')"
-            class="text-primary underline underline-offset-2"
-          >
-            {{ t('heritage.form.privacyLink') }}
-          </ULink>
-        </template>
-      </i18n-t>
-
-      <UFormField name="consentPublish">
-        <UCheckbox
-          v-model="state.consentPublish"
-          :label="t('heritage.form.consentLabel')"
-          required
-        />
-      </UFormField>
+      <HeritageSubmissionContributorFields
+        v-model:name="state.name"
+        v-model:contact="state.contact"
+        v-model:consent-publish="state.consentPublish"
+        v-model:website="state.website"
+      />
 
       <UAlert
         v-if="sendState === 'error'"
@@ -271,13 +173,6 @@ const successActions = computed(() => {
       />
 
       <div class="flex flex-wrap justify-end gap-2 print:hidden">
-        <UButton
-          v-if="dismissible"
-          :label="t('heritage.form.close')"
-          color="neutral"
-          variant="ghost"
-          @click="closeForm"
-        />
         <UButton
           type="submit"
           :label="t('heritage.form.submit')"
