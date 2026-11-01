@@ -245,6 +245,14 @@ describe('word admin and public word APIs', () => {
     expect(word.active).toBe(false)
   })
 
+  it('publishes an active word whose variants have no places, without storing any region usage', async () => {
+    const input = wordInput(true)
+    input.entry.variants[0]!.usages = []
+    const word = await createWord(input)
+    const published = (await readPublic()).words.find(w => w.id === word.entry.id)
+    expect(published?.variants[0]?.usages).toEqual([])
+  })
+
   it('uses memories as examples and never invents a contributor credit', async () => {
     await submit({ ...valid, text: 'promotion memory test', type: 'memory', name: '', placeId: null })
     const submission = (await listAll()).find(s => s.text === 'promotion memory test')!

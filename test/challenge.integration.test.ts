@@ -108,7 +108,7 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     const revealed = await state(await guest.request(path(joined, 'reveal'), {}))
     expect(revealed.question).toMatchObject({
       id: 'quiz-hiza',
-      options: [{ hr: 'sat', en: 'clock' }, { hr: 'kuća', en: 'house' }, { hr: 'bunar', en: 'well' }]
+      options: [{ hr: 'sat', en: 'clock' }, { hr: 'kuća, dom', en: 'kuća, dom' }, { hr: 'bunar', en: 'well' }]
     })
   })
 

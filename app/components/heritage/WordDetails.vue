@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdminWord } from '~~/shared/utils/word'
+import { REGION_FALLBACK_NAME, type AdminWord } from '~~/shared/utils/word'
 
 defineProps<{ word: AdminWord }>()
 </script>
@@ -76,7 +76,7 @@ defineProps<{ word: AdminWord }>()
           v-if="!variant.usages.length"
           class="text-muted"
         >
-          Područje još nije odabrano.
+          Područje još nije odabrano; prikazuje se cijela regija ({{ REGION_FALLBACK_NAME }}).
         </p>
         <p
           v-for="usage in variant.usages"

@@ -83,6 +83,11 @@ const labels = computed(() => props.english
             class="mt-1 flex flex-wrap justify-center gap-1"
           >
             <HeritageAreaTag
+              v-if="!headVariant.usages.length"
+              :sample="sample"
+              :english="english"
+            />
+            <HeritageAreaTag
               v-for="usage in headVariant.usages"
               :key="usage.areaId"
               :usage="usage"

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { AreaUsage } from '~/types/heritage'
+import { REGION_FALLBACK_NAME } from '~~/shared/utils/word'
 
 const props = defineProps<{
-  usage: AreaUsage
+  /** Omit for a variant without usages: the whole region is shown instead. */
+  usage?: AreaUsage
   /** Sample data: the link between this form and the area is only an example. */
   sample?: boolean
   /** Adds an English gloss to the sample note, for /en visitors. */
@@ -11,8 +13,8 @@ const props = defineProps<{
 
 const { areaById, areaTrail } = useHeritage()
 
-const name = computed(() => areaById.value.get(props.usage.areaId)?.name ?? props.usage.areaId)
-const trail = computed(() => areaTrail(props.usage.areaId).map(area => area.name))
+const name = computed(() => props.usage ? areaById.value.get(props.usage.areaId)?.name ?? props.usage.areaId : REGION_FALLBACK_NAME)
+const trail = computed(() => props.usage ? areaTrail(props.usage.areaId).map(area => area.name) : [REGION_FALLBACK_NAME])
 const title = computed(() => {
   const text = trail.value.join(' › ')
   if (!props.sample) return text

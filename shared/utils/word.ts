@@ -22,6 +22,8 @@ export const WORD_STATUSES = ['placeholder', 'community', 'verified'] as const
 export const AREA_KINDS = ['settlement', 'municipality', 'town', 'county', 'region', 'country'] as const
 export const SOURCE_KINDS = ['contribution', 'interview', 'publication', 'editor'] as const
 export const WORD_BODY_LIMIT = 128 * 1024
+/** Display fallback for a variant without usages; never stored as data. */
+export const REGION_FALLBACK_NAME = 'Potkalničko prigorje'
 
 /** Also used to project public output: only explicitly parsed fields survive. */
 export function validateWord(input: unknown, id: string): { value: WordInput, issues: string[] } {
@@ -151,7 +153,6 @@ export function validateWord(input: unknown, id: string): { value: WordInput, is
   unique(entry.variants.map(v => v.id), 'variants')
   for (const variant of entry.variants) {
     unique(variant.usages.map(u => u.areaId), 'usages')
-    if (active && !variant.usages.length) issues.push('variants.usages: odaberi područje za svaku inačicu')
     for (const usage of variant.usages) {
       if (usage.sourceId && !entry.sources.some(s => s.id === usage.sourceId)) issues.push('usages.sourceId: nepoznat izvor')
     }

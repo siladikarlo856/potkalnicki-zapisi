@@ -42,7 +42,7 @@ function addVariant() {
     @submit.prevent="save(model.active)"
   >
     <p class="text-sm text-muted">
-      Skica ostaje privatna. Za aktivaciju ispuni naslovnu riječ, hrvatsko značenje, vrstu riječi, izvore i područja svake inačice. Prva inačica mora biti naslovna riječ.
+      Skica ostaje privatna. Za aktivaciju ispuni naslovnu riječ, hrvatsko značenje, vrstu riječi i izvore. Područja inačica nisu obavezna: inačica bez područja prikazuje se za cijelu regiju (Potkalničko prigorje). Prva inačica mora biti naslovna riječ.
     </p>
     <div class="grid gap-4 sm:grid-cols-2">
       <UFormField label="Naslovna riječ">

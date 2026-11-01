@@ -42,6 +42,11 @@ const sample = computed(() => props.entry.status === 'placeholder')
         :lang="english ? 'en' : undefined"
       >{{ english ? 'base form' : 'osnovni oblik' }}</span>
       <HeritageAreaTag
+        v-if="!variant.usages.length"
+        :sample="sample"
+        :english="english"
+      />
+      <HeritageAreaTag
         v-for="usage in variant.usages"
         :key="usage.areaId"
         :usage="usage"
