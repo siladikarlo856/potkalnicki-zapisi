@@ -6,6 +6,8 @@ import type { SubmissionType } from '~~/shared/utils/submission'
 const props = defineProps<{
   /** Headword to prefill "Instead of … we say:", e.g. the word a visitor came here about. */
   word?: string
+  fixedType?: SubmissionType
+  hideTypePicker?: boolean
 }>()
 
 const { t } = useI18n()
@@ -38,6 +40,10 @@ const sendError = ref('')
 
 // A visitor can arrive with a word, so the sentence starts with the variant wording.
 // Never overwrite anything the visitor has already typed.
+watch(() => props.fixedType, (type) => {
+  if (type) state.type = type
+}, { immediate: true })
+
 watch(() => props.word, (word) => {
   if (!word || state.text) return
   state.text = t('heritage.form.prefill', { word })
@@ -118,6 +124,7 @@ const successActions = computed(() => [
 
       <div class="grid gap-4 sm:grid-cols-2">
         <UFormField
+          v-if="!props.hideTypePicker"
           name="type"
           :label="t('heritage.form.type')"
         >

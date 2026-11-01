@@ -8,7 +8,6 @@
     "myStory": "Moja priča",
     "projects": "Projekti",
     "siladiDizajn": "Siladi Dizajn",
-    "apps": "Potkalnički zapisi",
     "contact": "Kontakt",
     "soon": "Uskoro"
   },
@@ -60,7 +59,7 @@
       "all": "Svi projekti",
       "soon": "Uskoro",
       "community": {
-        "tag": "Za zajednicu",
+        "tag": "Projekt 1 · Za zajednicu",
         "title": "Potkalnički zapisi",
         "description": "Priče, ljudi i baština Potkalničkoga prigorja."
       },
@@ -541,6 +540,7 @@
     "friendTitle": "Izazovi prijatelja",
     "friendHelp": "Stvori sedmodnevni izazov s istim pitanjima i svojim rezultatom već na ljestvici.",
     "friendCreate": "Stvori izazov za prijatelja",
+    "friendCreateWithScore": "Napravi izazov sa {score}/{total} →",
     "createError": "Izazov nije moguće stvoriti. Pokušaj ponovno.",
     "share": "Pozovi ekipu",
     "shareHelp": "Pozovi jednu ili više osoba već sada, prije ili tijekom igre. Svatko igra ista pitanja svojim tempom.",
@@ -588,5 +588,125 @@
     "inProgress": "U tijeku",
     "completed": "Završeno",
     "incomplete": "Nedovršeno"
+  },
+  "pz": {
+    "footer": {
+      "note": "Prilozi se objavljuju uz dopuštenje autora."
+    },
+    "municipalities": {
+      "krizevci": "Grad Križevci",
+      "kalnik": "Općina Kalnik",
+      "gornjaRijeka": "Općina Gornja Rijeka",
+      "svetiPetarOrehovec": "Općina Sveti Petar Orehovec",
+      "svetiIvanZabno": "Općina Sveti Ivan Žabno"
+    },
+    "home": {
+      "seoTitle": "Potkalnički zapisi",
+      "heroEyebrow": "Digitalni zavičajni atlas Potkalničkog prigorja",
+      "heroTitle": "Otkrij priče koje čine Potkalničko prigorje.",
+      "heroDescription": "Istraži mjesta, upoznaj ljude, nauči lokalne riječi i otkrij baštinu kraja pod Kalnikom.",
+      "playCta": "Igraj s riječima",
+      "discoveryTitle": "Što ovdje pronalaziš",
+      "dailyWord": "Riječ dana",
+      "soon": "uskoro",
+      "dailyWordHint": "Dnevna riječ i niz ovisi o odluci o objavi — trenutačno ne igra.",
+      "discovery": {
+        "speech": {
+          "title": "Naš govor",
+          "description": "Riječi koje pričaju priču."
+        },
+        "heritage": {
+          "title": "Povijest i baština",
+          "description": "Otkrij tragove prošlosti — 107 zapisa u provjeri."
+        },
+        "places": {
+          "title": "Mjesta i ljudi",
+          "description": "Upoznaj naselja i njihove ljude."
+        },
+        "stories": {
+          "title": "Običaji i priče",
+          "description": "Sačuvaj ono što se prenosi generacijama."
+        }
+      },
+      "regionsTitle": "Pet područja",
+      "regionsDescription": "Radni obuhvat projekta, ne službena granica prigorja.",
+      "regionCounts": "{settlements} naselja · {items} zapisa",
+      "contributeTitle": "Znaš riječ, priču ili staru fotografiju?",
+      "contributeDescription": "Pošalji je — prije objave sve pregledamo.",
+      "contributeCta": "Doprinesi"
+    },
+    "games": {
+      "hubTitle": "Igre i kvizovi",
+      "hubDescription": "Izazovi prijatelja ili uči riječi našeg kraja.",
+      "friendHeroTitle": "Tko bolje zna naš govor?",
+      "friendHeroDescription": "Ista pitanja za sve · poveznica za WhatsApp ili Viber · ljestvica 7 dana",
+      "friendHeroCta": "Napravi izazov →"
+    },
+    "contribute": {
+      "title": "Doprinesi",
+      "intro": "Sve što pošalješ prvo pregledamo. Ime je neobavezno, prijava nije potrebna.",
+      "back": "Doprinesi",
+      "picker": {
+        "word": {
+          "title": "Pošalji riječ ili izraz",
+          "description": "Kako se kaže kod vas, što znači i gdje se govori."
+        },
+        "memory": {
+          "title": "Pošalji sjećanje ili priču",
+          "description": "Običaj, legenda, kako se nekad živjelo."
+        },
+        "correction": {
+          "title": "Predloži ispravak",
+          "description": "Netočan naziv, mjesto ili godina u zapisu.",
+          "badge": "faza 3"
+        },
+        "photo": {
+          "title": "Pošalji fotografiju",
+          "description": "Stare fotografije s imenima mjesta i ljudi.",
+          "badge": "faza 6"
+        }
+      }
+    },
+    "about": {
+      "title": "O projektu",
+      "intro": "Potkalnički zapisi su digitalni zavičajni atlas i igre o riječima, ljudiima i baštini Potkalničkoga prigorja — pet općina i Grada Križevaca podno Kalnika.",
+      "privacyLink": "Obavijest o privatnosti",
+      "footerNote": "Autor je naveden ovdje i u obavijesti o privatnosti. Aplikacija nema poveznicu na portfolio.",
+      "sections": {
+        "author": {
+          "title": "Autor",
+          "text": [
+            "Projekt vodi Karlo Siladi iz Križevaca — inženjer i poduzetnik koji ga gradi kao javnu, besplatnu aplikaciju za svoj kraj."
+          ]
+        },
+        "controller": {
+          "title": "Voditelj obrade podataka",
+          "text": [
+            "Voditelj obrade podataka za priloge, igre i analitiku posjeta je Karlo Siladi. Pitanja o privatnosti šalji na e-mail u nastavku ili pročitaj obavijest o privatnosti."
+          ]
+        },
+        "method": {
+          "title": "Metoda i pouzdanost",
+          "text": [
+            "Sadržaj se objavljuje postupno: prilozi zajednice pregledavamo prije objave, a zapisi baštine iz istraživačkog inventara označavamo kao „u provjeri” dok ih ne potvrdimo u izvorima.",
+            "Igre koriste provjerene riječi iz baze; kvizovi ne otkrivaju točne odgovore u dijeljenju rezultata. Geografski opseg priloga ograničen je na pet općina projekta."
+          ]
+        },
+        "sources": {
+          "title": "Izvori",
+          "text": [
+            "Početni inventar sakralne baštine (107 stavki) sastavljen je iz prostornih planova, strateških dokumenata općina, konzervatorskih studija i registra kulturnih dobara — uz eksplicitne napomene što još provjeravamo.",
+            "Riječi u igrama dolaze iz uzorka i odobrenih priloga; svaka objava navodi izvor kad je to moguće."
+          ],
+          "items": [
+            "Prostorni planovi uređenja općina Potkalničkoga prigorja",
+            "Strateški razvojni programi općina",
+            "Konzervatorska studija Koprivničko-križevačke županije (1999.)",
+            "Registar kulturnih dobara Republike Hrvatske (provjera po stavci)",
+            "Službene stranice općina i grada (kad su dostupne)"
+          ]
+        }
+      }
+    }
   }
 }

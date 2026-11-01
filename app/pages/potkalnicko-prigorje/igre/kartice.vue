@@ -308,7 +308,7 @@ async function restart(cards: WordEntry[] = words.value) {
               @click="restart()"
             />
             <UButton
-              :to="{ path: localePath('/potkalnicko-prigorje'), hash: '#doprinos' }"
+              :to="{ path: localePath('/potkalnicko-prigorje/doprinesi'), query: { vrsta: 'rijec' } }"
               :label="t('game.differently')"
               icon="i-lucide-message-square-plus"
               color="neutral"

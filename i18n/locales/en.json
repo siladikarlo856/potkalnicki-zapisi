@@ -8,7 +8,6 @@
     "myStory": "My Story",
     "projects": "Projects",
     "siladiDizajn": "Siladi Dizajn",
-    "apps": "Potkalnički zapisi",
     "contact": "Contact",
     "soon": "Soon"
   },
@@ -61,7 +60,7 @@
       "all": "See all projects",
       "soon": "Soon",
       "community": {
-        "tag": "Community",
+        "tag": "Project 1 · Community",
         "title": "Potkalnički zapisi",
         "description": "Stories, people and heritage from Potkalničko prigorje."
       },

@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { pzHeaderNavItems } from '~~/shared/utils/pzNav'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
-const items = [
+const items = computed(() => [
   { label: 'Početna', to: pzRoutes.home },
-  { label: 'Igre', to: `${pzRoutes.home}#igre` },
-  { label: 'Doprinesi', to: `${pzRoutes.home}#doprinos` }
-]
+  ...pzHeaderNavItems()
+])
 </script>
 
 <template>

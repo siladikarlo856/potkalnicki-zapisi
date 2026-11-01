@@ -50,6 +50,8 @@ export default defineNuxtConfig({
     '/potkalnicko-prigorje/igre/kartice': { prerender: true },
     '/potkalnicko-prigorje/igre/kviz': { prerender: true },
     '/potkalnicko-prigorje/igre/**': { prerender: true },
+    '/potkalnicko-prigorje/doprinesi': { prerender: true },
+    '/potkalnicko-prigorje/o-projektu': { prerender: true },
     '/potkalnicko-prigorje/privatnost': { prerender: true },
     '/admin/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
     '/api/**': { headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }

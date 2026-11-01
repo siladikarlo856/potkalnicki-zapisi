@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ChallengeState, QuizChallengeInput } from '../../../shared/utils/challenge'
 
-const props = defineProps<{ code?: string, quiz?: QuizChallengeInput }>()
+const props = defineProps<{ code?: string, quiz?: QuizChallengeInput, score?: number, total?: number }>()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const origin = ref('')
@@ -98,8 +98,12 @@ onMounted(() => {
         type="submit"
         icon="i-lucide-swords"
         :loading="creating"
+        size="lg"
+        block
       >
-        {{ t('challenge.friendCreate') }}
+        {{ props.score != null && props.total != null
+          ? t('challenge.friendCreateWithScore', { score: props.score, total: props.total })
+          : t('challenge.friendCreate') }}
       </UButton>
       <p
         v-if="error"

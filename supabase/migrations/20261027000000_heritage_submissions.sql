@@ -1,10 +1,10 @@
--- Heritage submissions sent from the form on /heritage, reviewed on /review.
+-- Heritage submissions sent from the form on /potkalnicko-prigorje/doprinesi, reviewed in /admin/prilozi.
 --
 -- Row Level Security is on and nothing is readable through the public API:
 --   * anon (the public key) may only INSERT a new pending submission with consent, and only
 --     the form columns; it cannot read, update or delete anything;
 --   * authenticated gets no access at all (the site has no user accounts);
---   * service_role (the server-only key used by the /review routes) bypasses RLS.
+--   * service_role (the server-only key used by the /admin review routes) bypasses RLS.
 
 create table public.heritage_submissions (
   id bigint generated always as identity primary key,

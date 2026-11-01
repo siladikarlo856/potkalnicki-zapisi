@@ -102,13 +102,16 @@ async function readPublic(limit?: number) {
 }
 
 describe('Potkalnički zapisi learning and challenge choice', () => {
-  it('serves the separate learning and challenge destinations in Croatian', async () => {
-    const response = await request('/potkalnicko-prigorje')
+  it('serves the separate learning and challenge destinations on the games hub', async () => {
+    const response = await request('/potkalnicko-prigorje/igre')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
     const window = new Window()
     window.document.body.innerHTML = html
+    const catalog = window.document.querySelector('[data-testid="quiz-catalog"]')!
+    expect(catalog).not.toBeNull()
+    expect(catalog.querySelector('[data-testid="friend-challenge-hero"]')?.textContent).toContain('Izazovi prijatelja')
     const choice = window.document.querySelector('[data-testid="heritage-mode-choice"]')!
     expect(choice).not.toBeNull()
     expect([...choice.querySelectorAll('h2')].map(h => h.textContent)).toEqual(['Uči', 'Izazov'])
@@ -121,11 +124,10 @@ describe('Potkalnički zapisi learning and challenge choice', () => {
     expect(challengeChoice.querySelector('a[href="/potkalnicko-prigorje/igre/kviz"]')?.textContent).toContain('Brzi izazov')
     expect(challengeChoice.textContent).toContain('Prilagođeni izazov')
     expect(challengeChoice.querySelector('button[disabled]')?.textContent).toContain('Uskoro')
-    expect(window.document.querySelector('#doprinos form')).not.toBeNull()
-    expect(window.document.querySelector('#uskoro')).not.toBeNull()
-    expect(window.document.querySelector('header')?.textContent).toContain('Potkalnički zapisi')
+    expect(window.document.querySelector('header')?.textContent).toContain('Igre')
+    expect(window.document.querySelector('header')?.textContent).toContain('Doprinesi')
+    expect(window.document.querySelector('header')?.textContent).toContain('O projektu')
     expect(window.document.querySelector('header')?.textContent).not.toContain('Karlo Siladi')
-    expect(html).not.toContain('i-lucide-construction')
     await window.happyDOM.close()
   })
 
@@ -143,9 +145,55 @@ describe('Potkalnički zapisi learning and challenge choice', () => {
   })
 })
 
+describe('Potkalnički zapisi app home', () => {
+  it('renders the phase 2 hero, regions teaser and contribute band', async () => {
+    const response = await request('/potkalnicko-prigorje')
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    const { Window } = await import('happy-dom')
+    const window = new Window()
+    window.document.body.innerHTML = html
+    expect(window.document.body.textContent).toContain('Otkrij priče koje čine Potkalničko prigorje.')
+    expect(html).toContain('Igraj s riječima')
+    expect(html).toContain('/potkalnicko-prigorje/igre')
+    expect(window.document.querySelector('#doprinos')).not.toBeNull()
+    expect(window.document.querySelector('a[href="/potkalnicko-prigorje/doprinesi"]')).not.toBeNull()
+    expect(window.document.querySelector('[data-testid="pet-podrucja"]')?.textContent).toContain('Grad Križevci')
+    expect(window.document.querySelector('[data-testid="pet-podrucja"]')?.textContent).toContain('60 naselja · 34 zapisa')
+    expect(window.document.querySelector('[data-testid="quiz-catalog"]')).toBeNull()
+    expect(window.document.querySelector('#doprinos form')).toBeNull()
+    expect(html).not.toContain('i-lucide-construction')
+    await window.happyDOM.close()
+  })
+})
+
+describe('Potkalnički zapisi contribute and about pages', () => {
+  it('renders the contribution type picker', async () => {
+    const picker = await request('/potkalnicko-prigorje/doprinesi')
+    expect(picker.status).toBe(200)
+    const pickerHtml = await picker.text()
+    const { Window } = await import('happy-dom')
+    const pickerWindow = new Window()
+    pickerWindow.document.body.innerHTML = pickerHtml
+    expect(pickerWindow.document.querySelector('[data-testid="contribute-type-picker"]')).not.toBeNull()
+    expect(pickerHtml).toContain('Pošalji riječ ili izraz')
+    expect(pickerHtml).toContain('faza 3')
+    await pickerWindow.happyDOM.close()
+  })
+
+  it('documents the author on O projektu without a portfolio link', async () => {
+    const response = await request('/potkalnicko-prigorje/o-projektu')
+    expect(response.status).toBe(200)
+    const html = await response.text()
+    expect(html).toContain('Karlo Siladi')
+    expect(html).toContain('id="izvori"')
+    expect(html).not.toMatch(/href="\/"/)
+  })
+})
+
 describe('Potkalnički zapisi quiz catalog', () => {
   it('renders the Croatian catalog with Croatian topic slugs', async () => {
-    const response = await request('/potkalnicko-prigorje')
+    const response = await request('/potkalnicko-prigorje/igre')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
@@ -675,6 +723,9 @@ describe('public discovery, sharing metadata and error pages', () => {
       'https://karlo-siladi.from.hr/',
       'https://karlo-siladi.from.hr/en',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/doprinesi',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/o-projektu',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre/kartice',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre/kviz',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/privatnost'
@@ -692,7 +743,10 @@ describe('public discovery, sharing metadata and error pages', () => {
   it.each([
     { path: '/', title: 'Karlo Siladi', description: 'Karlo Siladi izrađuje stvari', image: 'share-hr.jpg' },
     { path: '/en', title: 'Karlo Siladi', description: 'Karlo Siladi builds things', image: 'share-en.jpg' },
-    { path: '/potkalnicko-prigorje', title: 'Potkalnički zapisi', description: 'Priče, ljudi i baština', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje', title: 'Potkalnički zapisi', description: 'Istraži mjesta', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje/igre', title: 'Igre i kvizovi · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje/doprinesi', title: 'Doprinesi · Potkalnički zapisi', description: 'Sve što pošalješ', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje/o-projektu', title: 'O projektu · Potkalnički zapisi', description: 'digitalni zavičajni atlas', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/igre/kartice', title: 'Kaj to znači? · Potkalnički zapisi', description: 'Kartice s riječima', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/igre/kviz', title: 'Ponuđeni odgovori · Potkalnički zapisi', description: 'Pročitaj riječ', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/privatnost', title: 'Obavijest o privatnosti · Potkalnički zapisi', description: 'Koje podatke', image: 'og.svg' }
@@ -719,6 +773,7 @@ describe('public discovery, sharing metadata and error pages', () => {
       expect(html).not.toContain('i-lucide-construction')
     }
     const portfolio = await (await fetch('/', { headers: { accept: 'text/html' } })).text()
+    expect(portfolio).toContain('Projekt 1 · Za zajednicu')
     const heritageBlock = portfolio.split('id="heritage"')[1]?.split('id="projects"')[0] ?? ''
     expect(heritageBlock).not.toContain('i-lucide-sparkles')
   })

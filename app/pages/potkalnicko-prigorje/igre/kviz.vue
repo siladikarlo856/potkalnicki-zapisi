@@ -377,13 +377,15 @@ async function replayMissed() {
               @click="replay"
             />
           </div>
-          <HeritageQuizShare
-            v-if="game.questions.length && !replayingMissed"
-            :results="game.results"
-          />
           <HeritageChallengeShare
             v-if="game.questions.length && !replayingMissed"
             :quiz="challengeQuiz"
+            :score="game.score"
+            :total="game.questions.length"
+          />
+          <HeritageQuizShare
+            v-if="game.questions.length && !replayingMissed"
+            :results="game.results"
           />
         </div>
       </div>
