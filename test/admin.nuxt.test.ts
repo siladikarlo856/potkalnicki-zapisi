@@ -20,7 +20,7 @@ beforeEach(() => sessionStorage.setItem('review-secret', 'x'))
 afterEach(() => sessionStorage.clear())
 
 describe('admin tables', () => {
-  for (const [name, page, label] of [['words', ReviewWords, word.headword], ['submissions', Review, 'Moja riječ']] as const) {
+  for (const [name, page, label] of [['submissions', Review, 'Moja riječ']] as const) {
     it(`${name}: row click and info button toggle the expanded row`, async () => {
       const wrapper = await mountSuspended(page)
       await vi.waitFor(() => expect(wrapper.text()).toContain(label))
@@ -35,4 +35,18 @@ describe('admin tables', () => {
       expect(wrapper.findAll('tbody tr')).toHaveLength(2)
     })
   }
+
+  it('words: row click opens a sidebar, info button and Escape behave', async () => {
+    const wrapper = await mountSuspended(ReviewWords, { attachTo: document.body })
+    await vi.waitFor(() => expect(wrapper.text()).toContain(word.headword))
+    await wrapper.find('button[aria-label^="Detalji"]').trigger('click')
+    expect(wrapper.findAll('tbody tr')).toHaveLength(2)
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull()
+    await wrapper.find('tbody tr').trigger('click')
+    await vi.waitFor(() => expect(document.body.querySelector('[role="dialog"]')?.textContent).toContain(word.meaning.hr))
+    expect(wrapper.findAll('tbody tr')).toHaveLength(2)
+    document.body.querySelector('[role="dialog"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await vi.waitFor(() => expect(document.body.querySelector('[role="dialog"]')).toBeNull())
+    wrapper.unmount()
+  })
 })
