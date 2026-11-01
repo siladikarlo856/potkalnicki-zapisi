@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { AdminWord, PublicWords, WordInput } from '../shared/utils/word'
 
 const SECRET = 'test-review-secret-0123456789'
+const SESSION_PASSWORD = 'test-admin-session-password-0123456789'
 const RATE_LIMIT_MAX = 3
 
 // By default the app talks to a small fake of Supabase's REST API (test/helpers/fakeSupabase.ts),
@@ -33,6 +34,7 @@ await setup({
     NUXT_SUPABASE_URL: supabase.url,
     NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey,
     NUXT_REVIEW_SECRET: SECRET,
+    NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD,
     NUXT_SUBMISSION_RATE_LIMIT_MAX: String(RATE_LIMIT_MAX)
   }
 })
@@ -99,12 +101,9 @@ async function readPublic(limit?: number) {
   return await response.json() as PublicWords
 }
 
-describe('heritage learning and challenge choice', () => {
-  it.each([
-    { prefix: '', learning: 'Uči', challenge: 'Izazov', startLearning: 'Počni učiti', quick: 'Brzi izazov', custom: 'Prilagođeni izazov', comingSoon: 'Uskoro' },
-    { prefix: '/en', learning: 'Learn', challenge: 'Challenge', startLearning: 'Start learning', quick: 'Quick challenge', custom: 'Custom challenge', comingSoon: 'Coming soon' }
-  ])('serves the separate learning and challenge destinations at $prefix/heritage', async ({ prefix, learning, challenge, startLearning, quick, custom, comingSoon }) => {
-    const response = await request(`${prefix}/heritage`)
+describe('Potkalnički zapisi learning and challenge choice', () => {
+  it('serves the separate learning and challenge destinations in Croatian', async () => {
+    const response = await request('/potkalnicko-prigorje')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
@@ -112,44 +111,40 @@ describe('heritage learning and challenge choice', () => {
     window.document.body.innerHTML = html
     const choice = window.document.querySelector('[data-testid="heritage-mode-choice"]')!
     expect(choice).not.toBeNull()
-    expect([...choice.querySelectorAll('h2')].map(h => h.textContent)).toEqual([learning, challenge])
+    expect([...choice.querySelectorAll('h2')].map(h => h.textContent)).toEqual(['Uči', 'Izazov'])
     expect([...choice.querySelectorAll('a')].map(a => a.getAttribute('href'))).toEqual([
-      `${prefix}/heritage/kartice`, `${prefix}/heritage/kviz`
+      '/potkalnicko-prigorje/igre/kartice', '/potkalnicko-prigorje/igre/kviz'
     ])
-    expect(choice.textContent).toContain(startLearning)
+    expect(choice.textContent).toContain('Počni učiti')
     const challengeChoice = choice.querySelector('[data-testid="challenge-mode-choice"]')!
     expect(challengeChoice).not.toBeNull()
-    expect(challengeChoice.querySelector(`a[href="${prefix}/heritage/kviz"]`)?.textContent).toContain(quick)
-    expect(challengeChoice.textContent).toContain(custom)
-    expect(challengeChoice.querySelector('button[disabled]')?.textContent).toContain(comingSoon)
+    expect(challengeChoice.querySelector('a[href="/potkalnicko-prigorje/igre/kviz"]')?.textContent).toContain('Brzi izazov')
+    expect(challengeChoice.textContent).toContain('Prilagođeni izazov')
+    expect(challengeChoice.querySelector('button[disabled]')?.textContent).toContain('Uskoro')
     expect(window.document.querySelector('#doprinos form')).not.toBeNull()
     expect(window.document.querySelector('#uskoro')).not.toBeNull()
+    expect(window.document.querySelector('header')?.textContent).toContain('Potkalnički zapisi')
+    expect(window.document.querySelector('header')?.textContent).not.toContain('Karlo Siladi')
     await window.happyDOM.close()
   })
 
-  it.each([
-    { prefix: '', label: 'Isprobaj izazov' },
-    { prefix: '/en', label: 'Try a challenge' }
-  ])('keeps the deliberate learning-to-challenge jump at $prefix/heritage/kartice', async ({ prefix, label }) => {
-    const response = await request(`${prefix}/heritage/kartice`)
+  it('keeps the deliberate learning-to-challenge jump on the cards page', async () => {
+    const response = await request('/potkalnicko-prigorje/igre/kartice')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
     const window = new Window()
     window.document.body.innerHTML = html
     const challengeLink = [...window.document.querySelectorAll('a')]
-      .find(link => link.getAttribute('href') === `${prefix}/heritage/kviz`)
-    expect(challengeLink?.textContent).toContain(label)
+      .find(link => link.getAttribute('href') === '/potkalnicko-prigorje/igre/kviz')
+    expect(challengeLink?.textContent).toContain('Isprobaj izazov')
     await window.happyDOM.close()
   })
 })
 
-describe('heritage quiz catalog', () => {
-  it.each([
-    { prefix: '', hero: 'Riječi', play: 'Igraj s riječima', topic: 'Crkve', mechanic: 'Spajanje' },
-    { prefix: '/en', hero: 'Words', play: 'Play Words', topic: 'Churches', mechanic: 'Matching' }
-  ])('renders the localized catalog at $prefix/heritage', async ({ prefix, hero, play, topic, mechanic }) => {
-    const response = await request(`${prefix}/heritage`)
+describe('Potkalnički zapisi quiz catalog', () => {
+  it('renders the Croatian catalog with Croatian topic slugs', async () => {
+    const response = await request('/potkalnicko-prigorje')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
@@ -157,23 +152,23 @@ describe('heritage quiz catalog', () => {
     window.document.body.innerHTML = html
     const catalog = window.document.querySelector('[data-testid="quiz-catalog"]')!
     expect(catalog).not.toBeNull()
-    expect(catalog.querySelector('[data-testid="quiz-hero"] h2')?.textContent).toBe(hero)
-    expect(catalog.querySelector('[data-testid="quiz-hero"] a')?.getAttribute('href')).toBe(`${prefix}/heritage/kviz`)
-    expect(catalog.querySelector('[data-testid="quiz-hero"]')?.textContent).toContain(play)
-    const churchCard = catalog.querySelector('[data-testid="topic-card-churches"]')!
+    expect(catalog.querySelector('[data-testid="quiz-hero"] h2')?.textContent).toBe('Riječi')
+    expect(catalog.querySelector('[data-testid="quiz-hero"] a')?.getAttribute('href')).toBe('/potkalnicko-prigorje/igre/kviz')
+    expect(catalog.querySelector('[data-testid="quiz-hero"]')?.textContent).toContain('Igraj s riječima')
+    const churchCard = catalog.querySelector('[data-testid="topic-card-crkve"]')!
     expect(churchCard).not.toBeNull()
     const churchLink = churchCard.matches('a') ? churchCard : churchCard.querySelector('a')
-    expect(churchLink?.getAttribute('href')).toBe(`${prefix}/heritage/igre/churches`)
-    expect(catalog.textContent).toContain(topic)
+    expect(churchLink?.getAttribute('href')).toBe('/potkalnicko-prigorje/igre/crkve')
+    expect(catalog.textContent).toContain('Crkve')
 
-    const topicResponse = await request(`${prefix}/heritage/igre/churches`)
+    const topicResponse = await request('/potkalnicko-prigorje/igre/crkve')
     expect(topicResponse.status).toBe(200)
     const topicHtml = await topicResponse.text()
     const topicWindow = new Window()
     topicWindow.document.body.innerHTML = topicHtml
     const quizList = topicWindow.document.querySelector('[data-testid="topic-quiz-list"]')!
     expect(quizList).not.toBeNull()
-    expect(quizList.textContent).toContain(mechanic)
+    expect(quizList.textContent).toContain('Spajanje')
     expect(quizList.querySelector('button[disabled]')).not.toBeNull()
     await window.happyDOM.close()
     await topicWindow.happyDOM.close()
@@ -182,7 +177,7 @@ describe('heritage quiz catalog', () => {
 
 describe('word admin and public word APIs', () => {
   it('renders loading copy for client-fetched cards in both prerendered pages', async () => {
-    for (const path of ['/', '/heritage/kartice']) {
+    for (const path of ['/', '/potkalnicko-prigorje/igre/kartice']) {
       const response = await request(path)
       expect(response.status).toBe(200)
       expect(await response.text()).toContain('Učitavam kartice…')
@@ -294,6 +289,33 @@ describe('word admin and public word APIs', () => {
     expect((await request('/api/review/words?offset=-1', { secret: SECRET })).status).toBe(400)
     expect((await request('/api/review/words/missing', { method: 'PUT', secret: SECRET, body: good })).status).toBe(404)
     expect((await request('/api/review/submissions/999999999/word', { method: 'POST', secret: SECRET })).status).toBe(404)
+  })
+})
+
+describe('admin session', () => {
+  it('rejects a wrong password and rate limits the eleventh failure', async () => {
+    const ip = newClient()
+    for (let attempt = 0; attempt < 10; attempt++) {
+      expect((await request('/api/admin/session', { method: 'POST', body: { password: 'wrong-password' }, ip })).status).toBe(401)
+    }
+    expect((await request('/api/admin/session', { method: 'POST', body: { password: 'wrong-password' }, ip })).status).toBe(429)
+  })
+
+  it('sets a sealed cookie, authenticates review APIs, and logs out', async () => {
+    const login = await request('/api/admin/session', { method: 'POST', body: { password: SECRET } })
+    expect(login.status).toBe(200)
+    const setCookie = login.headers.get('set-cookie')!
+    expect(setCookie).toMatch(/admin-session=/)
+    expect(setCookie).toMatch(/HttpOnly/i)
+    expect(setCookie).toMatch(/Secure/i)
+    expect(setCookie).toMatch(/SameSite=Strict/i)
+    expect(setCookie).toMatch(/Max-Age=43200/i)
+    const cookie = setCookie.split(';')[0]!
+    expect((await request('/api/admin/session', { headers: { cookie } })).status).toBe(200)
+    expect((await request('/api/review/submissions', { headers: { cookie } })).status).toBe(200)
+    const logout = await request('/api/admin/session', { method: 'DELETE', headers: { cookie } })
+    expect(logout.status).toBe(200)
+    expect(logout.headers.get('set-cookie')).toMatch(/Max-Age=0/i)
   })
 })
 
@@ -588,19 +610,16 @@ describe('server-only credentials', () => {
 })
 
 describe('multiple-choice pages', () => {
-  it.each([
-    { path: '/heritage/kviz', lang: 'hr', title: 'Ponuđeni odgovori', loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi' },
-    { path: '/en/heritage/kviz', lang: 'en', title: 'Multiple choice', loading: 'Loading questions…', empty: 'We need a few more words' }
-  ])('renders loading copy for the client-fetched $lang quiz from the production server', async ({ path, lang, title, loading, empty }) => {
-    const response = await fetch(path)
+  it('renders Croatian loading copy for the client-fetched quiz from the production server', async () => {
+    const response = await fetch('/potkalnicko-prigorje/igre/kviz')
     expect(response.status).toBe(200)
     const html = await response.text()
-    expect(html).toMatch(new RegExp(`<html[^>]+lang="${lang === 'hr' ? 'hr-HR' : 'en-GB'}"`))
-    expect(html).toContain(title)
-    expect(html).toContain(loading)
-    expect(html).not.toContain(empty)
+    expect(html).toMatch(/<html[^>]+lang="hr-HR"/)
+    expect(html).toContain('Ponuđeni odgovori')
+    expect(html).toContain('Učitavam pitanja…')
+    expect(html).not.toContain('Trebamo još riječi')
     expect(html).toContain('role="status"')
-    expect(html).not.toContain(`${lang === 'en' ? '/en' : ''}/heritage/kartice`)
+    expect(html).not.toContain('/potkalnicko-prigorje/igre/kartice')
   })
 })
 
@@ -616,19 +635,16 @@ describe('public discovery, sharing metadata and error pages', () => {
     expect(urls).toEqual([
       'https://karlo-siladi.from.hr/',
       'https://karlo-siladi.from.hr/en',
-      'https://karlo-siladi.from.hr/heritage',
-      'https://karlo-siladi.from.hr/en/heritage',
-      'https://karlo-siladi.from.hr/heritage/kartice',
-      'https://karlo-siladi.from.hr/en/heritage/kartice',
-      'https://karlo-siladi.from.hr/heritage/kviz',
-      'https://karlo-siladi.from.hr/en/heritage/kviz',
-      'https://karlo-siladi.from.hr/privacy',
-      'https://karlo-siladi.from.hr/en/privacy'
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre/kartice',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre/kviz',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/privatnost'
     ])
-    expect(sitemap).not.toContain('/review')
+    expect(sitemap).not.toContain('/heritage')
+    expect(sitemap).not.toContain('/en/potkalnicko-prigorje')
 
     const robots = await (await fetch('/robots.txt')).text()
-    for (const path of ['/review', '/en/review', '/review-words', '/en/review-words', '/api/']) {
+    for (const path of ['/admin', '/api/']) {
       expect(robots).toContain(`Disallow: ${path}`)
     }
     expect(robots).toContain('Sitemap: https://karlo-siladi.from.hr/sitemap.xml')
@@ -637,14 +653,10 @@ describe('public discovery, sharing metadata and error pages', () => {
   it.each([
     { path: '/', title: 'Karlo Siladi', description: 'Karlo Siladi izrađuje stvari', image: 'share-hr.jpg' },
     { path: '/en', title: 'Karlo Siladi', description: 'Karlo Siladi builds things', image: 'share-en.jpg' },
-    { path: '/heritage', title: 'Zavičajna baština · Karlo Siladi', description: 'Čuvamo riječi', image: 'share-hr.jpg' },
-    { path: '/en/heritage', title: 'Local Heritage Project · Karlo Siladi', description: 'Preserving and sharing', image: 'share-en.jpg' },
-    { path: '/heritage/kartice', title: 'Kaj to znači? · Karlo Siladi', description: 'Kartice s riječima', image: 'share-hr.jpg' },
-    { path: '/en/heritage/kartice', title: 'Kaj to znači? · Karlo Siladi', description: 'Local word cards', image: 'share-en.jpg' },
-    { path: '/heritage/kviz', title: 'Ponuđeni odgovori · Karlo Siladi', description: 'Pročitaj riječ', image: 'share-hr.jpg' },
-    { path: '/en/heritage/kviz', title: 'Multiple choice · Karlo Siladi', description: 'Read the word', image: 'share-en.jpg' },
-    { path: '/privacy', title: 'Obavijest o privatnosti · Karlo Siladi', description: 'Koje podatke', image: 'share-hr.jpg' },
-    { path: '/en/privacy', title: 'Privacy notice · Karlo Siladi', description: 'What the Local Heritage Project', image: 'share-en.jpg' }
+    { path: '/potkalnicko-prigorje', title: 'Potkalnički zapisi', description: 'Priče, ljudi i baština', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje/igre/kartice', title: 'Kaj to znači? · Potkalnički zapisi', description: 'Kartice s riječima', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje/igre/kviz', title: 'Ponuđeni odgovori · Potkalnički zapisi', description: 'Pročitaj riječ', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje/privatnost', title: 'Obavijest o privatnosti · Potkalnički zapisi', description: 'Koje podatke', image: 'og.svg' }
   ])('sets localized sharing metadata on $path', async ({ path, title, description, image }) => {
     const response = await fetch(path)
     expect(response.status).toBe(200)
@@ -653,6 +665,10 @@ describe('public discovery, sharing metadata and error pages', () => {
     expect(metaContent(html, 'og:description')).toContain(description)
     expect(metaContent(html, 'og:image')).toContain(image)
     expect(metaContent(html, 'twitter:card')).toBe('summary_large_image')
+  })
+
+  it.each(['/heritage', '/privacy', '/review', '/review-words', '/en/potkalnicko-prigorje'])('does not keep the retired page route %s', async (path) => {
+    expect((await fetch(path, { headers: { accept: 'text/html' } })).status).toBe(404)
   })
 
   it.each([

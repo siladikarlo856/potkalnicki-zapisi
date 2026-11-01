@@ -8,7 +8,7 @@
     "myStory": "Moja priča",
     "projects": "Projekti",
     "siladiDizajn": "Siladi Dizajn",
-    "apps": "Aplikacije i web",
+    "apps": "Potkalnički zapisi",
     "contact": "Kontakt",
     "soon": "Uskoro"
   },
@@ -24,9 +24,9 @@
     },
     "heritage": {
       "badge": "Uskoro",
-      "eyebrow": "Zavičajna baština · radni naziv",
-      "title": "Riječi, izrazi i običaji našeg kraja — da ne padnu u zaborav.",
-      "description": "Skupljamo riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i okolice — a uskoro i kroz kvizove i igre.",
+      "eyebrow": "Potkalnički zapisi",
+      "title": "Priče, ljudi i baština našega kraja.",
+      "description": "Samostalna aplikacija posvećena riječima, pričama i baštini Potkalničkoga prigorja.",
       "explore": "Saznaj više o projektu",
       "share": "Pošalji riječ",
       "note": "Projekt je tek u izradi. Sve što pošalješ prvo provjerimo."
@@ -62,8 +62,8 @@
       "soon": "Uskoro",
       "community": {
         "tag": "Za zajednicu",
-        "title": "Projekt 1",
-        "description": "Ovdje dolazi projekt za zajednicu."
+        "title": "Potkalnički zapisi",
+        "description": "Priče, ljudi i baština Potkalničkoga prigorja."
       },
       "professional": {
         "tag": "Posao",
@@ -88,9 +88,9 @@
     "copyright": "© {year} Karlo Siladi"
   },
   "heritage": {
-    "title": "Zavičajna baština",
-    "nameNote": "Radni naziv — pravo ime još tražimo",
-    "description": "Čuvamo riječi, izraze, sjećanja i običaje Svetog Petra Orehovca, Križevaca i okolice — i dijelimo ih dalje.",
+    "title": "Potkalnički zapisi",
+    "nameNote": "Priče, ljudi i baština našega kraja.",
+    "description": "Priče, ljudi i baština našega kraja.",
     "badge": "Uskoro",
     "status": "U izradi",
     "share": "Pošalji riječ",

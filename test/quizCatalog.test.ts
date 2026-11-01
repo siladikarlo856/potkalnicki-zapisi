@@ -4,12 +4,12 @@ import { quizDefinitions, quizMechanics, quizTopics } from '../app/data/heritage
 describe('heritage quiz catalog', () => {
   it('keeps topics and mechanics as separate dimensions', () => {
     expect(quizTopics.map(topic => topic.slug)).toEqual([
-      'words',
-      'churches',
-      'history',
-      'legends',
-      'geography',
-      'famous-people',
+      'rijeci',
+      'crkve',
+      'povijest',
+      'legende',
+      'zemljopis',
+      'poznati-ljudi',
       'sport'
     ])
     expect(quizMechanics).toEqual(['multiple-choice', 'matching', 'map-pin'])
@@ -20,18 +20,18 @@ describe('heritage quiz catalog', () => {
   it('marks the existing Words multiple-choice quiz as playable', () => {
     expect(quizDefinitions).toContainEqual(expect.objectContaining({
       id: 'words-multiple-choice',
-      topic: 'words',
+      topic: 'rijeci',
       mechanic: 'multiple-choice',
       playable: true,
-      path: '/heritage/kviz'
+      path: '/potkalnicko-prigorje/igre/kviz'
     }))
   })
 
   it('keeps future mechanic examples in the catalog without making them playable', () => {
     expect(quizDefinitions).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'churches-matching', topic: 'churches', mechanic: 'matching', playable: false }),
-      expect.objectContaining({ id: 'geography-map-pin', topic: 'geography', mechanic: 'map-pin', playable: false }),
-      expect.objectContaining({ id: 'geography-matching', topic: 'geography', mechanic: 'matching', playable: false }),
+      expect.objectContaining({ id: 'churches-matching', topic: 'crkve', mechanic: 'matching', playable: false }),
+      expect.objectContaining({ id: 'geography-map-pin', topic: 'zemljopis', mechanic: 'map-pin', playable: false }),
+      expect.objectContaining({ id: 'geography-matching', topic: 'zemljopis', mechanic: 'matching', playable: false }),
       expect.objectContaining({ id: 'sport-matching', topic: 'sport', mechanic: 'matching', playable: false })
     ]))
   })

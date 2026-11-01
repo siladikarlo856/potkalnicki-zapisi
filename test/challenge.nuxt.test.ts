@@ -38,34 +38,30 @@ afterEach(() => {
   Object.defineProperty(navigator, 'share', shareDescriptor ?? { configurable: true, value: undefined })
 })
 
-describe.each(['hr', 'en'] as const)('%s early challenge sharing', (locale) => {
+describe('hr early challenge sharing', () => {
   it.each(['ready', 'question'] as const)('offers copy, native share, close date and scoreboard in the %s phase', async (nextPhase) => {
     phase = nextPhase
-    await useNuxtApp().$i18n.setLocale(locale)
-    const prefix = locale === 'en' ? '/en' : ''
-    wrapper = await mountSuspended(Challenge, { props: { code }, route: `${prefix}/heritage/challenge/${code}` })
+    await useNuxtApp().$i18n.setLocale('hr')
+    wrapper = await mountSuspended(Challenge, { props: { code }, route: `/potkalnicko-prigorje/izazov/${code}` })
     await expect.poll(() => wrapper!.find('[data-testid="challenge-share"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="challenge-finish"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="challenge-scoreboard-link"]').attributes('href')).toBe(`${prefix}/heritage/challenge/${code}/leaderboard`)
-    expect(wrapper.text()).toContain(locale === 'hr' ? 'Otvoren do' : 'Open until')
-    expect(wrapper.find(`a[href="${prefix}/heritage/challenge"]`).exists()).toBe(true)
+    expect(wrapper.get('[data-testid="challenge-scoreboard-link"]').attributes('href')).toBe(`/potkalnicko-prigorje/izazov/${code}/ljestvica`)
+    expect(wrapper.text()).toContain('Otvoren do')
+    expect(wrapper.find('a[href="/potkalnicko-prigorje/izazov"]').exists()).toBe(true)
     const link = wrapper.get('[data-testid="challenge-share"] input[readonly]').element as HTMLInputElement
-    expect(link.value).toContain(`${prefix}/heritage/challenge/${code}`)
+    expect(link.value).toContain(`/potkalnicko-prigorje/izazov/${code}`)
     await wrapper.get('[data-testid="challenge-copy"]').trigger('click')
     expect(copy).toHaveBeenCalledWith(link.value)
     await wrapper.get('[data-testid="challenge-native-share"]').trigger('click')
-    expect(share).toHaveBeenCalledWith({ title: locale === 'hr' ? 'Izazov zavičaja' : 'Heritage challenge', url: link.value })
+    expect(share).toHaveBeenCalledWith({ title: 'Izazov zavičaja', url: link.value })
     expect(wrapper.get('[data-testid="challenge-whatsapp"]').attributes('href')).toContain('https://wa.me/?text=')
     expect(wrapper.get('[data-testid="challenge-viber"]').attributes('href')).toContain('viber://forward?text=')
   })
 })
 
-describe.each([
-  { locale: 'hr' as const, create: 'Stvori izazov za prijatelja' },
-  { locale: 'en' as const, create: 'Create a friend challenge' }
-])('$locale quiz challenge creation', ({ locale, create }) => {
+describe('hr quiz challenge creation', () => {
   it('creates a completed challenge from the played round before offering every share action', async () => {
-    await useNuxtApp().$i18n.setLocale(locale)
+    await useNuxtApp().$i18n.setLocale('hr')
     wrapper = await mountSuspended(ChallengeShare, {
       props: {
         quiz: {
@@ -76,9 +72,9 @@ describe.each([
           results: [true, false]
         }
       } as never,
-      route: `${locale === 'en' ? '/en' : ''}/heritage/kviz`
+      route: '/potkalnicko-prigorje/igre/kviz'
     })
-    expect(wrapper.get('[data-testid="challenge-create"]').text()).toContain(create)
+    expect(wrapper.get('[data-testid="challenge-create"]').text()).toContain('Stvori izazov za prijatelja')
     await wrapper.get('input[name="nickname"]').setValue('Ana')
     await wrapper.get('[data-testid="challenge-create"] form').trigger('submit')
     await expect.poll(() => wrapper!.find('[data-testid="challenge-share-link"]').exists()).toBe(true)

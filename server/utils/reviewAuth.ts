@@ -10,8 +10,7 @@ function digest(value: string) {
   return createHash('sha256').update(value).digest()
 }
 
-// Every review API route calls this first: the review page itself holds no protection.
-export function requireReviewer(event: H3Event) {
+export function verifyReviewerPassword(event: H3Event, given: string) {
   const { reviewSecret } = useRuntimeConfig(event)
   if (!reviewSecret || reviewSecret.length < REVIEW_SECRET_MIN_LENGTH) {
     throw createError({ statusCode: 503, statusMessage: 'Review is not configured' })
@@ -22,10 +21,17 @@ export function requireReviewer(event: H3Event) {
     throw createError({ statusCode: 429, statusMessage: 'Too many attempts' })
   }
 
-  const header = getRequestHeader(event, 'authorization') ?? ''
-  const given = header.startsWith('Bearer ') ? header.slice('Bearer '.length) : ''
   if (!given || !timingSafeEqual(digest(given), digest(reviewSecret))) {
     countRateLimit('review-auth', key, FAILED_ATTEMPTS_WINDOW_SECONDS)
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
+}
+
+// Every review API route calls this first. Browser sessions and Bearer clients are both supported.
+export async function requireReviewer(event: H3Event) {
+  const header = getRequestHeader(event, 'authorization') ?? ''
+  const given = header.startsWith('Bearer ') ? header.slice('Bearer '.length) : ''
+  if (given) return verifyReviewerPassword(event, given)
+  if (await hasAdminSession(event)) return
+  throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
 }

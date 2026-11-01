@@ -2,8 +2,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createClient } from '@supabase/supabase-js'
 import { clearNuxtData, useNuxtApp } from '#imports'
-import Quiz from '../app/pages/heritage/kviz.vue'
-import Cards from '../app/pages/heritage/kartice.vue'
+import Quiz from '../app/pages/potkalnicko-prigorje/igre/kviz.vue'
+import Cards from '../app/pages/potkalnicko-prigorje/igre/kartice.vue'
 import sampleWords from '../content/heritage/words.json'
 import sampleAreas from '../content/heritage/areas.json'
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
@@ -46,21 +46,20 @@ afterEach(() => {
 })
 afterAll(() => fake.stop())
 
-async function mountQuiz(lang: 'hr' | 'en') {
+async function mountQuiz(lang: 'hr' = 'hr') {
   await useNuxtApp().$i18n.setLocale(lang)
-  wrapper = await mountSuspended(Quiz, { route: `${lang === 'en' ? '/en' : ''}/heritage/kviz` })
+  wrapper = await mountSuspended(Quiz, { route: '/potkalnicko-prigorje/igre/kviz' })
   return wrapper
 }
 
-async function mountCards(lang: 'hr' | 'en') {
+async function mountCards(lang: 'hr' = 'hr') {
   await useNuxtApp().$i18n.setLocale(lang)
-  wrapper = await mountSuspended(Cards, { route: `${lang === 'en' ? '/en' : ''}/heritage/kartice` })
+  wrapper = await mountSuspended(Cards, { route: '/potkalnicko-prigorje/igre/kartice' })
   return wrapper
 }
 
 const locales = [
-  { lang: 'hr' as const, loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi', prompt: 'Što znači ova riječ?', progress: 'Odgovorena pitanja', error: 'Pitanja trenutačno nisu dostupna.', retry: 'Pokušaj opet' },
-  { lang: 'en' as const, loading: 'Loading questions…', empty: 'We need a few more words', prompt: 'What does this word mean?', progress: 'Questions answered', error: 'Questions are currently unavailable.', retry: 'Try again' }
+  { lang: 'hr' as const, loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi', prompt: 'Što znači ova riječ?', progress: 'Odgovorena pitanja', error: 'Pitanja trenutačno nisu dostupna.', retry: 'Pokušaj opet' }
 ]
 
 describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, prompt, progress, error, retry }) => {
@@ -121,8 +120,7 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, pr
 })
 
 describe.each([
-  { lang: 'hr' as const, counter: 'Kartica 1 od 4', flip: 'Okreni karticu', unknown: 'Ne znam', next: 'Kartica 2 od 4' },
-  { lang: 'en' as const, counter: 'Card 1 of 4', flip: 'Flip the card', unknown: 'I don’t know', next: 'Card 2 of 4' }
+  { lang: 'hr' as const, counter: 'Kartica 1 od 4', flip: 'Okreni karticu', unknown: 'Ne znam', next: 'Kartica 2 od 4' }
 ])('$lang flip-card page', ({ lang, counter, flip, unknown, next }) => {
   it('localizes controls and announces flips and the next card', async () => {
     const page = await mountCards(lang)
@@ -132,7 +130,6 @@ describe.each([
     const spoken = page.findAll('[aria-live="polite"]').map(region => region.text()).find(Boolean)!
     const current = seeds.find(word => spoken.includes(`${word.headword}: ${word.meaning.hr}`))
     expect(current).toBeDefined()
-    if (lang === 'en') expect(spoken).toContain(`(${current!.meaning.en})`)
 
     const unknownButton = page.findAll('button').find(button => button.text().includes(unknown))!
     await unknownButton.trigger('click')
@@ -141,15 +138,14 @@ describe.each([
 })
 
 describe.each([
-  { lang: 'hr' as const, differently: 'Kod nas se kaže drugačije', close: 'Zatvori', prefill: 'Umjesto „{word}“ kod nas se kaže: ' },
-  { lang: 'en' as const, differently: 'Where I’m from, we say it differently', close: 'Close', prefill: 'Instead of “{word}”, where I’m from we say: ' }
+  { lang: 'hr' as const, differently: 'Kod nas se kaže drugačije', close: 'Zatvori', prefill: 'Umjesto „{word}“ kod nas se kaže: ' }
 ])('$lang card contribution form', ({ lang, differently, close, prefill }) => {
   it('opens the prefilled variant form inline without leaving the cards', async () => {
     const page = await mountCards(lang)
-    await expect.poll(() => page.text()).toContain(lang === 'hr' ? 'Kartica 1 od 4' : 'Card 1 of 4')
+    await expect.poll(() => page.text()).toContain('Kartica 1 od 4')
     const headword = page.findAll('p').find(paragraph => paragraph.classes().includes('text-4xl'))!.text()
     expect(seeds.map(word => word.headword)).toContain(headword)
-    const flip = page.findAll('button').find(button => button.text() === (lang === 'hr' ? 'Okreni karticu' : 'Flip the card'))!
+    const flip = page.findAll('button').find(button => button.text() === 'Okreni karticu')!
     await flip.trigger('click')
     // The first matching control is the one on the card back, the second the page-level trigger.
     const trigger = page.findAll('button').find(button => button.text() === differently)!
@@ -158,7 +154,7 @@ describe.each([
     expect(textarea.exists()).toBe(true)
     expect((textarea.element as HTMLTextAreaElement).value).toBe(prefill.replace('{word}', headword))
     // Still on the card: its counter is visible and the form was not a navigation.
-    expect(page.text()).toContain(lang === 'hr' ? 'Kartica 1 od 4' : 'Card 1 of 4')
+    expect(page.text()).toContain('Kartica 1 od 4')
     const closeButton = page.findAll('button').find(button => button.text() === close)!
     await closeButton.trigger('click')
     expect(page.find('textarea').exists()).toBe(false)
@@ -168,22 +164,21 @@ describe.each([
 describe('limited active words', () => {
   it.each([0, 1, 2, 3])('handles %i active words after loading completes', async (count) => {
     for (const entry of seeds.slice(count)) await db.from('heritage_words').update({ active: false }).eq('id', entry.id)
-    const page = await mountQuiz('en')
+    const page = await mountQuiz()
     if (count < 2) {
-      await expect.poll(() => page.text()).toContain('We need a few more words')
-      expect(page.text()).toContain('at least two distinct meanings')
+      await expect.poll(() => page.text()).toContain('Trebamo još riječi')
+      expect(page.text()).toContain('barem dva različita značenja')
       expect(page.find('[data-option-id]').exists()).toBe(false)
     } else {
       await expect.poll(() => page.findAll('[data-option-id]').length).toBe(count)
-      expect(page.text()).toContain(`This word has ${count} distinct answer choices available.`)
-      expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe('Questions answered')
+      expect(page.text()).toContain(`Za ovu riječ imamo ${count} različita ponuđena značenja.`)
+      expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe('Odgovorena pitanja')
     }
   })
 })
 
 describe.each([
-  { lang: 'hr' as const, next: 'Sljedeća riječ', results: 'Pogledaj rezultat', review: 'Riječi za ponavljanje', summary: 'Kaj to znači? 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 / 1', copy: 'Kopiraj rezultat', copied: 'Kopirano!', path: '/heritage/kviz' },
-  { lang: 'en' as const, next: 'Next word', results: 'See your score', review: 'Words to review', summary: 'Kaj to znači? 3/4', replay: 'Replay missed (1)', noMisses: 'No misses', counter: 'Question 1 / 1', copy: 'Copy result', copied: 'Copied!', path: '/en/heritage/kviz' }
+  { lang: 'hr' as const, next: 'Sljedeća riječ', results: 'Pogledaj rezultat', review: 'Riječi za ponavljanje', summary: 'Kaj to znači? 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 / 1', copy: 'Kopiraj rezultat', copied: 'Kopirano!', path: '/potkalnicko-prigorje/igre/kviz' }
 ])('$lang quiz result', ({ lang, next, results, review, summary, replay, noMisses, counter, copy, copied, path }) => {
   async function answerCurrent(page: Awaited<ReturnType<typeof mountQuiz>>, correct: boolean) {
     const headword = page.get('#question-word').text()

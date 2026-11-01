@@ -55,7 +55,7 @@ async function act(action: 'create' | 'join' | 'reveal' | 'answer' | 'continue',
   try {
     const path = action === 'create' ? '/api/challenges' : `/api/challenges/${props.code}/${action}`
     state.value = await $fetch<ChallengeState>(path, { method: 'POST', body })
-    if (action === 'create') await navigateTo(localePath(`/heritage/challenge/${state.value.code}`))
+    if (action === 'create') await navigateTo(localePath(`/potkalnicko-prigorje/izazov/${state.value.code}`))
     entering.value = false
   } catch (cause) {
     error.value = message(cause)
@@ -93,7 +93,7 @@ onMounted(() => {
 <template>
   <UContainer class="max-w-3xl py-10 sm:py-16">
     <UButton
-      :to="localePath('/heritage')"
+      :to="localePath('/potkalnicko-prigorje')"
       color="neutral"
       variant="link"
       icon="i-lucide-arrow-left"
@@ -142,14 +142,14 @@ onMounted(() => {
         class="flex flex-wrap gap-3"
       >
         <UButton
-          :to="localePath(`/heritage/challenge/${state.code}/leaderboard`)"
+          :to="localePath(`/potkalnicko-prigorje/izazov/${state.code}/ljestvica`)"
           icon="i-lucide-list-ordered"
           data-testid="challenge-scoreboard-link"
         >
           {{ t(state.closed ? 'challenge.final' : 'challenge.leaderboard') }}
         </UButton>
         <UButton
-          :to="localePath('/heritage/challenge')"
+          :to="localePath('/potkalnicko-prigorje/izazov')"
           color="neutral"
           variant="outline"
         >

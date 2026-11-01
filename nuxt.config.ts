@@ -28,6 +28,7 @@ export default defineNuxtConfig({
       serviceRoleKey: ''
     },
     reviewSecret: '',
+    adminSessionPassword: '',
     challengeRateLimit: {
       create: 5,
       join: 20,
@@ -44,20 +45,12 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { prerender: true },
     '/en': { prerender: true },
-    '/heritage': { prerender: true },
-    '/en/heritage': { prerender: true },
-    '/heritage/kartice': { prerender: true },
-    '/en/heritage/kartice': { prerender: true },
-    '/heritage/kviz': { prerender: true },
-    '/en/heritage/kviz': { prerender: true },
-    '/heritage/igre/**': { prerender: true },
-    '/en/heritage/igre/**': { prerender: true },
-    '/privacy': { prerender: true },
-    '/en/privacy': { prerender: true },
-    '/review': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
-    '/en/review': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
-    '/review-words': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
-    '/en/review-words': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    '/potkalnicko-prigorje': { prerender: true },
+    '/potkalnicko-prigorje/igre/kartice': { prerender: true },
+    '/potkalnicko-prigorje/igre/kviz': { prerender: true },
+    '/potkalnicko-prigorje/igre/**': { prerender: true },
+    '/potkalnicko-prigorje/privatnost': { prerender: true },
+    '/admin/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
     '/api/**': { headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }
   },
 

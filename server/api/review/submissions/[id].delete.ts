@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  requireReviewer(event)
+  await requireReviewer(event)
   const id = submissionIdParam(event)
 
   if (!await deleteSubmission(id)) {

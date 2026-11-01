@@ -9,7 +9,7 @@ const error = ref('')
 const nativeShare = ref(false)
 const score = computed(() => props.results.filter(Boolean).length)
 const summary = computed(() => resultShareText(t('quiz.shareText', { score: score.value, total: props.results.length }), props.results))
-const link = computed(() => origin.value + localePath('/heritage/kviz'))
+const link = computed(() => origin.value + localePath('/potkalnicko-prigorje/igre/kviz'))
 
 async function copy() {
   error.value = ''

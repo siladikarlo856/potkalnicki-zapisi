@@ -244,7 +244,7 @@ const successActions = computed(() => {
       >
         <template #privacy>
           <ULink
-            :to="localePath('/privacy')"
+            :to="localePath('/potkalnicko-prigorje/privatnost')"
             class="text-primary underline underline-offset-2"
           >
             {{ t('heritage.form.privacyLink') }}

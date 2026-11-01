@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import ReviewWords from '../app/pages/review-words.vue'
-import Review from '../app/pages/review.vue'
+import ReviewWords from '../app/pages/admin/rijeci.vue'
+import Review from '../app/pages/admin/prilozi.vue'
 import sampleWords from '../content/heritage/words.json'
 import sampleAreas from '../content/heritage/areas.json'
 
@@ -15,9 +15,6 @@ registerEndpoint('/api/review/words', () => [{
   entry: word, areas: sampleAreas, active: true, submissionId: null, submissionPlace: null, createdAt: '2026-10-30', updatedAt: '2026-10-30'
 }])
 registerEndpoint('/api/review/submissions', () => [submission])
-
-beforeEach(() => sessionStorage.setItem('review-secret', 'x'))
-afterEach(() => sessionStorage.clear())
 
 describe('admin tables', () => {
   for (const [name, page, label] of [['submissions', Review, 'Moja riječ']] as const) {

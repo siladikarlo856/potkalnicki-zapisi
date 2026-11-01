@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  requireReviewer(event)
+  await requireReviewer(event)
   const id = submissionIdParam(event)
 
   const body = await readBody<{ status?: unknown }>(event).catch(() => null)
