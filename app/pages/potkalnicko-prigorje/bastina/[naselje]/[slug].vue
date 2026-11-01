@@ -19,6 +19,11 @@ const settlement = settlementByCode(heritageItem.settlementCode!)!
 const municipality = atlas.value.municipalities.find(m => m.id === heritageItem.municipalityId)!
 const sources = heritageItem.sourceIds.map(id => atlas.value.sources.find(s => s.id === id)!).filter(Boolean)
 
+const correctionTo = computed(() => localePath({
+  path: '/potkalnicko-prigorje/doprinesi',
+  query: { vrsta: 'ispravak', zapis: heritageItem.id }
+}))
+
 useSeoMeta({
   title: () => `${heritageItem.name} · Potkalnički zapisi`,
   description: () => heritageItem.researchNotes.slice(0, 160),
@@ -109,6 +114,15 @@ function locationLine() {
       <p class="text-sm text-muted">
         {{ t('pz.heritage.noDescriptionYet') }}
       </p>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <UButton
+          :to="correctionTo"
+          :label="t('pz.heritage.suggestCorrection')"
+          color="neutral"
+          variant="outline"
+          data-testid="heritage-suggest-correction"
+        />
+      </div>
       <ULink
         class="mt-4 inline-flex text-sm text-primary"
         :to="localePath(`/potkalnicko-prigorje/naselja/${settlement.slug}`)"

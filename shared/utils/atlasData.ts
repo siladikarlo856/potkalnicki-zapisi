@@ -45,6 +45,10 @@ export function heritageItemByRoute(settlementSlug: string, itemSlug: string) {
   )
 }
 
+export function heritageItemById(id: string) {
+  return getAtlas().heritage.find(item => item.id === id)
+}
+
 export function municipalityStats(municipalityId: AtlasMunicipality['id']) {
   const atlas = getAtlas()
   const settlements = atlas.settlements.filter(s => s.municipalityId === municipalityId)

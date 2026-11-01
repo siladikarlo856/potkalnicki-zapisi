@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3'
+import { heritageItemById } from '~~/shared/utils/atlasData'
 import { placeById } from './places'
 
 const TABLE = 'heritage_submissions'
@@ -12,6 +13,7 @@ interface SubmissionRow {
   place: string | null
   place_id: string | null
   place_catalog_version: string | null
+  target_ref: string | null
   name: string | null
   contact: string | null
   consent_publish: boolean
@@ -42,6 +44,7 @@ function toSubmission(row: SubmissionRow): Submission {
     id: Number(row.id),
     text: row.text,
     type: row.type,
+    targetRef: row.target_ref ?? null,
     place: row.place,
     placeId: row.place_id ?? null,
     placeCatalogVersion: row.place_catalog_version ?? null,
@@ -63,6 +66,7 @@ export async function insertSubmission(input: ResolvedSubmissionInput) {
   const { error } = await useDatabaseClient().from(TABLE).insert({
     text: input.text,
     type: input.type,
+    target_ref: input.targetRef,
     place: input.place,
     place_id: input.placeId,
     place_catalog_version: input.placeCatalogVersion,
@@ -75,12 +79,13 @@ export async function insertSubmission(input: ResolvedSubmissionInput) {
   if (error) databaseError(error)
 }
 
-export async function listSubmissions(status: SubmissionStatus | 'all') {
+export async function listSubmissions(status: SubmissionStatus | 'all', type?: SubmissionType) {
   const client = useDatabaseClient()
   const rows: SubmissionRow[] = []
   for (let from = 0; ; from += PAGE_SIZE) {
     let query = client.from(TABLE).select('*')
     if (status !== 'all') query = query.eq('status', status)
+    if (type) query = query.eq('type', type)
     const { data, error } = await query
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -110,6 +115,16 @@ export async function deleteSubmission(id: number) {
     .select('id')
   if (error) databaseError(error)
   return data.length > 0
+}
+
+export function assertKnownCorrectionTarget(targetRef: string) {
+  if (!heritageItemById(targetRef)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid submission',
+      data: { issues: [{ field: 'targetRef', code: 'invalid' }] }
+    })
+  }
 }
 
 export function submissionIdParam(event: H3Event) {

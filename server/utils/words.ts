@@ -76,6 +76,7 @@ export async function promoteSubmission(id: number) {
   if (error) databaseError(error)
   const submission = data[0]
   if (!submission) throw createError({ statusCode: 404, statusMessage: 'Submission not found' })
+  if (submission.type === 'correction') throw createError({ statusCode: 400, statusMessage: 'Not a word submission' })
   if (!submission.consent_publish) throw createError({ statusCode: 400, statusMessage: 'Publication consent required' })
   const wordId = randomUUID()
   const isWord = submission.type === 'word' || submission.type === 'expression'

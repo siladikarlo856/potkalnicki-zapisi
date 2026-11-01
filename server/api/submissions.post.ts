@@ -36,6 +36,9 @@ export default defineEventHandler(async (event) => {
     const code = place && resolveActivePlace(result.value.placeId) ? 'outOfScope' : 'invalid'
     throw createError({ statusCode: 400, statusMessage: 'Invalid submission', data: { issues: localizePlaceIssues([{ field: 'place', code }], result.value.locale) } })
   }
+  if (result.value.type === 'correction' && result.value.targetRef) {
+    assertKnownCorrectionTarget(result.value.targetRef)
+  }
   await insertSubmission({
     ...result.value,
     place: selected ? placeSnapshot(selected) : null,

@@ -14,7 +14,7 @@ describe('validateSubmission', () => {
     const result = validateSubmission({ ...valid, text: '  kaj  ', type: '', place: '  ', name: 'Ana ', contact: undefined })
     expect(result).toEqual({
       ok: true,
-      value: { text: 'kaj', type: null, placeId: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
+      value: { text: 'kaj', type: null, targetRef: null, placeId: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
     })
   })
 
@@ -66,6 +66,18 @@ describe('validateSubmission', () => {
       { field: 'name', code: 'invalid' },
       { field: 'locale', code: 'invalid' }
     ])
+  })
+
+  it('requires targetRef for corrections and rejects unknown refs', () => {
+    expect(issuesOf({ ...valid, type: 'correction' })).toEqual([{ field: 'targetRef', code: 'required' }])
+    expect(issuesOf({ ...valid, type: 'correction', targetRef: 'bad id!' })).toEqual([{ field: 'targetRef', code: 'invalid' }])
+    expect(issuesOf({ ...valid, type: 'word', targetRef: 'kalnik-crkva-sv-brcka' })).toEqual([{ field: 'type', code: 'invalid' }])
+    expect(validateSubmission({
+      ...valid,
+      type: 'correction',
+      targetRef: 'kalnik-crkva-sv-brcka',
+      text: 'Zapis: test\n\nPredloženi ispravak:\nLokacija je drugačija.'
+    }).ok).toBe(true)
   })
 
   it('rejects a body that is not an object', () => {

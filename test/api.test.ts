@@ -179,7 +179,8 @@ describe('Potkalnički zapisi contribute and about pages', () => {
     pickerWindow.document.body.innerHTML = pickerHtml
     expect(pickerWindow.document.querySelector('[data-testid="contribute-type-picker"]')).not.toBeNull()
     expect(pickerHtml).toContain('Pošalji riječ ili izraz')
-    expect(pickerHtml).toContain('faza 3')
+    expect(pickerHtml).toContain('Predloži ispravak')
+    expect(pickerHtml).not.toContain('faza 3')
     await pickerWindow.happyDOM.close()
   })
 
@@ -379,6 +380,36 @@ describe('admin session', () => {
 })
 
 describe('POST /api/submissions', () => {
+  it('stores a heritage correction with its atlas target', async () => {
+    const response = await submit({
+      ...valid,
+      type: 'correction',
+      targetRef: 'kalnik-crkva-sv-brcka',
+      text: 'Zapis: Crkva sv. Brcka\n\nPredloženi ispravak:\nTitular u izvoru je drugačiji.',
+      placeId: null,
+      name: null,
+      contact: null
+    })
+    expect(response.status).toBe(201)
+    const stored = (await listAll()).find(row => row.type === 'correction' && row.targetRef === 'kalnik-crkva-sv-brcka')
+    expect(stored).toMatchObject({
+      type: 'correction',
+      targetRef: 'kalnik-crkva-sv-brcka',
+      status: 'pending'
+    })
+  })
+
+  it('rejects corrections with an unknown atlas target', async () => {
+    const response = await submit({
+      ...valid,
+      type: 'correction',
+      targetRef: 'nepostojeci-zapis',
+      text: 'Zapis: test\n\nPredloženi ispravak:\nNešto.'
+    })
+    expect(response.status).toBe(400)
+    expect((await response.json()).data.issues).toContainEqual({ field: 'targetRef', code: 'invalid' })
+  })
+
   it('requires a valid place for variant reports while ordinary word contributions may omit it', async () => {
     const text = 'variant place validation test'
     for (const placeId of [undefined, null, '', '   ', 'forged', 'geonames:9999999999', 'geonames:3194379']) {
@@ -399,6 +430,7 @@ describe('POST /api/submissions', () => {
     const stored = (await listAll()).find(row => row.text === 'stored submission')
     expect(stored).toMatchObject({
       type: 'expression',
+      targetRef: null,
       place: 'Sveti Petar Orehovec (geonames:3194024)',
       placeId: 'geonames:3194024',
       placeCatalogVersion: expect.any(String),
@@ -645,6 +677,23 @@ describe('review API', () => {
     expect(rows.some(row => row.text === 'listed submission')).toBe(true)
 
     expect((await request('/api/review/submissions?status=nope', { secret: SECRET })).status).toBe(400)
+  })
+
+  it('filters review submissions by type', async () => {
+    await submit({
+      ...valid,
+      type: 'correction',
+      targetRef: 'kalnik-crkva-sv-brcka',
+      text: 'type filter correction row',
+      placeId: null
+    })
+    await submit({ ...valid, text: 'type filter ordinary row', type: 'memory' })
+    const response = await request('/api/review/submissions?status=all&type=correction', { secret: SECRET })
+    expect(response.status).toBe(200)
+    const rows = await response.json() as Array<{ type: string | null, text: string }>
+    expect(rows.every(row => row.type === 'correction')).toBe(true)
+    expect(rows.some(row => row.text === 'type filter correction row')).toBe(true)
+    expect(rows.some(row => row.text === 'type filter ordinary row')).toBe(false)
   })
 
   it('approves, rejects and deletes a submission', async () => {

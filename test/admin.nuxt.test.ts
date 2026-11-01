@@ -7,7 +7,7 @@ import sampleAreas from '../content/heritage/areas.json'
 
 const word = sampleWords[0]!
 const submission = {
-  id: 7, text: 'Moja riječ', type: null, place: null, placeId: null, name: null, contact: null,
+  id: 7, text: 'Moja riječ', type: null, targetRef: null, place: null, placeId: null, name: null, contact: null,
   locale: 'hr', consentPublish: true, consentVersion: 'v1', status: 'pending', createdAt: '2026-10-30 10:00:00'
 }
 

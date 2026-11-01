@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SubmissionType } from '~~/shared/utils/submission'
+import { heritageItemById } from '~~/shared/utils/atlasData'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -18,16 +19,26 @@ const pickerCards: { kind: PickerKind, type?: SubmissionType, soon?: boolean }[]
   { kind: 'photo', soon: true }
 ]
 
+const correctionItem = computed(() => {
+  const raw = route.query.zapis
+  if (typeof raw !== 'string') return undefined
+  return heritageItemById(raw)
+})
+
 const selectedKind = computed(() => {
   const raw = route.query.vrsta
   if (raw === 'rijec' || raw === 'rijec-izraz') return 'word' as const
   if (raw === 'sjecanje' || raw === 'prica') return 'memory' as const
+  if (raw === 'ispravak' && correctionItem.value) return 'correction' as const
   return undefined
 })
+
+const correctionError = computed(() => route.query.vrsta === 'ispravak' && !correctionItem.value)
 
 const fixedType = computed(() => {
   if (selectedKind.value === 'word') return 'word' as SubmissionType
   if (selectedKind.value === 'memory') return 'memory' as SubmissionType
+  if (selectedKind.value === 'correction') return 'correction' as SubmissionType
   return undefined
 })
 
@@ -103,6 +114,7 @@ useSeoMeta({
               </p>
             </div>
             <UBadge
+              v-if="card.soon"
               :label="t(`pz.contribute.picker.${card.kind}.badge`)"
               color="neutral"
               variant="subtle"
@@ -110,6 +122,14 @@ useSeoMeta({
           </div>
         </UCard>
       </div>
+
+      <UAlert
+        v-else-if="correctionError"
+        color="error"
+        variant="subtle"
+        :title="t('pz.contribute.correctionMissingTarget')"
+        icon="i-lucide-circle-alert"
+      />
 
       <div
         v-else
@@ -130,6 +150,8 @@ useSeoMeta({
         <HeritageSubmissionForm
           :word="prefillWord"
           :fixed-type="fixedType"
+          :target-ref="correctionItem?.id"
+          :correction-item-name="correctionItem?.name"
           hide-type-picker
         />
       </div>

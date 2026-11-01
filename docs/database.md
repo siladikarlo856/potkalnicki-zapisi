@@ -81,6 +81,12 @@ If automation is unavailable, use the [manual fallback](#manual-fallback) with a
 
 For an app rollback, retain the nullable columns, catalog references and all stored place strings. Older app code ignores the additions and can still write null IDs; the picker version treats those free-text rows as legacy/unverified when restored. Do not drop the columns or destructively backfill locations as part of rollback. The workflow does not automatically revert the schema or deployed app.
 
+## Heritage correction submissions
+
+`20261102100000_submission_corrections.sql` adds the `correction` submission type and nullable `target_ref` (atlas item id). It sorts after the seed migrations and does not change word tables or triggers. The constraint requires `target_ref` when `type = 'correction'` and forbids it on other types. Legacy rows keep null `target_ref` and their existing types.
+
+Apply through the normal production workflow before deploying the matching app. On staging, verify a correction stores the atlas id, unknown ids are rejected, and legacy rows stay readable. `node scripts/test-correction-migration.mjs` checks the SQL against an already-running local Postgres inside a rolled-back transaction, like the place-picker script.
+
 ## Failure and recovery
 
 Open **GitHub → Actions → Production database and deploy → failing run → Migrate then promote production branch**. The history step shows version numbers, and the Supabase CLI reports the failed migration and database error. Missing baseline entries, unknown remote migrations, missing earlier versions, authentication/connection errors, SQL errors, branch divergence, or branch protection failures stop the job. Subsequent branch promotion is skipped on migration failure; `production` remains at its last promoted commit.

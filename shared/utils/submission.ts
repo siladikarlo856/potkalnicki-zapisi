@@ -1,6 +1,8 @@
 // Rules for heritage submissions, shared by the form and the API so both check the same limits.
 
-export const SUBMISSION_TYPES = ['word', 'expression', 'memory', 'other'] as const
+import { isCorrectionTargetRefFormat } from './correctionReport'
+
+export const SUBMISSION_TYPES = ['word', 'expression', 'memory', 'other', 'correction'] as const
 export const SUBMISSION_STATUSES = ['pending', 'approved', 'rejected'] as const
 export const SUBMISSION_LOCALES = ['hr', 'en'] as const
 
@@ -21,6 +23,7 @@ export type SubmissionLocale = typeof SUBMISSION_LOCALES[number]
 export interface SubmissionInput {
   text: string
   type: SubmissionType | null
+  targetRef: string | null
   placeId: string | null
   name: string | null
   contact: string | null
@@ -40,7 +43,7 @@ export interface Submission extends Omit<SubmissionInput, 'consentPublish'> {
   reviewedAt: string | null
 }
 
-export type SubmissionField = 'text' | 'type' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
+export type SubmissionField = 'text' | 'type' | 'targetRef' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
 export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid' | 'selectPlace' | 'refreshPlace' | 'outOfScope'
 
 export interface SubmissionIssue {
@@ -86,6 +89,22 @@ export function validateSubmission(input: unknown): SubmissionValidation {
     else issues.push({ field: 'type', code: 'invalid' })
   }
 
+  let targetRef: string | null = null
+  if (body.targetRef !== undefined && body.targetRef !== null && body.targetRef !== '') {
+    if (typeof body.targetRef !== 'string' || !isCorrectionTargetRefFormat(body.targetRef.trim())) {
+      issues.push({ field: 'targetRef', code: 'invalid' })
+    } else {
+      targetRef = body.targetRef.trim()
+    }
+  }
+
+  if (type === 'correction' && !targetRef && !issues.some(issue => issue.field === 'targetRef')) {
+    issues.push({ field: 'targetRef', code: 'required' })
+  }
+  if (targetRef && type !== 'correction' && !issues.some(issue => issue.field === 'type')) {
+    issues.push({ field: 'type', code: 'invalid' })
+  }
+
   // Cached old clients must refresh/reselect instead of submitting arbitrary location text.
   if (body.place !== undefined && body.place !== null && body.place !== '') {
     if (typeof body.place !== 'string' || body.place.trim()) issues.push({ field: 'place', code: 'refreshPlace' })
@@ -104,5 +123,5 @@ export function validateSubmission(input: unknown): SubmissionValidation {
 
   if (issues.length || !locale) return { ok: false, issues }
 
-  return { ok: true, value: { text, type, placeId, name, contact, consentPublish: true, locale } }
+  return { ok: true, value: { text, type, targetRef, placeId, name, contact, consentPublish: true, locale } }
 }

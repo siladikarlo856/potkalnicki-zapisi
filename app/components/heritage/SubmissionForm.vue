@@ -6,6 +6,10 @@ import type { SubmissionType } from '~~/shared/utils/submission'
 const props = defineProps<{
   /** Headword to prefill "Instead of … we say:", e.g. the word a visitor came here about. */
   word?: string
+  /** Atlas item id for a heritage correction; sent as targetRef with type correction. */
+  targetRef?: string
+  /** Item title for correction prefill when targetRef is set. */
+  correctionItemName?: string
   fixedType?: SubmissionType
   hideTypePicker?: boolean
 }>()
@@ -54,6 +58,16 @@ watch(() => props.word, (word) => {
   })
 }, { immediate: true })
 
+watch(() => [props.correctionItemName, props.targetRef] as const, ([name, targetRef]) => {
+  if (!name || !targetRef || state.text) return
+  state.text = t('heritage.form.correctionPrefill', { name })
+  state.type = 'correction'
+  nextTick(() => {
+    const element = textarea.value?.textareaRef
+    element?.setSelectionRange(state.text.length, state.text.length)
+  })
+}, { immediate: true })
+
 function validate(): FormError[] {
   const result = validateSubmission({ ...state, locale: locale.value })
   const errors = result.ok ? [] : toFormErrors(result.issues)
@@ -63,7 +77,11 @@ function validate(): FormError[] {
 
 async function send() {
   sendState.value = 'idle'
-  const outcome = await submit({ ...state })
+  const outcome = await submit({
+    ...state,
+    type: props.fixedType ?? state.type ?? null,
+    targetRef: props.targetRef ?? null
+  })
   if (outcome.ok) {
     Object.assign(state, { text: '', type: undefined, placeId: null, name: '', contact: '', consentPublish: false })
     placeQuery.value = ''
@@ -120,6 +138,16 @@ const successActions = computed(() => [
           :placeholder="t('heritage.form.textPlaceholder')"
           class="w-full"
         />
+      </UFormField>
+
+      <UFormField
+        v-if="props.targetRef && props.correctionItemName"
+        name="targetRef"
+        :label="t('heritage.form.correctionTarget')"
+      >
+        <p class="text-sm font-medium text-highlighted">
+          {{ props.correctionItemName }}
+        </p>
       </UFormField>
 
       <div class="grid gap-4 sm:grid-cols-2">

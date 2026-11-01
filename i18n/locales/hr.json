@@ -199,7 +199,8 @@
         "word": "Riječ",
         "expression": "Izraz",
         "memory": "Sjećanje ili priču",
-        "other": "Nešto drugo"
+        "other": "Nešto drugo",
+        "correction": "Ispravak zapisa"
       },
       "place": "Gdje se tako govori? (neobavezno)",
       "placePlaceholder": "Pretraži sela i gradove u Hrvatskoj",
@@ -230,7 +231,9 @@
       "typePlaceholder": "Odaberi vrstu",
       "typeClear": "Ukloni",
       "typeClearLabel": "Ukloni odabranu vrstu",
-      "prefill": "Umjesto „{word}“ kod nas se kaže: "
+      "prefill": "Umjesto „{word}“ kod nas se kaže: ",
+      "correctionPrefill": "Zapis: „{name}“\n\nPredloženi ispravak:\n",
+      "correctionTarget": "Zapis u Baštini"
     },
     "variantDialog": {
       "title": "Kako se to kaže kod nas?",
@@ -433,7 +436,16 @@
     "anonymous": "bez imena",
     "consentGiven": "da (obavijest od {version})",
     "legacyPlace": "Stari zapis / neprovjereno mjesto",
-    "catalogPlace": "Provjereno naselje · katalog {version}; kontekst iz trenutačnog kataloga"
+    "catalogPlace": "Provjereno naselje · katalog {version}; kontekst iz trenutačnog kataloga",
+    "bastina": {
+      "title": "Ispravci baštine",
+      "intro": "Prijedlozi ispravaka s poveznicom na zapis u inventaru.",
+      "tableCaption": "Ispravci baštine",
+      "unknownTarget": "Nepoznat zapis ({id})",
+      "fields": {
+        "target": "Zapis"
+      }
+    }
   },
   "quiz": {
     "loading": "Učitavam pitanja…",
@@ -659,6 +671,7 @@
       "researchTitle": "Što još provjeravamo",
       "sourcesTitle": "Izvori",
       "noDescriptionYet": "Opis još nije napisan.",
+      "suggestCorrection": "Predloži ispravak",
       "backToSettlement": "← Natrag na {name}",
       "settlementItemsTitle": "Zapisi baštine",
       "emptySettlement": "Za ovo naselje još nema zapisa povezanih s officialnom kartom.",
@@ -675,6 +688,7 @@
       "title": "Doprinesi",
       "intro": "Sve što pošalješ prvo pregledamo. Ime je neobavezno, prijava nije potrebna.",
       "back": "Doprinesi",
+      "correctionMissingTarget": "Ovaj obrazac treba otvoriti s poveznice na zapis u Baštini.",
       "picker": {
         "word": {
           "title": "Pošalji riječ ili izraz",
@@ -687,7 +701,7 @@
         "correction": {
           "title": "Predloži ispravak",
           "description": "Netočan naziv, mjesto ili godina u zapisu.",
-          "badge": "faza 3"
+          "badge": "s stranice zapisa"
         },
         "photo": {
           "title": "Pošalji fotografiju",

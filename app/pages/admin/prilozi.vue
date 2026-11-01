@@ -242,6 +242,7 @@ onMounted(load)
 
             <div class="flex flex-wrap gap-2">
               <UButton
+                v-if="submission.type !== 'correction'"
                 label="Dodaj u riječi / otvori skicu"
                 icon="i-lucide-book-plus"
                 color="neutral"

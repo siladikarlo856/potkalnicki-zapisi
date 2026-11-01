@@ -7,7 +7,7 @@ const tiles = [
   { title: 'Prilozi', description: 'Pregledaj i odobri priloge zajednice.', icon: 'i-lucide-inbox', to: '/admin/prilozi' },
   { title: 'Riječi', description: 'Uredi skice i aktivne kartice.', icon: 'i-lucide-book-open', to: '/admin/rijeci' },
   { title: 'Riječ dana', description: 'Dolazi u sljedećoj fazi.', icon: 'i-lucide-calendar-days' },
-  { title: 'Baština', description: 'Dolazi u sljedećoj fazi.', icon: 'i-lucide-landmark' },
+  { title: 'Baština', description: 'Ispravci zapisa iz inventara.', icon: 'i-lucide-landmark', to: '/admin/bastina' },
   { title: 'Izazovi', description: 'Dolazi u sljedećoj fazi.', icon: 'i-lucide-trophy' }
 ]
 </script>
