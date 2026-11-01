@@ -52,7 +52,7 @@ watch(() => props.word, (word) => {
 }, { immediate: true })
 
 function issueMessage({ field, code }: SubmissionIssue) {
-  if (field === 'place') return t(`heritage.places.${code === 'refreshPlace' ? 'refresh' : code === 'selectPlace' ? 'choose' : 'invalid'}`)
+  if (field === 'place') return t(`heritage.places.${code === 'refreshPlace' ? 'refresh' : code === 'selectPlace' ? 'choose' : code === 'outOfScope' ? 'outOfScope' : 'invalid'}`)
   if (field === 'consentPublish') return t('heritage.form.errors.consent')
   if (code === 'required') return t('heritage.form.errors.required')
   if (code === 'tooShort') return t('heritage.form.errors.tooShort', { min: SUBMISSION_LIMITS.text.min })

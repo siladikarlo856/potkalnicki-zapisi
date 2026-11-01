@@ -9,5 +9,5 @@ export default defineEventHandler((event) => {
   if (typeof q !== 'string' || q.length > PLACE_QUERY_MAX) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid place search' })
   }
-  return { version: PLACE_CATALOG_VERSION, places: searchPlaces(q) }
+  return { version: PLACE_CATALOG_VERSION, places: searchContributionPlaces(q) }
 })

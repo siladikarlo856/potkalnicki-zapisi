@@ -125,6 +125,7 @@ describe('Potkalnički zapisi learning and challenge choice', () => {
     expect(window.document.querySelector('#uskoro')).not.toBeNull()
     expect(window.document.querySelector('header')?.textContent).toContain('Potkalnički zapisi')
     expect(window.document.querySelector('header')?.textContent).not.toContain('Karlo Siladi')
+    expect(html).not.toContain('i-lucide-construction')
     await window.happyDOM.close()
   })
 
@@ -233,13 +234,13 @@ describe('word admin and public word APIs', () => {
   })
 
   it('retains an unmapped canonical place as a private note without guessing a sample area', async () => {
-    expect((await submit({ ...valid, text: 'unmapped catalog promotion', placeId: 'geonames:3194379' })).status).toBe(201)
+    expect((await submit({ ...valid, text: 'unmapped catalog promotion', placeId: 'geonames:3194545' })).status).toBe(201)
     const submission = (await listAll()).find(s => s.text === 'unmapped catalog promotion')!
     const response = await request(`/api/review/submissions/${submission.id}/word`, { method: 'POST', secret: SECRET })
     expect(response.status).toBe(201)
     const word = await response.json() as AdminWord
     wordIds.push(word.entry.id)
-    expect(word.submissionPlace).toBe('Novigrad - Cittanova (geonames:3194379)')
+    expect(word.submissionPlace).toBe('Nemčevec (geonames:3194545)')
     expect(word.entry.variants[0]?.usages).toEqual([])
     expect(word.active).toBe(false)
   })
@@ -420,18 +421,24 @@ describe('POST /api/submissions', () => {
 })
 
 describe('Croatian place search and selection API', () => {
-  it('searches without diacritics, preserves labels, and distinguishes duplicate names', async () => {
+  it('searches Potkalničko prigorje settlements without diacritics and preserves labels', async () => {
     const response = await request('/api/places?q=krizevci')
     expect(response.status).toBe(200)
     const found = await response.json()
-    expect(found.places[0]).toMatchObject({ id: 'geonames:3197230', name: 'Križevci' })
+    expect(found.places[0]).toMatchObject({ id: 'geonames:3197230', name: 'Križevci', municipality: 'Križevci' })
     expect(found.version).toMatch(/^hr-geonames-/)
+    const outside = await (await request('/api/places?q=cakovec')).json()
+    expect(outside.places).toEqual([])
     const duplicates = await (await request('/api/places?q=novigrad')).json()
-    const counties = new Set(duplicates.places.map((p: { county: string }) => p.county))
-    expect(counties.has('Istarska županija')).toBe(true)
-    expect(counties.has('Zadarska županija')).toBe(true)
-    expect((await (await request('/api/places?q=cakovec')).json()).places[0].name).toBe('Čakovec')
-    expect((await (await request('/api/places?q=djakovo')).json()).places[0].name).toBe('Đakovo')
+    expect(duplicates.places).toEqual([])
+  })
+
+  it('never returns settlements outside the five municipalities', async () => {
+    const response = await (await request('/api/places?q=gr')).json()
+    expect(response.places.length).toBeGreaterThan(0)
+    for (const place of response.places) {
+      expect(['Križevci', 'Kalnik', 'Gornja Rijeka', 'Sveti Petar Orehovec', 'Sveti Ivan Žabno']).toContain(place.municipality)
+    }
   })
 
   it('bounds query length, result count and short searches; does not return the catalog', async () => {
@@ -473,6 +480,18 @@ describe('Croatian place search and selection API', () => {
       expect(issue).toMatchObject({ field: 'place', code: 'invalid', message: expect.stringContaining('Croatian settlement') })
     }
     expect((await listAll()).some(row => row.text === 'bad place choice')).toBe(false)
+  })
+
+  it('rejects Croatian settlements outside Potkalničko prigorje with a localized out-of-scope issue', async () => {
+    const response = await submit({ ...valid, text: 'outside prigorje', placeId: 'geonames:3194379', locale: 'hr' })
+    expect(response.status).toBe(400)
+    const issue = (await response.json()).data.issues[0]
+    expect(issue).toMatchObject({
+      field: 'place',
+      code: 'outOfScope',
+      message: expect.stringContaining('Potkalničkom prigorju')
+    })
+    expect((await listAll()).some(row => row.text === 'outside prigorje')).toBe(false)
   })
 
   it('requires cached free-text clients to refresh and reselect, even alongside an ID', async () => {
@@ -667,21 +686,46 @@ describe('public discovery, sharing metadata and error pages', () => {
     expect(metaContent(html, 'twitter:card')).toBe('summary_large_image')
   })
 
+  it('documents Umami visit analytics on the privacy notice', async () => {
+    const html = await (await fetch('/potkalnicko-prigorje/privatnost', { headers: { accept: 'text/html' } })).text()
+    expect(html).toContain('Umami Cloud')
+    expect(html).toContain('kolačiće')
+    expect(html).toContain('1. studenoga 2026.')
+  })
+
+  it('does not show coming-soon hero badges on the portfolio or app home', async () => {
+    for (const path of ['/', '/potkalnicko-prigorje']) {
+      const html = await (await fetch(path, { headers: { accept: 'text/html' } })).text()
+      expect(html).not.toContain('i-lucide-construction')
+    }
+    const portfolio = await (await fetch('/', { headers: { accept: 'text/html' } })).text()
+    const heritageBlock = portfolio.split('id="heritage"')[1]?.split('id="projects"')[0] ?? ''
+    expect(heritageBlock).not.toContain('i-lucide-sparkles')
+  })
+
   it.each(['/heritage', '/privacy', '/review', '/review-words', '/en/potkalnicko-prigorje'])('does not keep the retired page route %s', async (path) => {
     expect((await fetch(path, { headers: { accept: 'text/html' } })).status).toBe(404)
   })
 
   it.each([
     { path: '/missing-page', lang: 'hr-HR', title: 'Stranica nije pronađena', home: 'Na početnu' },
-    { path: '/en/missing-page', lang: 'en-GB', title: 'Page not found', home: 'Back to home' }
-  ])('returns a localized, non-indexable 404 for $path', async ({ path, lang, title, home }) => {
+    { path: '/en/missing-page', lang: 'en-GB', title: 'Page not found', home: 'Back to home' },
+    { path: '/admin/nema-stranice', lang: 'hr-HR', title: 'Stranica nije pronađena', home: 'Na početnu', admin: true }
+  ])('returns a localized, non-indexable 404 for $path', async ({ path, lang, title, home, admin }) => {
     const response = await fetch(path, { headers: { accept: 'text/html' } })
     expect(response.status).toBe(404)
     const html = await response.text()
     expect(html).toMatch(new RegExp(`<html[^>]+lang="${lang}"`))
     expect(html).toContain(title)
     expect(html).toContain(home)
-    expect(metaContent(html, 'robots')).toBe('noindex')
+    if (admin) {
+      expect(html).toContain('Administracija')
+      expect(html).toContain('Odjava')
+      expect(html).not.toContain('aria-label="Karlo Siladi"')
+      expect(metaContent(html, 'robots')).toBe('noindex, nofollow')
+    } else {
+      expect(metaContent(html, 'robots')).toBe('noindex')
+    }
   })
 })
 

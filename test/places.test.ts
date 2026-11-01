@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import catalog from '../server/data/places/hr.json'
-import { foldPlace, placeById, placeSnapshot, resolveActivePlace, searchPlaces } from '../server/utils/places'
+import { foldPlace, placeById, placeSnapshot, resolveActivePlace, resolveContributionPlace, searchContributionPlaces, searchPlaces, CONTRIBUTION_PLACE_COUNT } from '../server/utils/places'
 
 describe('reviewed Croatian catalog', () => {
   it('supports Croatian diacritics, đ transliterations and aliases', () => {
@@ -46,5 +46,16 @@ describe('reviewed Croatian catalog', () => {
     expect(searchPlaces('a'.repeat(81))).toEqual([])
     expect(searchPlaces('gr')).toHaveLength(8)
     expect(searchPlaces('gr')).toEqual(searchPlaces('gr'))
+  })
+})
+
+describe('Potkalničko prigorje contribution places', () => {
+  it('covers exactly 135 active settlements across the five municipalities', () => {
+    expect(CONTRIBUTION_PLACE_COUNT).toBe(135)
+    expect(searchContributionPlaces('krizevci')[0]?.name).toBe('Križevci')
+    expect(searchContributionPlaces('cakovec')).toEqual([])
+    expect(resolveContributionPlace('geonames:3197230')).toBeDefined()
+    expect(resolveContributionPlace('geonames:3194379')).toBeUndefined()
+    expect(resolveActivePlace('geonames:3194379')).toBeDefined()
   })
 })

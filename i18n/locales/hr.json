@@ -23,7 +23,6 @@
       "cta": "Pogledaj na čemu radim"
     },
     "heritage": {
-      "badge": "Uskoro",
       "eyebrow": "Potkalnički zapisi",
       "title": "Priče, ljudi i baština našega kraja.",
       "description": "Samostalna aplikacija posvećena riječima, pričama i baštini Potkalničkoga prigorja.",
@@ -91,8 +90,6 @@
     "title": "Potkalnički zapisi",
     "nameNote": "Priče, ljudi i baština našega kraja.",
     "description": "Priče, ljudi i baština našega kraja.",
-    "badge": "Uskoro",
-    "status": "U izradi",
     "share": "Pošalji riječ",
     "coming": {
       "title": "Što pripremamo",
@@ -252,6 +249,7 @@
       "refresh": "Osvježi obrazac i ponovno odaberi naselje u Hrvatskoj. Prije osvježavanja sačuvaj svoj prilog.",
       "choose": "Odaberi mjesto s popisa ili obriši upisani naziv za nastavak bez mjesta.",
       "invalid": "To mjesto nije dostupno. Ponovno odaberi naselje u Hrvatskoj ili obriši odabir.",
+      "outOfScope": "To naselje nije u Potkalničkom prigorju. Odaberi jedno od pet općina u popisu mjesta ili nastavi bez mjesta.",
       "listLabel": "Naselja u Hrvatskoj"
     }
   },
@@ -315,6 +313,12 @@
         ],
         "after": [
           "IP adresu ne spremamo uz prilog. Server je kratko drži u memoriji samo da spriječi zlouporabu, npr. previše slanja u kratkom vremenu. Pružatelj hostinga može voditi uobičajene tehničke zapise o posjetima stranici."
+        ]
+      },
+      "analytics": {
+        "title": "Brojanje posjeta",
+        "text": [
+          "Na stranici Potkalničkih zapisa koristimo Umami Cloud analitiku kako bismo znali koliko je posjeta i koje su stranice gledane. Umami ne koristi kolačiće, ne pokušava te identificirati i ne sprema tvoje ime, e-mail ili drugu osobnu identifikaciju. Prikupljaju se samo agregirani podaci o posjetu: koje je stranice pregledano, odakle dolaziš (referrer), vrsta preglednika i uređaja te država posjetitelja."
         ]
       },
       "purpose": {

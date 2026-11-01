@@ -52,22 +52,6 @@ const prefillWord = computed(() => {
       ]"
       :ui="{ container: 'py-16 sm:py-24 lg:py-28', title: 'text-4xl sm:text-6xl', footer: 'print:hidden' }"
     >
-      <template #headline>
-        <span class="flex flex-wrap justify-center gap-2">
-          <UBadge
-            :label="t('heritage.badge')"
-            icon="i-lucide-sparkles"
-            variant="subtle"
-          />
-          <UBadge
-            :label="t('heritage.status')"
-            icon="i-lucide-construction"
-            color="neutral"
-            variant="outline"
-          />
-        </span>
-      </template>
-
       <template #description>
         <span class="block text-sm text-muted">{{ t('heritage.nameNote') }}</span>
         <span class="mt-4 block">{{ t('heritage.description') }}</span>

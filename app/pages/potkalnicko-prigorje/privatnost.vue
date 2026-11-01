@@ -18,7 +18,7 @@ const updated = computed(() => new Date(`${PRIVACY_NOTICE_VERSION}T00:00:00Z`).t
   { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }
 ))
 
-const sections = ['controller', 'collected', 'purpose', 'optional', 'review', 'retention', 'access', 'rights', 'changes'] as const
+const sections = ['controller', 'collected', 'analytics', 'purpose', 'optional', 'review', 'retention', 'access', 'rights', 'changes'] as const
 
 function count(key: string) {
   const messages = tm(key)

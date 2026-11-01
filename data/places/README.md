@@ -2,7 +2,7 @@
 
 This is the catalog for the optional, single settlement where a word/expression is used. It does not identify a contributor’s home or GPS position. The sample word-card `content/heritage/areas.json` is a separate dataset.
 
-`server/data/places/hr.json` is loaded once on the server. The browser receives only bounded search results from `GET /api/places`: minimum two characters, maximum 80, a fixed cap of eight results (no client-selectable limit), and 120 requests per minute per client address. No API key, hosted geocoder, map or runtime/build data download is needed. Croatian labels are preserved; search folds accents and supports both d/dj for đ. Existing submission consent, payload cap, honeypot and submission rate limit are unchanged.
+`server/data/places/hr.json` is loaded once on the server. The catalog covers all of Croatia, but the contribution form, `GET /api/places` and `POST /api/submissions` accept only the 135 settlements of the five Potkalničko prigorje municipalities (`CONTRIBUTION_MUNICIPALITIES` in `server/utils/places.ts`). The browser receives only bounded search results from `GET /api/places`: minimum two characters, maximum 80, a fixed cap of eight results (no client-selectable limit), and 120 requests per minute per client address. No API key, hosted geocoder, map or runtime/build data download is needed. Croatian labels are preserved; search folds accents and supports both d/dj for đ. Existing submission consent, payload cap, honeypot and submission rate limit are unchanged.
 
 ## Sources and rights
 

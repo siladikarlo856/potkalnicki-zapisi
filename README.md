@@ -84,7 +84,7 @@ Contact details, social links and the Siladi Dizajn link are set in `app/app.con
 
 ## Submissions
 
-The form on `/potkalnicko-prigorje` posts to `POST /api/submissions`. The server checks the same rules as the form (`shared/utils/submission.ts`): the text is required (2 to 2000 characters), type, name and contact are optional and length-limited; place is one optional Croatian settlement selected from the reviewed local catalog, and the consent checkbox for publishing is required. Each submission is stored with its consent, the version of the privacy notice it was given for (`PRIVACY_NOTICE_VERSION`), the page language, the time it was sent and a status: `pending`, `approved` or `rejected`. IP addresses are not stored.
+The form on `/potkalnicko-prigorje` posts to `POST /api/submissions`. The server checks the same rules as the form (`shared/utils/submission.ts`): the text is required (2 to 2000 characters), type, name and contact are optional and length-limited; place is one optional settlement of the five Potkalničko prigorje municipalities (Grad Križevci, Kalnik, Gornja Rijeka, Sveti Petar Orehovec, Sveti Ivan Žabno; 135 settlements) selected from the reviewed local catalog, and the consent checkbox for publishing is required. Each submission is stored with its consent, the version of the privacy notice it was given for (`PRIVACY_NOTICE_VERSION`), the page language, the time it was sent and a status: `pending`, `approved` or `rejected`. IP addresses are not stored.
 
 Spam protection, without a third-party CAPTCHA:
 
@@ -100,7 +100,7 @@ Approving a submission alone does not publish it. Use “Dodaj u riječi / otvor
 
 ### Croatian place selection
 
-The form sends a selected `placeId` or null. Typed search alone must be selected or explicitly cleared. `GET /api/places` searches a versioned server-only GeoNames/DGU catalog; the submission server resolves the ID against the same catalog and derives the canonical snapshot/version. Client labels, country, coordinates and versions are not authoritative. Arbitrary free-text locations and unknown/foreign/inactive IDs return a localized place-field error; cached old forms receive `refreshPlace` and retain their contribution text.
+The form sends a selected `placeId` or null. Typed search alone must be selected or explicitly cleared. `GET /api/places` searches only those five municipalities' settlements in a versioned server-only GeoNames/DGU catalog; the submission server resolves the ID against the same catalog and derives the canonical snapshot/version. Client labels, country, coordinates and versions are not authoritative. Arbitrary free-text locations and unknown/foreign/inactive and out-of-scope IDs return a localized place-field error; cached old forms receive `refreshPlace` and retain their contribution text.
 
 New submissions store `place` as `name (geonames:ID)` (unambiguous and below the existing 120-character limit), plus nullable `place_id` and `place_catalog_version`. Old `place` strings are untouched and displayed as legacy/unverified in review. Longer municipal/county context comes from the trusted current catalog and is labeled accordingly. There is no destructive backfill, GPS, map or nearest-town assignment. Environment variables are unchanged.
 

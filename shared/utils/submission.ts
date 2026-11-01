@@ -5,7 +5,7 @@ export const SUBMISSION_STATUSES = ['pending', 'approved', 'rejected'] as const
 export const SUBMISSION_LOCALES = ['hr', 'en'] as const
 
 // Bump when the privacy notice changes, so each stored consent says which text it was given for.
-export const PRIVACY_NOTICE_VERSION = '2026-10-27'
+export const PRIVACY_NOTICE_VERSION = '2026-11-01'
 
 export const SUBMISSION_LIMITS = {
   text: { min: 2, max: 2000 },
@@ -41,7 +41,7 @@ export interface Submission extends Omit<SubmissionInput, 'consentPublish'> {
 }
 
 export type SubmissionField = 'text' | 'type' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
-export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid' | 'selectPlace' | 'refreshPlace'
+export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid' | 'selectPlace' | 'refreshPlace' | 'outOfScope'
 
 export interface SubmissionIssue {
   field: SubmissionField

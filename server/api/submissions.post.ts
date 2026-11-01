@@ -30,9 +30,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid submission', data: { issues: localizePlaceIssues(result.issues, body?.locale) } })
   }
 
-  const selected = result.value.placeId ? resolveActivePlace(result.value.placeId) : null
+  const selected = result.value.placeId ? resolveContributionPlace(result.value.placeId) : null
   if (result.value.placeId && !selected) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid submission', data: { issues: localizePlaceIssues([{ field: 'place', code: 'invalid' }], result.value.locale) } })
+    const place = placeById(result.value.placeId)
+    const code = place && resolveActivePlace(result.value.placeId) ? 'outOfScope' : 'invalid'
+    throw createError({ statusCode: 400, statusMessage: 'Invalid submission', data: { issues: localizePlaceIssues([{ field: 'place', code }], result.value.locale) } })
   }
   await insertSubmission({
     ...result.value,
