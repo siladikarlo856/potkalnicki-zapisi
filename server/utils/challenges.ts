@@ -20,23 +20,8 @@ export function challengeLimit(event: H3Event, kind: 'create' | 'join' | 'action
 }
 
 export async function challengeBody(event: H3Event) {
-  const origin = getRequestHeader(event, 'origin')
-  if (origin) {
-    let host: string
-    try {
-      host = new URL(origin).host
-    } catch {
-      throw createError({ statusCode: 403, statusMessage: 'Invalid origin' })
-    }
-    if (host !== getRequestHeader(event, 'host')) throw createError({ statusCode: 403, statusMessage: 'Invalid origin' })
-  }
-  const length = getRequestHeader(event, 'content-length') ?? ''
-  if (!/^\d+$/.test(length)) throw createError({ statusCode: 411, statusMessage: 'Content-Length required' })
-  if (Number(length) > BODY_LIMIT) throw createError({ statusCode: 413, statusMessage: 'Request too large' })
-  if (!getRequestHeader(event, 'content-type')?.startsWith('application/json')) throw createError({ statusCode: 415, statusMessage: 'JSON required' })
-  const body = await readBody(event).catch(() => null)
-  if (!body || typeof body !== 'object' || Array.isArray(body) || Buffer.byteLength(JSON.stringify(body)) > BODY_LIMIT) throw createError({ statusCode: 400, statusMessage: 'Invalid request' })
-  return body as Record<string, unknown>
+  assertSameOrigin(event)
+  return readJsonObject(event, BODY_LIMIT)
 }
 
 function tokenHash(token: string) {

@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { fetch, getServerLogs, setup, startServer, useTestContext } from '@nuxt/test-utils/e2e'
+import { fetch, getServerLogs, setup, startServer, url, useTestContext } from '@nuxt/test-utils/e2e'
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
 import { createClient } from '@supabase/supabase-js'
 import type { AdminWord, PublicWords, WordInput } from '../shared/utils/word'
@@ -746,6 +746,69 @@ describe('Croatian place search and selection API', () => {
   it.skipIf(!fake)('keeps legacy free-text review rows readable and unassigned', async () => {
     fake!.seed({ text: 'legacy location row', place: 'Somewhere near Orehovec', locale: 'hr', type: null, name: null, contact: null, consent_publish: true, consent_version: '2026-10-27' })
     expect((await listAll()).find(row => row.text === 'legacy location row')).toMatchObject({ place: 'Somewhere near Orehovec', placeId: null, placeCatalogVersion: null, placeContext: null })
+  })
+})
+
+describe('admin and review API guard', () => {
+  const apiRoot = fileURLToPath(new URL('../server/api/', import.meta.url))
+
+  // Every route file under server/api/admin and server/api/review, as a method and a sample path.
+  async function adminRoutes() {
+    const files = (await readdir(apiRoot, { recursive: true }))
+      .map(file => file.replaceAll('\\', '/'))
+      .filter(file => /^(admin|review)\//.test(file) && file.endsWith('.ts') && !/^admin\/session\./.test(file))
+    return files.map((file) => {
+      const [, route, method] = /^(.*?)(?:\.(get|post|put|patch|delete))?\.ts$/.exec(file)!
+      return { file, method: (method ?? 'get').toUpperCase(), path: `/api/${route!.replace(/\/?index$/, '').replace(/\[[^\]]+\]/g, 'test')}` }
+    })
+  }
+
+  it('answers 401 without a session or secret on every admin and review route', async () => {
+    const routes = await adminRoutes()
+    expect(routes.map(route => route.file)).toEqual(expect.arrayContaining([
+      'admin/content/[kind]/index.get.ts', 'admin/content/[kind]/[id].delete.ts', 'admin/lookup/[kind].get.ts', 'review/submissions.get.ts'
+    ]))
+    for (const route of routes) {
+      const body = route.method === 'GET' || route.method === 'DELETE' ? undefined : {}
+      expect((await request(route.path, { method: route.method, body })).status, `${route.method} ${route.path}`).toBe(401)
+    }
+  })
+
+  it('also guards an encoded spelling of a protected path', async () => {
+    expect((await request('/api/%61dmin/content/source')).status).toBe(401)
+    expect((await request('/api/admin/content/source', { headers: { cookie: 'admin-session=forged' } })).status).toBe(401)
+  })
+
+  it('refuses a cross-site or non-JSON write even with the secret, and changes nothing', async () => {
+    await submit({ ...valid, text: 'guarded submission' })
+    const { id } = (await listAll()).find(row => row.text === 'guarded submission')!
+    const path = `/api/review/submissions/${id}`
+
+    const crossSite = await request(path, { method: 'PATCH', body: { status: 'approved' }, secret: SECRET, headers: { origin: 'https://evil.example' } })
+    expect(crossSite.status).toBe(403)
+    const formPost = await fetch(path, {
+      method: 'PATCH',
+      headers: { 'authorization': `Bearer ${SECRET}`, 'content-type': 'application/x-www-form-urlencoded', 'x-forwarded-for': newClient() },
+      body: 'status=approved'
+    })
+    expect(formPost.status).toBe(415)
+    expect((await listAll()).find(row => row.id === id)).toMatchObject({ status: 'pending' })
+
+    const host = new URL(url('/')).host
+    expect((await request(path, { method: 'PATCH', body: { status: 'approved' }, secret: SECRET, headers: { origin: `http://${host}` } })).status).toBe(200)
+    expect((await listAll()).find(row => row.id === id)).toMatchObject({ status: 'approved' })
+  })
+
+  it('refuses a cross-site login', async () => {
+    const response = await request('/api/admin/session', { method: 'POST', body: { password: SECRET }, headers: { origin: 'https://evil.example' } })
+    expect(response.status).toBe(403)
+    expect(response.headers.get('set-cookie')).toBeNull()
+  })
+
+  it('answers 404 for an unknown content kind or a non-UUID id once authenticated', async () => {
+    expect((await request('/api/admin/content/sources', { secret: SECRET })).status).toBe(404)
+    expect((await request('/api/admin/content/source/registar-kulturnih-dobara', { secret: SECRET })).status).toBe(404)
+    expect((await request('/api/admin/lookup/nope', { secret: SECRET })).status).toBe(404)
   })
 })
 

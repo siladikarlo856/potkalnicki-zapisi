@@ -438,8 +438,10 @@
     "reject": "Odbij",
     "toPending": "Vrati na čekanje",
     "delete": "Obriši",
-    "confirmDelete": "Trajno obrisati ovu prijavu? Svaka riječ nastala iz nje bit će deaktivirana i bez imena suradnika.",
-    "confirmReject": "Odbiti ovu prijavu? Svaka riječ nastala iz nje bit će deaktivirana.",
+    "confirmDeleteTitle": "Trajno obrisati prijavu #{id}?",
+    "confirmDelete": "Svaka riječ nastala iz nje bit će deaktivirana i bez imena suradnika.",
+    "confirmRejectTitle": "Odbiti prijavu #{id}?",
+    "confirmReject": "Svaka riječ nastala iz nje bit će deaktivirana.",
     "fields": {
       "type": "Vrsta",
       "place": "Mjesto",

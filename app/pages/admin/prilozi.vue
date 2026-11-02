@@ -5,6 +5,7 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
 
 const { t, locale } = useI18n()
+const confirm = useAdminConfirm()
 
 useSeoMeta({
   title: () => t('review.title'),
@@ -72,8 +73,17 @@ async function load() {
 }
 
 async function act(submission: Submission, action: SubmissionStatus | 'delete') {
-  if (action === 'delete' && !window.confirm(t('review.confirmDelete'))) return
-  if (action === 'rejected' && !window.confirm(t('review.confirmReject'))) return
+  if (action === 'delete' && !await confirm({
+    title: t('review.confirmDeleteTitle', { id: submission.id }),
+    description: t('review.confirmDelete'),
+    confirmLabel: t('review.delete'),
+    color: 'error'
+  })) return
+  if (action === 'rejected' && !await confirm({
+    title: t('review.confirmRejectTitle', { id: submission.id }),
+    description: t('review.confirmReject'),
+    confirmLabel: t('review.reject')
+  })) return
   busyId.value = submission.id
   error.value = ''
   try {
@@ -103,24 +113,22 @@ onMounted(load)
 </script>
 
 <template>
-  <UContainer class="py-12 sm:py-16">
-    <div class="mx-auto flex max-w-5xl flex-col gap-6">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h1 class="text-3xl font-bold tracking-tight text-highlighted">
-          {{ t('review.title') }}
-        </h1>
-        <div class="flex gap-2">
-          <UButton
-            :label="t('review.refresh')"
-            icon="i-lucide-refresh-cw"
-            color="neutral"
-            variant="subtle"
-            :loading="loading"
-            @click="load"
-          />
-        </div>
-      </div>
-
+  <AdminPanel
+    :title="t('review.title')"
+    icon="i-lucide-inbox"
+    width="wide"
+  >
+    <template #actions>
+      <UButton
+        :label="t('review.refresh')"
+        icon="i-lucide-refresh-cw"
+        color="neutral"
+        variant="subtle"
+        :loading="loading"
+        @click="load"
+      />
+    </template>
+    <div class="flex flex-col gap-6">
       <UAlert
         v-if="error"
         :title="error"
@@ -327,5 +335,5 @@ onMounted(load)
         </template>
       </UTable>
     </div>
-  </UContainer>
+  </AdminPanel>
 </template>

@@ -5,6 +5,8 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex, nofollow' }]
 })
 
+const nav = ADMIN_NAV
+
 async function signOut() {
   await $fetch('/api/admin/session', { method: 'DELETE' })
   await navigateTo('/admin/prijava')
@@ -12,28 +14,57 @@ async function signOut() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-default">
-    <UHeader
-      to="/admin"
-      title="Administracija"
+  <UDashboardGroup
+    unit="rem"
+    storage="local"
+    storage-key="admin-dashboard"
+  >
+    <UDashboardSidebar
+      collapsible
+      resizable
+      :ui="{ footer: 'border-t border-default' }"
     >
-      <template #right>
-        <UButton
-          label="Odjava"
-          icon="i-lucide-log-out"
-          color="neutral"
-          variant="ghost"
-          @click="signOut"
-        />
-        <UColorModeButton />
+      <template #header="{ collapsed }">
+        <ULink
+          to="/admin"
+          class="flex items-center gap-2 font-semibold text-highlighted"
+        >
+          <UIcon
+            name="i-lucide-shield-check"
+            class="size-5 shrink-0 text-primary"
+          />
+          <span v-if="!collapsed">Administracija</span>
+        </ULink>
       </template>
-    </UHeader>
-    <UMain
-      id="main-content"
-      tabindex="-1"
-      class="focus:outline-none"
-    >
-      <slot />
-    </UMain>
-  </div>
+
+      <template #default="{ collapsed }">
+        <UNavigationMenu
+          :collapsed="collapsed"
+          :items="nav"
+          orientation="vertical"
+          tooltip
+          aria-label="Administracija"
+        />
+      </template>
+
+      <template #footer="{ collapsed }">
+        <div
+          class="flex w-full gap-1"
+          :class="collapsed ? 'flex-col items-center' : 'items-center justify-between'"
+        >
+          <UButton
+            :label="collapsed ? undefined : 'Odjava'"
+            icon="i-lucide-log-out"
+            color="neutral"
+            variant="ghost"
+            aria-label="Odjava"
+            @click="signOut"
+          />
+          <UColorModeButton />
+        </div>
+      </template>
+    </UDashboardSidebar>
+
+    <slot />
+  </UDashboardGroup>
 </template>

@@ -179,6 +179,18 @@ Apply it through the normal migration-first workflow. The previously deployed ap
 
 `node scripts/test-challenges.mjs` runs `test/wordColumns.integration.test.ts` on its disposable Postgres: the backfilled slugs and baseline revisions of the seeded words, the id check (text, uppercase and suffixed ids refused), `content_slug` against `atlasSlug`, homograph suffixes and slug stability, revision and stale-update refusal, history rows (deletes included), archiving, slug history and the previous app's insert and update.
 
+## Admin content API (no migration)
+
+The content admin kit (`/api/admin/content/:kind`, first used by `/admin/izvori`) adds no migration. It reads and writes the content tables created by `20261103010000_content_tables.sql` (see Content tables above: `sources`, `heritage_item_sources`, `content_legacy_ids`, `content_revisions` and their triggers) through the same server-only service-role key as the other routes. Deploy it only after that migration is applied: until then the routes answer 503 `not-migrated` and change nothing, and the rest of the site is unaffected.
+
+The database keeps the invariants, so direct SQL edits behave the same as admin edits:
+
+- `content_before_write` bumps `revision`, sets `updated_at` and the folded `search_text`, and refuses a client-set revision or id change with `check_violation`, which the API maps to 400. The API updates with `revision = <expected>` and answers 409 when no row matched.
+- `content_audit` writes every insert, update and delete to `content_revisions`. Requests through PostgREST cannot set the transaction setting `app.actor`, so their rows record the default actor `admin`. Seed migrations set `import`.
+- Foreign keys with `on delete restrict` (for sources: `heritage_item_sources.source_id`) are the final guard against deleting a cited row. The API checks references first and maps a late `23503` to the same 409.
+
+Rollback is app-only: the old app ignores these routes, and rows written through them stay valid content rows.
+
 ## Failure and recovery
 
 Open **GitHub → Actions → Production database and deploy → failing run → Migrate then promote production branch**. The history step shows version numbers, and the Supabase CLI reports the failed migration and database error. Missing baseline entries, unknown remote migrations, missing earlier versions, authentication/connection errors, SQL errors, branch divergence, or branch protection failures stop the job. Subsequent branch promotion is skipped on migration failure; `production` remains at its last promoted commit.

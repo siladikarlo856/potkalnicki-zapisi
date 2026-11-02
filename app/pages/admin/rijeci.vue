@@ -175,28 +175,22 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UContainer class="py-12 sm:py-16">
-    <div
-      class="mx-auto flex max-w-5xl flex-col gap-6"
-      lang="hr"
-    >
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 class="text-3xl font-bold tracking-tight text-highlighted">
-            Upravljanje riječima
-          </h1>
-          <p class="mt-2 text-muted">
-            Skice, izvori i aktivne kartice na jednom mjestu.
-          </p>
-        </div>
-        <UButton
-          to="/admin/prilozi"
-          label="Prijave"
-          icon="i-lucide-inbox"
-          color="neutral"
-          variant="outline"
-        />
-      </div>
+  <AdminPanel
+    title="Upravljanje riječima"
+    description="Skice, izvori i aktivne kartice na jednom mjestu."
+    icon="i-lucide-book-open"
+    width="wide"
+  >
+    <template #actions>
+      <UButton
+        to="/admin/prilozi"
+        label="Prijave"
+        icon="i-lucide-inbox"
+        color="neutral"
+        variant="outline"
+      />
+    </template>
+    <div class="flex flex-col gap-6">
       <UAlert
         v-if="error"
         :title="error"
@@ -424,5 +418,5 @@ onMounted(async () => {
         </div>
       </template>
     </USlideover>
-  </UContainer>
+  </AdminPanel>
 </template>

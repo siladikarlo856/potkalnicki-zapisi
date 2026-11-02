@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'admin' })
+definePageMeta({ layout: 'admin-auth' })
 defineI18nRoute({ locales: ['hr'] })
 
 useSeoMeta({ title: 'Prijava', robots: 'noindex, nofollow' })
