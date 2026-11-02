@@ -31,6 +31,8 @@ const sidebarOpen = computed({
   set: (open) => { if (!open) sidebarId.value = undefined }
 })
 const editorHeading = useTemplateRef<HTMLElement>('editorHeading')
+const daily = useTemplateRef<{ refresh: () => Promise<void> }>('daily')
+const pinRequest = ref<{ wordId: string, nonce: number }>()
 const readinessPool = ref<WordInput['entry'][]>([])
 const READINESS_LABELS = { example: 'primjer', category: 'kategorija', distractors: 'netočni odgovori' } as const
 function readiness(word: AdminWord) {
@@ -108,6 +110,10 @@ function edit(word: AdminWord) {
   error.value = ''
   focusEditor()
 }
+function pinFor(word: AdminWord) {
+  pinRequest.value = { wordId: word.entry.id, nonce: (pinRequest.value?.nonce ?? 0) + 1 }
+  document.getElementById('rijec-dana')?.scrollIntoView({ block: 'start' })
+}
 function create() {
   editorVersion.value++
   const id = crypto.randomUUID()
@@ -129,6 +135,7 @@ async function save(active: boolean) {
   try {
     await api<AdminWord>(editingId.value ? `/api/review/words/${editingId.value}` : '/api/review/words', editingId.value ? 'PUT' : 'POST', parsed.value)
     editor.value = undefined
+    void daily.value?.refresh()
     notice.value = active ? 'Riječ je aktivna. Povezana prijava označena je kao odobrena. Javne kartice osvježavaju se unutar 30 sekundi.' : 'Neaktivna skica je spremljena. Ne prikazuje se u igri.'
     await load()
   } catch (err) {
@@ -142,6 +149,8 @@ async function toggle(word: AdminWord) {
   error.value = ''
   try {
     await api(`/api/review/words/${word.entry.id}`, 'PUT', { entry: word.entry, areas: word.areas, active: !word.active })
+    // Activation changes what the schedule can use.
+    void daily.value?.refresh()
     notice.value = word.active ? 'Riječ je deaktivirana. Javne kartice osvježavaju se unutar 30 sekundi.' : 'Riječ je aktivirana; povezana prijava je odobrena.'
     await load()
   } catch (err) {
@@ -219,6 +228,11 @@ onMounted(async () => {
           @click="load()"
         />
       </div>
+      <HeritageDailyAdmin
+        ref="daily"
+        :words="words"
+        :request="pinRequest"
+      />
       <UCard v-if="editor && !editingId">
         <template #header>
           <h2
@@ -342,6 +356,15 @@ onMounted(async () => {
                   variant="subtle"
                   :disabled="busy"
                   @click="toggle(row.original)"
+                />
+                <UButton
+                  label="Prikvači za datum"
+                  icon="i-lucide-pin"
+                  color="neutral"
+                  variant="subtle"
+                  :disabled="busy || !row.original.active"
+                  :title="row.original.active ? undefined : 'Prikvačiti se mogu samo aktivne riječi.'"
+                  @click="pinFor(row.original)"
                 />
               </div>
             </template>

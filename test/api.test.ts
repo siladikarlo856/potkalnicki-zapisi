@@ -245,7 +245,10 @@ describe('word admin and public word APIs', () => {
     { method: 'GET', path: '/api/review/words' },
     { method: 'POST', path: '/api/review/words', body: wordInput() },
     { method: 'PUT', path: '/api/review/words/anything', body: wordInput() },
-    { method: 'POST', path: '/api/review/submissions/1/word' }
+    { method: 'POST', path: '/api/review/submissions/1/word' },
+    { method: 'GET', path: '/api/review/daily' },
+    { method: 'PUT', path: '/api/review/daily/2099-01-01', body: { wordId: 'anything' } },
+    { method: 'DELETE', path: '/api/review/daily/2099-01-01' }
   ])('$method $path rejects unauthenticated access before doing any work', async ({ method, path, body }) => {
     expect((await request(path, { method, body })).status).toBe(401)
     expect((await request(path, { method, body, secret: 'wrong' })).status).toBe(401)
@@ -896,7 +899,10 @@ const reviewRoutes = [
   { method: 'GET', path: '/api/review/words' },
   { method: 'POST', path: '/api/review/words', body: wordInput() },
   { method: 'PUT', path: '/api/review/words/missing', body: wordInput() },
-  { method: 'POST', path: '/api/review/submissions/1/word' }
+  { method: 'POST', path: '/api/review/submissions/1/word' },
+  { method: 'GET', path: '/api/review/daily' },
+  { method: 'PUT', path: '/api/review/daily/2099-01-01', body: { wordId: 'anything' } },
+  { method: 'DELETE', path: '/api/review/daily/2099-01-01' }
 ]
 
 describe('Supabase settings', () => {

@@ -48,7 +48,7 @@ interface Snapshot {
   villageAreaId: string | null
   clues: DailyClue[]
 }
-interface DailyRow {
+export interface DailyRow {
   day: string
   word_id: string
   source: 'pinned' | 'auto'
@@ -57,7 +57,7 @@ interface DailyRow {
   resolved_at: string | null
   replaced_word_ids: string[]
 }
-interface Candidate {
+export interface Candidate {
   id: string
   entry: WordEntry
   areas: Area[]
@@ -92,7 +92,7 @@ function candidate(row: { id: string, entry: unknown, areas: unknown }): Candida
 }
 
 /** Every active, valid word. Not capped at the 100 rows the public word list returns. */
-async function activeCandidates(client: SupabaseClient) {
+export async function activeCandidates(client: SupabaseClient) {
   const rows = await pages<{ id: string, entry: unknown, areas: unknown }>((from, to) =>
     client.from(WORDS).select('id,entry,areas').eq('active', true).order('id').range(from, to))
   return rows.map(candidate).filter((word): word is Candidate => !!word)
@@ -268,7 +268,7 @@ async function choose(client: SupabaseClient, day: string, rows: readonly DailyR
   throw new DailyWordError(404, 'no-words')
 }
 
-async function allRows(client: SupabaseClient) {
+export async function allRows(client: SupabaseClient) {
   return await pages<DailyRow>((from, to) => client.from(DAILY).select('*').order('day').range(from, to))
 }
 
