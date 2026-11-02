@@ -63,7 +63,7 @@ All transitions run through one server-only Postgres RPC (`heritage_challenge_ac
 
 ### Verification and rollout
 
-`node scripts/test-challenges.mjs` creates uniquely named disposable Postgres/PostgREST containers, applies all migrations in order, runs the real Nuxt HTTP/RPC behavior suite, and removes only those containers. Docker is required; it never resets or migrates the shared local Supabase stack. CI runs this in addition to the regular tests. Coverage includes pre-answer secrecy, immutable submissions, concurrent answers, reconnects, progress ordering, skip scoring, token/nickname separation, ranks, snapshot isolation, expiry extension/cap, closed reads/refusals, public-role denial, validation and rate limits.
+`node scripts/test-challenges.mjs` creates uniquely named disposable Postgres/PostgREST containers, applies all migrations in order, runs the real Nuxt HTTP/RPC behavior suite plus the daily word and content table suites, and removes only those containers. Docker is required; it never resets or migrates the shared local Supabase stack. CI runs this in addition to the regular tests. Coverage includes pre-answer secrecy, immutable submissions, concurrent answers, reconnects, progress ordering, skip scoring, token/nickname separation, ranks, snapshot isolation, expiry extension/cap, closed reads/refusals, public-role denial, validation and rate limits.
 
 Rollout uses the existing automatic [production database workflow](.github/workflows/production.yml), which applies `20261031000000_heritage_challenges.sql` and the additive `20261101000000_challenge_scoreboard.sql` before advancing the deployment branch. Both versions are strictly later than the pending `20261030000000_submission_places.sql`. Follow the [baseline, secrets and recovery instructions](docs/database.md); do not apply this manually to production or deploy ahead of migration. The server uses the existing server-only Supabase key and returns 503 when it is unconfigured. No production migration or deployment is part of this change.
 
@@ -131,6 +131,10 @@ Production migrations run through [the production workflow](.github/workflows/pr
 The table `heritage_submissions` has Row Level Security enabled. The public key and authenticated users have no access to it: the server uses **one secret key** for both `POST /api/submissions` and `/api/review/*`. That key bypasses RLS by design, so the form relies on its server validation, consent check, honeypot, rate limit and body-size cap. The table's check constraints (lengths, allowed values, consent must be true) still apply. Review routes also check the review password before accessing the database.
 
 Without the Supabase URL or secret key, both submissions and review answer 503 and log which variable is missing. Admin and review APIs use `NUXT_REVIEW_SECRET` (and the admin session cookie), not Supabase Auth.
+
+### Content tables
+
+All site content is moving into the database so it can be managed in an admin. The first step, `20261103010000_content_tables.sql`, adds the tables without data and without any reader yet: `areas` (country, county, region, town, municipality and settlement in one hierarchy), `area_regions`, `heritage_categories`, `sources`, `heritage_items` with their ordered `heritage_item_sources`, and the shared `content_legacy_ids`, `content_slug_history` and `content_revisions`. The atlas pages still read `content/atlas/*.json` until later steps import that content and switch the pages over. Rows use UUID ids (deterministic ones from `content_uuid()` for imported rows), a database-managed `revision` for conflict detection, full change history and slug history for redirects; access is server-only, like every other table. The model, its rules and the rollout are in [docs/database.md](docs/database.md#content-tables).
 
 ### Environment variables
 
