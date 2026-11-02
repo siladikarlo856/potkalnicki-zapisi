@@ -372,6 +372,16 @@ describe('word admin and public word APIs', () => {
   })
 })
 
+describe('GET /api/heritage/daily', () => {
+  it('stays closed until the launch day and touches no data', async () => {
+    const before = fake?.daily.length
+    const response = await request('/api/heritage/daily')
+    expect(response.status).toBe(404)
+    expect(await response.text()).toContain('not-started')
+    if (fake) expect(fake.daily.length).toBe(before)
+  })
+})
+
 describe('admin session', () => {
   it('rejects a wrong password and rate limits the eleventh failure', async () => {
     const ip = newClient()
@@ -910,6 +920,7 @@ describe('Supabase settings', () => {
     await startServer({ env: { ...blank, ...settings } })
     expect((await submit({ ...valid, text: 'no database' })).status).toBe(503)
     expect((await request('/api/heritage/words')).status).toBe(503)
+    expect((await request('/api/heritage/daily')).status).toBe(503)
     for (const route of reviewRoutes) {
       expect((await request(route.path, { ...route, secret: SECRET })).status).toBe(503)
     }
