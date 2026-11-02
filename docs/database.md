@@ -91,7 +91,7 @@ Apply through the normal production workflow before deploying the matching app. 
 
 `20261102110000_heritage_daily_words.sql` adds `heritage_daily_words`: one row per Europe/Zagreb day with the chosen word, the options and clues frozen for that day, optional admin pins and an audit list of replaced words. It is additive, enables RLS with no anon/authenticated grants (service role only) and adds a guard trigger. It does not change `heritage_words`. The version is deliberately later than `20261102100000_submission_corrections.sql`: a timestamp earlier than an already applied remote migration would fail the workflow's history check, and `--include-all` must never be used to get around that.
 
-Nothing is visible when this ships. `DAILY_WORD_EPOCH` in `shared/utils/dailyWord.ts` is still a far-future sentinel, so `GET /api/heritage/daily` answers 404 `not-started` and never writes a row. Change the epoch only in the later PR that adds the page, and only once at least 30 verified, daily-ready words exist.
+Nothing is visible when this ships. `DAILY_WORD_EPOCH` in `shared/utils/dailyWord.ts` is still a far-future sentinel, so `GET /api/heritage/daily` answers 404 `not-started` and never writes a row. The page now exists; change the epoch only as the deliberate launch step, and only once at least 30 verified, daily-ready words exist.
 
 Apply it through the normal migration-first workflow (the worker did not apply anything to production):
 

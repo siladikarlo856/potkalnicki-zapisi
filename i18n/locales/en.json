@@ -103,6 +103,43 @@
     "heritage": "Local Heritage Project"
   },
   "daily": {
+    "title": "Word of the day",
+    "number": "Word of the day #{n}",
+    "prompt": "What does this word mean?",
+    "sample": "Sample",
+    "village": "This one's from {place}",
+    "triesLeft": {
+      "one": "{n} try left",
+      "other": "{n} tries left"
+    },
+    "wrong": "Not quite.",
+    "clue": {
+      "example": "Clue: an example sentence",
+      "category": "Clue: {category}",
+      "variants": "Clue: also heard as {forms}",
+      "partOfSpeech": "Clue: word type — {pos}",
+      "areas": "Clue: used in {places}"
+    },
+    "solved": {
+      "one": "Got it in {n}!",
+      "other": "Got it in {n}!"
+    },
+    "missed": "Not this time.",
+    "usedTries": "Tries: {tries}/{max}",
+    "meaning": "Meaning",
+    "example": "Example:",
+    "variants": "Variants by place",
+    "funFact": "Did you know?",
+    "next": "Next word in {time}",
+    "countdown": {
+      "hoursMinutes": "{h} h {m} min",
+      "minutes": "{m} min"
+    },
+    "savedOnDevice": "Saved on this device only",
+    "storageUnavailable": "Your result can't be saved on this device.",
+    "replaced": "Today's word was replaced since you played, and your result for the day is kept.",
+    "error": "The word of the day isn't available right now.",
+    "retry": "Try again",
     "category": {
       "house": "something in the house",
       "yard": "in the yard or village",

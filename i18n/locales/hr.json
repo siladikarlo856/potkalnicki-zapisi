@@ -183,6 +183,10 @@
         "sportMatching": {
           "title": "Nogometni klubovi i sela",
           "description": "Spoji nogometni klub s njegovim selom."
+        },
+        "wordsDaily": {
+          "title": "Riječ dana",
+          "description": "Jedna riječ dnevno, ista za sve: pogodi njezino značenje u tri pokušaja."
         }
       }
     },
@@ -754,6 +758,43 @@
     }
   },
   "daily": {
+    "title": "Riječ dana",
+    "number": "Riječ dana #{n}",
+    "prompt": "Što znači ova riječ?",
+    "sample": "Uzorak",
+    "village": "Riječ iz mjesta {place}",
+    "triesLeft": {
+      "one": "Preostao {n} pokušaj",
+      "other": "Preostala {n} pokušaja"
+    },
+    "wrong": "Netočno.",
+    "clue": {
+      "example": "Trag: primjer rečenice",
+      "category": "Trag: {category}",
+      "variants": "Trag: čuje se i kao {forms}",
+      "partOfSpeech": "Trag: vrsta riječi — {pos}",
+      "areas": "Trag: koristi se u mjestima {places}"
+    },
+    "solved": {
+      "one": "Točno iz {n}. pokušaja!",
+      "other": "Točno iz {n}. pokušaja!"
+    },
+    "missed": "Ovaj put nije uspjelo.",
+    "usedTries": "Pokušaji: {tries}/{max}",
+    "meaning": "Značenje",
+    "example": "Primjer:",
+    "variants": "Inačice po mjestima",
+    "funFact": "Zanimljivost",
+    "next": "Nova riječ za {time}",
+    "countdown": {
+      "hoursMinutes": "{h} h {m} min",
+      "minutes": "{m} min"
+    },
+    "savedOnDevice": "Spremljeno samo na ovom uređaju",
+    "storageUnavailable": "Rezultat se ne može spremiti na ovom uređaju.",
+    "replaced": "Današnja riječ je u međuvremenu zamijenjena, a tvoj rezultat za ovaj dan je sačuvan.",
+    "error": "Riječ dana trenutačno nije dostupna.",
+    "retry": "Pokušaj opet",
     "category": {
       "house": "nešto u kući",
       "yard": "u dvorištu ili selu",

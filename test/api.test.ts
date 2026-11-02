@@ -204,6 +204,11 @@ describe('Potkalnički zapisi quiz catalog', () => {
     window.document.body.innerHTML = html
     const catalog = window.document.querySelector('[data-testid="quiz-catalog"]')!
     expect(catalog).not.toBeNull()
+    // The daily word section and its skeleton are prerendered first, so #rijec-dana links work.
+    const daily = window.document.querySelector('#rijec-dana')!
+    expect(daily).not.toBeNull()
+    expect(daily.compareDocumentPosition(catalog) & 4).toBeTruthy()
+    expect(window.document.querySelector('#rijec-dana [data-testid="daily-skeleton"]')).not.toBeNull()
     expect(catalog.querySelector('[data-testid="quiz-hero"] h2')?.textContent).toBe('Riječi')
     expect(catalog.querySelector('[data-testid="quiz-hero"] a')?.getAttribute('href')).toBe('/potkalnicko-prigorje/igre/kviz')
     expect(catalog.querySelector('[data-testid="quiz-hero"]')?.textContent).toContain('Igraj s riječima')
