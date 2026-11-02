@@ -63,6 +63,7 @@ const topicCards = quizTopics.filter(topic => topic.slug !== 'rijeci')
               <p class="max-w-2xl text-muted">
                 {{ t('heritage.games.heroDescription') }}
               </p>
+              <HeritageDailyStatus />
             </div>
           </div>
           <UButton

@@ -809,6 +809,42 @@
       "customs": "običaji i blagdani",
       "feelings": "osjećaji i ponašanje",
       "function": "mala riječ (zamjenica, prilog…)"
+    },
+    "streakDays": {
+      "one": "{n} dan",
+      "other": "{n} dana"
+    },
+    "status": {
+      "waiting": "Riječ dana čeka",
+      "play": "Igraj",
+      "played": "Riječ dana ✓ {result}",
+      "streak": "niz {days}"
+    },
+    "share": {
+      "title": "Podijeli rezultat",
+      "shareTitle": "Riječ dana",
+      "copy": "Kopiraj rezultat",
+      "copied": "Kopirano",
+      "nativeShare": "Podijeli",
+      "copyError": "Kopiranje nije uspjelo.",
+      "shareError": "Dijeljenje nije uspjelo."
+    },
+    "stats": {
+      "title": "Tvoja statistika",
+      "streak": "Niz",
+      "played": "Odigrano dana",
+      "correct": "Točno",
+      "best": "Najdulji niz: {days}",
+      "distribution": "Raspodjela pokušaja",
+      "tries": "Pokušaj {n}",
+      "missed": "Nije uspjelo",
+      "todayMarker": "danas"
+    },
+    "nextSteps": {
+      "title": "Što dalje?",
+      "learn": "Saznaj više",
+      "quiz": "Igraj kviz",
+      "challenge": "Izazovi prijatelja"
     }
   }
 }

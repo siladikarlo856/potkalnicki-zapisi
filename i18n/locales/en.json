@@ -154,6 +154,42 @@
       "customs": "customs and holidays",
       "feelings": "feelings and behaviour",
       "function": "a small word (pronoun, adverb…)"
+    },
+    "streakDays": {
+      "one": "{n} day",
+      "other": "{n} days"
+    },
+    "status": {
+      "waiting": "Today's word is waiting",
+      "play": "Play",
+      "played": "Word of the day ✓ {result}",
+      "streak": "streak {days}"
+    },
+    "share": {
+      "title": "Share your result",
+      "shareTitle": "Word of the day",
+      "copy": "Copy result",
+      "copied": "Copied",
+      "nativeShare": "Share",
+      "copyError": "Couldn't copy.",
+      "shareError": "Couldn't share."
+    },
+    "stats": {
+      "title": "Your stats",
+      "streak": "Streak",
+      "played": "Days played",
+      "correct": "Correct",
+      "best": "Longest streak: {days}",
+      "distribution": "Tries distribution",
+      "tries": "Try {n}",
+      "missed": "Missed",
+      "todayMarker": "today"
+    },
+    "nextSteps": {
+      "title": "What next?",
+      "learn": "Learn more",
+      "quiz": "Play a quiz",
+      "challenge": "Challenge a friend"
     }
   }
 }

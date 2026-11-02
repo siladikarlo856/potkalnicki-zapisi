@@ -6,15 +6,20 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const origin = ref('')
 const createdCode = ref(props.code ?? '')
-const copied = ref(false)
 const error = ref('')
-const nativeShare = ref(false)
 const nickname = ref('')
 const creating = ref(false)
 const link = computed(() => createdCode.value ? origin.value + localePath(`/potkalnicko-prigorje/izazov/${createdCode.value}`) : '')
 const shareText = computed(() => `${t('challenge.shareMessage')} ${link.value}`)
-const whatsapp = computed(() => `https://wa.me/?text=${encodeURIComponent(shareText.value)}`)
-const viber = computed(() => `viber://forward?text=${encodeURIComponent(shareText.value)}`)
+const shareLabels = computed(() => ({
+  copy: t('challenge.copy'),
+  copied: t('challenge.copied'),
+  nativeShare: t('challenge.nativeShare'),
+  copyError: t('challenge.copyError'),
+  shareError: t('challenge.shareError'),
+  whatsapp: t('challenge.whatsapp'),
+  viber: t('challenge.viber')
+}))
 
 async function create() {
   const name = challengeNickname(nickname.value)
@@ -39,28 +44,8 @@ async function create() {
   }
 }
 
-async function copy() {
-  error.value = ''
-  try {
-    await navigator.clipboard.writeText(link.value)
-    copied.value = true
-  } catch {
-    error.value = t('challenge.copyError')
-  }
-}
-
-async function share() {
-  error.value = ''
-  try {
-    await navigator.share({ title: t('challenge.title'), url: link.value })
-  } catch (cause) {
-    if (!(cause instanceof Error && cause.name === 'AbortError')) error.value = t('challenge.shareError')
-  }
-}
-
 onMounted(() => {
   origin.value = window.location.origin
-  nativeShare.value = typeof navigator.share === 'function'
 })
 </script>
 
@@ -134,61 +119,14 @@ onMounted(() => {
           @focus="($event.target as HTMLInputElement).select()"
         />
       </UFormField>
-      <div class="flex flex-wrap gap-3">
-        <UButton
-          icon="i-lucide-copy"
-          :disabled="!origin"
-          data-testid="challenge-copy"
-          @click="copy"
-        >
-          {{ t(copied ? 'challenge.copied' : 'challenge.copy') }}
-        </UButton>
-        <UButton
-          v-if="nativeShare"
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-share-2"
-          data-testid="challenge-native-share"
-          @click="share"
-        >
-          {{ t('challenge.nativeShare') }}
-        </UButton>
-        <UButton
-          :to="whatsapp"
-          target="_blank"
-          external
-          color="neutral"
-          variant="outline"
-          icon="i-simple-icons-whatsapp"
-          data-testid="challenge-whatsapp"
-        >
-          {{ t('challenge.whatsapp') }}
-        </UButton>
-        <UButton
-          :to="viber"
-          external
-          color="neutral"
-          variant="outline"
-          icon="i-simple-icons-viber"
-          data-testid="challenge-viber"
-        >
-          {{ t('challenge.viber') }}
-        </UButton>
-      </div>
-      <p
-        v-if="copied"
-        role="status"
-        class="sr-only"
-      >
-        {{ t('challenge.copied') }}
-      </p>
-      <p
-        v-if="error"
-        role="alert"
-        class="text-sm text-error"
-      >
-        {{ error }}
-      </p>
+      <HeritageShareButtons
+        prefix="challenge"
+        :disabled="!origin"
+        :copy-text="link"
+        :share-data="{ title: t('challenge.title'), url: link }"
+        :message-text="shareText"
+        :labels="shareLabels"
+      />
     </div>
   </UCard>
 </template>

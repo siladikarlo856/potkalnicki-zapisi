@@ -149,12 +149,15 @@ export function deriveDailyStats(days: Readonly<Record<string, DailyProgress>>, 
   return { streak, maxStreak, played: completed.length, percentCorrect: completed.length ? Math.round(100 * solved / completed.length) : 0, distribution }
 }
 
-/** Only completed results can be shared. No word or clue data is accepted. */
-export function dailyWordShareText(number: number, result: Pick<DailyProgress, 'done' | 'solved' | 'tries' | 'maxTries'>, locale: 'hr' | 'en' = 'hr'): string {
+/**
+ * Only completed results can be shared. No word or clue data is accepted. The text is the same
+ * in both languages and links to the games hub (the Croatian-only page that hosts the daily word).
+ */
+export function dailyWordShareText(number: number, result: Pick<DailyProgress, 'done' | 'solved' | 'tries' | 'maxTries'>): string {
   if (!result.done) return ''
   const { solved, tries, maxTries } = result
   const squares = '🟥'.repeat(solved ? tries - 1 : tries) + (solved ? '🟩' : '') + '⬜'.repeat(maxTries - tries)
-  return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://karlo-siladi.from.hr${locale === 'en' ? '/en' : ''}/heritage#rijec-dana`
+  return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://karlo-siladi.from.hr/potkalnicko-prigorje/igre#rijec-dana`
 }
 
 export interface DailyReadiness {

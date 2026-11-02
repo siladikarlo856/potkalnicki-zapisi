@@ -11,6 +11,10 @@ const english = computed(() => locale.value === 'en')
 const stored = computed(() => payload.value ? progress.days.value[payload.value.day] : undefined)
 /** The visitor already played a different word today: it was withdrawn and replaced afterwards. */
 const replaced = computed(() => !!payload.value && !!stored.value && stored.value.wordId !== payload.value.entry.id)
+/** The finished result for today's day, whether it was played here or before the word was replaced. */
+const finished = computed(() => stored.value?.done ? stored.value : undefined)
+const todayKey = computed<'1' | '2' | '3' | 'X'>(() => finished.value?.solved ? String(finished.value.tries) as '1' | '2' | '3' : 'X')
+const stats = computed(() => payload.value ? progress.statsFor(payload.value.day) : undefined)
 const maxTries = computed(() => (payload.value?.options.length ?? 1) - 1)
 const game = ref<DailyGame>()
 const place = computed(() => payload.value?.areas.find(area => area.id === payload.value?.villageAreaId)?.name)
@@ -223,6 +227,19 @@ const hidden = computed(() => unavailable.value)
         />
       </template>
 
+      <template v-if="finished && stats">
+        <HeritageDailyShare
+          class="mt-4 border-t border-default pt-3"
+          :number="payload.number"
+          :result="finished"
+        />
+        <HeritageDailyStats
+          class="mt-4 border-t border-default pt-3"
+          :stats="stats"
+          :today="todayKey"
+        />
+      </template>
+
       <HeritageDailyCountdown
         v-if="game.done || replaced"
         class="mt-4 border-t border-default pt-3"
@@ -234,6 +251,11 @@ const hidden = computed(() => unavailable.value)
       >
         {{ t('daily.savedOnDevice') }}
       </p>
+
+      <HeritageDailyNextSteps
+        v-if="game.done || replaced"
+        class="mt-4 border-t border-default pt-3"
+      />
     </div>
   </section>
 </template>

@@ -133,10 +133,10 @@ describe('device stats', () => {
 })
 
 describe('spoiler-free share', () => {
-  it.each(['hr', 'en'] as const)('uses the Croatian brand and locale link in %s', (locale) => {
-    const link = `https://karlo-siladi.from.hr${locale === 'en' ? '/en' : ''}/heritage#rijec-dana`
-    expect(dailyWordShareText(12, result(true, 2), locale)).toBe(`Riječ dana #12: 2/3\n🟥🟩⬜\n${link}`)
-    expect(dailyWordShareText(12, result(false, 3), locale)).toBe(`Riječ dana #12: X/3\n🟥🟥🟥\n${link}`)
+  it('uses the Croatian brand and the games hub link for every interface language', () => {
+    const link = 'https://karlo-siladi.from.hr/potkalnicko-prigorje/igre#rijec-dana'
+    expect(dailyWordShareText(12, result(true, 2))).toBe(`Riječ dana #12: 2/3\n🟥🟩⬜\n${link}`)
+    expect(dailyWordShareText(12, result(false, 3))).toBe(`Riječ dana #12: X/3\n🟥🟥🟥\n${link}`)
   })
   it('renders first and last try wins, reduced option counts and unfinished games', () => {
     expect(dailyWordShareText(1, result())).toContain('1/3\n🟩⬜⬜\n')
