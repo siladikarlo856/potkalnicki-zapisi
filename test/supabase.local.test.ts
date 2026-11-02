@@ -80,15 +80,18 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
     }
   })
 
-  it('seeds only the existing nine placeholder samples as active words', async () => {
-    const ids = ['hiza', 'kaj', 'vura', 'zdenec', 'fertun', 'lajbek', 'skrlak', 'cuker', 'denes']
-    const { data, error } = await admin.from('heritage_words').select('entry,active,submission_id').in('id', ids)
+  it('seeds the reviewed word list with UUID ids and none of the old text ids', async () => {
+    const { data, error } = await admin.from('heritage_words').select('id,entry,active,submission_id').is('submission_id', null)
     expect(error).toBeNull()
-    expect(data).toHaveLength(9)
-    for (const row of data!) {
-      expect(row).toMatchObject({ active: true, submission_id: null, entry: { status: 'placeholder' } })
-      expect(row.entry.variants.every((v: { status: string }) => v.status === 'placeholder')).toBe(true)
+    const seeded = data!.filter(row => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(row.id))
+    expect(seeded.filter(row => row.active)).toHaveLength(51)
+    expect(seeded.filter(row => !row.active)).toHaveLength(10)
+    for (const row of seeded) {
+      expect(row.entry.id).toBe(row.id)
+      expect(row.entry.status).toBe(row.active ? 'verified' : 'placeholder')
     }
+    const old = await admin.from('heritage_words').select('id').in('id', ['hiza', 'kaj', 'vura', 'zdenec', 'fertun', 'lajbek', 'skrlak', 'cuker', 'denes', 'babica'])
+    expect(old.data).toEqual([])
   })
 
   it('deactivates the linked word when its submission is rejected or deleted, and removes the credit', async () => {

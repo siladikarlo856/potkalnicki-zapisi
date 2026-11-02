@@ -99,7 +99,21 @@ Apply it through the normal migration-first workflow (the worker did not apply a
 2. Verify: `\d public.heritage_daily_words` shows RLS enabled and the guard trigger; `anon` and `authenticated` get `permission denied`; the table is empty.
 3. The previously deployed app ignores the table, so migrating first is safe. Roll back app code first if needed and leave the additive table, trigger and rows in place; do not drop them. A resolved day cannot be deleted (the trigger refuses it), which is intended: it is what every visitor saw. To retire a mistaken pin, delete the unresolved row.
 
+`node scripts/test-seed-reload-migration.mjs` runs the seed reload migration against an already-running local Postgres inside a rolled-back transaction: pinned and resolved daily rows on old text ids are removed, 61 UUID words (51 active) exist, an unrelated word and its daily row survive, and `heritage_daily_word_guard` stays enabled.
+
 `node scripts/test-challenges.mjs` applies every migration to a disposable Postgres and checks the table's RLS, constraints, guard trigger, the concurrent first-insert race on the primary key, and the resolver end to end (pin, skipped pin, withdrawal replacement).
+
+## Seed word reload
+
+`20261102120000_reload_seed_words.sql` replaces the seeded words with the reviewed list in one transaction. It deletes the 61 ids created by `20261028010000_heritage_words.sql` and `20261101010000_seed_kajkavian_words.sql` (hiza, babica and the others), only where `submission_id` is null, then inserts the 61 corrected words with UUID ids stored as text in the existing `id` column (`entry->>'id'` equals the column). 51 are active and `verified`; 10 are `active = false` with status `placeholder`. Every word has one usage in `hr-kkz-sveti-petar-orehovec` and keeps its source credit. The `category` values on active words are proposals for editorial review; examples, notes and distractors are empty.
+
+What it touches, so it cannot fail on a reference:
+
+- `heritage_daily_words.word_id` is a foreign key to `heritage_words`. Rows pointing at the deleted ids, pinned or resolved, are deleted first. Resolved days are protected by `heritage_daily_word_guard`, so the migration disables that trigger for the one delete and re-enables it before the word delete, inside the transaction. A day that was already shown to visitors is therefore lost and the next request resolves that day again with a new word; `replaced_word_ids` is a plain array and needs no change.
+- `heritage_challenges.content` stores its own question snapshots and `heritage_submissions.target_ref` is an atlas item id, so neither references word ids; existing quiz challenges keep working from their snapshots.
+- Any other `heritage_words` row, and any row linked to a submission, is not touched.
+
+The inserts use `on conflict (id) do nothing`, so replaying the file never overwrites a later edit. Words move to UUID ids, so client-side progress that stored an old text id (for example daily word stats for `hiza`) no longer matches a word; nobody uses the app yet, which is why this was accepted. The migration is applied by the normal workflow; the old text-id seed migrations stay in history and are not edited. `test/seedReload.test.ts` checks the delete list, the order of statements and every inserted entry against `validateWord`.
 
 ## Failure and recovery
 

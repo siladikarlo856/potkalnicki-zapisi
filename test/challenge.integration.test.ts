@@ -81,12 +81,19 @@ async function complete(player: Player, game: ChallengeState, skip = true) {
 describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
   it('creates a challenge from the played quiz round and records the creator score immediately', async () => {
     const player = client()
+    // Seeded words have UUID ids; take three active ones with distinct meanings from the database.
+    const words = sql('select id || \'|\' || (entry->>\'headword\') || \'|\' || (entry->\'meaning\'->>\'hr\') || \'|\' || coalesce(entry->\'meaning\'->>\'en\', \'\') from heritage_words where active order by id limit 3')
+      .split('\n').map((line) => {
+        const [id, headword, hr, en] = line.split('|') as [string, string, string, string]
+        return { id, headword, hr, en }
+      })
+    const [a, b, c] = words as [typeof words[0], typeof words[0], typeof words[0]]
     const response = await player.request('/api/challenges', {
       nickname: 'Ana',
       quiz: {
         questions: [
-          { id: 'hiza', optionIds: ['vura', 'hiza', 'zdenec'] },
-          { id: 'zdenec', optionIds: ['zdenec', 'hiza', 'vura'] }
+          { id: a.id, optionIds: [c.id, a.id, b.id] },
+          { id: b.id, optionIds: [b.id, a.id, c.id] }
         ],
         results: [true, false]
       }
@@ -107,8 +114,8 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     const joined = await state(await guest.request(path(game, 'join'), { nickname: 'Iva' }))
     const revealed = await state(await guest.request(path(joined, 'reveal'), {}))
     expect(revealed.question).toMatchObject({
-      id: 'quiz-hiza',
-      options: [{ hr: 'sat', en: 'clock' }, { hr: 'kuća, dom', en: 'kuća, dom' }, { hr: 'bunar', en: 'well' }]
+      id: `quiz-${a.id}`,
+      options: [c, a, b].map(w => ({ hr: w.hr, en: w.en || w.hr }))
     })
   })
 
