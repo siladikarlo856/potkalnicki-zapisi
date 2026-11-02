@@ -185,6 +185,12 @@
       "missed": "Missed",
       "todayMarker": "today"
     },
+    "contribute": {
+      "title": "Help us",
+      "variant": "Where I’m from, we say it differently",
+      "usage": "Used in my village too",
+      "close": "Close the form"
+    },
     "nextSteps": {
       "title": "What next?",
       "learn": "Learn more",

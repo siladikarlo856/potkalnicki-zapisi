@@ -116,7 +116,7 @@ export async function startFakeSupabase() {
       const now = new Date().toISOString()
       const row = isWords
         ? { submission_id: null, submission_place: null, ...body, created_at: now, updated_at: now }
-        : { place_id: null, place_catalog_version: null, target_ref: null, ...body, id: nextId++, status: 'pending', created_at: now, reviewed_at: null }
+        : { place_id: null, place_catalog_version: null, target_ref: null, word_id: null, intent: null, ...body, id: nextId++, status: 'pending', created_at: now, reviewed_at: null }
       table.push(row)
       if (isWords) activate(row)
       return reply(response, 201, request.headers.prefer?.includes('return=representation') ? [project(row)] : undefined)

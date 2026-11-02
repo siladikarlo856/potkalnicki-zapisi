@@ -14,6 +14,8 @@ interface SubmissionRow {
   place_id: string | null
   place_catalog_version: string | null
   target_ref: string | null
+  word_id?: string | null
+  intent?: SubmissionIntent | null
   name: string | null
   contact: string | null
   consent_publish: boolean
@@ -39,12 +41,15 @@ function formatTime(value: string) {
   return new Date(value).toISOString().slice(0, 19).replace('T', ' ')
 }
 
-function toSubmission(row: SubmissionRow): Submission {
+function toSubmission(row: SubmissionRow, headwords: ReadonlyMap<string, string>): Submission {
   return {
     id: Number(row.id),
     text: row.text,
     type: row.type,
     targetRef: row.target_ref ?? null,
+    wordId: row.word_id ?? null,
+    intent: row.intent ?? null,
+    wordHeadword: row.word_id ? headwords.get(row.word_id) ?? null : null,
     place: row.place,
     placeId: row.place_id ?? null,
     placeCatalogVersion: row.place_catalog_version ?? null,
@@ -74,7 +79,9 @@ export async function insertSubmission(input: ResolvedSubmissionInput) {
     contact: input.contact,
     consent_publish: input.consentPublish,
     consent_version: PRIVACY_NOTICE_VERSION,
-    locale: input.locale
+    locale: input.locale,
+    // Only sent when set, so ordinary submissions still work before the word-link migration is applied.
+    ...(input.wordId ? { word_id: input.wordId, intent: input.intent } : {})
   })
   if (error) databaseError(error)
 }
@@ -94,7 +101,35 @@ export async function listSubmissions(status: SubmissionStatus | 'all', type?: S
     rows.push(...data as SubmissionRow[])
     if (data.length < PAGE_SIZE) break
   }
-  return rows.map(toSubmission)
+  const headwords = await linkedHeadwords(rows.flatMap(row => row.word_id ? [row.word_id] : []))
+  return rows.map(row => toSubmission(row, headwords))
+}
+
+// Review shows which word a contribution is about, so the headwords of the linked words are read in one go.
+async function linkedHeadwords(ids: string[]) {
+  const headwords = new Map<string, string>()
+  const unique = [...new Set(ids)]
+  for (let from = 0; from < unique.length; from += 100) {
+    const { data, error } = await useDatabaseClient().from('heritage_words').select('id,entry').in('id', unique.slice(from, from + 100))
+    if (error) databaseError(error)
+    for (const word of data as Array<{ id: string, entry: { headword?: unknown } }>) {
+      if (typeof word.entry?.headword === 'string') headwords.set(word.id, word.entry.headword)
+    }
+  }
+  return headwords
+}
+
+// Contributions from the daily word may only point at a word that is live, so nobody can attach text to a draft.
+export async function assertActiveWord(id: string, locale: unknown) {
+  const { data, error } = await useDatabaseClient().from('heritage_words').select('id').eq('id', id).eq('active', true)
+  if (error) databaseError(error)
+  if (!data.length) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid submission',
+      data: { issues: [{ field: 'wordId', code: 'invalid', message: locale === 'en' ? 'This word is no longer available.' : 'Ova riječ više nije dostupna.' }] }
+    })
+  }
 }
 
 export async function setSubmissionStatus(id: number, status: SubmissionStatus) {

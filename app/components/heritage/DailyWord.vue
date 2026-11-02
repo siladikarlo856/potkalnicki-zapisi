@@ -227,6 +227,13 @@ const hidden = computed(() => unavailable.value)
         />
       </template>
 
+      <HeritageDailyContribute
+        v-if="game.done && !replaced"
+        class="mt-4 border-t border-default pt-3"
+        :word-id="payload.entry.id"
+        :headword="payload.entry.headword"
+      />
+
       <template v-if="finished && stats">
         <HeritageDailyShare
           class="mt-4 border-t border-default pt-3"

@@ -72,11 +72,13 @@ export async function promoteSubmission(id: number) {
 
   // Only the fields needed for a draft are read. Contact never enters the word store.
   const { data, error } = await client.from('heritage_submissions')
-    .select('id,text,type,place,place_id,name,consent_publish').eq('id', id)
+    .select('id,text,type,intent,place,place_id,name,consent_publish').eq('id', id)
   if (error) databaseError(error)
   const submission = data[0]
   if (!submission) throw createError({ statusCode: 404, statusMessage: 'Submission not found' })
   if (submission.type === 'correction') throw createError({ statusCode: 400, statusMessage: 'Not a word submission' })
+  // "Used in my village too" confirms an existing word; turning it into a draft would duplicate that word.
+  if (submission.intent === 'usage') throw createError({ statusCode: 400, statusMessage: 'Usage confirmations are not new words' })
   if (!submission.consent_publish) throw createError({ statusCode: 400, statusMessage: 'Publication consent required' })
   const wordId = randomUUID()
   const isWord = submission.type === 'word' || submission.type === 'expression'

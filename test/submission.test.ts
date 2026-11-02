@@ -14,7 +14,7 @@ describe('validateSubmission', () => {
     const result = validateSubmission({ ...valid, text: '  kaj  ', type: '', place: '  ', name: 'Ana ', contact: undefined })
     expect(result).toEqual({
       ok: true,
-      value: { text: 'kaj', type: null, targetRef: null, placeId: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
+      value: { text: 'kaj', type: null, targetRef: null, placeId: null, wordId: null, intent: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
     })
   })
 
@@ -83,6 +83,57 @@ describe('validateSubmission', () => {
   it('rejects a body that is not an object', () => {
     expect(validateSubmission(null).ok).toBe(false)
     expect(validateSubmission('text').ok).toBe(false)
+  })
+})
+
+describe('validateSubmission word link (contributions from the daily word)', () => {
+  const place = 'geonames:3194024'
+  const word = 'b0c1d2e3-0000-4000-8000-000000000001'
+
+  it('accepts a variant with or without a place, and a usage with a place', () => {
+    expect(validateSubmission({ ...valid, wordId: word, intent: 'variant' })).toMatchObject({ ok: true, value: { wordId: word, intent: 'variant', placeId: null } })
+    expect(validateSubmission({ ...valid, wordId: word, intent: 'variant', placeId: place })).toMatchObject({ ok: true, value: { wordId: word, intent: 'variant', placeId: place } })
+    expect(validateSubmission({ ...valid, wordId: word, intent: 'usage', placeId: place })).toMatchObject({ ok: true, value: { wordId: word, intent: 'usage', placeId: place } })
+  })
+
+  it('keeps ordinary submissions unlinked', () => {
+    for (const empty of [undefined, null, '']) {
+      expect(validateSubmission({ ...valid, wordId: empty, intent: empty })).toMatchObject({ ok: true, value: { wordId: null, intent: null } })
+    }
+  })
+
+  it('requires the place for a usage, with the selectPlace code', () => {
+    for (const placeId of [undefined, null, '', '   ']) {
+      expect(issuesOf({ ...valid, wordId: word, intent: 'usage', placeId })).toEqual([{ field: 'place', code: 'selectPlace' }])
+    }
+    expect(issuesOf({ ...valid, wordId: word, intent: 'usage', placeId: 'forged' })).toEqual([{ field: 'place', code: 'invalid' }])
+  })
+
+  it('requires a word whenever an intent is set', () => {
+    for (const intent of ['variant', 'usage']) {
+      expect(issuesOf({ ...valid, intent, placeId: place })).toEqual([{ field: 'wordId', code: 'required' }])
+    }
+  })
+
+  it('rejects unknown intents and malformed or non-text word ids', () => {
+    expect(issuesOf({ ...valid, wordId: word, intent: 'confirm' })).toEqual([{ field: 'intent', code: 'invalid' }])
+    expect(issuesOf({ ...valid, wordId: word, intent: ['usage'] })).toEqual([{ field: 'intent', code: 'invalid' }])
+    for (const wordId of ['has space', 'a/b', 'x'.repeat(201), 42, ['a'], { id: 'a' }]) {
+      expect(issuesOf({ ...valid, wordId, intent: 'variant' })).toEqual([{ field: 'wordId', code: 'invalid' }])
+    }
+    expect(issuesOf({ ...valid, wordId: 'hiza', intent: 'variant' })).toEqual([])
+    expect(issuesOf({ ...valid, wordId: 'x'.repeat(200), intent: 'variant' })).toEqual([])
+  })
+
+  it('does not let a correction point at a word', () => {
+    expect(issuesOf({ ...valid, type: 'correction', targetRef: 'kalnik-crkva-sv-brcka', wordId: word, intent: 'variant' })).toEqual([{ field: 'type', code: 'invalid' }])
+  })
+
+  it('reports every problem of a bad linked submission together', () => {
+    expect(issuesOf({ ...valid, wordId: 'bad id', intent: 'usage' })).toEqual([
+      { field: 'wordId', code: 'invalid' },
+      { field: 'place', code: 'selectPlace' }
+    ])
   })
 })
 

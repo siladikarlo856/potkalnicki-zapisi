@@ -94,6 +94,42 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
     expect(old.data).toEqual([])
   })
 
+  it('keeps the word link on submissions closed to public roles and constrained for the secret key', async () => {
+    const linkedText = `rls linked ${Date.now()}`
+    const linked = { ...row, text: linkedText, type: 'word', place_id: null, word_id: wordId, intent: 'usage' }
+    const email = `rls-link-${Date.now()}@example.com`
+    const password = 'local-test-password-0123456789'
+    const created = await admin.auth.admin.createUser({ email, password, email_confirm: true })
+    expect(created.error).toBeNull()
+    const authenticated = createClient(url, publicKey, options)
+    expect((await authenticated.auth.signInWithPassword({ email, password })).error).toBeNull()
+
+    for (const client of [anon, authenticated]) {
+      expect((await client.from('heritage_submissions').insert(linked)).error).not.toBeNull()
+      const read = await client.from('heritage_submissions').select('word_id,intent')
+      expect(read.error).not.toBeNull()
+      expect(read.data).toBeNull()
+      expect((await client.from('heritage_submissions').update({ word_id: wordId, intent: 'usage' }).eq('id', id)).error).not.toBeNull()
+    }
+    await admin.auth.admin.deleteUser(created.data.user!.id)
+
+    // The secret key bypasses RLS but not the check constraints: an intent needs a word, and only two intents exist.
+    expect((await admin.from('heritage_submissions').insert({ ...linked, word_id: null })).error).not.toBeNull()
+    expect((await admin.from('heritage_submissions').insert({ ...linked, intent: 'confirm' })).error).not.toBeNull()
+    expect((await admin.from('heritage_submissions').insert({ ...linked, word_id: 'no-such-word' })).error).not.toBeNull()
+    const stored = await admin.from('heritage_submissions').insert(linked).select('id,word_id,intent').single()
+    expect(stored.error).toBeNull()
+    expect(stored.data).toMatchObject({ word_id: wordId, intent: 'usage' })
+    const unlinked = await admin.from('heritage_submissions').insert({ ...row, text: `${linkedText} unlinked` }).select('word_id,intent').single()
+    expect(unlinked.data).toEqual({ word_id: null, intent: null })
+
+    // Deleting a usage confirmation must never deactivate the word it points at.
+    const wordBefore = await admin.from('heritage_words').select('active').eq('id', wordId).single()
+    expect((await admin.from('heritage_submissions').delete().eq('id', stored.data!.id)).error).toBeNull()
+    expect((await admin.from('heritage_words').select('active').eq('id', wordId).single()).data).toEqual(wordBefore.data)
+    await admin.from('heritage_submissions').delete().like('text', `${linkedText}%`)
+  })
+
   it('deactivates the linked word when its submission is rejected or deleted, and removes the credit', async () => {
     const make = async (suffix: string) => {
       const sub = await admin.from('heritage_submissions').insert({ ...row, text: `rls withdraw ${suffix}`, name: 'Ana' }).select('id').single()

@@ -177,6 +177,14 @@ onMounted(load)
         </template>
         <template #text-cell="{ row }">
           <span class="block max-w-[10rem] truncate text-highlighted sm:max-w-md">{{ row.original.text }}</span>
+          <UBadge
+            v-if="row.original.wordId && row.original.intent"
+            :label="t(`review.intents.${row.original.intent}`)"
+            color="info"
+            variant="subtle"
+            size="sm"
+            class="mt-1"
+          />
         </template>
         <template #status-cell="{ row }">
           <UBadge
@@ -203,6 +211,26 @@ onMounted(load)
                 {{ t('review.fields.type') }}
               </dt>
               <dd>{{ submission.type ? t(`heritage.form.types.${submission.type}`) : '—' }}</dd>
+              <template v-if="submission.wordId">
+                <dt class="text-muted">
+                  {{ t('review.fields.word') }}
+                </dt>
+                <dd
+                  class="break-words"
+                  data-testid="submission-word"
+                >
+                  <ULink
+                    :to="{ path: '/admin/rijeci', query: { edit: submission.wordId } }"
+                    class="text-primary underline underline-offset-2"
+                    lang="hr"
+                  >
+                    {{ submission.wordHeadword || submission.wordId }}
+                  </ULink>
+                  <template v-if="submission.intent">
+                    · {{ t(`review.intents.${submission.intent}`) }}
+                  </template>
+                </dd>
+              </template>
               <dt class="text-muted">
                 {{ t('review.fields.place') }}
               </dt>
@@ -240,9 +268,17 @@ onMounted(load)
               <dd>{{ submission.consentPublish ? t('review.consentGiven', { version: submission.consentVersion }) : '—' }}</dd>
             </dl>
 
+            <p
+              v-if="submission.intent === 'usage'"
+              class="text-sm text-muted"
+              data-testid="usage-note"
+            >
+              {{ t('review.usageNote') }}
+            </p>
+
             <div class="flex flex-wrap gap-2">
               <UButton
-                v-if="submission.type !== 'correction'"
+                v-if="submission.type !== 'correction' && submission.intent !== 'usage'"
                 label="Dodaj u riječi / otvori skicu"
                 icon="i-lucide-book-plus"
                 color="neutral"

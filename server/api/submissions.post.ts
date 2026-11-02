@@ -39,6 +39,7 @@ export default defineEventHandler(async (event) => {
   if (result.value.type === 'correction' && result.value.targetRef) {
     assertKnownCorrectionTarget(result.value.targetRef)
   }
+  if (result.value.wordId) await assertActiveWord(result.value.wordId, result.value.locale)
   await insertSubmission({
     ...result.value,
     place: selected ? placeSnapshot(selected) : null,

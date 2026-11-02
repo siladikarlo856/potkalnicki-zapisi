@@ -538,6 +538,97 @@ describe('POST /api/submissions', () => {
     expect((await listAll()).some(row => row.text === 'chunked submission')).toBe(false)
   })
 
+  describe('linked to a word (contributions from the daily word)', () => {
+    const usage = (wordId: unknown, extra: Record<string, unknown> = {}) => submit({ ...valid, type: 'word', intent: 'usage', wordId, ...extra })
+
+    it('stores a usage and a variant with the word and intent, and review lists them with the headword', async () => {
+      const word = await createWord(wordInput(true))
+      expect((await usage(word.entry.id, { text: 'linked usage', name: null })).status).toBe(201)
+      expect((await submit({ ...valid, type: 'word', intent: 'variant', wordId: word.entry.id, text: 'linked variant', placeId: null })).status).toBe(201)
+      const rows = await listAll()
+      expect(rows.find(row => row.text === 'linked usage')).toMatchObject({ wordId: word.entry.id, intent: 'usage', wordHeadword: 'testna riječ', placeId: 'geonames:3194024', status: 'pending' })
+      expect(rows.find(row => row.text === 'linked variant')).toMatchObject({ wordId: word.entry.id, intent: 'variant', wordHeadword: 'testna riječ', placeId: null })
+      expect(rows.find(row => row.text === 'stored submission')?.wordId ?? null).toBeNull()
+    })
+
+    it('leaves an unlinked submission without a word or intent', async () => {
+      expect((await submit({ ...valid, text: 'plain submission' })).status).toBe(201)
+      expect((await listAll()).find(row => row.text === 'plain submission')).toMatchObject({ wordId: null, intent: null, wordHeadword: null })
+    })
+
+    it('answers 400 for an unknown word and stores nothing', async () => {
+      for (const intent of ['usage', 'variant']) {
+        const response = await submit({ ...valid, type: 'word', intent, wordId: 'no-such-word', text: 'unknown word link' })
+        expect(response.status).toBe(400)
+        expect((await response.json()).data.issues).toContainEqual(expect.objectContaining({ field: 'wordId', code: 'invalid' }))
+      }
+      expect((await listAll()).some(row => row.text === 'unknown word link')).toBe(false)
+    })
+
+    it('answers 400 for a word that is not active, including a withdrawn one', async () => {
+      const draft = await createWord(wordInput(false))
+      const response = await usage(draft.entry.id, { text: 'draft word link' })
+      expect(response.status).toBe(400)
+      expect((await response.json()).data.issues).toContainEqual(expect.objectContaining({ field: 'wordId', code: 'invalid' }))
+
+      const live = await createWord(wordInput(true))
+      expect((await usage(live.entry.id, { text: 'live word link' })).status).toBe(201)
+      expect((await request(`/api/review/words/${live.entry.id}`, { method: 'PUT', secret: SECRET, body: { ...live, active: false } })).status).toBe(200)
+      expect((await usage(live.entry.id, { text: 'withdrawn word link' })).status).toBe(400)
+      const texts = (await listAll()).map(row => row.text)
+      expect(texts).toContain('live word link')
+      expect(texts).not.toContain('draft word link')
+      expect(texts).not.toContain('withdrawn word link')
+    })
+
+    it('requires the place for a usage, with a place message in the response', async () => {
+      const word = await createWord(wordInput(true))
+      for (const locale of ['hr', 'en']) {
+        const response = await usage(word.entry.id, { placeId: null, locale, text: 'usage without place' })
+        expect(response.status).toBe(400)
+        const issues = (await response.json()).data.issues
+        expect(issues).toContainEqual(expect.objectContaining({ field: 'place', code: 'selectPlace', message: expect.any(String) }))
+        expect(issues.find((issue: { code: string }) => issue.code === 'selectPlace').message).toBe(locale === 'en' ? 'Select the place where this is said.' : 'Odaberi mjesto gdje se tako govori.')
+      }
+      expect((await listAll()).some(row => row.text === 'usage without place')).toBe(false)
+    })
+
+    it('rejects an intent without a word, a malformed word id and an unknown intent', async () => {
+      expect((await submit({ ...valid, intent: 'usage', text: 'intent only' })).status).toBe(400)
+      expect((await usage('bad id!', { text: 'bad word id' })).status).toBe(400)
+      expect((await submit({ ...valid, intent: 'confirm', wordId: 'x', text: 'bad intent' })).status).toBe(400)
+      const texts = (await listAll()).map(row => row.text)
+      for (const text of ['intent only', 'bad word id', 'bad intent']) expect(texts).not.toContain(text)
+    })
+
+    it('still drops a honeypot submission silently and still rate limits linked submissions', async () => {
+      const word = await createWord(wordInput(true))
+      const dropped = await usage(word.entry.id, { text: 'linked honeypot', website: 'https://spam.example' })
+      expect(dropped.status).toBe(201)
+      expect((await listAll()).some(row => row.text === 'linked honeypot')).toBe(false)
+      // The honeypot answer is given before any word lookup, so a bot learns nothing about word ids.
+      expect((await usage('no-such-word', { text: 'linked honeypot unknown', website: 'x' })).status).toBe(201)
+
+      const ip = newClient()
+      for (let i = 0; i < RATE_LIMIT_MAX; i++) expect((await submit({ ...valid, type: 'word', intent: 'usage', wordId: word.entry.id, text: `linked rate ${i}` }, ip)).status).toBe(201)
+      expect((await submit({ ...valid, type: 'word', intent: 'usage', wordId: word.entry.id, text: 'linked rate over' }, ip)).status).toBe(429)
+      expect((await listAll()).some(row => row.text === 'linked rate over')).toBe(false)
+    })
+
+    it('does not turn a usage confirmation into a new word draft, but still promotes a variant', async () => {
+      const word = await createWord(wordInput(true))
+      await usage(word.entry.id, { text: 'usage not promotable' })
+      await submit({ ...valid, type: 'word', intent: 'variant', wordId: word.entry.id, text: 'variant promotable', placeId: null })
+      const rows = await listAll()
+      const usageRow = rows.find(row => row.text === 'usage not promotable')!
+      expect((await request(`/api/review/submissions/${usageRow.id}/word`, { method: 'POST', secret: SECRET })).status).toBe(400)
+      const variantRow = rows.find(row => row.text === 'variant promotable')!
+      const promoted = await request(`/api/review/submissions/${variantRow.id}/word`, { method: 'POST', secret: SECRET })
+      expect(promoted.status).toBe(201)
+      wordIds.push((await promoted.json() as AdminWord).entry.id)
+    })
+  })
+
   it('silently drops submissions that fill in the honeypot', async () => {
     const response = await submit({ ...valid, text: 'honeypot submission', website: 'https://spam.example' })
     expect(response.status).toBe(201)
@@ -852,7 +943,14 @@ describe('public discovery, sharing metadata and error pages', () => {
     const html = await (await fetch('/potkalnicko-prigorje/privatnost', { headers: { accept: 'text/html' } })).text()
     expect(html).toContain('Umami Cloud')
     expect(html).toContain('kolačiće')
-    expect(html).toContain('1. studenoga 2026.')
+    expect(html).toContain('2. studenoga 2026.')
+  })
+
+  it('describes the games, device storage and word-linked contributions on the privacy notice', async () => {
+    const html = await (await fetch('/potkalnicko-prigorje/privatnost', { headers: { accept: 'text/html' } })).text()
+    expect(html).toContain('Igre i podaci na uređaju')
+    expect(html).toContain('samo u tvom pregledniku')
+    expect(html).toContain('povezan s riječju na koju se odnosi')
   })
 
   it('does not show coming-soon hero badges on the portfolio or app home', async () => {

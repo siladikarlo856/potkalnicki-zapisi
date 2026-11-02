@@ -18,7 +18,8 @@ const submission = {
 registerEndpoint('/api/review/words', () => [{
   entry: word, areas: sampleAreas, active: true, submissionId: null, submissionPlace: null, createdAt: '2026-10-30', updatedAt: '2026-10-30'
 }])
-registerEndpoint('/api/review/submissions', () => [submission])
+let submissionRows: Array<Record<string, unknown>> = [submission]
+registerEndpoint('/api/review/submissions', () => submissionRows)
 
 const pinned = { day: '2030-05-12', wordId: 'gone', headword: 'stara', active: false, source: 'pinned' as const, village: 'none', resolved: false, resolvedAt: null, replacedWordIds: [] }
 const dailyOverview: DailyAdminOverview = {
@@ -46,6 +47,49 @@ registerEndpoint('/api/review/daily/2030-05-12', {
     dailyCalls.push({ method: 'DELETE', url: event.path.replace(/^\/_/, '') })
     return { day: '2030-05-12', removed: true }
   }
+})
+
+describe('admin submissions linked to a word', () => {
+  const linked = { ...submission, wordId: 'fixture-word-1', wordHeadword: 'hiža', placeId: 'geonames:3194024', place: 'Sveti Petar Orehovec', placeContext: 'Sveti Petar Orehovec · Koprivničko-križevačka', placeCatalogVersion: 'test' }
+  const usage = { ...linked, id: 21, text: 'Usage confirmation', intent: 'usage' }
+  const variant = { ...linked, id: 22, text: 'Variant form', intent: 'variant' }
+
+  it('shows the linked word and intent, links to the word editor and hides promotion for a usage', async () => {
+    submissionRows = [usage, variant, { ...submission, id: 23, text: 'Plain one' }]
+    try {
+      const wrapper = await mountSuspended(Review)
+      await vi.waitFor(() => expect(wrapper.text()).toContain('Usage confirmation'))
+      // Badges next to the text, so the editor sees the kind without opening the row.
+      expect(wrapper.text()).toContain('Potvrda upotrebe')
+      expect(wrapper.text()).toContain('Drugačiji oblik')
+      for (const info of wrapper.findAll('button[aria-label^="Detalji"]')) await info.trigger('click')
+      const links = wrapper.findAll('[data-testid="submission-word"]')
+      expect(links).toHaveLength(2)
+      expect(links[0]!.text()).toBe('hiža · Potvrda upotrebe')
+      expect(links[1]!.text()).toBe('hiža · Drugačiji oblik')
+      expect(links[0]!.get('a').attributes('href')).toBe('/admin/rijeci?edit=fixture-word-1')
+      const promote = wrapper.findAll('button').filter(button => button.text() === 'Dodaj u riječi / otvori skicu')
+      // A variant (and the plain row) can still become a draft; the usage cannot.
+      expect(promote).toHaveLength(2)
+      expect(wrapper.findAll('[data-testid="usage-note"]')).toHaveLength(1)
+      expect(wrapper.get('[data-testid="usage-note"]').text()).toContain('ne pretvara u novu skicu')
+    } finally {
+      submissionRows = [submission]
+    }
+  })
+
+  it('falls back to the word id when the headword is unknown and shows nothing for an unlinked row', async () => {
+    submissionRows = [{ ...usage, wordHeadword: null }, { ...submission, id: 24, text: 'Unlinked' }]
+    try {
+      const wrapper = await mountSuspended(Review)
+      await vi.waitFor(() => expect(wrapper.text()).toContain('Usage confirmation'))
+      for (const info of wrapper.findAll('button[aria-label^="Detalji"]')) await info.trigger('click')
+      expect(wrapper.findAll('[data-testid="submission-word"]')).toHaveLength(1)
+      expect(wrapper.get('[data-testid="submission-word"]').text()).toContain('fixture-word-1')
+    } finally {
+      submissionRows = [submission]
+    }
+  })
 })
 
 describe('admin tables', () => {

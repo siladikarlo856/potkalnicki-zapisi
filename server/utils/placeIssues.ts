@@ -9,17 +9,17 @@ const englishMessages = {
 
 // Human-readable field errors are also in the API response for cached clients.
 export function localizePlaceIssues(issues: SubmissionIssue[], locale: unknown) {
-  const messages = locale === 'en' ? englishMessages : hr.heritage.places
+  const en = locale === 'en'
+  const messages = en ? englishMessages : hr.heritage.places
+  const placeRequired = en ? englishMessages.required : hr.heritage.variantDialog.errors.placeRequired
+  const byCode: Partial<Record<SubmissionIssue['code'], string>> = {
+    required: placeRequired,
+    // Confirming a word is used "here" needs the place; the generic "continue without" hint would be wrong.
+    selectPlace: placeRequired,
+    refreshPlace: messages.refresh,
+    outOfScope: messages.outOfScope
+  }
   return issues.map(issue => issue.field === 'place'
-    ? {
-        ...issue,
-        message: issue.code === 'required'
-          ? locale === 'en' ? englishMessages.required : hr.heritage.variantDialog.errors.placeRequired
-          : issue.code === 'refreshPlace'
-            ? messages.refresh
-            : issue.code === 'outOfScope'
-              ? messages.outOfScope
-              : messages.invalid
-      }
+    ? { ...issue, message: byCode[issue.code] ?? messages.invalid }
     : issue)
 }

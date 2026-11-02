@@ -115,6 +115,14 @@ What it touches, so it cannot fail on a reference:
 
 The inserts use `on conflict (id) do nothing`, so replaying the file never overwrites a later edit. Words move to UUID ids, so client-side progress that stored an old text id (for example daily word stats for `hiza`) no longer matches a word; nobody uses the app yet, which is why this was accepted. The migration is applied by the normal workflow; the old text-id seed migrations stay in history and are not edited. `test/seedReload.test.ts` checks the delete list, the order of statements and every inserted entry against `validateWord`.
 
+## Submission word link rollout
+
+`20261103000000_submission_word_link.sql` adds two nullable columns to `heritage_submissions` for contributions sent from the daily word: `word_id` (text, references `heritage_words(id)` with `on delete set null`) and `intent` (`variant` or `usage`), with a check that an `intent` needs a `word_id`. It is additive and sorts after every earlier migration, including `20261102110000_heritage_daily_words.sql`. Existing rows and policies are unchanged: RLS and the missing anon/authenticated grants still apply to the whole table.
+
+Apply it through the normal migration-first workflow before deploying the matching app. The previously deployed app never reads or writes the columns, so migrating first is safe, and the new app only sends them for a linked contribution, so ordinary submissions still work if it runs briefly before the migration. Roll back the app first if needed and leave the columns in place. `word_id` is plain text, so it follows whatever the word ids are.
+
+The withdrawal trigger only acts on words created *from* a submission (`heritage_words.submission_id`), so deleting a usage confirmation never deactivates the word it points at. Because `intent` requires `word_id`, a `before delete` trigger on `heritage_words` (`heritage_words_unlink_submissions`, empty `search_path`, execute revoked from public roles) clears `word_id` and `intent` on linked submissions first, so a word can be hard-deleted (as the seed reload migration does) and the contribution survives unlinked.
+
 ## Failure and recovery
 
 Open **GitHub → Actions → Production database and deploy → failing run → Migrate then promote production branch**. The history step shows version numbers, and the Supabase CLI reports the failed migration and database error. Missing baseline entries, unknown remote migrations, missing earlier versions, authentication/connection errors, SQL errors, branch divergence, or branch protection failures stop the job. Subsequent branch promotion is skipped on migration failure; `production` remains at its last promoted commit.

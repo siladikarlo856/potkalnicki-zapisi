@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormError, SelectItem } from '@nuxt/ui'
 import { SUBMISSION_LIMITS, SUBMISSION_TYPES, validateSubmission } from '~~/shared/utils/submission'
-import type { SubmissionType } from '~~/shared/utils/submission'
+import type { SubmissionIntent, SubmissionType } from '~~/shared/utils/submission'
 
 const props = defineProps<{
   /** Headword to prefill "Instead of … we say:", e.g. the word a visitor came here about. */
@@ -12,6 +12,10 @@ const props = defineProps<{
   correctionItemName?: string
   fixedType?: SubmissionType
   hideTypePicker?: boolean
+  /** Word this contribution concerns (from the daily word). Sent with `intent` so editors see the link. */
+  wordId?: string
+  /** `usage` = "this word is said in my place too": the place becomes required. `variant` = a local form. */
+  intent?: SubmissionIntent
 }>()
 
 const { t } = useI18n()
@@ -36,6 +40,7 @@ function clearType() {
   typeSelect.value?.triggerRef?.focus()
 }
 
+const usage = computed(() => props.wordId && props.intent === 'usage')
 const placeQuery = ref('')
 const form = useTemplateRef('form')
 const textarea = useTemplateRef<{ textareaRef: HTMLTextAreaElement | null }>('textarea')
@@ -50,7 +55,7 @@ watch(() => props.fixedType, (type) => {
 
 watch(() => props.word, (word) => {
   if (!word || state.text) return
-  state.text = t('heritage.form.prefill', { word })
+  state.text = t(usage.value ? 'heritage.form.usagePrefill' : 'heritage.form.prefill', { word })
   state.type = 'word'
   nextTick(() => {
     const element = textarea.value?.textareaRef
@@ -69,7 +74,7 @@ watch(() => [props.correctionItemName, props.targetRef] as const, ([name, target
 }, { immediate: true })
 
 function validate(): FormError[] {
-  const result = validateSubmission({ ...state, locale: locale.value })
+  const result = validateSubmission({ ...state, wordId: props.wordId, intent: props.wordId ? props.intent : undefined, locale: locale.value })
   const errors = result.ok ? [] : toFormErrors(result.issues)
   if (placeQuery.value.trim() && !state.placeId) errors.push({ name: 'place', message: t('heritage.places.choose') })
   return errors
@@ -80,7 +85,8 @@ async function send() {
   const outcome = await submit({
     ...state,
     type: props.fixedType ?? state.type ?? null,
-    targetRef: props.targetRef ?? null
+    targetRef: props.targetRef ?? null,
+    ...(props.wordId ? { wordId: props.wordId, intent: props.intent } : {})
   })
   if (outcome.ok) {
     Object.assign(state, { text: '', type: undefined, placeId: null, name: '', contact: '', consentPublish: false })
@@ -178,8 +184,9 @@ const successActions = computed(() => [
         </UFormField>
         <UFormField
           name="place"
-          :label="t('heritage.form.place')"
+          :label="usage ? t('heritage.form.placeUsage') : t('heritage.form.place')"
           :help="t('heritage.places.help')"
+          :required="!!usage"
           class="sm:col-span-2"
         >
           <HeritagePlacePicker

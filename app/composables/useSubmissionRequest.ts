@@ -11,7 +11,8 @@ export function useSubmissionRequest() {
   const { locale, t } = useI18n()
 
   function issueMessage({ field, code }: SubmissionIssue) {
-    if (field === 'place') return t(`heritage.places.${code === 'refreshPlace' ? 'refresh' : code === 'selectPlace' ? 'choose' : code === 'outOfScope' ? 'outOfScope' : 'invalid'}`)
+    if (field === 'place' && code === 'selectPlace') return t('heritage.form.errors.usagePlace')
+    if (field === 'place') return t(`heritage.places.${code === 'refreshPlace' ? 'refresh' : code === 'outOfScope' ? 'outOfScope' : 'invalid'}`)
     if (field === 'consentPublish') return t('heritage.form.errors.consent')
     if (code === 'required') return t('heritage.form.errors.required')
     if (code === 'tooShort') return t('heritage.form.errors.tooShort', { min: SUBMISSION_LIMITS.text.min })
@@ -33,6 +34,8 @@ export function useSubmissionRequest() {
     } catch (error) {
       const { statusCode, data } = error as { statusCode?: number, data?: { data?: { issues?: SubmissionIssue[] } } }
       const issues = data?.data?.issues
+      // The linked word was withdrawn or never existed: no field to mark, so the message says it.
+      if (statusCode === 400 && issues?.some(issue => issue.field === 'wordId')) return { ok: false, issues, message: t('heritage.form.errorWord') }
       if (statusCode === 400 && issues?.length) return { ok: false, issues, message: t('heritage.form.errorInvalid') }
       if (statusCode === 429) return { ok: false, message: t('heritage.form.errorTooMany') }
       return { ok: false, message: t('heritage.form.errorGeneric') }

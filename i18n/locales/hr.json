@@ -229,7 +229,8 @@
         "tooShort": "Upiši barem {min} znaka.",
         "tooLong": "Najviše {max} znakova.",
         "consent": "Bez tvog pristanka prilog ne možemo poslati.",
-        "invalid": "Ova vrijednost nije ispravna."
+        "invalid": "Ova vrijednost nije ispravna.",
+        "usagePlace": "Odaberi mjesto u kojem se riječ tako kaže."
       },
       "contactPlaceholder": "E-mail ili broj mobitela",
       "typePlaceholder": "Odaberi vrstu",
@@ -237,7 +238,10 @@
       "typeClearLabel": "Ukloni odabranu vrstu",
       "prefill": "Umjesto „{word}“ kod nas se kaže: ",
       "correctionPrefill": "Zapis: „{name}“\n\nPredloženi ispravak:\n",
-      "correctionTarget": "Zapis u Baštini"
+      "correctionTarget": "Zapis u Baštini",
+      "usagePrefill": "„{word}“ kaže se i u mom mjestu.",
+      "placeUsage": "U kojem se mjestu tako kaže?",
+      "errorWord": "Ova riječ više nije dostupna, pa prilog nismo mogli povezati s njom. Osvježi stranicu i pokušaj ponovno."
     },
     "variantDialog": {
       "title": "Kako se to kaže kod nas?",
@@ -319,7 +323,7 @@
     "title": "Obavijest o privatnosti",
     "description": "Koje podatke prikuplja obrazac projekta lokalne baštine, zašto i kako se o njima brinemo.",
     "updated": "Zadnja izmjena: {date}",
-    "intro": "Ova obavijest odnosi se na obrazac kojim šalješ riječi, izraze i sjećanja za projekt lokalne baštine. Ovdje piše koje podatke prikupljamo, zašto ih trebamo i što s njima radimo.",
+    "intro": "Ova obavijest odnosi se na obrazac kojim šalješ riječi, izraze i sjećanja za projekt lokalne baštine te na igre na ovoj stranici. Ovdje piše koje podatke prikupljamo, zašto ih trebamo i što s njima radimo.",
     "back": "Natrag na obrazac",
     "sections": {
       "controller": {
@@ -338,10 +342,19 @@
           "vrstu priloga i mjesto gdje se koristi, ako ih upišeš",
           "ime, ako ga upišeš",
           "kontakt, npr. e-mail ili broj telefona, ako ga upišeš",
-          "tvoj pristanak na objavu, jezik stranice i vrijeme slanja"
+          "tvoj pristanak na objavu, jezik stranice i vrijeme slanja",
+          "riječ iz Riječi dana na koju se prilog odnosi i je li to drugačiji oblik ili potvrda da se riječ koristi u tvom mjestu, ako prilog šalješ iz igre"
         ],
         "after": [
           "IP adresu ne spremamo uz prilog. Server je kratko drži u memoriji samo da spriječi zlouporabu, npr. previše slanja u kratkom vremenu. Pružatelj hostinga može voditi uobičajene tehničke zapise o posjetima stranici."
+        ]
+      },
+      "device": {
+        "title": "Igre i podaci na uređaju",
+        "text": [
+          "Rezultat i statistika igre Riječ dana (pokušaji, niz uzastopnih dana i broj odigranih dana) spremaju se samo u tvom pregledniku, ne šalju se nikamo i brišu se s podacima stranice u pregledniku.",
+          "Kad se pridružiš izazovu s prijateljima, preglednik sprema kolačić s nasumičnim kodom sudjelovanja (godinu dana), kako bi te server prepoznao u tom izazovu. Kolačić nije povezan ni s kakvom osobnom oznakom.",
+          "Prilog poslan iz Riječi dana može biti povezan s riječju na koju se odnosi, kako bi ga urednici lakše pregledali. Takav prilog vrijedi kao i svaki drugi: najprije ga pregledamo, a objavljujemo ga samo uz tvoj pristanak."
         ]
       },
       "analytics": {
@@ -436,8 +449,14 @@
       "text": "Prijava",
       "status": "Status",
       "language": "Jezik",
-      "consent": "Pristanak na objavu"
+      "consent": "Pristanak na objavu",
+      "word": "Odnosi se na"
     },
+    "intents": {
+      "variant": "Drugačiji oblik",
+      "usage": "Potvrda upotrebe"
+    },
+    "usageNote": "Potvrda upotrebe potvrđuje postojeću riječ, pa se ne pretvara u novu skicu. Mjesto možeš ručno dodati u riječ u uređivaču riječi.",
     "anonymous": "bez imena",
     "consentGiven": "da (obavijest od {version})",
     "legacyPlace": "Stari zapis / neprovjereno mjesto",
@@ -839,6 +858,12 @@
       "tries": "Pokušaj {n}",
       "missed": "Nije uspjelo",
       "todayMarker": "danas"
+    },
+    "contribute": {
+      "title": "Pomozi nam",
+      "variant": "Kod nas se kaže drugačije",
+      "usage": "I u mom mjestu se tako kaže",
+      "close": "Zatvori obrazac"
     },
     "nextSteps": {
       "title": "Što dalje?",

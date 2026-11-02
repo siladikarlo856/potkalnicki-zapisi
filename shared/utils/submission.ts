@@ -5,9 +5,13 @@ import { isCorrectionTargetRefFormat } from './correctionReport'
 export const SUBMISSION_TYPES = ['word', 'expression', 'memory', 'other', 'correction'] as const
 export const SUBMISSION_STATUSES = ['pending', 'approved', 'rejected'] as const
 export const SUBMISSION_LOCALES = ['hr', 'en'] as const
+// What a contribution from the daily word says about its word: a local form, or "it is said here too".
+export const SUBMISSION_INTENTS = ['variant', 'usage'] as const
+// Same shape the word API accepts for ids (server/utils/words.ts), so a linked id can never be arbitrary text.
+export const WORD_ID_PATTERN = /^[\w~-]{1,200}$/
 
 // Bump when the privacy notice changes, so each stored consent says which text it was given for.
-export const PRIVACY_NOTICE_VERSION = '2026-11-01'
+export const PRIVACY_NOTICE_VERSION = '2026-11-02'
 
 export const SUBMISSION_LIMITS = {
   text: { min: 2, max: 2000 },
@@ -19,12 +23,15 @@ export const SUBMISSION_LIMITS = {
 export type SubmissionType = typeof SUBMISSION_TYPES[number]
 export type SubmissionStatus = typeof SUBMISSION_STATUSES[number]
 export type SubmissionLocale = typeof SUBMISSION_LOCALES[number]
+export type SubmissionIntent = typeof SUBMISSION_INTENTS[number]
 
 export interface SubmissionInput {
   text: string
   type: SubmissionType | null
   targetRef: string | null
   placeId: string | null
+  wordId: string | null
+  intent: SubmissionIntent | null
   name: string | null
   contact: string | null
   consentPublish: true
@@ -33,6 +40,8 @@ export interface SubmissionInput {
 
 export interface Submission extends Omit<SubmissionInput, 'consentPublish'> {
   id: number
+  /** Headword of the linked word, read for review; null when there is no link. */
+  wordHeadword: string | null
   place: string | null
   placeCatalogVersion: string | null
   placeContext: string | null
@@ -43,7 +52,7 @@ export interface Submission extends Omit<SubmissionInput, 'consentPublish'> {
   reviewedAt: string | null
 }
 
-export type SubmissionField = 'text' | 'type' | 'targetRef' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
+export type SubmissionField = 'text' | 'type' | 'targetRef' | 'wordId' | 'intent' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
 export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid' | 'selectPlace' | 'refreshPlace' | 'outOfScope'
 
 export interface SubmissionIssue {
@@ -105,6 +114,20 @@ export function validateSubmission(input: unknown): SubmissionValidation {
     issues.push({ field: 'type', code: 'invalid' })
   }
 
+  let wordId: string | null = null
+  if (body.wordId !== undefined && body.wordId !== null && body.wordId !== '') {
+    if (typeof body.wordId !== 'string' || !WORD_ID_PATTERN.test(body.wordId)) issues.push({ field: 'wordId', code: 'invalid' })
+    else wordId = body.wordId
+  }
+  let intent: SubmissionIntent | null = null
+  if (body.intent !== undefined && body.intent !== null && body.intent !== '') {
+    if (isOneOf(SUBMISSION_INTENTS, body.intent)) intent = body.intent
+    else issues.push({ field: 'intent', code: 'invalid' })
+  }
+  // A link only means something with a word; corrections have their own target and never concern a word.
+  if (intent && !wordId && !issues.some(issue => issue.field === 'wordId')) issues.push({ field: 'wordId', code: 'required' })
+  if (wordId && type === 'correction' && !issues.some(issue => issue.field === 'type')) issues.push({ field: 'type', code: 'invalid' })
+
   // Cached old clients must refresh/reselect instead of submitting arbitrary location text.
   if (body.place !== undefined && body.place !== null && body.place !== '') {
     if (typeof body.place !== 'string' || body.place.trim()) issues.push({ field: 'place', code: 'refreshPlace' })
@@ -112,6 +135,8 @@ export function validateSubmission(input: unknown): SubmissionValidation {
   const placeId = optionalText(body.placeId, 'place', 40, issues)
   // Variant reports need a location; ordinary contributions may still omit it.
   if (body.reportKind === 'variant' && !placeId && !issues.some(issue => issue.field === 'place')) issues.push({ field: 'place', code: 'required' })
+  // Confirming that a word is used "here" is only worth anything with the place.
+  if (intent === 'usage' && !placeId && !issues.some(issue => issue.field === 'place')) issues.push({ field: 'place', code: 'selectPlace' })
   if (placeId && !/^geonames:[0-9]{1,10}$/.test(placeId)) issues.push({ field: 'place', code: 'invalid' })
   const name = optionalText(body.name, 'name', SUBMISSION_LIMITS.name.max, issues)
   const contact = optionalText(body.contact, 'contact', SUBMISSION_LIMITS.contact.max, issues)
@@ -123,5 +148,5 @@ export function validateSubmission(input: unknown): SubmissionValidation {
 
   if (issues.length || !locale) return { ok: false, issues }
 
-  return { ok: true, value: { text, type, targetRef, placeId, name, contact, consentPublish: true, locale } }
+  return { ok: true, value: { text, type, targetRef, placeId, wordId, intent, name, contact, consentPublish: true, locale } }
 }

@@ -154,4 +154,15 @@ describe.skipIf(!url)('heritage_daily_words on Postgres', () => {
     expect(fallback.entry.id).not.toBe(skipped)
     expect((await service.from('heritage_daily_words').select('*').eq('day', '2031-06-04')).data![0]).toMatchObject({ source: 'auto', replaced_word_ids: [skipped] })
   })
+
+  it('keeps a contribution, unlinked, when its word is deleted', async () => {
+    const [wordId] = await addWords('unlink', 1)
+    const text = `daily-test-unlink ${Date.now()}`
+    const stored = await service.from('heritage_submissions').insert({ text, type: 'word', place: 'Orehovec', consent_publish: true, consent_version: '2026-10-26', locale: 'hr', word_id: wordId, intent: 'usage' }).select('id').single()
+    expect(stored.error).toBeNull()
+    expect((await service.from('heritage_words').delete().eq('id', wordId)).error).toBeNull()
+    const after = await service.from('heritage_submissions').select('word_id,intent').eq('id', stored.data!.id).single()
+    expect(after.data).toEqual({ word_id: null, intent: null })
+    await service.from('heritage_submissions').delete().eq('id', stored.data!.id)
+  })
 })
