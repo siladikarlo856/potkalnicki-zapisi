@@ -125,7 +125,7 @@ The withdrawal trigger only acts on words created *from* a submission (`heritage
 
 ## Content tables
 
-`20261103010000_content_tables.sql` creates the database home for the atlas content that is still read from `content/atlas/*.json` today. It is the first step of the content admin plan: nothing reads these tables yet, and the rows arrive in a later seed migration, so the tables start empty. The version sorts after every migration on `main` and after `20261103000000_submission_word_link.sql`; if another migration lands first with a later timestamp, rename this file to sort after it before merging.
+`20261103010000_content_tables.sql` creates the database home for the atlas content that is still read from `content/atlas/*.json` today. It is the first step of the content admin plan: nothing reads these tables yet, and the rows arrive in the [atlas content import](#atlas-content-import), so the tables start empty. The version sorts after every migration on `main` and after `20261103000000_submission_word_link.sql`; if another migration lands first with a later timestamp, rename this file to sort after it before merging.
 
 What it adds:
 
@@ -140,6 +140,26 @@ Every content table has a UUID `id`, `status` (`draft`, `published`, `archived`)
 Apply it through the normal migration-first workflow. The previously deployed app ignores the new tables, so migrating first is safe, and an app rollback keeps them: do not drop them to roll back. After rollout, verify that `\dt public.*` lists the nine tables with RLS enabled, that `anon` and `authenticated` get `permission denied`, and that the tables are empty.
 
 `node scripts/test-challenges.mjs` also runs `test/content.integration.test.ts` on its disposable Postgres and PostgREST: the deterministic UUIDs (SQL against the Node implementation), public-role denial in SQL and through PostgREST, revisions and stale-update refusal, history rows with their actor (deletes included), the area hierarchy, slug and code uniqueness, region membership, the item place rule and settlement moves, slug history and `restrict` deletes.
+
+## Atlas content import
+
+`20261103020000_seed_content.sql` imports the atlas into the content tables once. It sorts after `20261103010000_content_tables.sql`, which it fills; if another migration lands first with a later timestamp, rename this file to sort after it before merging (the generator and the drift test find it by its `_seed_content.sql` suffix).
+
+What it inserts, all with `status = 'published'`:
+
+- `areas`: Hrvatska (country) and Koprivničko-križevačka županija (county), from the word-area keys in `content/heritage/areas.json`; the region Potkalničko prigorje (slug `potkalnicko-prigorje`) below the county; Križevci as a `town` and Kalnik, Gornja Rijeka, Sveti Petar Orehovec and Sveti Ivan Žabno as `municipality` rows below the county, with today's slugs (`grad-krizevci`, `opcina-kalnik`, …). The stored name is the bare place name; "Grad"/"Općina" comes from the kind, which reproduces today's labels. Then the 135 settlements from `content/atlas/settlements.json` below their town or municipality, with the DGU code as `official_code`, the centroid and the `geonames_id` of the one active place-catalog entry with that code (`server/data/places/hr.json`).
+- `area_regions`: the five towns and municipalities as members of Potkalničko prigorje.
+- `heritage_categories`: the 10 dataset categories with today's Croatian labels and sort order (`monastery` is defined but unused); English labels are left empty.
+- `sources`: the 10 sources.
+- `heritage_items`: the 107 items of `content/atlas/heritage.json` with the same name, slug, category, municipality, settlement (12 have none), locality, `verification` (from `status`), research notes and `noindex`; `dataset_id` is the dataset record id. From the source dataset (`data/heritage/…json`) they also get `period` (7 items), `registry_number` (19) and `heritage_status` (100 `needs_verification`, 7 `historical_site`); description and coordinates are empty there, so they stay null.
+- `heritage_item_sources`: 137 links, in the item's source order.
+- `content_legacy_ids`: every import key, plus `hr-kkz-krizevci` and `hr-kkz-sveti-petar-orehovec` (the word usages' town and municipality keys, mapped to the same rows as `krizevci` and `svetiPetarOrehovec`) and the 55 dataset item ids with diacritics (`križevci-crkva-sv-ane`).
+
+Ids are deterministic: `content_uuid('<kind>:<import key>')`, where the import key is the pre-UUID id (`area:hr`, `area:krizevci`, `area:000299` for a settlement's DGU code, `heritage_category:church`, `source:registar-kulturnih-dobara`, `heritage_item:krizevci-crkva-sv-ane`). Local, CI and production therefore hold the same ids, and code and tests can compute them. The file runs in one transaction with `set local app.actor = 'import'`, so the content triggers write one `insert` revision per row with actor `import`. Words are not part of the import: they are already in `heritage_words`.
+
+`scripts/generate-content-seed.mjs` renders the file from `content/atlas/*.json`, `content/heritage/areas.json`, the source dataset and the place catalog, and stops on any inconsistency (an unknown settlement, source or category, a settlement outside its item's municipality, a missing or ambiguous catalog entry). `test/contentSeed.test.ts` (part of `pnpm test`) fails when the committed file differs from what the generator renders, which keeps the JSON frozen while it still exists. Once merged the migration is applied and must not change: content edits go into the database, not the JSON. `node scripts/test-challenges.mjs` also runs `test/contentSeed.integration.test.ts` on its disposable Postgres: every imported row field by field against the content files, the counts (5 towns and municipalities, 135 settlements, 10 categories, 10 sources, 107 items), legacy-id resolution, deterministic ids, the import revisions, and that replaying the file changes nothing.
+
+Apply it through the normal migration-first workflow. It only inserts, each statement with `on conflict do nothing`, so a replay never overwrites a later edit, and the previously deployed app ignores the rows: migrating first is safe, and an app rollback keeps them. After rollout, verify the counts: `select kind, count(*) from public.areas group by kind;` gives 1 country, 1 county, 1 region, 1 town, 4 municipality and 135 settlement rows; `heritage_items` has 107 rows, `sources` and `heritage_categories` 10 each; and `select count(*) from public.content_revisions where actor = 'import';` gives 270.
 
 ## Failure and recovery
 
