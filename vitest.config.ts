@@ -1,7 +1,17 @@
+import { fileURLToPath } from 'node:url'
+
 import { defineConfig } from 'vitest/config'
 import { defineVitestProject } from '@nuxt/test-utils/config'
 
+const rootDir = fileURLToPath(new URL('.', import.meta.url))
+
 export default defineConfig(async () => ({
+  resolve: {
+    alias: {
+      '~~/': `${rootDir}/`,
+      '~/': `${rootDir}/app/`
+    }
+  },
   test: {
     projects: [
       {
