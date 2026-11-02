@@ -1,11 +1,12 @@
 import { execFileSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 import { resolveDailyWord } from '../server/utils/dailyWord'
 
 // Run with `node scripts/test-challenges.mjs`, which provisions a disposable Postgres and
 // PostgREST, applies every migration and removes both afterwards. Skipped everywhere else.
-// Words are added with the `daily-test-` prefix, and only those are ever deactivated, so the
+// Words are added with fresh UUID ids (word ids must be UUIDs), and only those are ever deactivated, so the
 // seed words used by the challenge tests are left alone.
 const url = process.env.TEST_CHALLENGE_API_URL
 const serviceKey = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
@@ -35,8 +36,8 @@ function entry(id: string) {
     variants: [{ id: 'v1', form: `riječ-${id}`, status: 'community', usages: [] }]
   }
 }
-async function addWords(prefix: string, count: number) {
-  const ids = Array.from({ length: count }, (_, i) => `daily-test-${prefix}-${i}`)
+async function addWords(count: number) {
+  const ids = Array.from({ length: count }, () => randomUUID())
   const { error } = await service.from('heritage_words').insert(ids.map(id => ({ id, entry: entry(id), areas: [], active: true })))
   expect(error).toBeNull()
   return ids
@@ -45,24 +46,24 @@ const clientFor = () => createClient(url ?? 'http://localhost', serviceKey || 's
 
 describe.skipIf(!url)('heritage_daily_words on Postgres', () => {
   it('denies every public role, in SQL and through PostgREST', async () => {
-    await addWords('rls', 1)
+    const [word] = await addWords(1)
     for (const role of ['anon', 'authenticated']) {
       for (const statement of [
         'select count(*) from public.heritage_daily_words',
-        'insert into public.heritage_daily_words(day, word_id, source) values (\'2031-02-01\', \'daily-test-rls-0\', \'auto\')',
+        `insert into public.heritage_daily_words(day, word_id, source) values ('2031-02-01', '${word}', 'auto')`,
         'update public.heritage_daily_words set village = \'none\'',
         'delete from public.heritage_daily_words'
       ]) expect(failure(`set role ${role}; ${statement};`)).toMatch(/permission denied/)
     }
     const anon = createClient(url!, publicKey, options)
     expect((await anon.from('heritage_daily_words').select('*')).error).not.toBeNull()
-    expect((await anon.from('heritage_daily_words').insert({ day: '2031-02-01', word_id: 'daily-test-rls-0', source: 'auto' })).error).not.toBeNull()
+    expect((await anon.from('heritage_daily_words').insert({ day: '2031-02-01', word_id: word, source: 'auto' })).error).not.toBeNull()
     expect((await service.from('heritage_daily_words').select('*')).error).toBeNull()
     expect(sql('select relrowsecurity from pg_class where oid = \'public.heritage_daily_words\'::regclass;')).toBe('t')
   })
 
   it('enforces the table constraints', async () => {
-    const [a] = await addWords('constraints', 1)
+    const [a] = await addWords(1)
     const insert = (columns: string, values: string) => `insert into public.heritage_daily_words(day, word_id, source${columns}) values ('2031-03-01', '${a}', 'pinned'${values});`
     expect(failure('insert into public.heritage_daily_words(day, word_id, source) values (\'2031-03-01\', \'daily-test-missing\', \'auto\');')).toMatch(/foreign key/)
     expect(failure(insert('', '').replace('\'pinned\'', '\'manual\''))).toMatch(/source/)
@@ -76,7 +77,7 @@ describe.skipIf(!url)('heritage_daily_words on Postgres', () => {
   })
 
   it('freezes a resolved day except for an audited replacement', async () => {
-    const [a, b] = await addWords('guard', 2)
+    const [a, b] = await addWords(2)
     const day = '2031-04-01'
     sql(`insert into public.heritage_daily_words(day, word_id, source) values ('${day}', '${a}', 'pinned');`)
     // Unresolved pins are free to change and delete.
@@ -106,7 +107,7 @@ describe.skipIf(!url)('heritage_daily_words on Postgres', () => {
   })
 
   it('lets only one of many concurrent first inserts win', async () => {
-    const ids = await addWords('race', 12)
+    const ids = await addWords(12)
     const day = '2031-05-01'
     const results = await Promise.all(ids.map(id => clientFor().from('heritage_daily_words').upsert({
       day, word_id: id, source: 'auto', village: 'auto', snapshot: { options: [{ id: 'a', text: { hr: id } }, { id: 'b', text: { hr: 'x' } }], correctOptionId: 'a', villageAreaId: null, clues: [] },
@@ -122,7 +123,7 @@ describe.skipIf(!url)('heritage_daily_words on Postgres', () => {
   it('resolves, pins, skips and replaces against the real constraints and trigger', async () => {
     const epoch = '2031-06-01'
     const at = (day: string) => new Date(`${day}T10:00:00Z`)
-    const [pinned, skipped] = await addWords('resolver', 2)
+    const [pinned, skipped] = await addWords(2)
     const resolve = (day: string) => resolveDailyWord(clientFor(), at(day), { epoch })
 
     // Concurrent first requests share one row and one answer.
@@ -156,7 +157,7 @@ describe.skipIf(!url)('heritage_daily_words on Postgres', () => {
   })
 
   it('keeps a contribution, unlinked, when its word is deleted', async () => {
-    const [wordId] = await addWords('unlink', 1)
+    const [wordId] = await addWords(1)
     const text = `daily-test-unlink ${Date.now()}`
     const stored = await service.from('heritage_submissions').insert({ text, type: 'word', place: 'Orehovec', consent_publish: true, consent_version: '2026-10-26', locale: 'hr', word_id: wordId, intent: 'usage' }).select('id').single()
     expect(stored.error).toBeNull()

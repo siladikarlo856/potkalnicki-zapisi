@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -14,7 +15,7 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
   const anon = createClient(url || 'http://localhost', publicKey || 'public', options)
   const admin = createClient(url || 'http://localhost', serviceRoleKey || 'service', options)
   let id = 0
-  const wordId = `rls-word-${Date.now()}`
+  const wordId = randomUUID()
   const wordRow = { id: wordId, entry: { id: wordId, headword: '', meaning: { hr: '' }, status: 'community', variants: [], sources: [] }, areas: [], active: false }
 
   beforeAll(async () => {
@@ -51,7 +52,7 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
       expect(update.error).not.toBeNull()
       const remove = await client.from('heritage_submissions').delete().eq('id', id)
       expect(remove.error).not.toBeNull()
-      const wordInsert = await client.from('heritage_words').insert({ ...wordRow, id: `${wordId}-public` })
+      const wordInsert = await client.from('heritage_words').insert({ ...wordRow, id: randomUUID() })
       expect(wordInsert.error).not.toBeNull()
       const wordRead = await client.from('heritage_words').select('*')
       expect(wordRead.error).not.toBeNull()
@@ -134,7 +135,7 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
     const make = async (suffix: string) => {
       const sub = await admin.from('heritage_submissions').insert({ ...row, text: `rls withdraw ${suffix}`, name: 'Ana' }).select('id').single()
       expect(sub.error).toBeNull()
-      const wid = `${wordId}-${suffix}`
+      const wid = randomUUID()
       const entry = { id: wid, headword: 'x', meaning: { hr: 'y' }, partOfSpeech: 'imenica', status: 'community', variants: [{ id: `${wid}~x`, form: 'x', status: 'community', usages: [] }], sources: [{ id: 's1', kind: 'contribution', credit: 'Ana' }] }
       expect((await admin.from('heritage_words').insert({ id: wid, entry, areas: [], active: true, submission_id: sub.data!.id })).error).toBeNull()
       return { sid: sub.data!.id as number, wid }
