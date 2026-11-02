@@ -26,9 +26,9 @@ export interface DailyWordPayload {
   clues: DailyClue[]
 }
 
-// Reserved future sentinel, not a launch date. Set only after 30 verified,
-// daily-ready words exist; core logic alone must not enable the feature.
-export const DAILY_WORD_EPOCH = '9999-01-01'
+// First Europe/Zagreb day of the daily word (day 1). The `dailyWordEpoch` runtime
+// config (`NUXT_DAILY_WORD_EPOCH`) overrides it, e.g. to hide the feature again.
+export const DAILY_WORD_EPOCH = '2026-11-02'
 const DAY_MS = 86_400_000
 const dayFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Europe/Zagreb', year: 'numeric', month: '2-digit', day: '2-digit'

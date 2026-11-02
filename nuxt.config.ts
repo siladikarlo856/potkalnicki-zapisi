@@ -25,7 +25,7 @@ export default defineNuxtConfig({
   // Server-only settings. Set them with environment variables on the server, never in the repo
   // (NUXT_SUPABASE_URL, NUXT_REVIEW_SECRET, ...). See the README.
   runtimeConfig: {
-    // Optional launch-day override for tests (`NUXT_DAILY_WORD_EPOCH`); production uses the shared constant.
+    // Optional launch-day override (`NUXT_DAILY_WORD_EPOCH`); when empty the shared constant is used.
     dailyWordEpoch: '',
     supabase: {
       url: '',

@@ -36,6 +36,8 @@ await setup({
     NUXT_SUPABASE_URL: supabase.url,
     NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey,
     NUXT_REVIEW_SECRET: SECRET,
+    // Keep the daily word closed here so the runtime-config override stays covered.
+    NUXT_DAILY_WORD_EPOCH: '9999-01-01',
     NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD,
     NUXT_SUBMISSION_RATE_LIMIT_MAX: String(RATE_LIMIT_MAX)
   }
@@ -381,7 +383,7 @@ describe('word admin and public word APIs', () => {
 })
 
 describe('GET /api/heritage/daily', () => {
-  it('stays closed until the launch day and touches no data', async () => {
+  it('stays closed before a configured launch day and touches no data', async () => {
     const before = fake?.daily.length
     const response = await request('/api/heritage/daily')
     expect(response.status).toBe(404)
