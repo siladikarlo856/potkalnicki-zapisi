@@ -206,7 +206,7 @@ pnpm typecheck
 pnpm test
 ```
 
-`pnpm test` runs the API tests against a small fake of Supabase's REST API (`test/helpers/fakeSupabase.ts`), so it needs no Docker and runs in CI. It also mounts the quiz in a Nuxt component environment with active words seeded through that fake, checking HR/EN questions, four choices, progress, loading, error/retry and limited-word states without a browser in CI. `pnpm test:local-db` runs the same API tests, plus `test/supabase.local.test.ts` (which checks the Row Level Security rules in the migration), against the real local Supabase stack; start it first with `pnpm db:up`.
+`pnpm test` runs the API tests against a small fake of Supabase's REST API (`test/helpers/fakeSupabase.ts`), so it needs no Docker and runs in CI. It also mounts the quiz and flashcards in a Nuxt component environment with active words seeded through that fake, checking HR/EN questions, four choices, progress, loading, error/retry and limited-word states without a browser in CI, and exercises the browser-local heritage progress composable (`test/progress.nuxt.test.ts`). `pnpm test:local-db` runs the same API tests, plus `test/supabase.local.test.ts` (which checks the Row Level Security rules in the migration), against the real local Supabase stack; start it first with `pnpm db:up`.
 
 ## Local development
 

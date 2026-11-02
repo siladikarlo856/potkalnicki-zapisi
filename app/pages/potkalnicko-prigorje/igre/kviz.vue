@@ -6,6 +6,7 @@ defineI18nRoute({ locales: ['hr'] })
 
 const { locale, t } = useI18n()
 const { words, status, error, refresh } = useHeritage()
+const { recordKnown, recordMissed, totals } = useProgress()
 // Nuxt carries the seed to the client, keeping server rendering and hydration identical.
 const seed = useState('heritage-quiz-seed', () => Math.floor(Math.random() * 4294967296))
 const meaningLocale = computed(() => locale.value === 'en' ? 'en' : 'hr')
@@ -47,7 +48,14 @@ watch([meaningLocale, wordList], () => {
 })
 
 async function answer(optionId: string) {
-  game.value = answerMeaningQuestion(game.value, optionId)
+  const previous = game.value
+  const updated = answerMeaningQuestion(previous, optionId)
+  if (updated === previous) return
+  if (question.value) {
+    if (isCorrectAnswer(question.value, optionId)) recordKnown(question.value.entry.id)
+    else recordMissed(question.value.entry.id)
+  }
+  game.value = updated
   await nextTick()
   nextControl.value?.querySelector('button')?.focus()
 }
@@ -90,6 +98,9 @@ async function replayMissed() {
         </h1>
         <p class="mt-1 text-sm text-muted">
           {{ t('quiz.description') }}
+        </p>
+        <p class="mt-1 text-xs text-muted">
+          {{ t('game.progressCount', { count: totals.known + totals.missed }) }}
         </p>
       </header>
 

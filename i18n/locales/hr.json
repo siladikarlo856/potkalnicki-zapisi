@@ -278,6 +278,7 @@
     }
   },
   "game": {
+    "progressCount": "Odgovoreno ukupno: {count}",
     "description": "Kartice s riječima našeg kraja: pročitaj riječ, pogodi što znači pa okreni karticu.",
     "languageNote": "",
     "sampleNote": {

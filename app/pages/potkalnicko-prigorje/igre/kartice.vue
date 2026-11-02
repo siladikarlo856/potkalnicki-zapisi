@@ -8,6 +8,7 @@ defineI18nRoute({ locales: ['hr'] })
 const { locale, t } = useI18n()
 const localePath = useLocalePath()
 const { words, status, error, refresh } = useHeritage()
+const { recordSeen, recordKnown, recordMissed, totals } = useProgress()
 
 useSeoMeta({
   title: 'Kaj to znači?',
@@ -63,10 +64,16 @@ function announceCard() {
 }
 
 watch(flipped, (value) => {
-  if (value) seen.value = true
+  if (value && !seen.value) {
+    seen.value = true
+    if (entry.value) recordSeen(entry.value.id)
+  }
 })
 
 async function score(knewIt: boolean) {
+  if (!entry.value || !seen.value) return
+  if (knewIt) recordKnown(entry.value.id)
+  else recordMissed(entry.value.id)
   if (knewIt) known.value++
   else {
     unknown.value++
@@ -147,6 +154,9 @@ async function restart(cards: WordEntry[] = words.value) {
         </h1>
         <p class="mt-1 text-sm text-muted">
           {{ t('game.intro') }}
+        </p>
+        <p class="mt-1 text-xs text-muted">
+          {{ t('game.progressCount', { count: totals.known + totals.missed }) }}
         </p>
       </header>
 

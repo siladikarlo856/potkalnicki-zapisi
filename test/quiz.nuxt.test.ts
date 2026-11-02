@@ -1,7 +1,8 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createClient } from '@supabase/supabase-js'
-import { clearNuxtData, useNuxtApp } from '#imports'
+import { clearNuxtData, clearNuxtState, useNuxtApp } from '#imports'
+import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
 import Quiz from '../app/pages/potkalnicko-prigorje/igre/kviz.vue'
 import Cards from '../app/pages/potkalnicko-prigorje/igre/kartice.vue'
 import sampleWords from '../content/heritage/words.json'
@@ -33,6 +34,8 @@ beforeAll(async () => {
   }
 })
 beforeEach(async () => {
+  localStorage.clear()
+  clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
   for (const entry of seeds) await db.from('heritage_words').update({ active: true }).eq('id', entry.id)
 })
 afterEach(() => {
@@ -83,6 +86,8 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, pr
     const correctId = seeds.find(word => word.headword === headword)!.id
     await page.get(`[data-option-id="${correctId}"]`).trigger('click')
     expect(page.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('1')
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[correctId].known).toBe(1)
+    expect(page.text()).toContain('Odgovoreno ukupno: 1')
     expect(page.text()).toContain(lang === 'hr' ? 'Bodovi: 1 / 4' : 'Score: 1 / 4')
     expect(page.get('[aria-live="polite"]').text()).toContain(lang === 'hr' ? 'Točno značenje:' : 'Correct meaning:')
     const next = page.findAll('button').find(button => button.text() === (lang === 'hr' ? 'Sljedeća riječ' : 'Next word'))!
@@ -130,10 +135,16 @@ describe.each([
     const spoken = page.findAll('[aria-live="polite"]').map(region => region.text()).find(Boolean)!
     const current = seeds.find(word => spoken.includes(`${word.headword}: ${word.meaning.hr}`))
     expect(current).toBeDefined()
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[current!.id].seen).toBe(1)
 
+    // Flipping back and revealing again is still the same card visit.
+    await flipButton.trigger('click')
+    await flipButton.trigger('click')
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[current!.id].seen).toBe(1)
     const unknownButton = page.findAll('button').find(button => button.text().includes(unknown))!
     await unknownButton.trigger('click')
     expect(page.findAll('[aria-live="polite"]').some(region => region.text().includes(next))).toBe(true)
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[current!.id].missed).toBe(1)
   })
 })
 
@@ -229,6 +240,8 @@ describe.each([
     const page = await mountQuiz(lang)
     await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
     const missedWord = await answerCurrent(page, false)
+    const missedId = seeds.find(word => word.headword === missedWord)!.id
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[missedId].missed).toBe(1)
     for (let i = 0; i < 3; i++) await answerCurrent(page, true)
 
     await expect.poll(() => page.find('[data-testid="quiz-review"]').exists()).toBe(true)
