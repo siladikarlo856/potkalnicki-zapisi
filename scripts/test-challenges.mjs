@@ -60,7 +60,7 @@ try {
   })
   await new Promise(resolve => proxy.listen(0, '127.0.0.1', resolve))
   const child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--project=node', 'test/challenge.integration.test.ts', 'test/dailyWord.integration.test.ts', 'test/content.integration.test.ts', 'test/contentSeed.integration.test.ts',
-    'test/wordColumns.integration.test.ts', 'test/adminContent.integration.test.ts'], {
+    'test/wordColumns.integration.test.ts', 'test/adminContent.integration.test.ts', 'test/contentHistory.integration.test.ts'], {
     cwd: root, stdio: 'inherit', env: {
       ...process.env, TEST_CHALLENGE_API_URL: `http://127.0.0.1:${proxy.address().port}`, TEST_CHALLENGE_SERVICE_KEY: jwt('service_role'),
       TEST_CHALLENGE_PUBLIC_KEY: jwt('anon'), TEST_CHALLENGE_CONTAINER: name

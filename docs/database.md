@@ -191,6 +191,18 @@ The database keeps the invariants, so direct SQL edits behave the same as admin 
 
 Rollback is app-only: the old app ignores these routes, and rows written through them stay valid content rows.
 
+## Change history (no migration)
+
+The history screens (`/admin/povijest` and the drawer on every resource page) add no migration. They read `content_revisions` and write only through the content tables, so nothing new has to be deployed to the database and the previous app is unaffected. Deploy after `20261103010000_content_tables.sql` (the routes answer 503 `not-migrated` until then).
+
+- Every audit row holds the full row (minus `search_text`) as `data`. The API compares consecutive snapshots of one `(entity_kind, entity_id)` in the order of `content_revisions_entity`, so no history table or column is added. A delete is recorded with revision `old.revision + 1`.
+- Restoring updates the live row with `revision = <expected>` (or inserts it again if it was deleted) and lets the triggers do the rest, so the result is an ordinary `update` or `insert` revision by actor `admin`. A recreated row gets `revision = newest recorded revision + 1` and its original `created_at`, so the count never repeats and ordering by `id` stays the order of events. The history does not mark a revision as a restore; it shows what changed.
+- A snapshot holds only the row. State kept in other tables (for example `heritage_item_sources`, `area_regions`) is not part of it, so a kind that edits such links needs them added to its registry definition before restore is complete for that kind.
+- Rows of kinds without an admin resource yet (`word`, `area`, `heritage_item`, `heritage_category`, including the `import` baselines) are listed in the global log but cannot be opened or restored.
+- `content_revisions` is append-only for the app: nothing deletes or edits it. Contributor-credit redaction (a later plan step) will have to scrub the snapshots it appears in.
+
+Rollback is app-only; the table and its rows stay.
+
 ## Failure and recovery
 
 Open **GitHub → Actions → Production database and deploy → failing run → Migrate then promote production branch**. The history step shows version numbers, and the Supabase CLI reports the failed migration and database error. Missing baseline entries, unknown remote migrations, missing earlier versions, authentication/connection errors, SQL errors, branch divergence, or branch protection failures stop the job. Subsequent branch promotion is skipped on migration failure; `production` remains at its last promoted commit.

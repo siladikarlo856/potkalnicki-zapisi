@@ -3,6 +3,7 @@ import type {
   ContentEntity, ContentErrorData, ContentIssue, ContentKind, ContentList, ContentReferences, ContentStatus
 } from '~~/shared/utils/content/common'
 import { CONTENT_PAGE_SIZES, CONTENT_STATUSES, isUuid } from '~~/shared/utils/content/common'
+import type { HistoryRestoreResult, HistoryRevisions } from '~~/shared/utils/content/history'
 
 // The client half of the admin CRUD kit. A page describes one resource with `defineAdminResource`
 // (labels, columns, filters, form state and the shared validator) and hands it to
@@ -97,7 +98,9 @@ export function useAdminContentApi<T extends ContentEntity>(kind: ContentKind) {
     update: (id: string, body: Record<string, unknown> & { revision: number }) => $fetch<{ entity: T }>(`${base}/${id}`, { method: 'PATCH', body }),
     archive: (id: string) => $fetch<{ mode: 'archive', entity: T }>(`${base}/${id}`, { method: 'DELETE', query: { mode: 'archive' } }),
     remove: (id: string) => $fetch<{ mode: 'hard', id: string }>(`${base}/${id}`, { method: 'DELETE', query: { mode: 'hard' } }),
-    references: (id: string) => $fetch<ContentReferences>(`${base}/${id}/references`)
+    references: (id: string) => $fetch<ContentReferences>(`${base}/${id}/references`),
+    revisions: (id: string, query: { before?: number } = {}) => $fetch<HistoryRevisions>(`${base}/${id}/revisions`, { query }),
+    restore: (id: string, body: { revisionId: number, revision?: number }) => $fetch<HistoryRestoreResult>(`${base}/${id}/restore`, { method: 'POST', body })
   }
 }
 
@@ -138,7 +141,8 @@ export function adminListState(query: LocationQuery, resource: AdminResource): A
 
 /**
  * List state in the URL (`q`, filters, `page`, `size`, `sort`), the list request that follows it,
- * and the dialog deep links (`?uredi=<uuid>`, `?novo=1&<field>=<prefill>`).
+ * and the dialog deep links (`?uredi=<uuid>`, `?novo=1&<field>=<prefill>`, `?povijest=<uuid>` for the
+ * history drawer).
  */
 export function useAdminResource<T extends ContentEntity, F extends object>(resource: AdminResource<T, F>) {
   const route = useRoute()
@@ -203,11 +207,23 @@ export function useAdminResource<T extends ContentEntity, F extends object>(reso
       .filter(([key, value]) => value !== undefined && typeof blank[key] === 'string' && !(key in state.value.filters))) as Partial<F>
   })
 
+  const historyId = computed(() => {
+    const id = single(route.query.povijest)
+    return isUuid(id) ? id : undefined
+  })
+
+  // One overlay at a time: opening a dialog or the history closes the others.
   function openEdit(id: string) {
-    return replaceQuery({ uredi: id, novo: undefined })
+    return replaceQuery({ uredi: id, novo: undefined, povijest: undefined })
   }
   function openCreate() {
-    return replaceQuery({ novo: '1', uredi: undefined })
+    return replaceQuery({ novo: '1', uredi: undefined, povijest: undefined })
+  }
+  function openHistory(id: string) {
+    return replaceQuery({ povijest: id, uredi: undefined, novo: undefined })
+  }
+  function closeHistory() {
+    return replaceQuery({ povijest: undefined })
   }
   function closeDialog() {
     const reset: LocationQueryRaw = { uredi: undefined, novo: undefined }
@@ -218,7 +234,8 @@ export function useAdminResource<T extends ContentEntity, F extends object>(reso
   return {
     state, setQuery, setPage, clear, isFiltered,
     list, listError,
-    editId, creating, prefill, openEdit, openCreate, closeDialog
+    editId, creating, prefill, openEdit, openCreate, closeDialog,
+    historyId, openHistory, closeHistory
   }
 }
 

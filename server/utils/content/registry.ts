@@ -17,6 +17,11 @@ export function contentKind(kind: ContentKind) {
   return REGISTRY[kind]
 }
 
+/** The definition of a kind that has an admin resource; undefined for any other entity kind (history lists those too). */
+export function findContentKind(kind: string) {
+  return isContentKind(kind) ? contentKind(kind) : undefined
+}
+
 /** The definition named by the `:kind` route parameter; an unknown kind is a 404. */
 export function contentKindParam(event: H3Event) {
   const kind = getRouterParam(event, 'kind')

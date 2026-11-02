@@ -25,7 +25,8 @@ const UButton = resolveComponent('UButton')
 const {
   state, setQuery, setPage, clear, isFiltered,
   list, listError,
-  editId, creating, prefill, openEdit, openCreate, closeDialog
+  editId, creating, prefill, openEdit, openCreate, closeDialog,
+  historyId, openHistory, closeHistory
 } = useAdminResource(props.resource)
 const api = useAdminContentApi<T>(props.resource.kind)
 const confirm = useAdminConfirm()
@@ -148,6 +149,7 @@ function rowActions(entity: T): DropdownMenuItem[][] {
   return [
     [
       { label: 'Uredi', icon: 'i-lucide-pencil', onSelect: () => openEdit(entity.id) },
+      { label: 'Povijest', icon: 'i-lucide-history', onSelect: () => openHistory(entity.id) },
       ...(publicPath ? [{ label: 'Otvori javno', icon: 'i-lucide-external-link', to: publicPath, target: '_blank' }] : [])
     ],
     [entity.status === 'archived'
@@ -162,6 +164,18 @@ const dialogOpen = computed({
   set: (value) => {
     if (!value) closeDialog()
   }
+})
+
+// The drawer stays mounted after closing, so it can slide out before it is forgotten.
+const historyOpen = computed({
+  get: () => !!historyId.value,
+  set: (value) => {
+    if (!value) closeHistory()
+  }
+})
+const shownHistoryId = ref(historyId.value)
+watch(historyId, (id) => {
+  if (id) shownHistoryId.value = id
 })
 
 const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranici`, value: value as number }))
@@ -351,6 +365,14 @@ const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranic
         />
       </template>
     </AdminEntityDialog>
+
+    <AdminHistoryDrawer
+      v-if="shownHistoryId"
+      v-model:open="historyOpen"
+      :kind="resource.kind"
+      :entity-id="shownHistoryId"
+      @restored="list.refresh()"
+    />
 
     <AdminDeleteDialog
       v-model:open="deleteOpen"

@@ -9,6 +9,7 @@ const tiles = [
   { title: 'Riječ dana', description: 'Raspored, zaliha riječi i prikvačeni dani.', icon: 'i-lucide-calendar-days', to: '/admin/rijeci#rijec-dana' },
   { title: 'Baština: ispravci', description: 'Ispravci zapisa iz inventara.', icon: 'i-lucide-landmark', to: '/admin/bastina' },
   { title: 'Izvori', description: 'Registri, studije i radovi na koje se pozivaju zapisi.', icon: 'i-lucide-library', to: '/admin/izvori' },
+  { title: 'Povijest', description: 'Tko je i kada mijenjao sadržaj; vrati raniju verziju.', icon: 'i-lucide-history', to: '/admin/povijest' },
   { title: 'Izazovi', description: 'Dolazi u sljedećoj fazi.', icon: 'i-lucide-trophy' }
 ]
 </script>

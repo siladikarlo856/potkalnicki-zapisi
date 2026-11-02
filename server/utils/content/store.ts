@@ -20,11 +20,11 @@ const COMMON_SORTS = { status: 'status', updatedAt: 'updated_at', createdAt: 'cr
 const MAX_PAGE = 10_000
 const MAX_LOOKUP_IDS = 50
 
-function fail(statusCode: number, statusMessage: string, data: ContentErrorData = {}): never {
+export function fail(statusCode: number, statusMessage: string, data: ContentErrorData = {}): never {
   throw createError({ statusCode, statusMessage, data })
 }
 
-function invalid(issues: ContentIssue[], message = 'Provjeri označena polja.'): never {
+export function invalid(issues: ContentIssue[], message = 'Provjeri označena polja.'): never {
   fail(400, 'Invalid content', { code: 'invalid', message, issues })
 }
 
@@ -32,7 +32,7 @@ function columnsOf(def: AnyContentKindDefinition) {
   return { ...COMMON_COLUMNS, ...def.fields } as Record<string, string>
 }
 
-function selectList(def: AnyContentKindDefinition) {
+export function selectList(def: AnyContentKindDefinition) {
   return [...new Set(Object.values(columnsOf(def)))].join(',')
 }
 
@@ -40,19 +40,19 @@ export function toEntity(def: AnyContentKindDefinition, row: Row): ContentEntity
   return Object.fromEntries(Object.entries(columnsOf(def)).map(([field, column]) => [field, row[column] ?? null])) as ContentEntityRecord
 }
 
-function toRow(def: AnyContentKindDefinition, value: Row) {
+export function toRow(def: AnyContentKindDefinition, value: Row) {
   const row: Row = { status: value.status }
   for (const [field, column] of Object.entries(def.fields as Record<string, string>)) row[column] = value[field]
   return row
 }
 
 /** Only the editable fields and `status`: ids, revisions and timestamps are never taken from a client. */
-function editable(def: AnyContentKindDefinition, source: Row) {
+export function editable(def: AnyContentKindDefinition, source: Row) {
   const keys = [...Object.keys(def.fields), 'status']
   return Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]))
 }
 
-function conflict(def: AnyContentKindDefinition, current: Row): never {
+export function conflict(def: AnyContentKindDefinition, current: Row): never {
   fail(409, 'Revision conflict', {
     code: 'revision-conflict',
     message: 'Netko je u međuvremenu spremio ovaj zapis. Učitaj najnoviju verziju ili prepiši svojom.',
@@ -93,7 +93,7 @@ export function contentIdParam(event: H3Event) {
   return id.toLowerCase()
 }
 
-async function readRow(def: AnyContentKindDefinition, id: string) {
+export async function readRow(def: AnyContentKindDefinition, id: string) {
   const { data, error } = await useDatabaseClient().from(def.table).select(selectList(def)).eq('id', id).maybeSingle()
   if (error) contentDatabaseError(def, error)
   return data as Row | null
@@ -105,13 +105,13 @@ async function requireRow(def: AnyContentKindDefinition, id: string) {
   return row
 }
 
-function queryText(value: unknown, name: string) {
+export function queryText(value: unknown, name: string) {
   if (value === undefined) return ''
   if (typeof value !== 'string') fail(400, `Invalid ${name}`, { message: `Parametar ${name} nije ispravan.` })
   return value
 }
 
-function queryInteger(value: unknown, name: string, fallback: number, max: number) {
+export function queryInteger(value: unknown, name: string, fallback: number, max: number) {
   const text = queryText(value, name)
   if (!text) return fallback
   const number = Number(text)

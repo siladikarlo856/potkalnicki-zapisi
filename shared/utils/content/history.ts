@@ -1,0 +1,173 @@
+import type { ContentKind, ContentList } from './common'
+import { CONTENT_STATUS_LABELS } from './common'
+import { SOURCE_TYPE_LABELS } from './source'
+
+// Change history of the content admin: the shapes of the history API, the vocabulary the screens
+// use (kind and field labels) and the pure helpers that turn two row snapshots into a field diff.
+// The database records every write in `content_revisions` (see docs/database.md); the API reads
+// that table, and the history drawer and /admin/povijest render what it returns.
+
+/**
+ * Every `entity_kind` the database audit triggers write to `content_revisions`. It is wider than
+ * `ContentKind` because history also lists kinds whose admin resource is not built yet (the
+ * imported areas, heritage items and categories, and words).
+ */
+export const HISTORY_KINDS = ['area', 'heritage_category', 'heritage_item', 'source', 'word'] as const
+export type HistoryKind = typeof HISTORY_KINDS[number]
+
+export function isHistoryKind(value: unknown): value is HistoryKind {
+  return (HISTORY_KINDS as readonly unknown[]).includes(value)
+}
+
+export const HISTORY_ACTIONS = ['insert', 'update', 'delete'] as const
+export type HistoryAction = typeof HISTORY_ACTIONS[number]
+
+export const HISTORY_ACTION_LABELS: Record<HistoryAction, string> = {
+  insert: 'Stvoreno',
+  update: 'Izmijenjeno',
+  delete: 'Obrisano'
+}
+
+/** Who wrote a revision: the admin (the default) or a seed migration (`import`). */
+export const HISTORY_ACTORS = ['admin', 'import'] as const
+export const HISTORY_ACTOR_LABELS: Record<string, string> = { admin: 'Administrator', import: 'Uvoz sadržaja' }
+export const HISTORY_ACTOR_PATTERN = /^[a-z0-9][a-z0-9:_-]{0,59}$/
+
+/** How a kind is named on the history screens and where its admin page lives (when it has one). */
+export interface HistoryKindMeta {
+  singular: string
+  plural: string
+  adminPath: string
+}
+
+export const HISTORY_KIND_META: Record<HistoryKind, HistoryKindMeta> = {
+  area: { singular: 'Mjesto', plural: 'Mjesta', adminPath: '/admin/mjesta' },
+  heritage_category: { singular: 'Kategorija baštine', plural: 'Kategorije baštine', adminPath: '/admin/kategorije' },
+  heritage_item: { singular: 'Zapis baštine', plural: 'Zapisi baštine', adminPath: '/admin/bastina' },
+  source: { singular: 'Izvor', plural: 'Izvori', adminPath: '/admin/izvori' },
+  word: { singular: 'Riječ', plural: 'Riječi', adminPath: '/admin/rijeci' }
+}
+
+/** A field as the history shows it: a Croatian label and, for coded values, a label per value. */
+export interface HistoryFieldMeta {
+  label: string
+  values?: Record<string, string>
+}
+
+/**
+ * Labels of the editable API fields of each registered kind (the keys of the kind's `fields`, plus
+ * `status`). Adding a kind to `ContentKind` requires an entry here, so a new admin resource cannot
+ * ship a history that shows raw field names.
+ */
+export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta>> = {
+  source: {
+    title: { label: 'Naslov' },
+    type: { label: 'Vrsta', values: SOURCE_TYPE_LABELS },
+    url: { label: 'Poveznica' },
+    note: { label: 'Napomena' }
+  }
+}
+
+export const HISTORY_STATUS_FIELD: HistoryFieldMeta = { label: 'Status', values: CONTENT_STATUS_LABELS }
+
+export function historyFieldMeta(kind: ContentKind, field: string): HistoryFieldMeta {
+  if (field === 'status') return HISTORY_STATUS_FIELD
+  return HISTORY_FIELDS[kind]?.[field] ?? { label: field }
+}
+
+/** A value in the history: empty values are an em dash, coded values use their label. */
+export function formatHistoryValue(meta: HistoryFieldMeta, value: unknown): string {
+  if (value === null || value === undefined || value === '') return '—'
+  if (typeof value === 'string') return meta.values?.[value] ?? value
+  if (typeof value === 'boolean') return value ? 'Da' : 'Ne'
+  if (typeof value === 'number') return String(value)
+  return JSON.stringify(value)
+}
+
+/** One field that differs between two versions of a row, in API (camelCase) form. */
+export interface HistoryChange {
+  field: string
+  before: unknown
+  after: unknown
+}
+
+type Snapshot = Record<string, unknown> | null
+
+function sameValue(a: unknown, b: unknown) {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+}
+
+function present(value: unknown) {
+  return value !== null && value !== undefined && value !== ''
+}
+
+/**
+ * The fields that differ between two versions of a row. `before` is null for a row's creation and
+ * `after` is null for its deletion; then the fields that hold a value are listed. Keys are compared
+ * in the order of `fields`, which is the kind's field order.
+ */
+export function diffSnapshots(before: Snapshot, after: Snapshot, fields: readonly string[]): HistoryChange[] {
+  const changes: HistoryChange[] = []
+  for (const field of fields) {
+    const was = before?.[field] ?? null
+    const now = after?.[field] ?? null
+    if (before && after ? !sameValue(was, now) : present(was) || present(now)) changes.push({ field, before: was, after: now })
+  }
+  return changes
+}
+
+/** A revision of one row as the history drawer shows it. */
+export interface HistoryRevision {
+  /** `content_revisions.id`: the key of a restore and of paging. */
+  id: number
+  /** The row's revision after this write (a delete counts as the next number). */
+  revision: number
+  action: HistoryAction
+  actor: string
+  createdAt: string
+  submissionId: number | null
+  /** What this write changed in the editable fields. */
+  changes: HistoryChange[]
+}
+
+export interface HistoryRevisions {
+  kind: ContentKind
+  entityId: string
+  /** Name of the row in its latest version. */
+  label: string
+  /** Whether the row exists now; a deleted row can still be restored. */
+  exists: boolean
+  /** The row's current `revision`, which a restore must send back; null when it is deleted. */
+  currentRevision: number | null
+  revisions: HistoryRevision[]
+  /** More, older revisions: ask again with `before` set to the last `id` listed. */
+  hasMore: boolean
+}
+
+export interface HistoryRestoreResult {
+  /** The row was already in the requested version, so nothing was written. */
+  unchanged: boolean
+  /** The row was recreated from a deleted state. */
+  recreated: boolean
+  entity: Record<string, unknown>
+}
+
+/** One line of the global change log (/admin/povijest). */
+export interface HistoryLogRow {
+  id: number
+  kind: HistoryKind
+  entityId: string
+  revision: number
+  action: HistoryAction
+  actor: string
+  createdAt: string
+  submissionId: number | null
+  /** Name of the row in this version. */
+  label: string
+  /** Whether the kind has an admin resource, and with it a history drawer and restore. */
+  registered: boolean
+}
+
+export type HistoryLog = ContentList<HistoryLogRow>
+export const HISTORY_REVISIONS_LIMIT = 20
+export const HISTORY_REVISIONS_MAX = 50
