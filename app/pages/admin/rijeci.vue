@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { AdminWord, WordInput } from '~~/shared/utils/word'
 import { validateWord } from '~~/shared/utils/word'
+import { dailyReadiness } from '~~/shared/utils/dailyWord'
 import baseAreas from '~~/content/heritage/areas.json'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
@@ -30,6 +31,15 @@ const sidebarOpen = computed({
   set: (open) => { if (!open) sidebarId.value = undefined }
 })
 const editorHeading = useTemplateRef<HTMLElement>('editorHeading')
+const readinessPool = ref<WordInput['entry'][]>([])
+const READINESS_LABELS = { example: 'primjer', category: 'kategorija', distractors: 'netočni odgovori' } as const
+function readiness(word: AdminWord) {
+  const result = dailyReadiness(word.entry, readinessPool.value)
+  return {
+    label: result.ready ? 'Riječ dana: spremno' : `Riječ dana: nedostaje ${result.missing.map(m => READINESS_LABELS[m]).join(', ')}`,
+    color: result.ready ? 'success' as const : 'warning' as const
+  }
+}
 const columns: TableColumn<AdminWord>[] = [
   { id: 'info', meta: { class: { th: 'w-12', td: 'w-12' } } },
   { id: 'headword', header: 'Riječ' },
@@ -58,6 +68,21 @@ async function load(append = false) {
   try {
     const nextOffset = append ? offset.value + 50 : 0
     const page = await api<AdminWord[]>(`/api/review/words?offset=${nextOffset}`)
+    if (!append) {
+      const pool = page.filter(w => w.active).map(w => w.entry)
+      try {
+        let poolOffset = 50
+        while (page.length === 50) {
+          const next = await api<AdminWord[]>(`/api/review/words?offset=${poolOffset}`)
+          pool.push(...next.filter(w => w.active).map(w => w.entry))
+          if (next.length < 50) break
+          poolOffset += 50
+        }
+      } catch {
+        // Table still loads; keep partial pool so badges degrade instead of blocking the list.
+      }
+      readinessPool.value = pool
+    }
     words.value = append ? [...words.value, ...page] : page
     offset.value = nextOffset
     more.value = page.length === 50
@@ -271,6 +296,10 @@ onMounted(async () => {
               :label="row.original.entry.status === 'placeholder' ? 'Uzorak · placeholder' : row.original.entry.status"
               color="neutral"
               variant="outline"
+            /><UBadge
+              :label="readiness(row.original).label"
+              :color="readiness(row.original).color"
+              variant="subtle"
             />
           </div>
         </template>
@@ -351,6 +380,11 @@ onMounted(async () => {
               :label="sidebarWord.entry.status === 'placeholder' ? 'Uzorak · placeholder' : sidebarWord.entry.status"
               color="neutral"
               variant="outline"
+            />
+            <UBadge
+              :label="readiness(sidebarWord).label"
+              :color="readiness(sidebarWord).color"
+              variant="subtle"
             />
           </div>
           <HeritageWordDetails :word="sidebarWord" />

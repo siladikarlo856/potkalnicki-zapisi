@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import ReviewWords from '../app/pages/admin/rijeci.vue'
+import WordEditor from '../app/components/heritage/WordEditor.vue'
+import { validateWord } from '../shared/utils/word'
 import Review from '../app/pages/admin/prilozi.vue'
 import sampleWords from '../content/heritage/words.json'
 import sampleAreas from '../content/heritage/areas.json'
@@ -45,5 +47,31 @@ describe('admin tables', () => {
     document.body.querySelector('[role="dialog"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await vi.waitFor(() => expect(document.body.querySelector('[role="dialog"]')).toBeNull())
     wrapper.unmount()
+  })
+
+  it('words: the table shows a daily-word readiness badge', async () => {
+    const wrapper = await mountSuspended(ReviewWords)
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Riječ dana: nedostaje'))
+    expect(wrapper.text()).toContain('kategorija')
+  })
+
+  it('word editor: round-trips category, note and hand-written distractors', async () => {
+    const input = validateWord({
+      entry: { ...word, category: 'house', note: { hr: 'Bilješka', en: 'Note' }, distractors: [{ hr: 'jedan', en: 'one' }] },
+      areas: sampleAreas, active: true
+    }, word.id).value
+    const wrapper = await mountSuspended(WordEditor, { props: { modelValue: input, busy: false } })
+    const values = wrapper.findAll('textarea, input').map(el => (el.element as HTMLInputElement).value)
+    expect(values).toEqual(expect.arrayContaining(['Bilješka', 'Note', 'jedan', 'one']))
+    expect(wrapper.text()).toContain('nešto u kući')
+
+    const note = wrapper.findAll('textarea').find(el => (el.element as HTMLTextAreaElement).value === 'Bilješka')!
+    await note.setValue('Nova bilješka')
+    await wrapper.findAll('input').find(el => (el.element as HTMLInputElement).value === 'jedan')!.setValue('drugi')
+    await wrapper.findAll('button').find(b => b.text().startsWith('Dodaj netočan odgovor'))!.trigger('click')
+    expect(input.entry.note).toEqual({ hr: 'Nova bilješka', en: 'Note' })
+    expect(input.entry.category).toBe('house')
+    expect(input.entry.distractors).toEqual([{ hr: 'drugi', en: 'one' }, { hr: '' }])
+    expect(validateWord(JSON.parse(JSON.stringify(input)), word.id).issues.length).toBeGreaterThan(0)
   })
 })

@@ -317,6 +317,26 @@ describe('word admin and public word APIs', () => {
     expect(word.active).toBe(false)
   })
 
+  it('projects the daily-word fields publicly and drops words whose stored fields are invalid', async () => {
+    const input = wordInput(true)
+    input.entry.category = 'house'
+    input.entry.note = { hr: 'Zanimljivost', en: 'Fun fact' }
+    input.entry.distractors = [{ hr: 'kuća', en: 'house' }, { hr: 'put' }]
+    const word = await createWord(input)
+    const published = (await readPublic()).words.find(w => w.id === word.entry.id)!
+    expect(published.category).toBe('house')
+    expect(published.note).toEqual({ hr: 'Zanimljivost', en: 'Fun fact' })
+    expect(published.distractors?.map(d => d.hr)).toEqual(['kuća', 'put'])
+
+    const invalid = [{ category: 'cars' }, { note: { hr: 'a'.repeat(1001) } }, { distractors: [{ hr: 'a' }, { hr: 'b' }, { hr: 'c' }, { hr: 'd' }] }, { distractors: [{ hr: 'testno značenje' }] }]
+    for (const extra of invalid) {
+      const { error } = await db.from('heritage_words').update({ entry: { ...word.entry, ...extra, privateNote: 'secret' } }).eq('id', word.entry.id)
+      expect(error).toBeNull()
+      expect((await readPublic()).words.some(w => w.id === word.entry.id), JSON.stringify(extra)).toBe(false)
+    }
+    expect((await request('/api/review/words', { method: 'POST', secret: SECRET, body: { ...wordInput(), entry: { ...wordInput().entry, category: 'cars' } } })).status).toBe(400)
+  })
+
   it('only returns active words and whitelisted public fields, even after a direct database write', async () => {
     const word = await createWord(wordInput(true))
     const rawEntry = { ...word.entry, contact: 'private@example.com', submissionId: 42, privateNote: 'secret', meaning: { ...word.entry.meaning, private: 'secret' }, sources: [{ ...word.entry.sources[0], contact: 'hidden' }] }

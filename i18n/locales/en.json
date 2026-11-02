@@ -101,5 +101,22 @@
     },
     "home": "Back to home",
     "heritage": "Local Heritage Project"
+  },
+  "daily": {
+    "category": {
+      "house": "something in the house",
+      "yard": "in the yard or village",
+      "clothing": "clothing or footwear",
+      "food": "food or drink",
+      "time": "time or the calendar",
+      "weather": "weather and nature",
+      "people": "people and family",
+      "body": "the body and health",
+      "animals": "animals",
+      "work": "work, tools and the fields",
+      "customs": "customs and holidays",
+      "feelings": "feelings and behaviour",
+      "function": "a small word (pronoun, adverb…)"
+    }
   }
 }

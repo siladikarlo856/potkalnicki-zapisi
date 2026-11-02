@@ -35,11 +35,17 @@ function wordType(entry: WordEntry) {
  * both HR and EN (with HR fallback) must be unique. Quiz callers retain their
  * original display-locale uniqueness rule by passing a locale explicitly.
  */
-export function pickDistractors(entry: WordEntry, pool: readonly WordEntry[], random: Random, count = 3, locale?: 'hr' | 'en'): WordEntry[] {
+export function pickDistractors(entry: WordEntry, pool: readonly WordEntry[], random: Random, count = 3, locale?: 'hr' | 'en', taken?: readonly { hr: string, en?: string }[]): WordEntry[] {
   if (count <= 0) return []
   const display = (word: WordEntry) => locale === 'hr' ? word.meaning.hr : word.meaning.en?.trim() || word.meaning.hr
   const meanings = new Set([normalized(display(entry))])
   const croatianMeanings = new Set([normalized(entry.meaning.hr)])
+  for (const item of taken ?? []) {
+    const hr = item.hr.trim()
+    if (!hr) continue
+    croatianMeanings.add(normalized(hr))
+    meanings.add(normalized(locale === 'hr' ? hr : item.en?.trim() || hr))
+  }
   const others = shuffled(pool.filter(word => word.id !== entry.id), random)
   const type = wordType(entry)
   const preferred = others.filter(word => type && wordType(word) === type)

@@ -1,3 +1,5 @@
+import type { DailyCategory } from '../../shared/utils/dailyWord'
+
 /** A place at any level. Areas form a hierarchy (settlement -> municipality/town -> county -> country). */
 export interface Area {
   id: string
@@ -59,4 +61,10 @@ export interface WordEntry {
   tags?: string[]
   status: ContentStatus
   sources: SourceRef[]
+  /** Daily-word hint: a slug from DAILY_CATEGORIES. */
+  category?: DailyCategory
+  /** Explanation or fun fact shown after the daily word is revealed. */
+  note?: { hr: string, en?: string }
+  /** Up to three hand-written wrong meanings; they replace automatic distractors. */
+  distractors?: { hr: string, en?: string }[]
 }

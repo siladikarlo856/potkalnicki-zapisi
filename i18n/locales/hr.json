@@ -752,5 +752,22 @@
         }
       }
     }
+  },
+  "daily": {
+    "category": {
+      "house": "nešto u kući",
+      "yard": "u dvorištu ili selu",
+      "clothing": "odjeća ili obuća",
+      "food": "hrana ili piće",
+      "time": "vrijeme ili kalendar",
+      "weather": "vremenske prilike i priroda",
+      "people": "ljudi i obitelj",
+      "body": "tijelo i zdravlje",
+      "animals": "životinje",
+      "work": "rad, alati i polje",
+      "customs": "običaji i blagdani",
+      "feelings": "osjećaji i ponašanje",
+      "function": "mala riječ (zamjenica, prilog…)"
+    }
   }
 }

@@ -1,4 +1,5 @@
 import type { Area, WordEntry } from '../../app/types/heritage'
+import { DAILY_CATEGORIES } from './dailyWord'
 
 export interface WordInput {
   entry: WordEntry
@@ -21,6 +22,9 @@ export interface PublicWords {
 export const WORD_STATUSES = ['placeholder', 'community', 'verified'] as const
 export const AREA_KINDS = ['settlement', 'municipality', 'town', 'county', 'region', 'country'] as const
 export const SOURCE_KINDS = ['contribution', 'interview', 'publication', 'editor'] as const
+export const NOTE_LIMIT = 1000
+export const DISTRACTOR_LIMIT = 200
+export const MAX_DISTRACTORS = 3
 export const WORD_BODY_LIMIT = 128 * 1024
 /** Display fallback for a variant without usages; never stored as data. */
 export const REGION_FALLBACK_NAME = 'Potkalničko prigorje'
@@ -59,6 +63,9 @@ export function validateWord(input: unknown, id: string): { value: WordInput, is
   }
   function unique(values: string[], path: string) {
     if (new Set(values).size !== values.length) issues.push(`${path}: ID mora biti jedinstven`)
+  }
+  function same(a: string, b: string) {
+    return a.normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('hr') === b.normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('hr')
   }
   const body = object(input)
   if (typeof body.active !== 'boolean') issues.push('active: očekuje se da/ne')
@@ -148,6 +155,37 @@ export function validateWord(input: unknown, id: string): { value: WordInput, is
         })
       }
     })
+  }
+  if (raw.category !== undefined && raw.category !== null && raw.category !== '') {
+    if (DAILY_CATEGORIES.includes(raw.category as typeof DAILY_CATEGORIES[number])) entry.category = raw.category as typeof DAILY_CATEGORIES[number]
+    else issues.push('category: neispravna vrijednost')
+  }
+  if (raw.note !== undefined && raw.note !== null) {
+    const note = object(raw.note)
+    const noteHr = text(note.hr, 'note.hr', NOTE_LIMIT)
+    const noteEn = optional(note.en, 'note.en', NOTE_LIMIT)
+    if (noteEn && !noteHr) issues.push('note.hr: obavezno uz engleski tekst')
+    if (noteHr) entry.note = { hr: noteHr, en: noteEn }
+  }
+  const handWritten = list(raw.distractors, 'distractors', MAX_DISTRACTORS)
+  if (handWritten.length) {
+    const distractors: NonNullable<WordEntry['distractors']> = handWritten.map((item, index) => {
+      const d = object(item)
+      return { hr: text(d.hr, `distractors.${index}.hr`, DISTRACTOR_LIMIT, true), en: optional(d.en, `distractors.${index}.en`, DISTRACTOR_LIMIT) }
+    })
+    const forbiddenMeanings = [entry.meaning.hr, entry.meaning.en].filter((t): t is string => !!t?.trim())
+    const seen = new Set<string>()
+    distractors.forEach((d, index) => {
+      if (!d.hr) return
+      const fields: { path: 'hr' | 'en', value: string }[] = [{ path: 'hr', value: d.hr }]
+      if (d.en) fields.push({ path: 'en', value: d.en })
+      for (const { path, value } of fields) {
+        if (forbiddenMeanings.some(meaning => same(value, meaning))) issues.push(`distractors.${index}.${path}: ne smije biti jednako značenju`)
+        else if ([...seen].some(other => same(other, value))) issues.push(`distractors.${index}.${path}: mora se razlikovati od ostalih`)
+        else seen.add(value)
+      }
+    })
+    entry.distractors = distractors
   }
   unique(entry.sources.map(s => s.id), 'sources')
   unique(entry.variants.map(v => v.id), 'variants')

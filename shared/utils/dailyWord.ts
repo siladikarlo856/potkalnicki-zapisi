@@ -1,4 +1,6 @@
 import type { Area, WordEntry } from '../../app/types/heritage'
+import { pickDistractors, seededRandom } from './multipleChoice'
+import { DISTRACTOR_LIMIT, MAX_DISTRACTORS } from './word'
 
 export const DAILY_CATEGORIES = ['house', 'yard', 'clothing', 'food', 'time', 'weather', 'people', 'body', 'animals', 'work', 'customs', 'feelings', 'function'] as const
 export type DailyCategory = typeof DAILY_CATEGORIES[number]
@@ -153,4 +155,53 @@ export function dailyWordShareText(number: number, result: Pick<DailyProgress, '
   const { solved, tries, maxTries } = result
   const squares = '🟥'.repeat(solved ? tries - 1 : tries) + (solved ? '🟩' : '') + '⬜'.repeat(maxTries - tries)
   return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://karlo-siladi.from.hr${locale === 'en' ? '/en' : ''}/heritage#rijec-dana`
+}
+
+export interface DailyReadiness {
+  example: boolean
+  category: boolean
+  distractors: boolean
+  ready: boolean
+  missing: ('example' | 'category' | 'distractors')[]
+}
+
+function normalizedMeaning(text: string) {
+  return text.normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('hr')
+}
+
+/** Admin checklist: whether an active word can be a daily word without substitute clues. */
+export function dailyReadiness(entry: WordEntry, pool: readonly WordEntry[]): DailyReadiness {
+  const meaningHr = normalizedMeaning(entry.meaning.hr)
+  const meaningEn = entry.meaning.en?.trim() ? normalizedMeaning(entry.meaning.en) : undefined
+  const forbidden = new Set([meaningHr, ...(meaningEn !== undefined ? [meaningEn] : [])])
+  const seenTexts = new Set<string>()
+  const taken: { hr: string, en?: string }[] = []
+  let invalidDistractorRow = (entry.distractors?.length ?? 0) > MAX_DISTRACTORS
+  for (const d of entry.distractors ?? []) {
+    const hr = d.hr.trim()
+    const en = d.en?.trim()
+    if (!hr) {
+      invalidDistractorRow = true
+      continue
+    }
+    if (hr.length > DISTRACTOR_LIMIT || (en && en.length > DISTRACTOR_LIMIT)) {
+      invalidDistractorRow = true
+      continue
+    }
+    const keys = [normalizedMeaning(hr), ...(en ? [normalizedMeaning(en)] : [])]
+    if (keys.some(key => forbidden.has(key) || seenTexts.has(key))) {
+      invalidDistractorRow = true
+      continue
+    }
+    for (const key of keys) seenTexts.add(key)
+    taken.push({ hr: d.hr, en: d.en })
+  }
+  const handWritten = taken.length
+  const available = handWritten + (handWritten >= 3 ? 0 : pickDistractors(entry, pool, seededRandom(1), 3 - handWritten, undefined, taken).length)
+  const example = !!entry.examples?.[0]?.text.trim()
+  const category = !!entry.category && (DAILY_CATEGORIES as readonly string[]).includes(entry.category)
+  const distractors = !invalidDistractorRow && available >= 3
+  const missing = ([['example', example], ['category', category], ['distractors', distractors]] as const)
+    .filter(([, ok]) => !ok).map(([name]) => name)
+  return { example, category, distractors, ready: !missing.length, missing }
 }

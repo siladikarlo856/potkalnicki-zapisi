@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import type { WordInput } from '~~/shared/utils/word'
-import { WORD_STATUSES, SOURCE_KINDS } from '~~/shared/utils/word'
+import { WORD_STATUSES, SOURCE_KINDS, MAX_DISTRACTORS, NOTE_LIMIT, DISTRACTOR_LIMIT } from '~~/shared/utils/word'
+import { DAILY_CATEGORIES } from '~~/shared/utils/dailyWord'
 
 const model = defineModel<WordInput>({ required: true })
 const props = defineProps<{ busy: boolean }>()
 const emit = defineEmits<{ save: [active: boolean], cancel: [] }>()
 const areasJson = ref(JSON.stringify(model.value.areas, null, 2))
 const areaError = ref('')
+const { t } = useI18n()
+const categoryItems = computed(() => [{ label: 'Bez kategorije', value: '__none__' }, ...DAILY_CATEGORIES.map(value => ({ label: `${t(`daily.category.${value}`)} · ${value}`, value }))])
+const noteHr = computed({ get: () => model.value.entry.note?.hr ?? '', set: (hr: string) => {
+  model.value.entry.note = { ...model.value.entry.note, hr }
+} })
+const noteEn = computed({ get: () => model.value.entry.note?.en ?? '', set: (en: string) => {
+  model.value.entry.note = { hr: model.value.entry.note?.hr ?? '', en }
+} })
 const tags = computed({ get: () => model.value.entry.tags?.join(', ') ?? '', set: (value: string) => {
   model.value.entry.tags = value.split(',').map(v => v.trim()).filter(Boolean)
 } })
@@ -88,6 +97,76 @@ function addVariant() {
         />
       </UFormField>
     </div>
+
+    <section class="flex flex-col gap-3">
+      <h3 class="text-lg font-semibold text-highlighted">
+        Riječ dana
+      </h3>
+      <p class="text-sm text-muted">
+        Nije obavezno za aktivaciju. Ako su netočni odgovori prazni, biraju se automatski iz značenja drugih riječi. Promjene vrijede od sljedećeg dana ako je riječ danas već objavljena.
+      </p>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <UFormField label="Kategorija (trag)">
+          <USelect
+            :model-value="model.entry.category || '__none__'"
+            :items="categoryItems"
+            class="w-full"
+            @update:model-value="value => model.entry.category = value === '__none__' ? undefined : value as typeof model.entry.category"
+          />
+        </UFormField>
+        <span class="hidden sm:block" />
+        <UFormField label="Objašnjenje / zanimljivost · HR">
+          <UTextarea
+            v-model="noteHr"
+            class="w-full"
+            :maxlength="NOTE_LIMIT"
+          />
+        </UFormField>
+        <UFormField label="Explanation / fun fact · EN">
+          <UTextarea
+            v-model="noteEn"
+            class="w-full"
+            :maxlength="NOTE_LIMIT"
+          />
+        </UFormField>
+      </div>
+      <div
+        v-for="(distractor, index) in model.entry.distractors"
+        :key="index"
+        class="grid gap-3 rounded-lg bg-elevated p-3 sm:grid-cols-2"
+      >
+        <UFormField label="Netočan odgovor · HR">
+          <UInput
+            v-model="distractor.hr"
+            class="w-full"
+            :maxlength="DISTRACTOR_LIMIT"
+          />
+        </UFormField>
+        <UFormField label="Wrong answer · EN">
+          <UInput
+            v-model="distractor.en"
+            class="w-full"
+            :maxlength="DISTRACTOR_LIMIT"
+          />
+        </UFormField>
+        <UButton
+          label="Ukloni netočan odgovor"
+          color="neutral"
+          variant="ghost"
+          class="justify-self-start"
+          @click="model.entry.distractors?.splice(index, 1)"
+        />
+      </div>
+      <UButton
+        v-if="(model.entry.distractors?.length ?? 0) < MAX_DISTRACTORS"
+        label="Dodaj netočan odgovor (ručno, do 3)"
+        icon="i-lucide-plus"
+        color="neutral"
+        variant="outline"
+        class="self-start"
+        @click="(model.entry.distractors ??= []).push({ hr: '' })"
+      />
+    </section>
 
     <section class="flex flex-col gap-3">
       <h3 class="text-lg font-semibold text-highlighted">
