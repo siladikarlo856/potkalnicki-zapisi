@@ -21,8 +21,6 @@
     "db:browser": "pnpm db:up && node scripts/local.mjs studio",
     "dev:local": "pnpm db:up && nuxt dev",
     "test": "vitest run",
-    "atlas:import": "node scripts/import-atlas.mjs",
-    "content:seed": "node scripts/generate-content-seed.mjs",
     "test:local-db": "node scripts/local.mjs test"
   },
   "dependencies": {

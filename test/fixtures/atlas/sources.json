@@ -1,0 +1,62 @@
+[
+  {
+    "id": "registar-kulturnih-dobara",
+    "title": "Registar kulturnih dobara Republike Hrvatske",
+    "type": "official_registry",
+    "url": "https://registar.kulturnadobra.hr/"
+  },
+  {
+    "id": "konzervatorska-studija-kkz-1999",
+    "title": "Konzervatorska studija Koprivničko-križevačke županije (1999.)",
+    "type": "conservation_study",
+    "url": null
+  },
+  {
+    "id": "izvjesce-grad-krizevci",
+    "title": "Izvješće o stanju u prostoru Grada Križevaca",
+    "type": "planning_document",
+    "url": null
+  },
+  {
+    "id": "grad-krizevci-sakralni-objekti",
+    "title": "Službene stranice Grada Križevaca – sakralni objekti",
+    "type": "municipal_source",
+    "url": "https://www.krizevci.hr/"
+  },
+  {
+    "id": "prostorni-plan-opcine-kalnik",
+    "title": "Prostorni plan uređenja Općine Kalnik",
+    "type": "planning_document",
+    "url": null
+  },
+  {
+    "id": "strateski-program-opcine-kalnik",
+    "title": "Strateški razvojni program Općine Kalnik",
+    "type": "development_document",
+    "url": null
+  },
+  {
+    "id": "prostorni-plan-opcine-gornja-rijeka",
+    "title": "Prostorni plan uređenja Općine Gornja Rijeka",
+    "type": "planning_document",
+    "url": null
+  },
+  {
+    "id": "prostorni-plan-opcine-sveti-petar-orehovec",
+    "title": "Prostorni plan uređenja Općine Sveti Petar Orehovec",
+    "type": "planning_document",
+    "url": null
+  },
+  {
+    "id": "prostorni-plan-opcine-sveti-ivan-zabno",
+    "title": "Prostorni plan uređenja Općine Sveti Ivan Žabno – prijedlog izmjena 2025.",
+    "type": "planning_document",
+    "url": null
+  },
+  {
+    "id": "hrz-vojakovac",
+    "title": "Hrvatski restauratorski zavod – dokumentacija o ikonostasu u Vojakovcu",
+    "type": "conservation_document",
+    "url": "https://www.hrz.hr/"
+  }
+]

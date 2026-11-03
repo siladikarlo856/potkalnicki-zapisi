@@ -23,6 +23,8 @@ const areas: Area[] = [
   { id: 'county', name: 'Županija', kind: 'county', parentId: null },
   { id: 'vil-a', name: 'Selo A', kind: 'settlement', parentId: 'county' }
 ]
+// A word's areas are read from the areas table, not stored with the word.
+fake.seedAreas(areas)
 
 function entry(id: string, meaning = `značenje ${id}`): WordEntry {
   return {
@@ -37,7 +39,7 @@ function entry(id: string, meaning = `značenje ${id}`): WordEntry {
 function addWord(id: string, meaning?: string) {
   const now = new Date().toISOString()
   fake.words.push({
-    id, entry: entry(id, meaning), areas, active: true,
+    id, entry: entry(id, meaning), active: true,
     submission_id: 7, submission_place: null, created_at: now, updated_at: now
   })
 }

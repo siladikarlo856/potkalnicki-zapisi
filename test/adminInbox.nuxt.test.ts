@@ -23,18 +23,18 @@ async function record(event: unknown, withBody = false) {
 }
 
 const base = {
-  text: 'Naziv je drugačiji.', type: 'correction' as const, targetRef: ITEM, targetKind: 'heritage_item' as const, targetId: ITEM, payload: { name: 'Kapela sv. Ane' },
+  text: 'Naziv je drugačiji.', type: 'correction' as const, targetKind: 'heritage_item' as const, targetId: ITEM, payload: { name: 'Kapela sv. Ane' },
   baseRevision: 2, wordId: null, intent: null, wordHeadword: null, place: null, placeId: null, placeCatalogVersion: null, placeContext: null,
   name: 'Ana Horvat', contact: 'ana@example.com', consentPublish: true, consentVersion: '2026-11-02', locale: 'hr' as const,
   status: 'pending' as const, createdAt: '2026-11-02 10:00:00', reviewedAt: null, appliedAt: null, appliedEntityId: null, created: null, canDraft: false
 }
 const correction: InboxRow = { ...base, id: 12, target: { kind: 'heritage_item', id: ITEM, label: 'Kapela sv. Ana', state: 'ok', status: 'published', revision: 3 } }
 const proposal: InboxRow = {
-  ...base, id: 13, type: 'proposal', text: 'Fali kapela uz cestu.', targetRef: null, targetId: null, targetKind: 'heritage_item', payload: { name: 'Nova kapela' }, baseRevision: null,
+  ...base, id: 13, type: 'proposal', text: 'Fali kapela uz cestu.', targetId: null, targetKind: 'heritage_item', payload: { name: 'Nova kapela' }, baseRevision: null,
   target: null, canDraft: true
 }
 const applied: InboxRow = { ...correction, id: 14, status: 'approved', appliedAt: '2026-11-02 12:00:00', appliedEntityId: ITEM }
-const plain: InboxRow = { ...base, id: 15, type: 'memory', text: 'Sjećanje na bake.', targetRef: null, targetKind: null, targetId: null, payload: null, baseRevision: null, target: null, canDraft: true }
+const plain: InboxRow = { ...base, id: 15, type: 'memory', text: 'Sjećanje na bake.', targetKind: null, targetId: null, payload: null, baseRevision: null, target: null, canDraft: true }
 
 let rows: InboxRow[] = [correction, proposal, applied, plain]
 let stale = true

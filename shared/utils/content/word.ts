@@ -58,7 +58,8 @@ export function validateAdminWord(input: unknown, id?: string): ContentValidatio
 export function projectWordRow(row: {
   id: string
   entry: WordEntry
-  areas: Area[]
+  /** The areas of the entry, read from the areas table; absent where a row is only listed or compared. */
+  areas?: Area[]
   active: boolean
   archived_at: string | null
   slug: string | null
@@ -71,7 +72,7 @@ export function projectWordRow(row: {
   return {
     id: row.id,
     entry: row.entry,
-    areas: row.areas,
+    areas: row.areas ?? [],
     status: wordActiveToStatus(row.active, row.archived_at),
     slug: row.slug,
     headword: row.entry.headword || '',

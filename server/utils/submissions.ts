@@ -1,20 +1,6 @@
 import type { H3Event } from 'h3'
 import type { ContributionKind, ContributionPayload } from '../../shared/utils/contribution'
-import { contentTarget } from './publicAtlas'
 import { placeById } from './places'
-
-/** A correction sent with an old atlas id: the item it points at, as its UUID. Unknown and gone items are refused. */
-export async function assertKnownCorrectionTarget(targetRef: string) {
-  const result = contentTarget(await getPublicContent(), 'heritage_item', targetRef)
-  if (result.status !== 'ok' || result.value.kind !== 'heritage_item') {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid submission',
-      data: { issues: [{ field: 'targetRef', code: 'invalid' }] }
-    })
-  }
-  return result.value.item.id
-}
 
 const TABLE = 'heritage_submissions'
 // Supabase's API returns at most 1000 rows per request (max_rows), so the list is read in pages.
@@ -27,7 +13,6 @@ export interface SubmissionRow {
   place: string | null
   place_id: string | null
   place_catalog_version: string | null
-  target_ref: string | null
   target_kind?: ContributionKind | null
   target_id?: string | null
   payload?: ContributionPayload | null
@@ -68,7 +53,6 @@ export function toSubmission(row: SubmissionRow, headwords: ReadonlyMap<string, 
     id: Number(row.id),
     text: row.text,
     type: row.type,
-    targetRef: row.target_ref ?? null,
     targetKind: row.target_kind ?? null,
     targetId: row.target_id ?? null,
     payload: row.payload ?? null,
@@ -99,7 +83,6 @@ export async function insertSubmission(input: ResolvedSubmissionInput) {
   const { error } = await useDatabaseClient().from(TABLE).insert({
     text: input.text,
     type: input.type,
-    target_ref: input.targetRef,
     place: input.place,
     place_id: input.placeId,
     place_catalog_version: input.placeCatalogVersion,

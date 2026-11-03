@@ -3,7 +3,7 @@ import type { WordEntry } from '../app/types/heritage'
 import { challengeNickname } from '../shared/utils/challenge'
 import { challengeOverview, quizChallengeContent } from '../server/utils/challengeContent'
 import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
-import sample from '../content/heritage/challenge.json'
+import sample from './fixtures/heritage/challenge.json'
 
 // The seeded current template, as a fixed challenge snapshots it (version from the template revision).
 const currentChallengeContent = validateChallengeContent(sample)

@@ -1,0 +1,114 @@
+[
+  {
+    "id": "hiza",
+    "headword": "hiža",
+    "meaning": { "hr": "kuća", "en": "house" },
+    "partOfSpeech": "imenica, ženski rod",
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "hiza~hiza", "form": "hiža", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }, { "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] },
+      { "id": "hiza~iza", "form": "iža", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }] },
+      { "id": "hiza~hisa", "form": "hiša", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] }
+    ]
+  },
+  {
+    "id": "kaj",
+    "headword": "kaj",
+    "meaning": { "hr": "što", "en": "what" },
+    "partOfSpeech": "zamjenica",
+    "examples": [{ "text": "Kaj delaš?", "translation": "Što radiš?" }],
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "kaj~kaj", "form": "kaj", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }, { "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] },
+      { "id": "kaj~kej", "form": "kej", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }] }
+    ]
+  },
+  {
+    "id": "vura",
+    "headword": "vura",
+    "meaning": { "hr": "sat", "en": "clock" },
+    "partOfSpeech": "imenica, ženski rod",
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "vura~vura", "form": "vura", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }, { "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] },
+      { "id": "vura~ura", "form": "ura", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] }
+    ]
+  },
+  {
+    "id": "zdenec",
+    "headword": "zdenec",
+    "meaning": { "hr": "bunar", "en": "water well" },
+    "partOfSpeech": "imenica, muški rod",
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "zdenec~zdenec", "form": "zdenec", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }, { "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] },
+      { "id": "zdenec~zdenc", "form": "zdenc", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }] },
+      { "id": "zdenec~zdenac", "form": "zdenac", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] }
+    ]
+  },
+  {
+    "id": "fertun",
+    "headword": "fertun",
+    "meaning": { "hr": "pregača", "en": "apron" },
+    "partOfSpeech": "imenica, muški rod",
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "fertun~fertun", "form": "fertun", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }] },
+      { "id": "fertun~firtun", "form": "firtun", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }] },
+      { "id": "fertun~fertuh", "form": "fertuh", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] }
+    ]
+  },
+  {
+    "id": "lajbek",
+    "headword": "lajbek",
+    "meaning": { "hr": "prsluk", "en": "waistcoat" },
+    "partOfSpeech": "imenica, muški rod",
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "lajbek~lajbek", "form": "lajbek", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }, { "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] },
+      { "id": "lajbek~lajbec", "form": "lajbec", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }] }
+    ]
+  },
+  {
+    "id": "skrlak",
+    "headword": "škrlak",
+    "meaning": { "hr": "šešir", "en": "hat" },
+    "partOfSpeech": "imenica, muški rod",
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "skrlak~skrlak", "form": "škrlak", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] },
+      { "id": "skrlak~skrljak", "form": "škrljak", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }] }
+    ]
+  },
+  {
+    "id": "cuker",
+    "headword": "cuker",
+    "meaning": { "hr": "šećer", "en": "sugar" },
+    "partOfSpeech": "imenica, muški rod",
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "cuker~cuker", "form": "cuker", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }, { "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] },
+      { "id": "cuker~cukor", "form": "cukor", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] }
+    ]
+  },
+  {
+    "id": "denes",
+    "headword": "denes",
+    "meaning": { "hr": "danas", "en": "today" },
+    "partOfSpeech": "prilog",
+    "status": "placeholder",
+    "sources": [{ "id": "sample", "kind": "editor", "credit": "uzorak, nije provjereno" }],
+    "variants": [
+      { "id": "denes~denes", "form": "denes", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-sveti-petar-orehovec", "confidence": "reported", "note": "primjer" }] },
+      { "id": "denes~danes", "form": "danes", "status": "placeholder", "usages": [{ "areaId": "hr-kkz-krizevci", "confidence": "reported", "note": "primjer" }] }
+    ]
+  }
+]

@@ -1,0 +1,6 @@
+[
+  { "id": "hr", "name": "Hrvatska", "kind": "country", "parentId": null },
+  { "id": "hr-kkz", "name": "Koprivničko-križevačka županija", "kind": "county", "parentId": "hr" },
+  { "id": "hr-kkz-krizevci", "name": "Križevci", "kind": "town", "parentId": "hr-kkz" },
+  { "id": "hr-kkz-sveti-petar-orehovec", "name": "Sveti Petar Orehovec", "kind": "municipality", "parentId": "hr-kkz" }
+]

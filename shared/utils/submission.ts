@@ -5,8 +5,7 @@ import type { ContributionKind, ContributionPayload } from './contribution'
 import { CONTRIBUTION_ALLOWED, isContributionKind, validateContributionPayload } from './contribution'
 
 // 'proposal' is a suggestion for a new row (a heritage item, settlement, source or word); 'correction'
-// is a change to an existing one, either an old atlas id in `targetRef` or a structured `targetKind` +
-// `targetId` with a `payload` of the proposed fields.
+// is a change to an existing one, as a `targetKind` + `targetId` with a `payload` of the proposed fields.
 export const SUBMISSION_TYPES = ['word', 'expression', 'memory', 'other', 'correction', 'proposal'] as const
 export const SUBMISSION_STATUSES = ['pending', 'approved', 'rejected'] as const
 export const SUBMISSION_LOCALES = ['hr', 'en'] as const
@@ -33,7 +32,6 @@ export type SubmissionIntent = typeof SUBMISSION_INTENTS[number]
 export interface SubmissionInput {
   text: string
   type: SubmissionType | null
-  targetRef: string | null
   /** Structured corrections and proposals: what they are about and the proposed fields. */
   targetKind: ContributionKind | null
   /** A UUID, or an old id the server resolves (heritage items, settlements, sources). Null for proposals. */
@@ -67,7 +65,7 @@ export interface Submission extends Omit<SubmissionInput, 'consentPublish'> {
   appliedEntityId: string | null
 }
 
-export type SubmissionField = 'text' | 'type' | 'targetRef' | 'targetKind' | 'targetId' | 'payload' | 'baseRevision' | 'wordId' | 'intent' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
+export type SubmissionField = 'text' | 'type' | 'targetKind' | 'targetId' | 'payload' | 'baseRevision' | 'wordId' | 'intent' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
 export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid' | 'selectPlace' | 'refreshPlace' | 'outOfScope' | 'unknown' | 'links'
 
 export interface SubmissionIssue {
@@ -115,22 +113,8 @@ export function validateSubmission(input: unknown): SubmissionValidation {
     else issues.push({ field: 'type', code: 'invalid' })
   }
 
-  let targetRef: string | null = null
-  if (body.targetRef !== undefined && body.targetRef !== null && body.targetRef !== '') {
-    if (typeof body.targetRef !== 'string' || !isCorrectionTargetRefFormat(body.targetRef.trim())) {
-      issues.push({ field: 'targetRef', code: 'invalid' })
-    } else {
-      targetRef = body.targetRef.trim()
-    }
-  }
-
   const structured = body.targetKind !== undefined && body.targetKind !== null && body.targetKind !== ''
-  if (type === 'correction' && !targetRef && !structured && !issues.some(issue => issue.field === 'targetRef')) {
-    issues.push({ field: 'targetRef', code: 'required' })
-  }
-  if (targetRef && type !== 'correction' && !issues.some(issue => issue.field === 'type')) {
-    issues.push({ field: 'type', code: 'invalid' })
-  }
+  if (type === 'correction' && !structured) issues.push({ field: 'targetKind', code: 'required' })
 
   let targetKind: ContributionKind | null = null
   let targetId: string | null = null
@@ -146,7 +130,6 @@ export function validateSubmission(input: unknown): SubmissionValidation {
     } else {
       targetKind = body.targetKind
       if (type === 'correction') {
-        if (targetRef) issues.push({ field: 'targetRef', code: 'invalid' })
         const rawId = typeof body.targetId === 'string' ? body.targetId.trim().toLowerCase() : ''
         if (!rawId) issues.push({ field: 'targetId', code: 'required' })
         else if (!isCorrectionTargetRefFormat(rawId)) issues.push({ field: 'targetId', code: 'invalid' })
@@ -200,5 +183,5 @@ export function validateSubmission(input: unknown): SubmissionValidation {
 
   if (issues.length || !locale) return { ok: false, issues }
 
-  return { ok: true, value: { text, type, targetRef, targetKind, targetId, payload, baseRevision, placeId, wordId, intent, name, contact, consentPublish: true, locale } }
+  return { ok: true, value: { text, type, targetKind, targetId, payload, baseRevision, placeId, wordId, intent, name, contact, consentPublish: true, locale } }
 }

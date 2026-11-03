@@ -1,0 +1,502 @@
+{
+  "version": 1,
+  "sample": true,
+  "title": {
+    "hr": "Izazov zavičaja — uzorak",
+    "en": "Heritage challenge — sample"
+  },
+  "rounds": [
+    {
+      "id": "words",
+      "topic": {
+        "hr": "Riječi — uzorak",
+        "en": "Words — sample"
+      },
+      "questions": [
+        {
+          "id": "word-1",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Uzorak riječi: što znači „hiža” u ovom primjeru?",
+            "en": "Sample word: what does “hiža” mean in this example?"
+          },
+          "options": [
+            {
+              "hr": "kuća",
+              "en": "house"
+            },
+            {
+              "hr": "što",
+              "en": "what"
+            },
+            {
+              "hr": "sat",
+              "en": "clock"
+            },
+            {
+              "hr": "bunar",
+              "en": "well"
+            }
+          ],
+          "correct": 0,
+          "explanation": {
+            "hr": "U ovom uzorku „hiža” znači „kuća”. Lokalna uporaba još nije provjerena.",
+            "en": "In this sample, “hiža” means “house”. Local usage has not been verified."
+          }
+        },
+        {
+          "id": "word-2",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Uzorak riječi: što znači „kaj” u ovom primjeru?",
+            "en": "Sample word: what does “kaj” mean in this example?"
+          },
+          "options": [
+            {
+              "hr": "kuća",
+              "en": "house"
+            },
+            {
+              "hr": "što",
+              "en": "what"
+            },
+            {
+              "hr": "sat",
+              "en": "clock"
+            },
+            {
+              "hr": "bunar",
+              "en": "well"
+            }
+          ],
+          "correct": 1,
+          "explanation": {
+            "hr": "U ovom uzorku „kaj” znači „što”. Lokalna uporaba još nije provjerena.",
+            "en": "In this sample, “kaj” means “what”. Local usage has not been verified."
+          }
+        },
+        {
+          "id": "word-3",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Uzorak riječi: što znači „vura” u ovom primjeru?",
+            "en": "Sample word: what does “vura” mean in this example?"
+          },
+          "options": [
+            {
+              "hr": "kuća",
+              "en": "house"
+            },
+            {
+              "hr": "što",
+              "en": "what"
+            },
+            {
+              "hr": "sat",
+              "en": "clock"
+            },
+            {
+              "hr": "bunar",
+              "en": "well"
+            }
+          ],
+          "correct": 2,
+          "explanation": {
+            "hr": "U ovom uzorku „vura” znači „sat”. Lokalna uporaba još nije provjerena.",
+            "en": "In this sample, “vura” means “clock”. Local usage has not been verified."
+          }
+        },
+        {
+          "id": "word-4",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Uzorak riječi: što znači „zdenec” u ovom primjeru?",
+            "en": "Sample word: what does “zdenec” mean in this example?"
+          },
+          "options": [
+            {
+              "hr": "kuća",
+              "en": "house"
+            },
+            {
+              "hr": "što",
+              "en": "what"
+            },
+            {
+              "hr": "sat",
+              "en": "clock"
+            },
+            {
+              "hr": "bunar",
+              "en": "well"
+            }
+          ],
+          "correct": 3,
+          "explanation": {
+            "hr": "U ovom uzorku „zdenec” znači „bunar”. Lokalna uporaba još nije provjerena.",
+            "en": "In this sample, “zdenec” means “well”. Local usage has not been verified."
+          }
+        },
+        {
+          "id": "word-5",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Uzorak riječi: što znači „fertun” u ovom primjeru?",
+            "en": "Sample word: what does “fertun” mean in this example?"
+          },
+          "options": [
+            {
+              "hr": "pregača",
+              "en": "apron"
+            },
+            {
+              "hr": "kuća",
+              "en": "house"
+            },
+            {
+              "hr": "što",
+              "en": "what"
+            },
+            {
+              "hr": "sat",
+              "en": "clock"
+            }
+          ],
+          "correct": 0,
+          "explanation": {
+            "hr": "U ovom uzorku „fertun” znači „pregača”. Lokalna uporaba još nije provjerena.",
+            "en": "In this sample, “fertun” means “apron”. Local usage has not been verified."
+          }
+        }
+      ]
+    },
+    {
+      "id": "landmarks",
+      "topic": {
+        "hr": "Znamenitosti — izmišljeni primjeri",
+        "en": "Landmarks — fictional examples"
+      },
+      "questions": [
+        {
+          "id": "landmark-1",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Na izmišljenoj karti uzorak označava most plavim krugom. Koja oznaka predstavlja most?",
+            "en": "On a fictional sample map, a bridge is marked with a blue circle. Which symbol represents the bridge?"
+          },
+          "options": [
+            {
+              "hr": "Plavi krug",
+              "en": "Blue circle"
+            },
+            {
+              "hr": "Crveni kvadrat",
+              "en": "Red square"
+            },
+            {
+              "hr": "Žuti trokut",
+              "en": "Yellow triangle"
+            },
+            {
+              "hr": "Zelena zvijezda",
+              "en": "Green star"
+            }
+          ],
+          "correct": 0,
+          "explanation": {
+            "hr": "Oznake na karti pomažu povezati simbole i mjesta. Ovaj most i karta su izmišljeni.",
+            "en": "Map keys connect symbols with places. This bridge and map are fictional."
+          }
+        },
+        {
+          "id": "landmark-2",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Izmišljeni putokaz kaže: „Mlin — lijevo, toranj — desno”. Kamo ideš prema mlinu?",
+            "en": "A fictional sign says: “Mill — left, tower — right”. Which way is the mill?"
+          },
+          "options": [
+            {
+              "hr": "Desno",
+              "en": "Right"
+            },
+            {
+              "hr": "Lijevo",
+              "en": "Left"
+            },
+            {
+              "hr": "Ravno",
+              "en": "Straight"
+            },
+            {
+              "hr": "Natrag",
+              "en": "Back"
+            }
+          ],
+          "correct": 1,
+          "explanation": {
+            "hr": "U ovom izmišljenom primjeru putokaz vodi lijevo prema mlinu.",
+            "en": "In this fictional example the sign points left to the mill."
+          }
+        },
+        {
+          "id": "landmark-3",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Na izmišljenoj fotografiji piše „Drveni most”. Koji materijal navodi natpis?",
+            "en": "A fictional photograph is captioned “Wooden bridge”. What material does it name?"
+          },
+          "options": [
+            {
+              "hr": "Kamen",
+              "en": "Stone"
+            },
+            {
+              "hr": "Metal",
+              "en": "Metal"
+            },
+            {
+              "hr": "Drvo",
+              "en": "Wood"
+            },
+            {
+              "hr": "Staklo",
+              "en": "Glass"
+            }
+          ],
+          "correct": 2,
+          "explanation": {
+            "hr": "Natpis daje odgovor: drvo. Ovo nije opis stvarnog lokalnog mosta.",
+            "en": "The caption gives the answer: wood. This is not a description of a real local bridge."
+          }
+        },
+        {
+          "id": "landmark-4",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Uzorak legende: zvijezda znači vidikovac. Što označava zvijezda?",
+            "en": "Sample map key: a star means a viewpoint. What does a star mark?"
+          },
+          "options": [
+            {
+              "hr": "Bunar",
+              "en": "Well"
+            },
+            {
+              "hr": "Školu",
+              "en": "School"
+            },
+            {
+              "hr": "Mlin",
+              "en": "Mill"
+            },
+            {
+              "hr": "Vidikovac",
+              "en": "Viewpoint"
+            }
+          ],
+          "correct": 3,
+          "explanation": {
+            "hr": "Legenda objašnjava oznake samo na ovoj izmišljenoj karti.",
+            "en": "This key explains symbols only on this fictional map."
+          }
+        },
+        {
+          "id": "landmark-5",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "U izmišljenom dnevniku šetnje prvo je trg, zatim park. Što dolazi nakon trga?",
+            "en": "In a fictional walk diary the square comes first, then the park. What follows the square?"
+          },
+          "options": [
+            {
+              "hr": "Park",
+              "en": "Park"
+            },
+            {
+              "hr": "Toranj",
+              "en": "Tower"
+            },
+            {
+              "hr": "Stanica",
+              "en": "Station"
+            },
+            {
+              "hr": "Most",
+              "en": "Bridge"
+            }
+          ],
+          "correct": 0,
+          "explanation": {
+            "hr": "Uzorak dnevnika navodi park nakon trga; ne opisuje stvarnu rutu.",
+            "en": "The sample diary places the park after the square; this is not a real route."
+          }
+        }
+      ]
+    },
+    {
+      "id": "villages",
+      "topic": {
+        "hr": "Sela i priče — izmišljeni primjeri",
+        "en": "Villages and stories — fictional examples"
+      },
+      "questions": [
+        {
+          "id": "village-1",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Izmišljeno selo A ima knjižnicu, selo B ima igralište. Gdje je knjižnica?",
+            "en": "Fictional village A has a library; village B has a playground. Where is the library?"
+          },
+          "options": [
+            {
+              "hr": "Selo B",
+              "en": "Village B"
+            },
+            {
+              "hr": "Selo A",
+              "en": "Village A"
+            },
+            {
+              "hr": "U oba sela",
+              "en": "Both villages"
+            },
+            {
+              "hr": "Nije navedeno",
+              "en": "Not stated"
+            }
+          ],
+          "correct": 1,
+          "explanation": {
+            "hr": "Ovo su izmišljena sela. U opisu je knjižnica u selu A.",
+            "en": "These villages are fictional. The description places the library in village A."
+          }
+        },
+        {
+          "id": "village-2",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "U izmišljenoj priči Ana bilježi stare riječi. Što Ana prikuplja?",
+            "en": "In a fictional story Ana records old words. What does Ana collect?"
+          },
+          "options": [
+            {
+              "hr": "Marke",
+              "en": "Stamps"
+            },
+            {
+              "hr": "Recepte",
+              "en": "Recipes"
+            },
+            {
+              "hr": "Riječi",
+              "en": "Words"
+            },
+            {
+              "hr": "Kamenje",
+              "en": "Stones"
+            }
+          ],
+          "correct": 2,
+          "explanation": {
+            "hr": "Ana je izmišljeni lik u ovom uzorku, a njezina zbirka sadrži riječi.",
+            "en": "Ana is a fictional character in this sample, and her collection contains words."
+          }
+        },
+        {
+          "id": "village-3",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Uzorak programa izmišljenog sela: u subotu šetnja, u nedjelju izložba. Kada je izložba?",
+            "en": "Sample programme for a fictional village: walk on Saturday, exhibition on Sunday. When is the exhibition?"
+          },
+          "options": [
+            {
+              "hr": "U petak",
+              "en": "Friday"
+            },
+            {
+              "hr": "U subotu",
+              "en": "Saturday"
+            },
+            {
+              "hr": "U ponedjeljak",
+              "en": "Monday"
+            },
+            {
+              "hr": "U nedjelju",
+              "en": "Sunday"
+            }
+          ],
+          "correct": 3,
+          "explanation": {
+            "hr": "Ovo nije najava stvarnog događaja. Uzorak navodi nedjelju.",
+            "en": "This is not a real event listing. The sample names Sunday."
+          }
+        },
+        {
+          "id": "village-4",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "Izmišljena zbirka ima tri fotografije i jednu razglednicu. Koliko je razglednica?",
+            "en": "A fictional collection has three photographs and one postcard. How many postcards are there?"
+          },
+          "options": [
+            {
+              "hr": "Jedna",
+              "en": "One"
+            },
+            {
+              "hr": "Dvije",
+              "en": "Two"
+            },
+            {
+              "hr": "Tri",
+              "en": "Three"
+            },
+            {
+              "hr": "Četiri",
+              "en": "Four"
+            }
+          ],
+          "correct": 0,
+          "explanation": {
+            "hr": "Uzorak razlikuje fotografije od razglednice; u zbirci je jedna razglednica.",
+            "en": "The sample distinguishes photographs from postcards; it contains one postcard."
+          }
+        },
+        {
+          "id": "village-5",
+          "mechanic": "multiple-choice",
+          "prompt": {
+            "hr": "U izmišljenoj priči Marko zapisuje tko mu je ispričao uspomenu. Što bilježi?",
+            "en": "In a fictional story Marko writes down who shared a memory with him. What does he record?"
+          },
+          "options": [
+            {
+              "hr": "Rezultat utrke",
+              "en": "Race result"
+            },
+            {
+              "hr": "Izvor uspomene",
+              "en": "Source of the memory"
+            },
+            {
+              "hr": "Vozni red",
+              "en": "Timetable"
+            },
+            {
+              "hr": "Temperaturu",
+              "en": "Temperature"
+            }
+          ],
+          "correct": 1,
+          "explanation": {
+            "hr": "Bilježenje izvora pomaže sačuvati kontekst priče. Marko i uspomena su izmišljeni.",
+            "en": "Recording a source helps preserve a story’s context. Marko and the memory are fictional."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "generatedAt": "2026-11-01T21:03:00.819Z",
+  "unmappedSettlements": [
+    {
+      "itemId": "greberanec-kapela-sv-vurija",
+      "name": "Kapela sv. Vurija",
+      "settlement": "Greberanec",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "igrišće-crkva-sv-martina",
+      "name": "Crkva sv. Martina",
+      "settlement": "Igrišće",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "gornji-črnčevec-poklonac",
+      "name": "Poklonac",
+      "settlement": "Gornji Črnčevec",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "lanišće-kapela-sv-vida",
+      "name": "Kapela sv. Vida",
+      "settlement": "Lanišće",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "osuđevo-kapela-majke-bozje-snjezne",
+      "name": "Kapela Majke Božje Snježne",
+      "settlement": "Osuđevo",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "medačevo-kapela-male-gospe",
+      "name": "Kapela Male Gospe",
+      "settlement": "Medačevo",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "budilovo-kapela-u-budilovu",
+      "name": "Kapela u Budilovu",
+      "settlement": "Budilovo",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "grabrovec-kapela-sv-antuna",
+      "name": "Kapela sv. Antuna",
+      "settlement": "Grabrovec",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "dvorišće-raspelo",
+      "name": "Raspelo",
+      "settlement": "Dvorišće",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "carevići-raspelo",
+      "name": "Raspelo",
+      "settlement": "Carevići",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "bušići-raspelo",
+      "name": "Raspelo",
+      "settlement": "Bušići",
+      "reason": "no official settlement match"
+    },
+    {
+      "itemId": "kaniža-poklonac-majke-bogorodice",
+      "name": "Poklonac Majke Bogorodice",
+      "settlement": "Kaniža",
+      "reason": "no official settlement match"
+    }
+  ],
+  "localityOnly": [
+    {
+      "itemId": "veliki-kalnik-sakralni-lokalitet-unutar-utvrde",
+      "settlement": "Veliki Kalnik",
+      "official": "Kalnik",
+      "locality": "Veliki Kalnik"
+    },
+    {
+      "itemId": "zaistovec-–-bregi-kapela-na-istocnom-ulazu",
+      "settlement": "Zaistovec – Bregi",
+      "official": "Zaistovec",
+      "locality": "Bregi"
+    },
+    {
+      "itemId": "zaistovec-–-dubravci-poklonac-na-ulazu",
+      "settlement": "Zaistovec – Dubravci",
+      "official": "Zaistovec",
+      "locality": "Dubravci"
+    }
+  ],
+  "notes": []
+}

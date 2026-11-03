@@ -1,0 +1,32 @@
+[
+  {
+    "id": "krizevci",
+    "slug": "grad-krizevci",
+    "name": "Grad Križevci",
+    "catalogName": "Križevci"
+  },
+  {
+    "id": "kalnik",
+    "slug": "opcina-kalnik",
+    "name": "Općina Kalnik",
+    "catalogName": "Kalnik"
+  },
+  {
+    "id": "gornjaRijeka",
+    "slug": "opcina-gornja-rijeka",
+    "name": "Općina Gornja Rijeka",
+    "catalogName": "Gornja Rijeka"
+  },
+  {
+    "id": "svetiPetarOrehovec",
+    "slug": "opcina-sveti-petar-orehovec",
+    "name": "Općina Sveti Petar Orehovec",
+    "catalogName": "Sveti Petar Orehovec"
+  },
+  {
+    "id": "svetiIvanZabno",
+    "slug": "opcina-sveti-ivan-zabno",
+    "name": "Općina Sveti Ivan Žabno",
+    "catalogName": "Sveti Ivan Žabno"
+  }
+]

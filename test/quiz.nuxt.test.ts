@@ -5,8 +5,8 @@ import { clearNuxtData, clearNuxtState, useNuxtApp } from '#imports'
 import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
 import Quiz from '../app/pages/potkalnicko-prigorje/igre/kviz.vue'
 import Cards from '../app/pages/potkalnicko-prigorje/igre/kartice.vue'
-import sampleWords from '../content/heritage/words.json'
-import sampleAreas from '../content/heritage/areas.json'
+import sampleWords from './fixtures/heritage/words.json'
+import sampleAreas from './fixtures/heritage/areas.json'
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
 
 const fake = await startFakeSupabase()

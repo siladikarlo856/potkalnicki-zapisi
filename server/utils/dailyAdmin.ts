@@ -6,6 +6,7 @@ import { DAILY_PIN_BODY_LIMIT, DAILY_PIN_HORIZON_DAYS, DAILY_RUNWAY_WARNING_DAYS
 import type { DailyAdminDay, DailyAdminOverview, DailyAdminWarning, DailyPinResult } from '../../shared/utils/dailyAdmin'
 import { validateWord } from '../../shared/utils/word'
 import { activeCandidates, allRows } from './dailyWord'
+import { loadAreaIndex, projectAreas } from './wordAreas'
 import type { Candidate, DailyRow } from './dailyWord'
 
 // Reviewer-only schedule routes. They reuse the resolver's reads (all active words, all rows)
@@ -163,11 +164,11 @@ export async function pinDailyWord(client: SupabaseClient, event: H3Event, day: 
   }
   const { wordId, village } = await readPinBody(event)
 
-  const found = await client.from(WORDS).select('id,entry,areas,active').eq('id', wordId)
+  const found = await client.from(WORDS).select('id,entry,active').eq('id', wordId)
   if (found.error) databaseError(found.error)
   const stored = found.data[0]
   if (!stored) refuse(404, 'Word not found', 'Riječ ne postoji.')
-  const parsed = validateWord({ entry: stored.entry, areas: stored.areas, active: true }, wordId)
+  const parsed = validateWord({ entry: stored.entry, areas: projectAreas(stored.entry, await loadAreaIndex(client)), active: true }, wordId)
   if (!stored.active || parsed.issues.length) refuse(400, 'Word is not active', 'Riječ nije aktivna. Prikvačiti se mogu samo aktivne riječi.')
   if (village !== 'auto' && village !== 'none' && !parsed.value.areas.some(area => area.id === village)) {
     refuse(400, 'Invalid village', 'Mjesto mora biti jedno od mjesta ove riječi.')

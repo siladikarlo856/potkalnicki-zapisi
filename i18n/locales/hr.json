@@ -237,8 +237,6 @@
       "typeClear": "Ukloni",
       "typeClearLabel": "Ukloni odabranu vrstu",
       "prefill": "Umjesto „{word}“ kod nas se kaže: ",
-      "correctionPrefill": "Zapis: „{name}“\n\nPredloženi ispravak:\n",
-      "correctionTarget": "Zapis u Baštini",
       "usagePrefill": "„{word}“ kaže se i u mom mjestu.",
       "placeUsage": "U kojem se mjestu tako kaže?",
       "errorWord": "Ova riječ više nije dostupna, pa prilog nismo mogli povezati s njom. Osvježi stranicu i pokušaj ponovno."
@@ -687,13 +685,6 @@
   "pz": {
     "footer": {
       "note": "Prilozi se objavljuju uz dopuštenje autora."
-    },
-    "municipalities": {
-      "krizevci": "Grad Križevci",
-      "kalnik": "Općina Kalnik",
-      "gornjaRijeka": "Općina Gornja Rijeka",
-      "svetiPetarOrehovec": "Općina Sveti Petar Orehovec",
-      "svetiIvanZabno": "Općina Sveti Ivan Žabno"
     },
     "home": {
       "seoTitle": "Potkalnički zapisi",

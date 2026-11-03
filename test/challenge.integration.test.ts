@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest'
 import { fetch, setup } from '@nuxt/test-utils/e2e'
 import type { ChallengeContent, ChallengeLeaderboard, ChallengeState } from '../shared/utils/challenge'
 import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
-import { contentUuid } from '../scripts/generate-content-seed.mjs'
-import sample from '../content/heritage/challenge.json'
+import { contentUuid } from './helpers/contentUuid'
+import sample from './fixtures/heritage/challenge.json'
 
 // Run with `node scripts/test-challenges.mjs`. It provisions and removes ONLY its own
 // containers, applies every migration and exercises the production HTTP + RPC paths.

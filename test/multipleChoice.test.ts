@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { WordEntry } from '../app/types/heritage'
 import { QUIZ_LENGTH, advanceMeaningGame, answerMeaningQuestion, createMeaningQuestions, isCorrectAnswer, isMeaningGameOver, limitQuestions, meaningOption, missedQuestions, replayMissedGame, seededRandom, shuffled, startMeaningGame } from '../app/utils/multipleChoice'
 import { resultEmojiRow, resultShareText } from '../app/utils/shareResult'
-import sampleWords from '../content/heritage/words.json'
+import sampleWords from './fixtures/heritage/words.json'
 
 const words = sampleWords as WordEntry[]
 function word(id: string, hr: string, partOfSpeech?: string, en?: string): WordEntry {

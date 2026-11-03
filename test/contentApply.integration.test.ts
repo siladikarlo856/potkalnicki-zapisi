@@ -40,8 +40,8 @@ function item(p: ReturnType<typeof place>, name = 'Kapela') {
 function submission(type: 'correction' | 'proposal', target: { kind: string, id?: string | null }, extra: { name?: string | null, status?: string } = {}) {
   const name = extra.name === undefined ? 'Ana Horvat' : extra.name
   const payload = type === 'correction' ? '{"name":"Nova kapela"}' : '{"name":"Predložena kapela"}'
-  return sql(`insert into public.heritage_submissions(text, type, target_kind, target_id, target_ref, payload, name, consent_publish, consent_version, locale, status)
-    values ('Bilješka', '${type}', '${target.kind}', ${quote(target.id ?? null)}, ${type === 'correction' ? `'${target.id}'` : 'null'}, '${payload}', ${quote(name)}, true, '2026-11-02', 'hr', ${quote(extra.status ?? 'pending')}) returning id;`)
+  return sql(`insert into public.heritage_submissions(text, type, target_kind, target_id, payload, name, consent_publish, consent_version, locale, status)
+    values ('Bilješka', '${type}', '${target.kind}', ${quote(target.id ?? null)}, '${payload}', ${quote(name)}, true, '2026-11-02', 'hr', ${quote(extra.status ?? 'pending')}) returning id;`)
 }
 const submissionRow = (id: string) => json(`select to_jsonb(s) from public.heritage_submissions s where id = ${id};`)
 

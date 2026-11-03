@@ -43,6 +43,13 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   references?(db: SupabaseClient, id: string): Promise<ContentReferenceGroup[]>
   /** Runs after every successful write, e.g. to invalidate a public content cache. */
   afterWrite?(event: H3Event): void | Promise<void>
+  /**
+   * API fields that are not stored with the row but derived from other data (for example the areas a word's
+   * entry points at). They are validated like any field, but are left out of the change history and not restored.
+   */
+  derivedFields?: readonly string[]
+  /** Fills derived fields from the database before validation; a client cannot dictate them. */
+  prepareInput?(db: SupabaseClient, input: Record<string, unknown>): Promise<Record<string, unknown>>
   enrichRows?(db: SupabaseClient, rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]>
   toEntityExtra?(row: Record<string, unknown>): Record<string, unknown>
   /** Optional label formatter for lookup menus (defaults to `labelColumn`). */

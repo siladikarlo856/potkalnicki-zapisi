@@ -6,12 +6,12 @@ import DailyAdmin from '../app/components/heritage/DailyAdmin.vue'
 import { validateWord } from '../shared/utils/word'
 import type { DailyAdminOverview } from '../shared/utils/dailyAdmin'
 import Review from '../app/pages/admin/prijedlozi.vue'
-import sampleWords from '../content/heritage/words.json'
-import sampleAreas from '../content/heritage/areas.json'
+import sampleWords from './fixtures/heritage/words.json'
+import sampleAreas from './fixtures/heritage/areas.json'
 
 const word = sampleWords[0]!
 const submission = {
-  id: 7, text: 'Moja riječ', type: null, targetRef: null, place: null, placeId: null, name: null, contact: null,
+  id: 7, text: 'Moja riječ', type: null, place: null, placeId: null, name: null, contact: null,
   locale: 'hr', consentPublish: true, consentVersion: 'v1', status: 'pending', createdAt: '2026-10-30 10:00:00'
 }
 

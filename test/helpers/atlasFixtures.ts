@@ -1,10 +1,59 @@
-import type { AtlasBundle, AtlasHeritageItem, AtlasMunicipality, AtlasSettlement, AtlasSource } from '../types/atlas'
-import municipalities from '../../content/atlas/municipalities.json'
-import settlements from '../../content/atlas/settlements.json'
-import sources from '../../content/atlas/sources.json'
-import heritage from '../../content/atlas/heritage.json'
-import prerenderRoutes from '../../content/atlas/prerender-routes.json'
+import type { AtlasItemStatus } from '../../shared/types/atlas'
+import municipalities from '../fixtures/atlas/municipalities.json'
+import settlements from '../fixtures/atlas/settlements.json'
+import sources from '../fixtures/atlas/sources.json'
+import heritage from '../fixtures/atlas/heritage.json'
+import prerenderRoutes from '../fixtures/atlas/prerender-routes.json'
 
+export interface AtlasMunicipality {
+  id: string
+  slug: string
+  name: string
+  /** Municipality label as in server/data/places/hr.json */
+  catalogName: string
+}
+
+export interface AtlasSettlement {
+  /** DGU official settlement code */
+  id: string
+  slug: string
+  name: string
+  municipalityId: string
+  centroid: { lat: number, lng: number } | null
+}
+
+export interface AtlasSource {
+  id: string
+  title: string
+  type: string
+  url: string | null
+}
+
+export interface AtlasHeritageItem {
+  id: string
+  legacyId: string
+  slug: string
+  name: string
+  category: string
+  municipalityId: string
+  /** DGU code; null when settlement could not be matched safely */
+  settlementCode: string | null
+  locality?: string
+  sourceIds: string[]
+  status: AtlasItemStatus
+  researchNotes: string
+  /** Standalone item page should carry noindex until described */
+  noindex: boolean
+}
+
+export interface AtlasBundle {
+  municipalities: AtlasMunicipality[]
+  settlements: AtlasSettlement[]
+  sources: AtlasSource[]
+  heritage: AtlasHeritageItem[]
+}
+
+/** The atlas as it was imported into the database (frozen test fixtures; the content itself lives in the database). */
 export const atlasPrerenderRoutes = prerenderRoutes as string[]
 
 let cached: AtlasBundle | undefined
@@ -59,21 +108,4 @@ export function municipalityStats(municipalityId: AtlasMunicipality['id']) {
     items: items.length,
     settlementsWithItems: withItems.size
   }
-}
-
-export const HERITAGE_CATEGORY_LABELS: Record<string, string> = {
-  'church': 'Crkva',
-  'cathedral': 'Katedrala',
-  'chapel': 'Kapela',
-  'chapel-shrine': 'Kapela / svetište',
-  'wayside-shrine': 'Kapelica / poklonac',
-  'cross': 'Križ',
-  'statue': 'Kip',
-  'monastery': 'Samostan',
-  'archaeological-site': 'Arheološki lokalitet',
-  'historical-site': 'Povijesni lokalitet'
-}
-
-export function categoryLabel(category: string) {
-  return HERITAGE_CATEGORY_LABELS[category] ?? category
 }

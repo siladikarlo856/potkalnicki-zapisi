@@ -5,7 +5,7 @@ import Municipality from '../app/pages/potkalnicko-prigorje/istrazi/[opcina].vue
 import Settlement from '../app/pages/potkalnicko-prigorje/naselja/[naselje].vue'
 import HeritageList from '../app/pages/potkalnicko-prigorje/bastina/index.vue'
 import HeritageItem from '../app/pages/potkalnicko-prigorje/bastina/[naselje]/[slug].vue'
-import { heritageItemByRoute } from '../shared/utils/atlasData'
+import { heritageItemByRoute } from './helpers/atlasFixtures'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
 
 registerAtlasApiEndpoints()

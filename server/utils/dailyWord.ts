@@ -4,6 +4,8 @@ import { DAILY_CATEGORIES, DAILY_WORD_EPOCH, addDays, dailyReadiness, dayDiff, z
 import type { DailyClue, DailyText, DailyWordPayload } from '../../shared/utils/dailyWord'
 import { pickDistractors, seededRandom, shuffled } from '../../shared/utils/multipleChoice'
 import { validateWord } from '../../shared/utils/word'
+import { loadAreaIndex, projectAreas } from './wordAreas'
+import type { AreaIndex } from './wordAreas'
 
 // Lazy, persisted daily word resolution. The first request of a Zagreb day writes the day's
 // row (word + frozen options/clues); everyone then reads that row. A hash of the date alone
@@ -84,8 +86,9 @@ async function pages<T>(read: (from: number, to: number) => PromiseLike<{ data: 
   }
 }
 
-function candidate(row: { id: string, entry: unknown, areas: unknown }): Candidate | null {
-  const parsed = validateWord({ entry: row.entry, areas: row.areas, active: true }, row.id)
+function candidate(row: { id: string, entry: unknown }, index: AreaIndex): Candidate | null {
+  const areas = projectAreas(row.entry, index)
+  const parsed = validateWord({ entry: row.entry, areas, active: true }, row.id)
   // Fail closed like /api/heritage/words: a direct database edit must not publish a broken word.
   if (parsed.issues.length) return null
   return { id: row.id, entry: parsed.value.entry, areas: parsed.value.areas }
@@ -93,15 +96,16 @@ function candidate(row: { id: string, entry: unknown, areas: unknown }): Candida
 
 /** Every active, valid word. Not capped at the 100 rows the public word list returns. */
 export async function activeCandidates(client: SupabaseClient) {
-  const rows = await pages<{ id: string, entry: unknown, areas: unknown }>((from, to) =>
-    client.from(WORDS).select('id,entry,areas').eq('active', true).order('id').range(from, to))
-  return rows.map(candidate).filter((word): word is Candidate => !!word)
+  const rows = await pages<{ id: string, entry: unknown }>((from, to) =>
+    client.from(WORDS).select('id,entry').eq('active', true).order('id').range(from, to))
+  const index = await loadAreaIndex(client)
+  return rows.map(row => candidate(row, index)).filter((word): word is Candidate => !!word)
 }
 
 async function activeCandidate(client: SupabaseClient, id: string) {
-  const { data, error } = await client.from(WORDS).select('id,entry,areas').eq('id', id).eq('active', true)
+  const { data, error } = await client.from(WORDS).select('id,entry').eq('id', id).eq('active', true)
   if (error) fail(error)
-  return data[0] ? candidate(data[0]) : null
+  return data[0] ? candidate(data[0], await loadAreaIndex(client)) : null
 }
 
 async function readRow(client: SupabaseClient, day: string) {

@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { fetch, setup } from '@nuxt/test-utils/e2e'
 import type { ContentList } from '../shared/utils/content/common'
 import type { ChallengeTemplate } from '../shared/utils/content/challengeTemplate'
-import { contentUuid } from '../scripts/generate-content-seed.mjs'
-import sample from '../content/heritage/challenge.json'
+import { contentUuid } from './helpers/contentUuid'
+import sample from './fixtures/heritage/challenge.json'
 
 // Challenge templates over real Postgres: the seed, the "current" rules of
 // 20261103100000_challenge_templates.sql and the admin API for the challenge_template kind. Run with
@@ -54,7 +54,7 @@ async function api<T = Record<string, unknown>>(path: string, init: { method?: s
 const BASE = '/api/admin/content/challenge_template'
 
 describe.skipIf(!url)('challenge templates over real Postgres', () => {
-  it('seeds content/heritage/challenge.json (without version) as the current published template', () => {
+  it('seeds test/fixtures/heritage/challenge.json (without version) as the current published template', () => {
     expect(JSON.parse(psql(`select content from heritage_challenge_templates where id = '${SAMPLE_ID}'`))).toEqual(sampleContent)
     expect(psql(`select name || '|' || status from heritage_challenge_templates where id = '${SAMPLE_ID}'`))
       .toBe('Izazov zavičaja — uzorak|published')

@@ -312,7 +312,8 @@ describe.skipIf(!url)('corrections and proposals inbox over real Postgres', () =
 
     // A settlement takes a correction through its UUID, and an old atlas id still resolves to the item's UUID.
     expect((await submit({ type: 'correction', targetKind: 'area', targetId: w.settlement, payload: { name: 'Apatovec (Gornji)' } })).status).toBe(201)
-    expect(sql(`select target_kind || ' ' || target_id || ' ' || target_ref from public.heritage_submissions where id = (select max(id) from public.heritage_submissions where type = 'correction');`)).toBe(`area ${w.settlement} ${w.settlement}`)
+    // The legacy target_ref is no longer written; the target is target_kind + target_id.
+    expect(sql(`select target_kind || ' ' || target_id || ' ' || coalesce(target_ref, '-') from public.heritage_submissions where id = (select max(id) from public.heritage_submissions where type = 'correction');`)).toBe(`area ${w.settlement} -`)
     const legacy = sql('select legacy_id from public.content_legacy_ids where kind = \'heritage_item\' limit 1;')
     const legacyId = sql(`select entity_id from public.content_legacy_ids where kind = 'heritage_item' and legacy_id = '${legacy}';`)
     expect((await submit({ type: 'correction', targetKind: 'heritage_item', targetId: legacy, payload: { period: '19. stoljeće' } })).status).toBe(201)

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import VariantDialog from '../app/components/heritage/VariantDialog.vue'
-import sampleWords from '../content/heritage/words.json'
+import sampleWords from './fixtures/heritage/words.json'
 
 const word = sampleWords[0]!
 const posted: Record<string, unknown>[] = []

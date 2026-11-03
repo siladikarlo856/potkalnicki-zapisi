@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { getAtlas, settlementByCode } from '../shared/utils/atlasData'
+import { getAtlas, settlementByCode } from './helpers/atlasFixtures'
 import { isAsciiId } from '../shared/utils/atlasSlug'
-import report from '../content/atlas/import-report.json'
-import sources from '../content/atlas/sources.json'
+import report from './fixtures/atlas/import-report.json'
+import sources from './fixtures/atlas/sources.json'
 
 describe('atlas content import', () => {
   const atlas = getAtlas()

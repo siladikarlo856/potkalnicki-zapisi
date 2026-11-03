@@ -4,7 +4,7 @@ import { validateHeritageCategory } from '../shared/utils/content/category'
 import { validateHeritageItem } from '../shared/utils/content/heritageItem'
 import { SOURCE_LIMITS, SOURCE_TYPES, SOURCE_TYPE_LABELS, validateSource } from '../shared/utils/content/source'
 import { adminRouteScope } from '../server/utils/requestGuard'
-import sources from '../content/atlas/sources.json'
+import sources from './fixtures/atlas/sources.json'
 
 describe('validateSource (shared by the dialog and the API)', () => {
   it('accepts every source in the atlas content and projects known fields only', () => {

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
@@ -6,11 +7,12 @@ import { fetch, getServerLogs, setup, startServer, url, useTestContext } from '@
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
 import { createClient } from '@supabase/supabase-js'
 import type { AdminWord, PublicWords, WordInput } from '../shared/utils/word'
-import atlasPrerenderRoutes from '../content/atlas/prerender-routes.json'
-import { getAtlas, heritageItemByRoute, settlementByCode } from '../shared/utils/atlasData'
+import atlasPrerenderRoutes from './fixtures/atlas/prerender-routes.json'
+import { getAtlas, heritageItemByRoute, settlementByCode } from './helpers/atlasFixtures'
 import { buildPublicContent } from '../server/utils/publicContent'
 import { sitemapEntries, SITE_URL } from '../server/utils/sitemap'
 import { fakeContentRows } from './helpers/fakeContentSeed'
+import { contentUuid } from './helpers/contentUuid'
 
 const SECRET = 'test-review-secret-0123456789'
 const SESSION_PASSWORD = 'test-admin-session-password-0123456789'
@@ -82,24 +84,35 @@ afterAll(async () => {
   for (const id of wordIds) await db.from('heritage_words').delete().eq('id', id)
 })
 
+// An imported area (the town of Križevci): its id is the same in the fake and in the real database, and words
+// refer to areas by id, so a usage needs a row in the areas table to be public.
+const TEST_AREA = contentUuid('area:krizevci')
+
 function wordInput(active = false): WordInput {
   return {
     entry: {
       id: 'client-id-is-ignored', headword: 'testna riječ', meaning: { hr: 'testno značenje', en: 'test meaning' }, partOfSpeech: 'imenica',
       status: 'community', sources: [{ id: 'editor', kind: 'editor', credit: 'Local test' }],
       examples: [{ text: 'Primjer riječi.', translation: 'Example.' }],
-      variants: [{ id: 'test-variant', form: 'testna riječ', status: 'community', usages: [{ areaId: 'test-area', confidence: 'reported', sourceId: 'editor' }] }]
+      variants: [{ id: 'test-variant', form: 'testna riječ', status: 'community', usages: [{ areaId: TEST_AREA, confidence: 'reported', sourceId: 'editor' }] }]
     },
-    areas: [{ id: 'test-area', name: 'Testno područje', kind: 'settlement', parentId: null }], active
+    areas: [], active
   }
 }
 
-async function createWord(body: unknown = wordInput()) {
-  const response = await request('/api/review/words', { method: 'POST', secret: SECRET, body })
-  expect(response.status).toBe(201)
-  const word = await response.json() as AdminWord
-  wordIds.push(word.entry.id)
-  return word
+// Words are written straight to the table: the admin writes them through /api/admin/content/word, which needs the
+// real database (test/adminWords.integration.test.ts). The areas of a word are never stored with it.
+async function createWord(input: WordInput = wordInput()) {
+  const id = randomUUID()
+  const entry = { ...input.entry, id }
+  const { error } = await db.from('heritage_words').insert({ id, entry, active: input.active })
+  expect(error).toBeNull()
+  wordIds.push(id)
+  return { entry, active: input.active }
+}
+async function updateWord(id: string, patch: Record<string, unknown>) {
+  const { error } = await db.from('heritage_words').update(patch).eq('id', id)
+  expect(error).toBeNull()
 }
 async function readPublic(limit?: number) {
   const response = await request(`/api/heritage/words${limit ? `?limit=${limit}` : ''}`)
@@ -249,9 +262,6 @@ describe('word admin and public word APIs', () => {
   })
 
   it.each([
-    { method: 'GET', path: '/api/review/words' },
-    { method: 'POST', path: '/api/review/words', body: wordInput() },
-    { method: 'PUT', path: '/api/review/words/anything', body: wordInput() },
     { method: 'POST', path: '/api/review/submissions/1/word' },
     { method: 'GET', path: '/api/review/daily' },
     { method: 'PUT', path: '/api/review/daily/2099-01-01', body: { wordId: 'anything' } },
@@ -261,19 +271,40 @@ describe('word admin and public word APIs', () => {
     expect((await request(path, { method, body, secret: 'wrong' })).status).toBe(401)
   })
 
-  it('creates, edits, activates and deactivates, preserving all WordEntry parameters', async () => {
+  it('retired the review word routes: words are written through the admin content API only', async () => {
+    for (const [method, path] of [['GET', '/api/review/words'], ['POST', '/api/review/words'], ['PUT', '/api/review/words/anything']]) {
+      expect((await request(path, { method, secret: SECRET, body: method === 'GET' ? undefined : wordInput() })).status, `${method} ${path}`).toBe(404)
+    }
+  })
+
+  it('serves an activated word with all WordEntry parameters and hides it again when deactivated', async () => {
     const word = await createWord()
-    expect(word.entry.id).not.toBe('client-id-is-ignored')
-    expect(word).toMatchObject({ active: false, submissionId: null, createdAt: expect.any(String), updatedAt: expect.any(String) })
+    expect(word).toMatchObject({ active: false })
     expect((await readPublic()).words.some(w => w.id === word.entry.id)).toBe(false)
-    const path = `/api/review/words/${word.entry.id}`
-    expect((await request(path, { method: 'PUT', secret: SECRET, body: { ...word, active: true, entry: { ...word.entry, meaning: { hr: 'novo značenje' } } } })).status).toBe(200)
+    await updateWord(word.entry.id, { active: true, entry: { ...word.entry, meaning: { hr: 'novo značenje' } } })
     const published = (await readPublic()).words.find(w => w.id === word.entry.id)
     expect(published).toMatchObject({ meaning: { hr: 'novo značenje' }, examples: word.entry.examples, variants: word.entry.variants, sources: word.entry.sources })
-    expect((await request(path, { method: 'PUT', secret: SECRET, body: { ...word, active: false } })).status).toBe(200)
+    await updateWord(word.entry.id, { active: false })
     expect((await readPublic()).words.some(w => w.id === word.entry.id)).toBe(false)
-    const list = await (await request('/api/review/words', { secret: SECRET })).json() as AdminWord[]
-    expect(list.find(w => w.entry.id === word.entry.id)?.active).toBe(false)
+  })
+
+  it('serves the areas a word points at, with their ancestors, from the areas table', async () => {
+    const word = await createWord(wordInput(true))
+    const result = await readPublic()
+    expect(result.words.some(w => w.id === word.entry.id)).toBe(true)
+    const town = result.areas.find(area => area.id === TEST_AREA)
+    expect(town).toMatchObject({ name: 'Križevci', kind: 'town', parentId: expect.stringMatching(/^[0-9a-f-]{36}$/) })
+    // The county and the country above it come along, parents before children.
+    const ids = result.areas.map(area => area.id)
+    expect(ids.indexOf(town!.parentId!)).toBeGreaterThanOrEqual(0)
+    expect(ids.indexOf(town!.parentId!)).toBeLessThan(ids.indexOf(TEST_AREA))
+  })
+
+  it('does not publish a word whose usage points at an area that does not exist', async () => {
+    const input = wordInput(true)
+    input.entry.variants[0]!.usages = [{ areaId: 'hr-kkz-krizevci-gone', confidence: 'reported' }]
+    const word = await createWord(input)
+    expect((await readPublic()).words.some(w => w.id === word.entry.id)).toBe(false)
   })
 
   it('promotes a submission once into a linked inactive draft without approving or publishing it', async () => {
@@ -291,10 +322,9 @@ describe('word admin and public word APIs', () => {
     expect(repeat.entry.id).toBe(word.entry.id)
     expect((await listAll()).find(s => s.id === submission.id)?.status).toBe('pending')
     expect((await readPublic()).words.some(w => w.id === word.entry.id)).toBe(false)
-    expect((await request(`/api/review/words/${word.entry.id}`, { method: 'PUT', secret: SECRET, body: { ...word, active: true } })).status).toBe(400)
     expect((await listAll()).find(s => s.id === submission.id)?.status).toBe('pending')
-    const completed = { ...word, active: true, entry: { ...word.entry, meaning: { hr: 'dovršeno značenje' }, partOfSpeech: 'imenica' } }
-    expect((await request(`/api/review/words/${word.entry.id}`, { method: 'PUT', secret: SECRET, body: completed })).status).toBe(200)
+    // Activating the finished draft is what approves the submission.
+    await updateWord(word.entry.id, { active: true, entry: { ...word.entry, meaning: { hr: 'dovršeno značenje' }, partOfSpeech: 'imenica' } })
     expect((await listAll()).find(s => s.id === submission.id)).toMatchObject({ status: 'approved', reviewedAt: expect.any(String) })
     expect((await readPublic()).words.find(w => w.id === word.entry.id)?.headword).toBe('promotion test word')
   })
@@ -349,7 +379,6 @@ describe('word admin and public word APIs', () => {
       expect(error).toBeNull()
       expect((await readPublic()).words.some(w => w.id === word.entry.id), JSON.stringify(extra)).toBe(false)
     }
-    expect((await request('/api/review/words', { method: 'POST', secret: SECRET, body: { ...wordInput(), entry: { ...wordInput().entry, category: 'cars' } } })).status).toBe(400)
   })
 
   it('only returns active words and whitelisted public fields, even after a direct database write', async () => {
@@ -370,19 +399,8 @@ describe('word admin and public word APIs', () => {
     expect((await readPublic(1)).words.length).toBeLessThanOrEqual(1)
   })
 
-  it('validates required active fields, nested types, references, lengths, and bounded queries', async () => {
-    const good = wordInput(true)
-    const invalid = [
-      {}, { ...good, active: 'true' },
-      ...[{ headword: '' }, { headword: 'x'.repeat(201) }, { meaning: { hr: '' } }, { partOfSpeech: '' }, { sources: [] }, { variants: [] }, { status: 'published' }, { examples: [{ text: 42 }] }, { variants: [{ ...good.entry.variants[0], usages: [{ areaId: 'unknown', confidence: 'reported' }] }] }].map(entry => ({ ...good, entry: { ...good.entry, ...entry } })),
-      { ...good, areas: [{ id: 'test-area', name: 'bad', kind: 'settlement', parentId: 'test-area' }] },
-      { ...good, entry: { ...good.entry, tags: Array.from({ length: 21 }, () => 'tag') } }
-    ]
-    for (const body of invalid) expect((await request('/api/review/words', { method: 'POST', body, secret: SECRET })).status).toBe(400)
-    expect((await request('/api/review/words', { method: 'POST', body: { ...good, extra: 'x'.repeat(140000) }, secret: SECRET })).status).toBe(413)
+  it('bounds the public word query and answers 404 for a submission that does not exist', async () => {
     for (const limit of ['0', '101', '1.5', 'nope']) expect((await request(`/api/heritage/words?limit=${limit}`)).status).toBe(400)
-    expect((await request('/api/review/words?offset=-1', { secret: SECRET })).status).toBe(400)
-    expect((await request('/api/review/words/missing', { method: 'PUT', secret: SECRET, body: good })).status).toBe(404)
     expect((await request('/api/review/submissions/999999999/word', { method: 'POST', secret: SECRET })).status).toBe(404)
   })
 })
@@ -425,7 +443,7 @@ describe('admin session', () => {
 })
 
 describe('POST /api/submissions', () => {
-  it('stores a heritage correction with its atlas target', async () => {
+  it('refuses the retired targetRef form of a correction: a correction names its target with targetKind and targetId', async () => {
     const response = await submit({
       ...valid,
       type: 'correction',
@@ -435,24 +453,9 @@ describe('POST /api/submissions', () => {
       name: null,
       contact: null
     })
-    expect(response.status).toBe(201)
-    const stored = (await listAll()).find(row => row.type === 'correction' && row.targetRef === 'kalnik-crkva-sv-brcka')
-    expect(stored).toMatchObject({
-      type: 'correction',
-      targetRef: 'kalnik-crkva-sv-brcka',
-      status: 'pending'
-    })
-  })
-
-  it('rejects corrections with an unknown atlas target', async () => {
-    const response = await submit({
-      ...valid,
-      type: 'correction',
-      targetRef: 'nepostojeci-zapis',
-      text: 'Zapis: test\n\nPredloženi ispravak:\nNešto.'
-    })
     expect(response.status).toBe(400)
-    expect((await response.json()).data.issues).toContainEqual({ field: 'targetRef', code: 'invalid' })
+    expect((await response.json()).data.issues).toContainEqual({ field: 'targetKind', code: 'required' })
+    expect((await listAll()).some(row => row.type === 'correction' && String(row.text).startsWith('Zapis: Crkva sv. Brcka'))).toBe(false)
   })
 
   it('requires a valid place for variant reports while ordinary word contributions may omit it', async () => {
@@ -475,7 +478,6 @@ describe('POST /api/submissions', () => {
     const stored = (await listAll()).find(row => row.text === 'stored submission')
     expect(stored).toMatchObject({
       type: 'expression',
-      targetRef: null,
       place: 'Sveti Petar Orehovec (geonames:3194024)',
       placeId: 'geonames:3194024',
       placeCatalogVersion: expect.any(String),
@@ -578,7 +580,7 @@ describe('POST /api/submissions', () => {
 
       const live = await createWord(wordInput(true))
       expect((await usage(live.entry.id, { text: 'live word link' })).status).toBe(201)
-      expect((await request(`/api/review/words/${live.entry.id}`, { method: 'PUT', secret: SECRET, body: { ...live, active: false } })).status).toBe(200)
+      await updateWord(live.entry.id, { active: false })
       expect((await usage(live.entry.id, { text: 'withdrawn word link' })).status).toBe(400)
       const texts = (await listAll()).map(row => row.text)
       expect(texts).toContain('live word link')
@@ -879,13 +881,12 @@ describe('review API', () => {
   })
 
   it('filters review submissions by type', async () => {
-    await submit({
-      ...valid,
-      type: 'correction',
-      targetRef: 'kalnik-crkva-sv-brcka',
-      text: 'type filter correction row',
-      placeId: null
+    // A structured correction needs the signed form token of a real form, so the row is written directly.
+    const inserted = await db.from('heritage_submissions').insert({
+      text: 'type filter correction row', type: 'correction', target_kind: 'heritage_item', target_id: contentUuid('heritage_item:kalnik-crkva-sv-brcka'),
+      payload: { name: 'Crkva sv. Brcka (ispravak)' }, consent_publish: true, consent_version: '2026-11-02', locale: 'hr'
     })
+    expect(inserted.error).toBeNull()
     await submit({ ...valid, text: 'type filter ordinary row', type: 'memory' })
     const response = await request('/api/review/submissions?status=all&type=correction', { secret: SECRET })
     expect(response.status).toBe(200)
@@ -1088,9 +1089,6 @@ const reviewRoutes = [
   { method: 'GET', path: '/api/review/submissions' },
   { method: 'PATCH', path: '/api/review/submissions/1', body: { status: 'approved' } },
   { method: 'DELETE', path: '/api/review/submissions/1' },
-  { method: 'GET', path: '/api/review/words' },
-  { method: 'POST', path: '/api/review/words', body: wordInput() },
-  { method: 'PUT', path: '/api/review/words/missing', body: wordInput() },
   { method: 'POST', path: '/api/review/submissions/1/word' },
   { method: 'GET', path: '/api/review/daily' },
   { method: 'PUT', path: '/api/review/daily/2099-01-01', body: { wordId: 'anything' } },

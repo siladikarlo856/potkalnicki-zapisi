@@ -64,7 +64,7 @@ export interface PublicSource {
 
 export interface PublicHeritageItem extends PublicHeritageListItem {
   /**
-   * Stable id for correction submissions (`target_ref`): the old item id for imported items
+   * Stable id for correction submissions (their `targetId`): the old item id for imported items
    * (`krizevci-crkva-sv-ane`), the UUID for items created later.
    */
   ref: string

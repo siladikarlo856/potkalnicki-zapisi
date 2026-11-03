@@ -58,11 +58,6 @@ export default defineEventHandler(async (event) => {
   const input = result.value
   // Above 1000 pending submissions the form says "try later": a flood must not fill the free-tier database.
   await assertPendingCapacity()
-  if (input.type === 'correction' && input.targetRef) {
-    // The old form: an atlas id in targetRef. It is stored with its resolved target like a structured one.
-    input.targetKind = 'heritage_item'
-    input.targetId = await assertKnownCorrectionTarget(input.targetRef)
-  }
   if (input.wordId) await assertActiveWord(input.wordId, input.locale)
 
   let fingerprint: string | null = null
@@ -83,7 +78,6 @@ export default defineEventHandler(async (event) => {
       if (!target) throw invalidIssue('targetId', 'invalid')
       input.targetId = target.id
       input.baseRevision ??= target.revision
-      input.targetRef = target.id
     } else {
       await assertProposalReferences(input.targetKind!, input.payload!)
     }

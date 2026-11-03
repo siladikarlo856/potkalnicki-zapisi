@@ -5,7 +5,7 @@ import {
   diffSnapshots, expandHistoryChange, formatHistoryValue, historyFieldMeta, isHistoryKind
 } from '../shared/utils/content/history'
 import { challengeContentEntries } from '../shared/utils/content/challengeTemplate'
-import sample from '../content/heritage/challenge.json'
+import sample from './fixtures/heritage/challenge.json'
 import { SOURCE_TYPES } from '../shared/utils/content/source'
 import { findContentKind } from '../server/utils/content/registry'
 

@@ -19,6 +19,8 @@ const areas: Area[] = [
   { id: 'vil-a', name: 'Selo A', kind: 'settlement', parentId: 'county' },
   { id: 'vil-b', name: 'Selo B', kind: 'municipality', parentId: 'county' }
 ]
+// A word's areas are read from the areas table, not stored with the word.
+fake.seedAreas(areas)
 
 interface WordOptions {
   example?: boolean
@@ -46,7 +48,7 @@ function entry(id: string, o: WordOptions = {}): WordEntry {
 function addWord(id: string, o: WordOptions = {}) {
   const now = new Date().toISOString()
   fake.words.push({
-    id, entry: entry(id, o), areas, active: o.active ?? true,
+    id, entry: entry(id, o), active: o.active ?? true,
     submission_id: 7, submission_place: o.submissionPlace ?? null, created_at: now, updated_at: now
   })
 }
@@ -167,7 +169,7 @@ describe('resolution and persistence', () => {
 
   it('fails closed on invalid active rows', async () => {
     words(5)
-    fake.words.push({ id: 'broken', entry: { id: 'broken', headword: 'x', meaning: { hr: '' }, status: 'nope', variants: [], sources: [] }, areas: [], active: true, submission_id: null, submission_place: null, created_at: '', updated_at: '' })
+    fake.words.push({ id: 'broken', entry: { id: 'broken', headword: 'x', meaning: { hr: '' }, status: 'nope', variants: [], sources: [] }, active: true, submission_id: null, submission_place: null, created_at: '', updated_at: '' })
     const picked = new Set<string>()
     for (const day of days('2026-11-02', 5)) picked.add((await resolve(day)).entry.id)
     expect(picked.has('broken')).toBe(false)

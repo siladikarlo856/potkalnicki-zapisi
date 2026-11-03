@@ -4,7 +4,7 @@ import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { UApp } from '#components'
 import AdminChallenges from '../app/pages/admin/izazovi.vue'
 import type { ChallengeTemplate } from '../shared/utils/content/challengeTemplate'
-import sample from '../content/heritage/challenge.json'
+import sample from './fixtures/heritage/challenge.json'
 
 // The Izazovi admin (challenge templates) on the CRUD kit, against mocked API routes: the list, the
 // nested round and question editor in the dialog, validation at the nested fields, and "Postavi kao

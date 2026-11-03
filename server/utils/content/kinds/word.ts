@@ -5,13 +5,15 @@ import {
   projectWordRow, validateAdminWord, wordStatusToActive, WORD_BODY_LIMIT
 } from '../../../../shared/utils/content/word'
 import { defineContentKind } from '../definition'
+import { loadAreaIndex, projectAreas } from '../../wordAreas'
 
 const EXAMPLES = 5
 
 type WordRow = {
   id: string
   entry: WordEntry
-  areas: Area[]
+  /** Not a column: the areas of the entry, read from the areas table (enrichRows, loadEntity). */
+  areas?: Area[]
   active: boolean
   archived_at: string | null
   slug: string | null
@@ -29,7 +31,6 @@ const WORD_COLUMNS = {
   createdAt: 'created_at',
   updatedAt: 'updated_at',
   entry: 'entry',
-  areas: 'areas',
   slug: 'slug',
   submissionId: 'submission_id',
   submissionPlace: 'submission_place'
@@ -52,7 +53,6 @@ const adapter = {
     const archivedAt = status === 'archived' ? new Date().toISOString() : null
     return {
       entry: value.entry,
-      areas: value.areas,
       active,
       ...(archivedAt ? { archived_at: archivedAt } : status === 'published' ? { archived_at: null } : {})
     }
@@ -100,7 +100,19 @@ async function wordReferences(db: SupabaseClient, id: string): Promise<ContentRe
 export const wordKind = defineContentKind({
   kind: 'word',
   table: 'heritage_words',
+  // `areas` is derived: the areas the entry points at, from the areas table. It is validated, never stored.
   fields: { entry: 'entry', areas: 'areas' },
+  derivedFields: ['areas'],
+  async prepareInput(db, input) {
+    return { ...input, areas: projectAreas(input.entry, await loadAreaIndex(db)) }
+  },
+  async enrichRows(db, rows) {
+    const index = await loadAreaIndex(db)
+    return rows.map(row => ({ ...row, areas: projectAreas(row.entry, index) }))
+  },
+  async loadEntity(db, entity) {
+    return { areas: projectAreas(entity.entry, await loadAreaIndex(db)) }
+  },
   labelColumn: 'search_text',
   validate: validateAdminWord,
   sorts: { headword: 'search_text', slug: 'slug' },

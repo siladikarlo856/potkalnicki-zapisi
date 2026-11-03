@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildPublicContent } from '../server/utils/publicContent'
 import { sitemapEntries, SITE_URL } from '../server/utils/sitemap'
-import { getAtlas, settlementByCode } from '../shared/utils/atlasData'
-import atlasPrerenderRoutes from '../content/atlas/prerender-routes.json'
+import { getAtlas, settlementByCode } from './helpers/atlasFixtures'
+import atlasPrerenderRoutes from './fixtures/atlas/prerender-routes.json'
 import { fakeContentRows } from './helpers/fakeContentSeed'
 
 describe('atlas sitemap parity (in-memory snapshot)', () => {

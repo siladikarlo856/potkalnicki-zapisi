@@ -14,7 +14,7 @@ describe('validateSubmission', () => {
     const result = validateSubmission({ ...valid, text: '  kaj  ', type: '', place: '  ', name: 'Ana ', contact: undefined })
     expect(result).toEqual({
       ok: true,
-      value: { text: 'kaj', type: null, targetRef: null, targetKind: null, targetId: null, payload: null, baseRevision: null, placeId: null, wordId: null, intent: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
+      value: { text: 'kaj', type: null, targetKind: null, targetId: null, payload: null, baseRevision: null, placeId: null, wordId: null, intent: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
     })
   })
 
@@ -68,16 +68,13 @@ describe('validateSubmission', () => {
     ])
   })
 
-  it('requires targetRef for corrections and rejects unknown refs', () => {
-    expect(issuesOf({ ...valid, type: 'correction' })).toEqual([{ field: 'targetRef', code: 'required' }])
-    expect(issuesOf({ ...valid, type: 'correction', targetRef: 'bad id!' })).toEqual([{ field: 'targetRef', code: 'invalid' }])
-    expect(issuesOf({ ...valid, type: 'word', targetRef: 'kalnik-crkva-sv-brcka' })).toEqual([{ field: 'type', code: 'invalid' }])
-    expect(validateSubmission({
-      ...valid,
-      type: 'correction',
-      targetRef: 'kalnik-crkva-sv-brcka',
-      text: 'Zapis: test\n\nPredloženi ispravak:\nLokacija je drugačija.'
-    }).ok).toBe(true)
+  it('requires a target for corrections and no longer takes the retired targetRef', () => {
+    expect(issuesOf({ ...valid, type: 'correction' })).toEqual([{ field: 'targetKind', code: 'required' }])
+    expect(issuesOf({ ...valid, type: 'correction', targetRef: 'kalnik-crkva-sv-brcka' })).toEqual([{ field: 'targetKind', code: 'required' }])
+    expect(issuesOf({ ...valid, type: 'correction', targetKind: 'heritage_item', targetId: 'bad id!', payload: { name: 'x' } })).toEqual([{ field: 'targetId', code: 'invalid' }])
+    // A stray targetRef on an ordinary submission is ignored, not stored.
+    expect(validateSubmission({ ...valid, type: 'word', targetRef: 'kalnik-crkva-sv-brcka' })).toMatchObject({ ok: true })
+    expect(validateSubmission({ ...valid, type: 'word', targetRef: 'kalnik-crkva-sv-brcka' })).not.toHaveProperty('value.targetRef')
   })
 
   it('rejects a body that is not an object', () => {
@@ -126,7 +123,7 @@ describe('validateSubmission word link (contributions from the daily word)', () 
   })
 
   it('does not let a correction point at a word', () => {
-    expect(issuesOf({ ...valid, type: 'correction', targetRef: 'kalnik-crkva-sv-brcka', wordId: word, intent: 'variant' })).toEqual([{ field: 'type', code: 'invalid' }])
+    expect(issuesOf({ ...valid, type: 'correction', targetKind: 'heritage_item', targetId: 'kalnik-crkva-sv-brcka', payload: { name: 'x' }, wordId: word, intent: 'variant' })).toEqual([{ field: 'type', code: 'invalid' }])
   })
 
   it('reports every problem of a bad linked submission together', () => {

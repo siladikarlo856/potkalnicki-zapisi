@@ -81,7 +81,7 @@ function inboxRows(submissions: Awaited<ReturnType<typeof listSubmissionRows>>, 
   return submissions.map((submission) => {
     const target = submission.targetKind
       ? targets.get(`${submission.targetKind}:${submission.targetId}`)
-      ?? { kind: submission.targetKind, id: submission.targetId, label: submission.targetRef ?? '', state: 'missing' as const, status: null, revision: null }
+      ?? { kind: submission.targetKind, id: submission.targetId, label: '', state: 'missing' as const, status: null, revision: null }
       : null
     const made = created.get(submission.id) ?? null
     const plain = submission.type !== 'correction' && submission.type !== 'proposal'

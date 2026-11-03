@@ -62,6 +62,11 @@ export function editable(def: AnyContentKindDefinition, source: Row) {
   return Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]))
 }
 
+/** The kind's validator, after its derived fields have been filled from the database. */
+export async function validateInput(def: AnyContentKindDefinition, input: Row, id?: string) {
+  return def.validate(def.prepareInput ? await def.prepareInput(useDatabaseClient(), input) : input, id)
+}
+
 export function conflict(def: AnyContentKindDefinition, current: Row): never {
   fail(409, 'Revision conflict', {
     code: 'revision-conflict',
@@ -239,7 +244,7 @@ export async function contentAfterWrite(event: H3Event, def: AnyContentKindDefin
 
 export async function createContent(event: H3Event, def: AnyContentKindDefinition) {
   const body = editable(def, await readInput(event, def))
-  const { value, issues } = def.validate(body)
+  const { value, issues } = await validateInput(def, body)
   if (issues.length) invalid(issues)
   const row = toRow(def, value)
   if (def.adapter?.createId) row.id = def.adapter.createId(value)
@@ -266,7 +271,7 @@ export async function updateContent(event: H3Event, def: AnyContentKindDefinitio
   const current = await requireRow(def, id)
   if (current.revision !== revision) conflict(def, current)
 
-  const { value, issues } = def.validate({ ...editable(def, toEntity(def, current)), ...editable(def, body) }, id)
+  const { value, issues } = await validateInput(def, { ...editable(def, toEntity(def, current)), ...editable(def, body) }, id)
   if (issues.length) invalid(issues)
   const { data, error } = await useDatabaseClient().from(def.table).update({ ...toRow(def, value), ...applyColumns(def, body) })
     .eq('id', id).eq('revision', revision).select(selectList(def))

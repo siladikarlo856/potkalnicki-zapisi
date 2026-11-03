@@ -1,15 +1,16 @@
 import { randomUUID } from 'node:crypto'
-import type { H3Event } from 'h3'
 import type { AdminWord, WordInput } from '../../shared/utils/word'
-import { validateWord, WORD_BODY_LIMIT } from '../../shared/utils/word'
+import { validateWord } from '../../shared/utils/word'
+import { loadAreaIndex, projectAreas, withProjectedAreas } from './wordAreas'
 
 const WORD_TABLE = 'heritage_words'
+// The columns a word draft is read back with; heritage_words.areas is never read (see wordAreas.ts).
+const ADMIN_COLUMNS = 'id,entry,active,submission_id,submission_place,created_at,updated_at'
 const AREAS_TABLE = 'areas'
 
 interface WordRow {
   id: string
   entry: WordInput['entry']
-  areas: WordInput['areas']
   active: boolean
   submission_id: number | null
   submission_place: string | null
@@ -27,46 +28,12 @@ interface AreaRow {
   status: string
 }
 
-function adminWord(row: WordRow): AdminWord {
+function adminWord(row: WordRow, areas: WordInput['areas']): AdminWord {
   return {
-    entry: row.entry, areas: row.areas, active: row.active,
+    entry: row.entry, areas, active: row.active,
     submissionId: row.submission_id, submissionPlace: row.submission_place,
     createdAt: row.created_at, updatedAt: row.updated_at
   }
-}
-
-export function wordIdParam(event: H3Event) {
-  const id = getRouterParam(event, 'id') ?? ''
-  if (!/^[\w~-]{1,200}$/.test(id)) throw createError({ statusCode: 400, statusMessage: 'Invalid word id' })
-  return id
-}
-
-export async function readWordInput(event: H3Event, id: string) {
-  const body = await readBody(event).catch(() => null)
-  if (Buffer.byteLength(JSON.stringify(body) ?? '') > WORD_BODY_LIMIT) {
-    throw createError({ statusCode: 413, statusMessage: 'Word too large' })
-  }
-  const { value, issues } = validateWord(body, id)
-  if (issues.length) throw createError({ statusCode: 400, statusMessage: 'Invalid word', data: { issues } })
-  return value
-}
-
-export async function listAdminWords(offset: number) {
-  const { data, error } = await useDatabaseClient().from(WORD_TABLE).select('*')
-    .order('created_at', { ascending: false }).order('id').range(offset, offset + 49)
-  if (error) databaseError(error)
-  return (data as WordRow[]).map(adminWord)
-}
-
-export async function saveWord(input: WordInput, id?: string) {
-  const row = { entry: input.entry, areas: input.areas, active: input.active }
-  const query = id
-    ? useDatabaseClient().from(WORD_TABLE).update(row).eq('id', id)
-    : useDatabaseClient().from(WORD_TABLE).insert({ ...row, id: input.entry.id })
-  const { data, error } = await query.select('*')
-  if (error) databaseError(error)
-  if (!data.length) throw createError({ statusCode: 404, statusMessage: 'Word not found' })
-  return adminWord(data[0] as WordRow)
 }
 
 /** Look up an area by its GeoNames id (e.g. 'geonames:3197230') from the areas table. */
@@ -119,9 +86,9 @@ export async function listAdminAreas() {
 
 export async function promoteSubmission(id: number) {
   const client = useDatabaseClient()
-  const existing = await client.from(WORD_TABLE).select('*').eq('submission_id', id)
+  const existing = await client.from(WORD_TABLE).select(ADMIN_COLUMNS).eq('submission_id', id)
   if (existing.error) databaseError(existing.error)
-  if (existing.data.length) return adminWord(existing.data[0] as WordRow)
+  if (existing.data.length) return adminWord(existing.data[0] as unknown as WordRow, projectAreas(existing.data[0]!.entry, await loadAreaIndex(client)))
 
   // Only the fields needed for a draft are read. Contact never enters the word store.
   const { data, error } = await client.from('heritage_submissions')
@@ -153,8 +120,7 @@ export async function promoteSubmission(id: number) {
     if (area) areaId = area.id
   }
 
-  // The areas column is left empty: the heritage_word_areas_sync trigger projects it from the areas
-  // table after the insert, using the areaId in the entry variants' usages.
+  // The draft names its area in the first variant's usage; the areas themselves are read from the areas table.
   const draft = validateWord({
     active: false,
     areas: [],
@@ -169,24 +135,25 @@ export async function promoteSubmission(id: number) {
     }
   }, wordId).value
   const inserted = await client.from(WORD_TABLE).insert({
-    id: wordId, entry: draft.entry, areas: draft.areas, active: false,
+    id: wordId, entry: draft.entry, active: false,
     submission_id: id, submission_place: submission.place
-  }).select('*')
+  }).select(ADMIN_COLUMNS)
   if (inserted.error) {
     // Unique submission_id makes repeated/concurrent promotion safe and idempotent.
     if (inserted.error.code === '23505') return promoteSubmission(id)
     databaseError(inserted.error)
   }
-  return adminWord(inserted.data![0] as WordRow)
+  return adminWord(inserted.data![0] as unknown as WordRow, projectAreas(draft.entry, await loadAreaIndex(client)))
 }
 
 export async function publicWords(limit: number) {
-  const { data, error } = await useDatabaseClient().from(WORD_TABLE)
-    .select('id,entry,areas').eq('active', true).order('id').limit(limit)
+  const client = useDatabaseClient()
+  const { data, error } = await client.from(WORD_TABLE)
+    .select('id,entry').eq('active', true).order('id').limit(limit)
   if (error) databaseError(error)
   const words: WordInput['entry'][] = []
   const areas = new Map<string, WordInput['areas'][number]>()
-  for (const row of data) {
+  for (const row of await withProjectedAreas(client, data)) {
     const parsed = validateWord({ entry: row.entry, areas: row.areas, active: true }, row.id)
     // Fail closed if a direct database edit has left an invalid active entry.
     if (parsed.issues.length) continue

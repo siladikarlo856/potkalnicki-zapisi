@@ -9,7 +9,7 @@ import {
 import type { AnyContentKindDefinition } from './definition'
 import { findContentKind } from './registry'
 import {
-  conflict, contentAfterWrite, contentDatabaseError, editable, fail, invalid, queryInteger, queryText, readRow, toEntity, toRow
+  conflict, contentAfterWrite, contentDatabaseError, editable, fail, invalid, queryInteger, queryText, readRow, toEntity, toRow, validateInput
 } from './store'
 
 // Change history over `content_revisions`, which the database fills: `content_audit` copies the full
@@ -39,7 +39,7 @@ const LABEL_KEYS = ['name', 'title', 'label_hr', 'key']
 
 /** The editable API fields of a kind, in its field order, with `status`. */
 function historyFields(def: AnyContentKindDefinition) {
-  return [...Object.keys(def.fields), ...(def.inputFields ?? []), 'status']
+  return [...Object.keys(def.fields).filter(field => !def.derivedFields?.includes(field)), ...(def.inputFields ?? []), 'status']
 }
 
 /** A stored snapshot (database columns) as the editable API fields. */
@@ -154,7 +154,7 @@ export async function restoreRevision(event: H3Event, def: AnyContentKindDefinit
   const now = current ? projected(def, current) : {}
   const kept = Object.fromEntries((def.restoreKeeps ?? []).filter(field => field in now).map(field => [field, now[field]]))
   // The stored version must still satisfy today's rules; the validator also normalizes it.
-  const { value, issues } = def.validate({ ...projected(def, target.data), ...kept })
+  const { value, issues } = await validateInput(def, { ...projected(def, target.data), ...kept })
   if (issues.length) invalid(issues, 'Ta se verzija ne može vratiti jer više ne zadovoljava pravila uređivanja.')
 
   if (current) {

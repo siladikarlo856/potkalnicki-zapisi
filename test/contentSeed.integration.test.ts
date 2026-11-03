@@ -1,19 +1,32 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import municipalities from '../content/atlas/municipalities.json'
-import settlements from '../content/atlas/settlements.json'
-import sources from '../content/atlas/sources.json'
-import heritage from '../content/atlas/heritage.json'
-import wordAreas from '../content/heritage/areas.json'
-import dataset from '../data/heritage/heritage-sakralna-bastina-potkalnickog-prigorja.json'
+import municipalities from './fixtures/atlas/municipalities.json'
+import settlements from './fixtures/atlas/settlements.json'
+import sources from './fixtures/atlas/sources.json'
+import heritage from './fixtures/atlas/heritage.json'
+import wordAreas from './fixtures/heritage/areas.json'
+import dataset from './fixtures/atlas/dataset.json'
 import catalog from '../server/data/places/hr.json'
-import { HERITAGE_CATEGORY_LABELS } from '../shared/utils/atlasData'
 
 // The atlas import (*_seed_content.sql) as applied to a real Postgres, checked field by field against the
 // content files it came from. Run with `node scripts/test-challenges.mjs`, which applies every migration to
 // a disposable Postgres; skipped everywhere else. Other suites add their own rows to the same tables, so
 // every query here starts from the imported ids (through content_legacy_ids), never from table totals.
+// The Croatian labels the import gave the ten heritage categories, in display order.
+const HERITAGE_CATEGORY_LABELS: Record<string, string> = {
+  'church': 'Crkva',
+  'cathedral': 'Katedrala',
+  'chapel': 'Kapela',
+  'chapel-shrine': 'Kapela / svetište',
+  'wayside-shrine': 'Kapelica / poklonac',
+  'cross': 'Križ',
+  'statue': 'Kip',
+  'monastery': 'Samostan',
+  'archaeological-site': 'Arheološki lokalitet',
+  'historical-site': 'Povijesni lokalitet'
+}
+
 const url = process.env.TEST_CHALLENGE_API_URL
 const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 

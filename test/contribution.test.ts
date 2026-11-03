@@ -74,10 +74,11 @@ describe('validateSubmission with a target', () => {
 
   it('accepts a structured correction and a proposal and carries the payload and target', () => {
     const result = validateSubmission({ ...correction, baseRevision: 4 })
-    expect(result).toMatchObject({ ok: true, value: { type: 'correction', targetKind: 'heritage_item', targetId: SETTLEMENT, payload: { name: 'Nova kapela' }, baseRevision: 4, targetRef: null } })
+    expect(result).toMatchObject({ ok: true, value: { type: 'correction', targetKind: 'heritage_item', targetId: SETTLEMENT, payload: { name: 'Nova kapela' }, baseRevision: 4 } })
     expect(validateSubmission(proposal)).toMatchObject({ ok: true, value: { type: 'proposal', targetKind: 'heritage_item', targetId: null } })
-    // An old atlas id still works as the target of a correction.
-    expect(validateSubmission({ ...valid, type: 'correction', targetRef: 'kalnik-crkva-sv-brcka' })).toMatchObject({ ok: true, value: { targetKind: null, payload: null } })
+    // An old atlas id still works as the targetId of a correction; the retired targetRef form does not.
+    expect(validateSubmission({ ...correction, targetId: 'kalnik-crkva-sv-brcka' })).toMatchObject({ ok: true, value: { targetKind: 'heritage_item', targetId: 'kalnik-crkva-sv-brcka' } })
+    expect(validateSubmission({ ...valid, type: 'correction', targetRef: 'kalnik-crkva-sv-brcka' })).toMatchObject({ ok: false, issues: [{ field: 'targetKind', code: 'required' }] })
   })
 
   it('refuses what the contribution rules do not allow', () => {
@@ -86,7 +87,6 @@ describe('validateSubmission with a target', () => {
     expect(issues({ ...correction, targetKind: 'source' })).toContainEqual({ field: 'targetKind', code: 'outOfScope' })
     expect(issues({ ...correction, targetId: undefined })).toContainEqual({ field: 'targetId', code: 'required' })
     expect(issues({ ...correction, targetId: 'Nije Dobro!' })).toContainEqual({ field: 'targetId', code: 'invalid' })
-    expect(issues({ ...correction, targetRef: 'kalnik-crkva-sv-brcka' })).toContainEqual({ field: 'targetRef', code: 'invalid' })
     expect(issues({ ...proposal, targetId: SETTLEMENT })).toContainEqual({ field: 'targetId', code: 'invalid' })
     expect(issues({ ...proposal, targetKind: undefined })).toContainEqual({ field: 'targetKind', code: 'required' })
     expect(issues({ ...proposal, payload: { ...proposal.payload, status: 'published' } })).toContainEqual({ field: 'payload', code: 'unknown', path: 'status' })

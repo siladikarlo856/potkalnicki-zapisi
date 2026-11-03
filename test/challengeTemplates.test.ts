@@ -8,7 +8,7 @@ import {
   addOption, addQuestion, addRound, blankChallengeTemplateContent, challengeIds, duplicateQuestion, isBlankQuestion,
   moveItem, moveOption, removeOption
 } from '../app/utils/challengeTemplateEditor'
-import sample from '../content/heritage/challenge.json'
+import sample from './fixtures/heritage/challenge.json'
 
 const { version: _version, ...sampleContent } = sample
 const MIGRATIONS = new URL('../supabase/migrations/', import.meta.url)
@@ -18,7 +18,7 @@ const clone = (): ChallengeTemplateContent => structuredClone(sampleContent) as 
 const template = (content: unknown = clone()) => ({ name: 'Izazov', content, isCurrent: false, status: 'published' })
 
 describe('challenge template seed', () => {
-  it('seeds exactly content/heritage/challenge.json without its version, as the current published template', () => {
+  it('seeds exactly test/fixtures/heritage/challenge.json without its version, as the current published template', () => {
     const sql = readFileSync(new URL(MIGRATION, MIGRATIONS), 'utf8')
     const literal = /\$challenge\$\n([\s\S]*?)\n\$challenge\$::jsonb/.exec(sql)?.[1]
     expect(literal, 'seed literal').toBeDefined()

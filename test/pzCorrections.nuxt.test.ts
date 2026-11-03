@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import HeritageItem from '../app/pages/potkalnicko-prigorje/bastina/[naselje]/[slug].vue'
 import Contribute from '../app/pages/potkalnicko-prigorje/doprinesi/index.vue'
-import { heritageItemByRoute } from '../shared/utils/atlasData'
+import { heritageItemByRoute } from './helpers/atlasFixtures'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
 
 registerAtlasApiEndpoints()

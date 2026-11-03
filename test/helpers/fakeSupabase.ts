@@ -82,26 +82,6 @@ export async function startFakeSupabase() {
   let beforeDailyUpsert: (() => void) | null = null
   const requests: Array<{ method: string, role: string, path: string }> = []
 
-  function projectWordAreas(row: Row) {
-    if (!Array.isArray(row.areas)) row.areas = []
-    const projected = row.areas as Row[]
-    const ids = new Set(projected.map(area => String(area.id)))
-    const entry = row.entry as Row | undefined
-    const variants = Array.isArray(entry?.variants) ? entry.variants as Row[] : []
-    const usageAreaIds = variants.flatMap(variant => Array.isArray(variant.usages) ? variant.usages as Row[] : [])
-      .map(usage => String(usage.areaId ?? '')).filter(Boolean)
-    function addAreaChain(areaId: string) {
-      let current = areas.find(candidate => String(candidate.id) === areaId)
-      while (current && !ids.has(String(current.id))) {
-        projected.push({ id: current.id, name: current.name, kind: current.kind, parentId: current.parent_id })
-        ids.add(String(current.id))
-        const parentId = current.parent_id ? String(current.parent_id) : ''
-        current = parentId ? areas.find(candidate => String(candidate.id) === parentId) : undefined
-      }
-    }
-    for (const areaId of usageAreaIds) addAreaChain(areaId)
-  }
-
   const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost')
     const key = String(request.headers.apikey ?? '')
@@ -155,9 +135,8 @@ export async function startFakeSupabase() {
       const now = new Date().toISOString()
       const row = isWords
         ? { submission_id: null, submission_place: null, ...body, created_at: now, updated_at: now }
-        : { place_id: null, place_catalog_version: null, target_ref: null, word_id: null, intent: null, ...body, id: nextId++, status: 'pending', created_at: now, reviewed_at: null }
+        : { place_id: null, place_catalog_version: null, word_id: null, intent: null, ...body, id: nextId++, status: 'pending', created_at: now, reviewed_at: null }
       if (isWords) {
-        projectWordAreas(row)
         activate(row)
       }
       table.push(row)
@@ -185,7 +164,6 @@ export async function startFakeSupabase() {
         const wasActive = row.active
         Object.assign(row, body)
         if (isWords) {
-          projectWordAreas(row)
           row.updated_at = new Date().toISOString()
           if (!wasActive) activate(row)
         }
@@ -213,6 +191,12 @@ export async function startFakeSupabase() {
     requests,
     words,
     daily,
+    /** The areas table; a word's areas are read from here (server/utils/wordAreas.ts), not stored with the word. */
+    areas,
+    /** Adds a word's areas ({ id, name, kind, parentId } as the public Area shape) to the areas table. */
+    seedAreas: (list: Array<{ id: string, name: string, kind: string, parentId: string | null }>) => {
+      for (const area of list) areas.push({ id: area.id, name: area.name, kind: area.kind, parent_id: area.parentId, official_code: null, geonames_id: null, status: 'published' })
+    },
     interceptNextDailyUpsert: (hook: () => void) => {
       beforeDailyUpsert = hook
     },
