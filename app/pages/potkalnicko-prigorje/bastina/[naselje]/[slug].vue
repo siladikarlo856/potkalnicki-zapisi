@@ -16,12 +16,19 @@ const { data: payload } = await useAtlasFetch<AtlasHeritageItemResponse>(
 
 const heritageItem = computed(() => payload.value?.item)
 
-const correctionTo = computed(() => heritageItem.value
-  ? localePath({
-      path: '/potkalnicko-prigorje/doprinesi',
-      query: { vrsta: 'ispravak', zapis: heritageItem.value.ref }
-    })
-  : undefined)
+const correctionOpen = ref(false)
+const sourceOpen = ref(false)
+const correctionCurrent = computed<Record<string, string | undefined>>(() => heritageItem.value
+  ? {
+      name: heritageItem.value.name,
+      categoryKey: heritageItem.value.category.key,
+      settlementId: heritageItem.value.settlement?.id ?? '',
+      locality: heritageItem.value.locality ?? '',
+      period: heritageItem.value.period ?? '',
+      description: heritageItem.value.description ?? ''
+    }
+  : {})
+const formatDate = (iso: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'long' }).format(new Date(iso))
 
 useSeoMeta({
   title: () => heritageItem.value ? `${heritageItem.value.name} · Potkalnički zapisi` : '',
@@ -121,14 +128,50 @@ function locationLine() {
       </p>
       <div class="mt-4 flex flex-wrap gap-3">
         <UButton
-          v-if="correctionTo"
-          :to="correctionTo"
           :label="t('pz.heritage.suggestCorrection')"
+          icon="i-lucide-pencil"
           color="neutral"
           variant="outline"
+          aria-haspopup="dialog"
           data-testid="heritage-suggest-correction"
+          @click="correctionOpen = true"
+        />
+        <UButton
+          :label="t('pz.heritage.addSource')"
+          icon="i-lucide-book-plus"
+          color="neutral"
+          variant="outline"
+          aria-haspopup="dialog"
+          data-testid="heritage-suggest-source"
+          @click="sourceOpen = true"
         />
       </div>
+      <p
+        v-if="heritageItem.credits.length"
+        class="mt-4 text-sm text-muted"
+        data-testid="heritage-credits"
+      >
+        {{ t('pz.heritage.credits', { names: heritageItem.credits.map(credit => credit.name).join(', ') }) }}
+      </p>
+      <p
+        class="mt-2 text-xs text-muted"
+        data-testid="heritage-updated"
+      >
+        {{ t('pz.heritage.updatedAt', { date: formatDate(heritageItem.updatedAt) }) }}
+      </p>
+      <HeritageSuggestDialog
+        v-model:open="correctionOpen"
+        kind="heritage_item"
+        mode="correction"
+        :target="{ id: heritageItem.ref, label: heritageItem.name }"
+        :current="correctionCurrent"
+      />
+      <HeritageSuggestDialog
+        v-model:open="sourceOpen"
+        kind="source"
+        mode="proposal"
+        :prefill="{ note: t('pz.heritage.sourceFor', { name: heritageItem.name }) }"
+      />
       <ULink
         v-if="heritageItem.settlement"
         class="mt-4 inline-flex text-sm text-primary"

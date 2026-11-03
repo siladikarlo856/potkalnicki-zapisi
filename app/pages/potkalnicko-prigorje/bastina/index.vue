@@ -7,6 +7,7 @@ defineI18nRoute({ locales: ['hr'] })
 const { t } = useI18n()
 const localePath = useLocalePath()
 
+const proposalOpen = ref(false)
 const municipalityFilter = ref('all')
 const categoryFilter = ref('all')
 
@@ -124,6 +125,23 @@ useSeoMeta({
           </div>
         </li>
       </ul>
+
+      <div class="mt-6">
+        <UButton
+          :label="t('pz.heritage.missingItem')"
+          icon="i-lucide-plus"
+          color="neutral"
+          variant="outline"
+          aria-haspopup="dialog"
+          data-testid="heritage-list-suggest-item"
+          @click="proposalOpen = true"
+        />
+        <HeritageSuggestDialog
+          v-model:open="proposalOpen"
+          kind="heritage_item"
+          mode="proposal"
+        />
+      </div>
     </UPageSection>
   </div>
 </template>

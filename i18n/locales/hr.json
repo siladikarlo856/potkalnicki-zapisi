@@ -283,6 +283,63 @@
       "invalid": "To mjesto nije dostupno. Ponovno odaberi naselje u Hrvatskoj ili obriši odabir.",
       "outOfScope": "To naselje nije u Potkalničkom prigorju. Odaberi jedno od pet općina u popisu mjesta ili nastavi bez mjesta.",
       "listLabel": "Naselja u Hrvatskoj"
+    },
+    "suggest": {
+      "title": {
+        "correction": "Predloži ispravak",
+        "proposal": "Predloži novi zapis"
+      },
+      "description": "Sve što pošalješ prvo pregledamo; ništa se ne objavljuje samo od sebe.",
+      "mode": {
+        "correction": "Ispravak",
+        "proposal": "Novi prijedlog"
+      },
+      "correctionOf": "Ispravak: {name}",
+      "newKind": {
+        "heritage_item": "Novi zapis baštine",
+        "area": "Naselje ili mjesto",
+        "source": "Izvor ili literatura",
+        "word": "Nova riječ"
+      },
+      "correctionHelp": "Promijeni samo ono što nije točno; polja koja ne dirneš ne šaljemo.",
+      "choose": "Odaberi…",
+      "search": "Traži…",
+      "note": "Napomena",
+      "noteHelp": "Zašto je to točno ili odakle znaš (neobavezno).",
+      "wordCorrection": "Predloži ispravak",
+      "successDescription": "Hvala! Pregledat ćemo prijedlog; ništa se ne mijenja dok ga ne potvrdimo.",
+      "pickerLabel": "Što treba ispraviti?",
+      "pickerHelp": "Upiši naziv zapisa baštine, naselja ili riječi.",
+      "nothingFound": "Nema pogodaka. Probaj drugi naziv.",
+      "kinds": {
+        "heritage_item": "Zapisi baštine",
+        "area": "Naselja",
+        "word": "Riječi"
+      },
+      "picker": {
+        "heritage_item": {
+          "title": "Novi zapis baštine",
+          "description": "Crkva, kapela, križ ili drugi spomenik kojeg još nema."
+        },
+        "area": {
+          "title": "Naselje ili mjesto",
+          "description": "Naselje ili mjesno ime koje nedostaje."
+        },
+        "source": {
+          "title": "Izvor ili literatura",
+          "description": "Knjiga, članak ili mrežna stranica koju vrijedi navesti."
+        },
+        "correction": {
+          "title": "Ispravak",
+          "description": "Pronađi zapis, naselje ili riječ i predloži što treba promijeniti."
+        }
+      },
+      "errors": {
+        "required": "Obavezno polje.",
+        "invalid": "Provjeri vrijednost.",
+        "links": "Najviše 2 poveznice, a u riječima nijedna.",
+        "nothingChanged": "Promijeni barem jedno polje."
+      }
     }
   },
   "game": {
@@ -704,7 +761,14 @@
       "backToSettlement": "← Natrag na {name}",
       "settlementItemsTitle": "Zapisi baštine",
       "emptySettlement": "Za ovo naselje još nema zapisa povezanih s officialnom kartom.",
-      "locationPending": "Lokacija se još povezuje s naseljem"
+      "locationPending": "Lokacija se još povezuje s naseljem",
+      "addSource": "Dodaj izvor",
+      "credits": "Zahvaljujemo: {names}",
+      "updatedAt": "Zadnja izmjena: {date}",
+      "sourceFor": "Uz zapis: {name}",
+      "suggestSettlementCorrection": "Predloži ispravak naselja",
+      "suggestItemIn": "Predloži novi zapis baštine u {name}",
+      "missingItem": "Nedostaje crkva, kapela ili križ? Predloži novi zapis"
     },
     "games": {
       "hubTitle": "Igre i kvizovi",
@@ -717,7 +781,7 @@
       "title": "Doprinesi",
       "intro": "Sve što pošalješ prvo pregledamo. Ime je neobavezno, prijava nije potrebna.",
       "back": "Doprinesi",
-      "correctionMissingTarget": "Ovaj obrazac treba otvoriti s poveznice na zapis u Baštini.",
+      "correctionMissingTarget": "Ovaj ispravak ili prijedlog ne možemo otvoriti. Odaberi što želiš poslati na popisu doprinosa.",
       "picker": {
         "word": {
           "title": "Pošalji riječ ili izraz",
@@ -726,11 +790,6 @@
         "memory": {
           "title": "Pošalji sjećanje ili priču",
           "description": "Običaj, legenda, kako se nekad živjelo."
-        },
-        "correction": {
-          "title": "Predloži ispravak",
-          "description": "Netočan naziv, mjesto ili godina u zapisu.",
-          "badge": "s stranice zapisa"
         },
         "photo": {
           "title": "Pošalji fotografiju",

@@ -35,6 +35,7 @@ export interface AreaRow {
   official_code: string | null
   latitude: number | null
   longitude: number | null
+  credits?: unknown
   status: Status
   updated_at: string
 }
@@ -94,6 +95,7 @@ export interface SnapshotSettlement {
   code: string | null
   municipalityId: string
   centroid: { lat: number, lng: number } | null
+  credits: PublicCredit[]
   updatedAt: string
 }
 
@@ -241,7 +243,7 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
     }
     settlements.push({
       id: a.id, slug: a.slug, name: a.name, code: a.official_code, municipalityId: a.parent_id,
-      centroid: coordinates(a.latitude, a.longitude), updatedAt: a.updated_at
+      centroid: coordinates(a.latitude, a.longitude), credits: publicCredits(a.credits), updatedAt: a.updated_at
     })
     areaBySlug.set(`settlement/${a.slug}`, a.id)
   }
@@ -326,7 +328,7 @@ async function readAll<T>(read: (from: number, to: number) => Page<T>) {
 export async function loadPublicContentRows(client: SupabaseClient): Promise<PublicContentRows> {
   const [areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory] = await Promise.all([
     readAll<AreaRow>((from, to) => client.from('areas')
-      .select('id,kind,parent_id,name,slug,official_code,latitude,longitude,status,updated_at')
+      .select('id,kind,parent_id,name,slug,official_code,latitude,longitude,credits,status,updated_at')
       .in('kind', ['region', 'town', 'municipality', 'settlement']).in('status', VISIBLE).order('id').range(from, to)),
     readAll<AreaRegionRow>((from, to) => client.from('area_regions').select('area_id,region_id').order('area_id').order('region_id').range(from, to)),
     readAll<CategoryRow>((from, to) => client.from('heritage_categories').select('id,key,label_hr,sort,status').in('status', VISIBLE).order('id').range(from, to)),

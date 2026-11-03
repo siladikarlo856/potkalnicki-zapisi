@@ -16,6 +16,7 @@ const game = ref(newGame())
 // A round of only the missed questions is practice: it is not shared as a result.
 const replayingMissed = ref(false)
 const variantOpen = ref(false)
+const correctionOpen = ref(false)
 const question = computed(() => game.value.questions[game.value.index])
 const answered = computed(() => game.value.selectedOptionId !== null)
 const correct = computed(() => question.value && game.value.selectedOptionId !== null && isCorrectAnswer(question.value, game.value.selectedOptionId))
@@ -303,6 +304,12 @@ async function replayMissed() {
 
           <HeritageVariantDialog
             v-model:open="variantOpen"
+            :entry="question.entry"
+          />
+
+          <HeritageWordCorrection
+            v-if="answered"
+            v-model:open="correctionOpen"
             :entry="question.entry"
           />
         </template>

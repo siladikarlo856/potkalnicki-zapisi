@@ -246,6 +246,10 @@ What it adds:
 
 The sidecar `heritage_item_sources` is not part of the atomic apply: correction payloads cannot change sources. `node scripts/test-challenges.mjs test/contentApply.integration.test.ts` proves the trigger in SQL and `test/adminInbox.integration.test.ts` the whole inbox flow on the disposable Postgres.
 
+## Suggest dialogs on every page (no migration)
+
+No migration and nothing to apply in production. The public suggestion forms (`HeritageSuggestDialog`, the `/doprinesi` cards) post to the existing `POST /api/submissions` and read two new public routes served from the snapshot store: `GET /api/content/suggest-options` and `GET /api/content/search`. The settlement page response gained `credits` and `updatedAt`, so the snapshot's area query now also selects the `credits` column that the inbox migration added. The privacy notice text is unchanged, so `PRIVACY_NOTICE_VERSION` stays as it is.
+
 ## Challenge templates
 
 `20261103100000_challenge_templates.sql` moves the fixed challenge sets ("Izazov zavičaja") from `content/heritage/challenge.json` into `heritage_challenge_templates`, edited at `/admin/izazovi`. It sorts after `20261103030000_word_admin_columns.sql` and uses the content-table helpers of `20261103010000_content_tables.sql`; if another migration lands first with a later timestamp, rename this file to sort after it before merging.

@@ -184,7 +184,9 @@ describe('Potkalnički zapisi contribute and about pages', () => {
     pickerWindow.document.body.innerHTML = pickerHtml
     expect(pickerWindow.document.querySelector('[data-testid="contribute-type-picker"]')).not.toBeNull()
     expect(pickerHtml).toContain('Pošalji riječ ili izraz')
-    expect(pickerHtml).toContain('Predloži ispravak')
+    expect(pickerHtml).toContain('Novi zapis baštine')
+    expect(pickerHtml).toContain('Izvor ili literatura')
+    expect(pickerHtml).toContain('Ispravak')
     expect(pickerHtml).not.toContain('faza 3')
     await pickerWindow.happyDOM.close()
   })

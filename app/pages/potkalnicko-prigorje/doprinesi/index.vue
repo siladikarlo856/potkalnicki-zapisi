@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { SubmissionType } from '~~/shared/utils/submission'
-import type { ContentTargetResponse } from '~~/shared/types/publicAtlas'
+import type { ContentTargetResponse, SuggestOptionsResponse } from '~~/shared/types/publicAtlas'
+import type { ContributionKind } from '~~/shared/utils/contribution'
+import { parseSuggestQuery, suggestQuery } from '~~/shared/utils/suggest'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -10,49 +12,100 @@ const localePath = useLocalePath()
 const route = useRoute()
 const { words } = useHeritage()
 
-type PickerKind = 'word' | 'memory' | 'correction' | 'photo'
+type PickerKind = 'word' | 'memory' | 'heritage_item' | 'area' | 'source' | 'correction' | 'photo'
 
-const pickerCards: { kind: PickerKind, type?: SubmissionType, soon?: boolean }[] = [
-  { kind: 'word', type: 'word' },
-  { kind: 'memory', type: 'memory' },
-  { kind: 'correction', soon: true },
+// Word and memory keep the free-text form; the other cards open the structured corrections and proposals.
+const pickerCards: { kind: PickerKind, soon?: boolean }[] = [
+  { kind: 'word' },
+  { kind: 'memory' },
+  { kind: 'heritage_item' },
+  { kind: 'area' },
+  { kind: 'source' },
+  { kind: 'correction' },
   { kind: 'photo', soon: true }
 ]
 
-const correctionTargetId = computed(() => {
-  const raw = route.query.zapis
-  return typeof raw === 'string' ? raw : undefined
+const suggest = computed(() => parseSuggestQuery(route.query))
+const suggestError = computed(() => !!route.query.vrsta && ['ispravak', 'prijedlog'].includes(String(route.query.vrsta)) && !suggest.value)
+
+const correctionRequest = computed(() => {
+  const request = suggest.value
+  return request?.mode === 'correction' ? request : undefined
 })
 
-const { data: correctionTarget } = await useAsyncData(
-  () => `correction-target-${correctionTargetId.value ?? 'none'}`,
-  () => (correctionTargetId.value
-    ? $fetch<ContentTargetResponse>('/api/content/target', { query: { kind: 'heritage_item', id: correctionTargetId.value } })
-    : Promise.resolve(null)),
-  { watch: [correctionTargetId] }
+interface CorrectionTarget { kind: ContributionKind, id: string, label: string, current: Record<string, string | undefined> }
+
+// What a correction is about, by UUID or (for old links) an old id. Words come from the list the page loads.
+const { data: correction, status: correctionStatus } = await useAsyncData<CorrectionTarget | null>(
+  () => `correction-target-${correctionRequest.value?.kind}-${correctionRequest.value?.id}-${words.value.length}`,
+  async () => {
+    const request = correctionRequest.value
+    if (!request) return null
+    if (request.kind === 'word') {
+      const word = words.value.find(entry => entry.id === request.id)
+      return word
+        ? { kind: 'word' as const, id: word.id, label: word.headword, current: { meaningHr: word.meaning.hr ?? '', meaningEn: word.meaning.en ?? '', partOfSpeech: word.partOfSpeech ?? '' } }
+        : null
+    }
+    try {
+      const target = await $fetch<ContentTargetResponse>('/api/content/target', { query: { kind: request.kind, id: request.id } })
+      if (target.kind === 'heritage_item') {
+        const { item } = target
+        return { kind: 'heritage_item' as const, id: item.id, label: item.name, current: { name: item.name, categoryKey: item.category.key, settlementId: item.settlement?.id ?? '', locality: item.locality ?? '' } }
+      }
+      if (target.kind === 'area' && target.area.areaKind === 'settlement') {
+        return { kind: 'area' as const, id: target.area.id, label: target.area.name, current: { name: target.area.name } }
+      }
+    } catch {
+      // unknown, gone or not correctable: the page says so below
+    }
+    return null
+  },
+  { watch: [correctionRequest, () => words.value.length] }
 )
 
-const correctionItem = computed(() => {
-  const target = correctionTarget.value
-  return target?.kind === 'heritage_item' ? target.item : undefined
+// A proposal can start from a settlement (`naselje=<slug>`) or municipality (`opcina=<slug>`) of the link.
+const proposalRequest = computed(() => {
+  const request = suggest.value
+  return request?.mode === 'proposal' ? request : undefined
+})
+const { data: options } = await useAsyncData(
+  () => `proposal-options-${proposalRequest.value?.settlement ?? ''}-${proposalRequest.value?.municipality ?? ''}`,
+  () => (proposalRequest.value?.settlement || proposalRequest.value?.municipality
+    ? $fetch<SuggestOptionsResponse>('/api/content/suggest-options')
+    : Promise.resolve(null)),
+  { watch: [proposalRequest] }
+)
+const proposalPrefill = computed(() => {
+  const request = proposalRequest.value
+  const prefill: Record<string, string> = {}
+  if (!request || !options.value) return prefill
+  const settlement = request.settlement ? options.value.settlements.find(row => row.slug === request.settlement) : undefined
+  const municipality = request.municipality ? options.value.municipalities.find(row => row.slug === request.municipality) : undefined
+  if (request.kind === 'heritage_item') {
+    if (settlement) prefill.settlementId = settlement.id
+    else if (municipality) prefill.municipalityId = municipality.id
+  } else if (request.kind === 'area' && (municipality || settlement)) {
+    prefill.parentId = (municipality ?? options.value.municipalities.find(row => row.id === settlement?.municipalityId))?.id ?? ''
+  }
+  return prefill
 })
 
 const selectedKind = computed(() => {
   const raw = route.query.vrsta
   if (raw === 'rijec' || raw === 'rijec-izraz') return 'word' as const
   if (raw === 'sjecanje' || raw === 'prica') return 'memory' as const
-  if (raw === 'ispravak' && correctionItem.value) return 'correction' as const
   return undefined
 })
-
-const correctionError = computed(() => route.query.vrsta === 'ispravak' && !correctionItem.value)
 
 const fixedType = computed(() => {
   if (selectedKind.value === 'word') return 'word' as SubmissionType
   if (selectedKind.value === 'memory') return 'memory' as SubmissionType
-  if (selectedKind.value === 'correction') return 'correction' as SubmissionType
   return undefined
 })
+
+const showPicker = computed(() => !selectedKind.value && !suggest.value && !suggestError.value)
+const correctionMissing = computed(() => !!correctionRequest.value && correctionStatus.value !== 'pending' && !correction.value)
 
 const prefillWord = computed(() => {
   const wordId = route.query.rijec
@@ -60,11 +113,31 @@ const prefillWord = computed(() => {
   return words.value.find(entry => entry.id === wordId)?.headword
 })
 
-function pickerTo(card: typeof pickerCards[number]) {
-  if (card.soon || !card.type) return undefined
-  const vrsta = card.kind === 'word' ? 'rijec' : 'sjecanje'
-  return localePath({ path: '/potkalnicko-prigorje/doprinesi', query: { ...route.query, vrsta } })
+function cardTo(kind: PickerKind) {
+  const path = '/potkalnicko-prigorje/doprinesi'
+  if (kind === 'word' || kind === 'memory') return localePath({ path, query: { ...route.query, vrsta: kind === 'word' ? 'rijec' : 'sjecanje' } })
+  if (kind === 'correction') return localePath({ path, query: { vrsta: 'ispravak' } })
+  if (kind === 'photo') return undefined
+  return localePath({ path, query: suggestQuery('proposal', kind as ContributionKind) })
 }
+
+function pick(kind: ContributionKind, id: string) {
+  return navigateTo(localePath({ path: '/potkalnicko-prigorje/doprinesi', query: suggestQuery('correction', kind, { id }) }))
+}
+
+function pickerTitle(kind: PickerKind) {
+  return kind === 'word' || kind === 'memory' || kind === 'photo' ? t(`pz.contribute.picker.${kind}.title`) : t(`heritage.suggest.picker.${kind}.title`)
+}
+function pickerDescription(kind: PickerKind) {
+  return kind === 'word' || kind === 'memory' || kind === 'photo' ? t(`pz.contribute.picker.${kind}.description`) : t(`heritage.suggest.picker.${kind}.description`)
+}
+
+const heading = computed(() => {
+  const request = suggest.value
+  if (request?.mode === 'correction') return t('heritage.suggest.picker.correction.title')
+  if (request?.mode === 'proposal') return t(`heritage.suggest.picker.${request.kind}.title`)
+  return selectedKind.value ? t(`pz.contribute.picker.${selectedKind.value}.title`) : ''
+})
 
 useSeoMeta({
   title: () => t('pz.contribute.title'),
@@ -77,7 +150,7 @@ useSeoMeta({
 <template>
   <UContainer class="py-12 sm:py-16">
     <div class="mx-auto flex max-w-2xl flex-col gap-8">
-      <header v-if="!selectedKind">
+      <header v-if="showPicker">
         <h1 class="text-3xl font-bold tracking-tight text-highlighted sm:text-4xl">
           {{ t('pz.contribute.title') }}
         </h1>
@@ -87,7 +160,7 @@ useSeoMeta({
       </header>
 
       <div
-        v-if="!selectedKind"
+        v-if="showPicker"
         class="grid gap-4"
         data-testid="contribute-type-picker"
       >
@@ -98,19 +171,18 @@ useSeoMeta({
           :class="card.soon ? 'opacity-90' : undefined"
         >
           <NuxtLink
-            v-if="pickerTo(card)"
-            :to="pickerTo(card)!"
+            v-if="cardTo(card.kind)"
+            :to="cardTo(card.kind)!"
             class="block"
+            :data-testid="`contribute-card-${card.kind}`"
           >
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-1">
-                <h2 class="text-lg font-semibold text-highlighted">
-                  {{ t(`pz.contribute.picker.${card.kind}.title`) }}
-                </h2>
-                <p class="text-sm text-muted">
-                  {{ t(`pz.contribute.picker.${card.kind}.description`) }}
-                </p>
-              </div>
+            <div class="space-y-1">
+              <h2 class="text-lg font-semibold text-highlighted">
+                {{ pickerTitle(card.kind) }}
+              </h2>
+              <p class="text-sm text-muted">
+                {{ pickerDescription(card.kind) }}
+              </p>
             </div>
           </NuxtLink>
           <div
@@ -119,15 +191,15 @@ useSeoMeta({
           >
             <div class="space-y-1">
               <h2 class="text-lg font-semibold text-highlighted">
-                {{ t(`pz.contribute.picker.${card.kind}.title`) }}
+                {{ pickerTitle(card.kind) }}
               </h2>
               <p class="text-sm text-muted">
-                {{ t(`pz.contribute.picker.${card.kind}.description`) }}
+                {{ pickerDescription(card.kind) }}
               </p>
             </div>
             <UBadge
               v-if="card.soon"
-              :label="t(`pz.contribute.picker.${card.kind}.badge`)"
+              :label="t('pz.contribute.picker.photo.badge')"
               color="neutral"
               variant="subtle"
             />
@@ -136,12 +208,21 @@ useSeoMeta({
       </div>
 
       <UAlert
-        v-else-if="correctionError"
+        v-else-if="suggestError || correctionMissing"
         color="error"
         variant="subtle"
         :title="t('pz.contribute.correctionMissingTarget')"
         icon="i-lucide-circle-alert"
-      />
+      >
+        <template #actions>
+          <UButton
+            :to="localePath('/potkalnicko-prigorje/doprinesi')"
+            :label="t('pz.contribute.back')"
+            color="neutral"
+            variant="subtle"
+          />
+        </template>
+      </UAlert>
 
       <div
         v-else
@@ -157,13 +238,31 @@ useSeoMeta({
           class="self-start px-0"
         />
         <h2 class="text-2xl font-semibold text-highlighted">
-          {{ t(`pz.contribute.picker.${selectedKind}.title`) }}
+          {{ heading }}
         </h2>
+        <HeritageSuggestPicker
+          v-if="suggest?.mode === 'search'"
+          @pick="pick"
+        />
+        <HeritageSuggestForm
+          v-else-if="correction && correctionRequest"
+          :key="`correction-${correction.kind}-${correction.id}`"
+          :kind="correction.kind"
+          mode="correction"
+          :target="{ id: correction.id, label: correction.label }"
+          :current="correction.current"
+        />
+        <HeritageSuggestForm
+          v-else-if="proposalRequest"
+          :key="`proposal-${proposalRequest.kind}-${JSON.stringify(proposalPrefill)}`"
+          :kind="proposalRequest.kind"
+          mode="proposal"
+          :prefill="proposalPrefill"
+        />
         <HeritageSubmissionForm
+          v-else-if="selectedKind"
           :word="prefillWord"
           :fixed-type="fixedType"
-          :target-ref="correctionItem?.ref"
-          :correction-item-name="correctionItem?.name"
           hide-type-picker
         />
       </div>

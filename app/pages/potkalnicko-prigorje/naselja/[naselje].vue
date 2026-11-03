@@ -13,6 +13,9 @@ const { data: page } = await useAtlasFetch<AtlasSettlementResponse>(
   () => `/api/atlas/settlements/${settlementSlug.value}`
 )
 
+const correctionOpen = ref(false)
+const proposalOpen = ref(false)
+const formatDate = (iso: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'long' }).format(new Date(iso))
 const settlement = computed(() => page.value?.settlement)
 const municipality = computed(() => page.value?.municipality)
 
@@ -95,6 +98,55 @@ useSeoMeta({
       >
         {{ t('pz.heritage.emptySettlement') }}
       </p>
+    </UPageSection>
+
+    <UPageSection :ui="{ root: 'border-t border-default' }">
+      <div class="flex flex-wrap gap-3">
+        <UButton
+          :label="t('pz.heritage.suggestSettlementCorrection')"
+          icon="i-lucide-pencil"
+          color="neutral"
+          variant="outline"
+          aria-haspopup="dialog"
+          data-testid="settlement-suggest-correction"
+          @click="correctionOpen = true"
+        />
+        <UButton
+          :label="t('pz.heritage.suggestItemIn', { name: settlement.name })"
+          icon="i-lucide-plus"
+          color="neutral"
+          variant="outline"
+          aria-haspopup="dialog"
+          data-testid="settlement-suggest-item"
+          @click="proposalOpen = true"
+        />
+      </div>
+      <p
+        v-if="settlement.credits.length"
+        class="mt-4 text-sm text-muted"
+        data-testid="settlement-credits"
+      >
+        {{ t('pz.heritage.credits', { names: settlement.credits.map(credit => credit.name).join(', ') }) }}
+      </p>
+      <p
+        class="mt-2 text-xs text-muted"
+        data-testid="settlement-updated"
+      >
+        {{ t('pz.heritage.updatedAt', { date: formatDate(settlement.updatedAt) }) }}
+      </p>
+      <HeritageSuggestDialog
+        v-model:open="correctionOpen"
+        kind="area"
+        mode="correction"
+        :target="{ id: settlement.id, label: settlement.name }"
+        :current="{ name: settlement.name }"
+      />
+      <HeritageSuggestDialog
+        v-model:open="proposalOpen"
+        kind="heritage_item"
+        mode="proposal"
+        :prefill="{ settlementId: settlement.id }"
+      />
     </UPageSection>
   </div>
 </template>

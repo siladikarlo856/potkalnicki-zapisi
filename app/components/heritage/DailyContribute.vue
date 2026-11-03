@@ -12,6 +12,7 @@ const intents = [
 ] as const satisfies ReadonlyArray<{ id: SubmissionIntent, icon: string, label: string }>
 
 const open = ref<SubmissionIntent>()
+const correctionOpen = ref(false)
 const formPanel = useTemplateRef<HTMLElement>('formPanel')
 const triggers = useTemplateRef<Array<{ $el: HTMLElement }>>('triggers')
 
@@ -41,7 +42,7 @@ async function close() {
     >
       {{ t('daily.contribute.title') }}
     </h3>
-    <div class="grid gap-2 sm:grid-cols-2">
+    <div class="grid gap-2 sm:grid-cols-3">
       <UButton
         v-for="intent in intents"
         ref="triggers"
@@ -56,7 +57,24 @@ async function close() {
         class="min-h-11 justify-start whitespace-normal"
         @click="toggle(intent.id)"
       />
+      <UButton
+        icon="i-lucide-pencil"
+        :label="t('heritage.suggest.wordCorrection')"
+        aria-haspopup="dialog"
+        data-testid="daily-contribute-correction"
+        color="neutral"
+        variant="outline"
+        block
+        class="min-h-11 justify-start whitespace-normal"
+        @click="correctionOpen = true"
+      />
     </div>
+    <HeritageSuggestDialog
+      v-model:open="correctionOpen"
+      kind="word"
+      mode="correction"
+      :target="{ id: props.wordId, label: props.headword }"
+    />
     <div
       v-if="open"
       ref="formPanel"

@@ -14,6 +14,7 @@ const { data: page } = await useAtlasFetch<AtlasMunicipalityResponse>(
   () => `/api/atlas/municipalities/${municipalitySlug.value}`
 )
 
+const proposalOpen = ref(false)
 const municipality = computed(() => page.value?.municipality)
 const stats = computed(() => page.value?.stats)
 
@@ -82,6 +83,24 @@ useSeoMeta({
           </ULink>
         </li>
       </ul>
+    </UPageSection>
+
+    <UPageSection :ui="{ root: 'border-t border-default' }">
+      <UButton
+        :label="t('pz.heritage.missingItem')"
+        icon="i-lucide-plus"
+        color="neutral"
+        variant="outline"
+        aria-haspopup="dialog"
+        data-testid="municipality-suggest-item"
+        @click="proposalOpen = true"
+      />
+      <HeritageSuggestDialog
+        v-model:open="proposalOpen"
+        kind="heritage_item"
+        mode="proposal"
+        :prefill="{ municipalityId: municipality.id }"
+      />
     </UPageSection>
   </div>
 </template>

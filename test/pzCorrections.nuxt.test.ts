@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import HeritageItem from '../app/pages/potkalnicko-prigorje/bastina/[naselje]/[slug].vue'
 import Contribute from '../app/pages/potkalnicko-prigorje/doprinesi/index.vue'
@@ -7,44 +7,89 @@ import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
 
 registerAtlasApiEndpoints()
 
+const posted: Record<string, unknown>[] = []
+registerEndpoint('/api/submissions', {
+  method: 'POST',
+  handler: async (event) => {
+    posted.push(await (event as unknown as { web: { request: Request } }).web.request.json())
+    return { ok: true }
+  }
+})
+
+afterEach(() => {
+  posted.length = 0
+})
+
 describe('heritage correction flow', () => {
   const item = heritageItemByRoute('kalnik', 'crkva-sv-brcka')!
 
-  it('links an item page to the prefilled correction form', async () => {
+  it('opens the correction dialog from an item page, with the last edit date', async () => {
     const page = await mountSuspended(HeritageItem, {
-      route: { path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } }
+      route: { path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } },
+      attachTo: document.body
     })
     await vi.waitFor(() => expect(page.find('[data-testid="heritage-suggest-correction"]').exists()).toBe(true))
-    const link = page.find('[data-testid="heritage-suggest-correction"]')
-    expect(link.attributes('href')).toContain('vrsta=ispravak')
-    expect(link.attributes('href')).toContain(`zapis=${item.id}`)
+    expect(page.find('[data-testid="heritage-updated"]').text()).toContain('Zadnja izmjena')
+    await page.find('[data-testid="heritage-suggest-correction"]').trigger('click')
+    await vi.waitFor(() => expect(document.body.querySelector('[role="dialog"] [data-testid="suggest-form"]')).not.toBeNull())
+    const heading = document.body.querySelector('[data-testid="suggest-heading"]')!.textContent
+    expect(heading).toContain(item.name)
+    const name = document.body.querySelector<HTMLInputElement>('[role="dialog"] input[name="p.name"], [role="dialog"] input')!
+    expect(name.value).toBe(item.name)
+    page.unmount()
   })
 
-  it('prefills the correction form from query parameters', async () => {
-    registerEndpoint('/api/content/target', () => ({
-      kind: 'heritage_item' as const,
-      item: {
-        ref: item.id,
-        id: 'test-id',
-        slug: item.slug,
-        name: item.name,
-        category: { key: 'church', label: 'Crkva' },
-        municipality: { id: 'm', slug: 'opcina-kalnik', label: 'Općina Kalnik' },
-        settlement: { id: 's', slug: 'kalnik', name: 'Kalnik' },
-        locality: null,
-        verification: 'unverified' as const,
-        noindex: false,
-        path: `/potkalnicko-prigorje/bastina/kalnik/${item.slug}`
-      }
-    }))
+  it('offers "Dodaj izvor" as a source proposal', async () => {
+    const page = await mountSuspended(HeritageItem, {
+      route: { path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } },
+      attachTo: document.body
+    })
+    await vi.waitFor(() => expect(page.find('[data-testid="heritage-suggest-source"]').exists()).toBe(true))
+    await page.find('[data-testid="heritage-suggest-source"]').trigger('click')
+    await vi.waitFor(() => expect(document.body.querySelector('[data-testid="suggest-heading"]')).not.toBeNull())
+    expect(document.body.querySelector('[data-testid="suggest-heading"]')!.textContent).toContain('Izvor ili literatura')
+    page.unmount()
+  })
+
+  it('resolves an old correction link into the structured correction form', async () => {
     const page = await mountSuspended(Contribute, {
       route: `/potkalnicko-prigorje/doprinesi?vrsta=ispravak&zapis=${item.id}`
     })
-    await vi.waitFor(() => expect(page.find('[data-testid="contribute-form"]').exists()).toBe(true))
-    expect(page.text()).toContain(item.name)
-    const textarea = page.find('textarea')
-    expect(textarea.exists()).toBe(true)
-    expect((textarea.element as HTMLTextAreaElement).value).toContain(item.name)
-    expect((textarea.element as HTMLTextAreaElement).value).toContain('Predloženi ispravak:')
+    await vi.waitFor(() => expect(page.find('[data-testid="suggest-form"]').exists()).toBe(true))
+    expect(page.find('[data-testid="suggest-heading"]').text()).toContain(item.name)
+    expect((page.find('input').element as HTMLInputElement).value).toBe(item.name)
+  })
+
+  it('says so when the correction target does not exist', async () => {
+    const page = await mountSuspended(Contribute, {
+      route: '/potkalnicko-prigorje/doprinesi?vrsta=ispravak&sadrzaj=heritage_item&id=no-such-item'
+    })
+    await vi.waitFor(() => expect(page.text()).toContain('ne možemo otvoriti'))
+  })
+})
+
+describe('/doprinesi cards', () => {
+  it('lists the new cards and links them to the structured forms', async () => {
+    const page = await mountSuspended(Contribute, { route: '/potkalnicko-prigorje/doprinesi' })
+    for (const kind of ['word', 'memory', 'heritage_item', 'area', 'source', 'correction']) {
+      expect(page.find(`[data-testid="contribute-card-${kind}"]`).exists()).toBe(true)
+    }
+    expect(page.find('[data-testid="contribute-card-heritage_item"]').attributes('href')).toContain('vrsta=prijedlog')
+    expect(page.find('[data-testid="contribute-card-correction"]').attributes('href')).toContain('vrsta=ispravak')
+  })
+
+  it('searches for what to correct', async () => {
+    const page = await mountSuspended(Contribute, { route: '/potkalnicko-prigorje/doprinesi?vrsta=ispravak' })
+    await vi.waitFor(() => expect(page.find('[data-testid="suggest-picker"]').exists()).toBe(true))
+    await page.find('[data-testid="suggest-picker"] input').setValue('Kalnik')
+    await vi.waitFor(() => expect(page.find('[data-testid="suggest-pick-area"]').exists()).toBe(true), { timeout: 3000 })
+  })
+
+  it('prefills a proposal from the settlement of the link', async () => {
+    const page = await mountSuspended(Contribute, {
+      route: '/potkalnicko-prigorje/doprinesi?vrsta=prijedlog&sadrzaj=heritage_item&naselje=kalnik'
+    })
+    await vi.waitFor(() => expect(page.find('[data-testid="suggest-form"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(page.text()).toContain('Kalnik'))
   })
 })

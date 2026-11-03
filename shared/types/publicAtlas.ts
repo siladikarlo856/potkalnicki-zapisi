@@ -93,7 +93,12 @@ export interface AtlasMunicipalityResponse {
 }
 
 export interface AtlasSettlementResponse {
-  settlement: PublicSettlementRef & { centroid: { lat: number, lng: number } | null }
+  settlement: PublicSettlementRef & {
+    centroid: { lat: number, lng: number } | null
+    /** Consenting named contributors ("Zahvaljujemo") and the last edit date ("Zadnja izmjena") */
+    credits: PublicCredit[]
+    updatedAt: string
+  }
   municipality: PublicMunicipalityRef
   items: PublicHeritageListItem[]
 }
@@ -130,3 +135,16 @@ export type ContentTargetResponse
   = | { kind: 'heritage_item', item: PublicHeritageListItem & { ref: string } }
     | { kind: 'area', area: PublicAreaTarget }
     | { kind: 'source', source: PublicSource }
+
+/** GET /api/content/suggest-options: the published rows a suggestion form picks from (ids are content UUIDs). */
+export interface SuggestOptionsResponse {
+  categories: Array<{ id: string, key: string, label: string }>
+  municipalities: Array<{ id: string, slug: string, label: string }>
+  settlements: Array<{ id: string, slug: string, name: string, municipalityId: string }>
+}
+
+/** GET /api/content/search?q=: what the "Ispravak" card offers to correct (words are searched in the browser). */
+export interface ContentSearchResponse {
+  items: Array<{ id: string, name: string, context: string }>
+  settlements: Array<{ id: string, name: string, context: string }>
+}

@@ -25,6 +25,7 @@ const seen = ref(false)
 const known = ref(0)
 const unknown = ref(0)
 const variantOpen = ref(false)
+const correctionOpen = ref(false)
 
 const flipControl = useTemplateRef<HTMLElement>('flipControl')
 const restartControl = useTemplateRef<HTMLElement>('restartControl')
@@ -91,8 +92,8 @@ async function score(knewIt: boolean) {
 
 // While the report dialog is open the arrow keys belong to it, not to the cards behind it.
 defineShortcuts(computed(() => ({
-  arrowleft: entry.value && seen.value && !variantOpen.value ? () => score(false) : false,
-  arrowright: entry.value && seen.value && !variantOpen.value ? () => score(true) : false
+  arrowleft: entry.value && seen.value && !variantOpen.value && !correctionOpen.value ? () => score(false) : false,
+  arrowright: entry.value && seen.value && !variantOpen.value && !correctionOpen.value ? () => score(true) : false
 })))
 
 function shuffled(cards: WordEntry[]) {
@@ -267,6 +268,12 @@ async function restart(cards: WordEntry[] = words.value) {
 
           <HeritageVariantDialog
             v-model:open="variantOpen"
+            :entry="entry"
+          />
+
+          <HeritageWordCorrection
+            v-if="seen"
+            v-model:open="correctionOpen"
             :entry="entry"
           />
         </template>

@@ -3,13 +3,15 @@ import type {
   AtlasMunicipalityResponse,
   AtlasOverviewResponse,
   AtlasSettlementResponse,
+  ContentSearchResponse,
   ContentTargetResponse,
   PublicCategoryRef,
   PublicHeritageItem,
   PublicHeritageListItem,
   PublicMunicipalityRef,
   PublicPlaceStats,
-  PublicSettlementRef
+  PublicSettlementRef,
+  SuggestOptionsResponse
 } from '../../shared/types/publicAtlas'
 import { pzRoutes } from '../../shared/utils/appRoutes'
 import { slugHistoryKey } from './publicContent'
@@ -187,7 +189,7 @@ export function municipalityPage(content: PublicContent, m: SnapshotMunicipality
 
 export function settlementPage(content: PublicContent, s: SnapshotSettlement): AtlasSettlementResponse {
   return {
-    settlement: { ...settlementRef(s), centroid: s.centroid },
+    settlement: { ...settlementRef(s), centroid: s.centroid, credits: s.credits, updatedAt: s.updatedAt },
     municipality: municipalityRef(content.municipalityById.get(s.municipalityId)!),
     items: content.items.filter(i => i.settlementId === s.id).map(i => heritageListItem(content, i))
   }
@@ -246,4 +248,29 @@ export function contentTarget(content: PublicContent, kind: ContentTargetKind, v
     if (source) return { status: 'ok', value: { kind, source } }
   }
   return content.gone.ids.has(id) ? { status: 'gone' } : { status: 'not_found' }
+}
+
+/** The published categories, towns, municipalities and settlements a suggestion form picks from. */
+export function suggestOptions(content: PublicContent): SuggestOptionsResponse {
+  return {
+    categories: [...content.categories.values()].filter(c => c.filterable).sort((a, b) => a.sort - b.sort || a.label.localeCompare(b.label, 'hr'))
+      .map(c => ({ id: c.id, key: c.key, label: c.label })),
+    municipalities: content.municipalities.map(m => ({ id: m.id, slug: m.slug, label: m.label })),
+    settlements: content.settlements.map(s => ({ id: s.id, slug: s.slug, name: s.name, municipalityId: s.municipalityId }))
+  }
+}
+
+const fold = (value: string) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'dj')
+
+/** Heritage items and settlements whose name contains the query (diacritics ignored), a few of each. */
+export function searchContent(content: PublicContent, query: string, limit = 8): ContentSearchResponse {
+  const q = fold(query.trim())
+  if (q.length < 2) return { items: [], settlements: [] }
+  const items = content.items.filter(i => fold(i.name).includes(q)).slice(0, limit).map((i) => {
+    const settlement = i.settlementId ? content.settlementById.get(i.settlementId) : undefined
+    return { id: i.id, name: i.name, context: settlement?.name ?? content.municipalityById.get(i.municipalityId)?.label ?? '' }
+  })
+  const settlements = content.settlements.filter(s => fold(s.name).includes(q)).slice(0, limit)
+    .map(s => ({ id: s.id, name: s.name, context: content.municipalityById.get(s.municipalityId)?.label ?? '' }))
+  return { items, settlements }
 }

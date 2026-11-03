@@ -1,4 +1,5 @@
-import { createError, getQuery, getRouterParam } from 'h3'
+import { createError, getRouterParam } from 'h3'
+import type { H3Event } from 'h3'
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { buildPublicContent } from '../../server/utils/publicContent'
 import {
@@ -11,7 +12,9 @@ import {
   resolveHeritageItem,
   resolveMunicipality,
   resolveSettlement,
-  settlementPage
+  searchContent,
+  settlementPage,
+  suggestOptions
 } from '../../server/utils/publicAtlas'
 import { fakeContentRows } from './fakeContentSeed'
 
@@ -28,6 +31,12 @@ function heritageItemResponse(settlement: string, slug: string) {
   if (result.status === 'gone') throw createError({ statusCode: 410, statusMessage: 'Content has been removed' })
   if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Heritage item not found' })
   return { item: heritageItemDetail(content(), result.value) }
+}
+
+// registerEndpoint hands handlers a web-backed event, which h3's getQuery cannot read: take it from the request URL.
+function getQuery(event: H3Event): Record<string, string> {
+  const url = (event as unknown as { web?: { request: Request } }).web?.request.url ?? event.path
+  return Object.fromEntries(new URL(url, 'http://localhost').searchParams)
 }
 
 /** Mock public atlas API routes for component tests (same data as the fake Supabase seed). */
@@ -86,4 +95,10 @@ export function registerAtlasApiEndpoints() {
     if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Content not found' })
     return result.value
   })
+  registerEndpoint('/api/content/suggest-options', () => suggestOptions(content()))
+  registerEndpoint('/api/content/search', (event) => {
+    const q = getQuery(event).q
+    return searchContent(content(), typeof q === 'string' ? q : '')
+  })
+  registerEndpoint('/api/submission-token', () => ({ token: 'test-token' }))
 }
