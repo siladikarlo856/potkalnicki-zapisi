@@ -1,0 +1,444 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { AtlasItemStatus } from '../../shared/types/atlas'
+import type { PublicCredit, PublicMunicipalityKind } from '../../shared/types/publicAtlas'
+import { isCorrectionTargetRefFormat } from '../../shared/utils/correctionReport'
+
+// The public read layer over the content tables: one in-process snapshot of everything the public atlas
+// shows, built from the database and served stale-while-revalidate. Admin writes call
+// invalidatePublicContent() so the next request sees them. Queries over the snapshot live in
+// publicAtlas.ts; this file only loads, shapes and caches it.
+//
+// Visibility rules (draft rows are never loaded, so they are simply absent):
+// - scope is the region ATLAS_REGION_SLUG: its member towns and municipalities, their settlements and the
+//   heritage items of those towns and municipalities;
+// - a row is live when it and every place above it are published, and gone (410) when it or a place above
+//   it is archived. Archiving a settlement or municipality therefore takes its pages and items offline too.
+
+/** The region whose members make up the public atlas (Potkalničko prigorje). */
+export const ATLAS_REGION_SLUG = 'potkalnicko-prigorje'
+
+/** Snapshot age after which a request triggers a background refresh. */
+export const PUBLIC_CONTENT_TTL_MS = 60_000
+
+const PAGE = 1000
+const VISIBLE = ['published', 'archived']
+const LEGACY_KINDS = ['area', 'heritage_item', 'heritage_category', 'source']
+
+type Status = 'published' | 'archived'
+
+export interface AreaRow {
+  id: string
+  kind: string
+  parent_id: string | null
+  name: string
+  slug: string | null
+  official_code: string | null
+  latitude: number | null
+  longitude: number | null
+  status: Status
+  updated_at: string
+}
+export interface AreaRegionRow { area_id: string, region_id: string }
+export interface CategoryRow { id: string, key: string, label_hr: string, sort: number, status: Status }
+export interface SourceRow { id: string, title: string, type: string, url: string | null, status: Status }
+export interface ItemRow {
+  id: string
+  name: string
+  slug: string
+  category_id: string
+  municipality_id: string
+  settlement_id: string | null
+  locality: string | null
+  verification: AtlasItemStatus
+  heritage_status: string | null
+  registry_number: string | null
+  period: string | null
+  description: string | null
+  research_notes: string
+  latitude: number | null
+  longitude: number | null
+  noindex: boolean
+  credits: unknown
+  status: Status
+  updated_at: string
+}
+export interface ItemSourceRow { item_id: string, source_id: string, position: number }
+export interface LegacyIdRow { kind: string, legacy_id: string, entity_id: string }
+export interface SlugHistoryRow { kind: string, namespace: string, scope_id: string | null, slug: string, entity_id: string }
+
+/** Everything the snapshot is built from, as read from the database. */
+export interface PublicContentRows {
+  areas: AreaRow[]
+  areaRegions: AreaRegionRow[]
+  categories: CategoryRow[]
+  sources: SourceRow[]
+  items: ItemRow[]
+  itemSources: ItemSourceRow[]
+  legacyIds: LegacyIdRow[]
+  slugHistory: SlugHistoryRow[]
+}
+
+export interface SnapshotMunicipality {
+  id: string
+  slug: string
+  name: string
+  label: string
+  kind: PublicMunicipalityKind
+  updatedAt: string
+}
+
+export interface SnapshotSettlement {
+  id: string
+  slug: string
+  name: string
+  code: string | null
+  municipalityId: string
+  centroid: { lat: number, lng: number } | null
+  updatedAt: string
+}
+
+export interface SnapshotCategory {
+  id: string
+  key: string
+  label: string
+  sort: number
+  /** Archived categories still label their items but are left out of filters. */
+  filterable: boolean
+}
+
+export interface SnapshotSource {
+  id: string
+  title: string
+  type: string
+  url: string | null
+}
+
+export interface SnapshotItem {
+  id: string
+  ref: string
+  slug: string
+  name: string
+  categoryId: string
+  municipalityId: string
+  settlementId: string | null
+  locality: string | null
+  verification: AtlasItemStatus
+  heritageStatus: string | null
+  registryNumber: string | null
+  period: string | null
+  description: string | null
+  researchNotes: string
+  coordinates: { lat: number, lng: number } | null
+  noindex: boolean
+  credits: PublicCredit[]
+  sourceIds: string[]
+  updatedAt: string
+}
+
+/** Where an archived (gone) row used to be reachable, so its old URL answers 410. */
+export interface GoneRoutes {
+  /** `${namespace}/${slug}` of archived towns, municipalities and settlements */
+  areas: Set<string>
+  /** `${settlementId}/${slug}` of archived items */
+  items: Set<string>
+  /** ids of every gone area, item and source */
+  ids: Set<string>
+}
+
+export interface PublicContent {
+  region: { id: string, slug: string, name: string } | null
+  /** Live rows, in display order (towns first, then by name; settlements and items by name). */
+  municipalities: SnapshotMunicipality[]
+  settlements: SnapshotSettlement[]
+  items: SnapshotItem[]
+  categories: Map<string, SnapshotCategory>
+  sources: Map<string, SnapshotSource>
+  municipalityById: Map<string, SnapshotMunicipality>
+  settlementById: Map<string, SnapshotSettlement>
+  itemById: Map<string, SnapshotItem>
+  /** `${namespace}/${slug}` → area id, namespace 'lau' (towns and municipalities) or 'settlement' */
+  areaBySlug: Map<string, string>
+  /** `${settlementId}/${slug}` → item id */
+  itemByRoute: Map<string, string>
+  gone: GoneRoutes
+  /** `${kind}:${legacyId}` → entity id */
+  legacyIds: Map<string, string>
+  /** `${kind}|${namespace}|${scopeId ?? ''}|${slug}` → entity id */
+  slugHistory: Map<string, string>
+  loadedAt: number
+}
+
+const collator = new Intl.Collator('hr')
+const byName = <T extends { name: string, id: string }>(a: T, b: T) => collator.compare(a.name, b.name) || (a.id < b.id ? -1 : 1)
+
+export function municipalityLabel(kind: PublicMunicipalityKind, name: string) {
+  return `${kind === 'town' ? 'Grad' : 'Općina'} ${name}`
+}
+
+export function areaNamespace(kind: string) {
+  return kind === 'town' || kind === 'municipality' ? 'lau' : kind
+}
+
+export const slugHistoryKey = (kind: string, namespace: string, scopeId: string | null, slug: string) =>
+  `${kind}|${namespace}|${scopeId ?? ''}|${slug}`
+
+function coordinates(lat: number | null, lng: number | null) {
+  return lat == null || lng == null ? null : { lat, lng }
+}
+
+function publicCredits(value: unknown): PublicCredit[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((credit) => {
+    if (!credit || typeof credit !== 'object') return []
+    const { name, kind } = credit as Record<string, unknown>
+    if (typeof name !== 'string' || !name.trim()) return []
+    return [typeof kind === 'string' ? { name, kind } : { name }]
+  })
+}
+
+export interface BuildOptions {
+  /** The region whose members are in scope; tests use their own. */
+  regionSlug?: string
+  loadedAt?: number
+}
+
+/** Shapes database rows into the public snapshot. Pure, so the rules are testable without a database. */
+export function buildPublicContent(rows: PublicContentRows, options: BuildOptions = {}): PublicContent {
+  const { regionSlug = ATLAS_REGION_SLUG, loadedAt = Date.now() } = options
+  const regionRow = rows.areas.find(a => a.kind === 'region' && a.slug === regionSlug && a.status === 'published')
+  const members = new Set(regionRow ? rows.areaRegions.filter(r => r.region_id === regionRow.id).map(r => r.area_id) : [])
+
+  const gone: GoneRoutes = { areas: new Set(), items: new Set(), ids: new Set() }
+  const municipalities: SnapshotMunicipality[] = []
+  const settlements: SnapshotSettlement[] = []
+  const areaBySlug = new Map<string, string>()
+  // Area id → live (true) or gone (false); areas outside the scope or drafts are absent.
+  const areaState = new Map<string, boolean>()
+
+  for (const a of rows.areas) {
+    if ((a.kind !== 'town' && a.kind !== 'municipality') || !members.has(a.id) || !a.slug) continue
+    const live = a.status === 'published'
+    areaState.set(a.id, live)
+    if (!live) {
+      gone.areas.add(`lau/${a.slug}`)
+      gone.ids.add(a.id)
+      continue
+    }
+    const kind = a.kind as PublicMunicipalityKind
+    municipalities.push({ id: a.id, slug: a.slug, name: a.name, label: municipalityLabel(kind, a.name), kind, updatedAt: a.updated_at })
+    areaBySlug.set(`lau/${a.slug}`, a.id)
+  }
+  for (const a of rows.areas) {
+    if (a.kind !== 'settlement' || !a.parent_id || !a.slug) continue
+    const parent = areaState.get(a.parent_id)
+    if (parent === undefined) continue
+    const live = parent && a.status === 'published'
+    areaState.set(a.id, live)
+    if (!live) {
+      gone.areas.add(`settlement/${a.slug}`)
+      gone.ids.add(a.id)
+      continue
+    }
+    settlements.push({
+      id: a.id, slug: a.slug, name: a.name, code: a.official_code, municipalityId: a.parent_id,
+      centroid: coordinates(a.latitude, a.longitude), updatedAt: a.updated_at
+    })
+    areaBySlug.set(`settlement/${a.slug}`, a.id)
+  }
+
+  const legacyIds = new Map<string, string>()
+  const refs = new Map<string, string>()
+  for (const row of [...rows.legacyIds].sort((a, b) => (a.legacy_id < b.legacy_id ? -1 : 1))) {
+    legacyIds.set(`${row.kind}:${row.legacy_id}`, row.entity_id)
+    // The old item id doubles as the correction target; the dataset id with diacritics does not fit it.
+    if (row.kind === 'heritage_item' && !refs.has(row.entity_id) && isCorrectionTargetRefFormat(row.legacy_id)) {
+      refs.set(row.entity_id, row.legacy_id)
+    }
+  }
+
+  const categories = new Map(rows.categories.map(c => [c.id, {
+    id: c.id, key: c.key, label: c.label_hr, sort: c.sort, filterable: c.status === 'published'
+  }]))
+  // Archived sources drop out of item pages; their id stays known so a correction target answers 410.
+  const sources = new Map<string, SnapshotSource>()
+  for (const s of rows.sources) {
+    if (s.status === 'published') sources.set(s.id, { id: s.id, title: s.title, type: s.type, url: s.url })
+    else gone.ids.add(s.id)
+  }
+  const itemSources = new Map<string, ItemSourceRow[]>()
+  for (const link of rows.itemSources) {
+    if (!sources.has(link.source_id)) continue
+    itemSources.set(link.item_id, [...(itemSources.get(link.item_id) ?? []), link])
+  }
+
+  const items: SnapshotItem[] = []
+  const itemByRoute = new Map<string, string>()
+  for (const i of rows.items) {
+    const municipality = areaState.get(i.municipality_id)
+    const settlement = i.settlement_id === null ? true : areaState.get(i.settlement_id)
+    if (municipality === undefined || settlement === undefined || !categories.has(i.category_id)) continue
+    if (!(municipality && settlement && i.status === 'published')) {
+      gone.ids.add(i.id)
+      if (i.settlement_id) gone.items.add(`${i.settlement_id}/${i.slug}`)
+      continue
+    }
+    items.push({
+      id: i.id, ref: refs.get(i.id) ?? i.id, slug: i.slug, name: i.name, categoryId: i.category_id,
+      municipalityId: i.municipality_id, settlementId: i.settlement_id, locality: i.locality, verification: i.verification,
+      heritageStatus: i.heritage_status, registryNumber: i.registry_number, period: i.period, description: i.description,
+      researchNotes: i.research_notes, coordinates: coordinates(i.latitude, i.longitude), noindex: i.noindex,
+      credits: publicCredits(i.credits),
+      sourceIds: (itemSources.get(i.id) ?? []).sort((a, b) => a.position - b.position).map(link => link.source_id),
+      updatedAt: i.updated_at
+    })
+    if (i.settlement_id) itemByRoute.set(`${i.settlement_id}/${i.slug}`, i.id)
+  }
+
+  municipalities.sort((a, b) => (a.kind === b.kind ? byName(a, b) : a.kind === 'town' ? -1 : 1))
+  settlements.sort(byName)
+  items.sort(byName)
+
+  const slugHistory = new Map(rows.slugHistory.map(h => [slugHistoryKey(h.kind, h.namespace, h.scope_id, h.slug), h.entity_id]))
+  const region = regionRow ? { id: regionRow.id, slug: regionSlug, name: regionRow.name } : null
+
+  return {
+    region, municipalities, settlements, items, categories, sources,
+    municipalityById: new Map(municipalities.map(m => [m.id, m])),
+    settlementById: new Map(settlements.map(s => [s.id, s])),
+    itemById: new Map(items.map(i => [i.id, i])),
+    areaBySlug, itemByRoute, gone, legacyIds, slugHistory, loadedAt
+  }
+}
+
+type Page<T> = PromiseLike<{ data: T[] | null, error: { message: string } | null }>
+
+async function readAll<T>(read: (from: number, to: number) => Page<T>) {
+  const rows: T[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await read(from, from + PAGE - 1)
+    if (error) throw new Error(error.message)
+    rows.push(...data!)
+    if (data!.length < PAGE) return rows
+  }
+}
+
+/** Reads every row the snapshot needs (published and archived only; drafts never leave the database). */
+export async function loadPublicContentRows(client: SupabaseClient): Promise<PublicContentRows> {
+  const [areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory] = await Promise.all([
+    readAll<AreaRow>((from, to) => client.from('areas')
+      .select('id,kind,parent_id,name,slug,official_code,latitude,longitude,status,updated_at')
+      .in('kind', ['region', 'town', 'municipality', 'settlement']).in('status', VISIBLE).order('id').range(from, to)),
+    readAll<AreaRegionRow>((from, to) => client.from('area_regions').select('area_id,region_id').order('area_id').order('region_id').range(from, to)),
+    readAll<CategoryRow>((from, to) => client.from('heritage_categories').select('id,key,label_hr,sort,status').in('status', VISIBLE).order('id').range(from, to)),
+    readAll<SourceRow>((from, to) => client.from('sources').select('id,title,type,url,status').in('status', VISIBLE).order('id').range(from, to)),
+    readAll<ItemRow>((from, to) => client.from('heritage_items')
+      .select('id,name,slug,category_id,municipality_id,settlement_id,locality,verification,heritage_status,registry_number,period,description,research_notes,latitude,longitude,noindex,credits,status,updated_at')
+      .in('status', VISIBLE).order('id').range(from, to)),
+    readAll<ItemSourceRow>((from, to) => client.from('heritage_item_sources').select('item_id,source_id,position').order('item_id').order('position').range(from, to)),
+    readAll<LegacyIdRow>((from, to) => client.from('content_legacy_ids').select('kind,legacy_id,entity_id').in('kind', LEGACY_KINDS).order('kind').order('legacy_id').range(from, to)),
+    readAll<SlugHistoryRow>((from, to) => client.from('content_slug_history').select('kind,namespace,scope_id,slug,entity_id')
+      .in('kind', ['area', 'heritage_item']).order('created_at').order('slug').range(from, to))
+  ])
+  return { areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory }
+}
+
+export async function loadPublicContent(client: SupabaseClient, options: Omit<BuildOptions, 'loadedAt'> = {}) {
+  return buildPublicContent(await loadPublicContentRows(client), options)
+}
+
+/** Thrown when there is no snapshot at all (cold start) and the database cannot be read. */
+export class PublicContentUnavailableError extends Error {
+  constructor(cause: unknown) {
+    super('Public content is unavailable', { cause })
+    this.name = 'PublicContentUnavailableError'
+  }
+}
+
+export interface SnapshotStoreOptions<T> {
+  load: () => Promise<T>
+  ttlMs?: number
+  now?: () => number
+  onError?: (error: unknown) => void
+}
+
+/**
+ * A single cached value with stale-while-revalidate refresh:
+ * - fresh (younger than ttl): served as is;
+ * - stale: served as is while one background load runs (single-flight);
+ * - invalidated or cold: the request waits for a new load, so a write is visible on the next request;
+ * - a failed load keeps the last good value, served as stale so the next request retries in the
+ *   background; with no value at all it throws PublicContentUnavailableError (and the next request retries).
+ */
+export function createSnapshotStore<T>(options: SnapshotStoreOptions<T>) {
+  const ttl = options.ttlMs ?? PUBLIC_CONTENT_TTL_MS
+  const now = options.now ?? Date.now
+  const report = options.onError ?? (error => console.error('[content] Refreshing the public content snapshot failed:', error))
+  let value: T | undefined
+  let loadedAt = 0
+  let generation = 0
+  let valueGeneration = -1
+  let inflight: { generation: number, promise: Promise<T> } | null = null
+
+  function refresh() {
+    if (inflight?.generation === generation) return inflight.promise
+    const started = generation
+    const promise = options.load().then((fresh) => {
+      if (started >= valueGeneration) {
+        value = fresh
+        loadedAt = now()
+        valueGeneration = started
+      }
+      return value!
+    }, (error: unknown) => {
+      // Keep serving the last good value as stale, so later requests retry in the background
+      // instead of each waiting on an unreachable database.
+      if (value !== undefined && started >= valueGeneration) {
+        valueGeneration = started
+        loadedAt = Number.NEGATIVE_INFINITY
+      }
+      throw error
+    }).finally(() => {
+      if (inflight?.promise === promise) inflight = null
+    })
+    inflight = { generation: started, promise }
+    return promise
+  }
+
+  return {
+    async get(): Promise<T> {
+      if (value !== undefined && valueGeneration === generation) {
+        if (now() - loadedAt >= ttl) refresh().catch(report)
+        return value
+      }
+      try {
+        return await refresh()
+      } catch (error) {
+        report(error)
+        if (value === undefined) throw new PublicContentUnavailableError(error)
+        return value
+      }
+    },
+    invalidate() {
+      generation++
+    }
+  }
+}
+
+const store = createSnapshotStore({ load: () => loadPublicContent(useDatabaseClient()) })
+
+/** The current public content snapshot; answers 503 when the database is unreachable on a cold start. */
+export async function getPublicContent(): Promise<PublicContent> {
+  try {
+    return await store.get()
+  } catch (error) {
+    if (error instanceof PublicContentUnavailableError) {
+      throw createError({ statusCode: 503, statusMessage: 'Content is temporarily unavailable' })
+    }
+    throw error
+  }
+}
+
+/** Call after every content write in this process, so the next public request reads the database again. */
+export function invalidatePublicContent() {
+  store.invalidate()
+}

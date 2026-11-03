@@ -244,6 +244,14 @@ Apply it through the normal migration-first workflow. The previously deployed ap
 
 `node scripts/test-challenges.mjs` runs `test/challengeTemplates.integration.test.ts` on its disposable Postgres: the seed and its import revision, the one-statement switch, the refusals for the current template (and the declarative checks without the trigger), the content outline and size checks, revision and search, public-role denial, the admin API (create, list, edit, conflict, archive, delete), and switching the current template through the API so that the next challenge uses it, plus a restore that keeps it current.
 
+## Public read layer
+
+No migration. The public atlas API (`/api/atlas/*`, `/api/content/target`) and the database sitemap route read the content tables through one in-process snapshot (`server/utils/publicContent.ts`): published and archived rows of `areas` (region, towns, municipalities, settlements), `area_regions`, `heritage_categories`, `heritage_items`, `sources` and `heritage_item_sources`, and the `area`, `heritage_item`, `heritage_category` and `source` rows of `content_legacy_ids` and `content_slug_history`. It reads as `service_role`, like every other server query, so RLS and grants are unchanged. Draft rows are never read.
+
+Nothing needs applying in production. No page uses the API yet and the committed `public/sitemap.xml` keeps shadowing the sitemap route, so deploying this changes nothing a visitor sees, and an app rollback simply removes the endpoints. The new runtime dependency starts with the step that switches the atlas pages over: from then on a cold start with the database unreachable answers 503 on atlas pages, while a running process keeps serving its last good snapshot.
+
+`node scripts/test-challenges.mjs` also runs `test/publicContent.integration.test.ts`: the whole imported atlas through the snapshot (every town, municipality, settlement and item, field by field, and old item ids with and without diacritics), every atlas route of `content/atlas/prerender-routes.json`, sitemap URL parity with `public/sitemap.xml`, and, on its own region, renames, item moves, archiving, drafts, region membership and invalidation after a write.
+
 ## Failure and recovery
 
 Open **GitHub → Actions → Production database and deploy → failing run → Migrate then promote production branch**. The history step shows version numbers, and the Supabase CLI reports the failed migration and database error. Missing baseline entries, unknown remote migrations, missing earlier versions, authentication/connection errors, SQL errors, branch divergence, or branch protection failures stop the job. Subsequent branch promotion is skipped on migration failure; `production` remains at its last promoted commit.

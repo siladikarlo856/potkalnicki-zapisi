@@ -982,6 +982,11 @@ describe('public discovery, sharing metadata and error pages', () => {
     expect(robots).toContain('Sitemap: https://karlo-siladi.from.hr/sitemap.xml')
   })
 
+  it('keeps serving the committed sitemap while it exists, ahead of the database sitemap route', async () => {
+    const committed = await readFile(fileURLToPath(new URL('../public/sitemap.xml', import.meta.url)), 'utf8')
+    expect(await (await fetch('/sitemap.xml')).text()).toBe(committed)
+  })
+
   it.each([
     { path: '/', title: 'Karlo Siladi', description: 'Karlo Siladi izrađuje stvari', image: 'share-hr.jpg' },
     { path: '/en', title: 'Karlo Siladi', description: 'Karlo Siladi builds things', image: 'share-en.jpg' },
@@ -1119,4 +1124,35 @@ describe('Umami analytics', () => {
       expect(html).not.toContain('c554cf77-732f-4f2d-bfbc-5f0b78492f4c')
     })
   }
+})
+
+describe('public atlas API', () => {
+  it('refuses invalid parameters before reading content', async () => {
+    for (const path of [
+      '/api/content/target?kind=word&id=x',
+      '/api/content/target?kind=heritage_item',
+      `/api/content/target?id=${'a'.repeat(201)}`,
+      '/api/atlas/heritage?municipality=a&municipality=b'
+    ]) {
+      expect((await request(path)).status, path).toBe(400)
+    }
+  })
+
+  // The fake database has no content tables, like a cold start while the database is unreachable.
+  it.skipIf(real)('answers 503 without a snapshot and does not let the error be cached', async () => {
+    for (const path of ['/api/atlas/overview', '/api/atlas/heritage', '/api/atlas/settlements/apatovec', '/api/content/target?id=krizevci-crkva-sv-ane']) {
+      const response = await request(path)
+      expect(response.status, path).toBe(503)
+      expect(response.headers.get('cache-control'), path).toBe('no-store')
+    }
+  })
+
+  it.runIf(real)('serves the imported atlas with a short public cache', async () => {
+    const response = await request('/api/atlas/overview')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('public, max-age=60, stale-while-revalidate=300')
+    expect((await response.json()).municipalities.map((m: { label: string }) => m.label)).toContain('Grad Križevci')
+    expect(await (await request('/api/atlas/heritage/krizevci/crkva-sv-ane')).json()).toMatchObject({ item: { ref: 'krizevci-crkva-sv-ane' } })
+    expect((await request('/api/atlas/settlements/ne-postoji')).status).toBe(404)
+  })
 })

@@ -153,6 +153,21 @@ describe.skipIf(!url)('admin content API over real Postgres', () => {
     expect((await api(`${BASE}/${entity.id}?mode=gone`, { method: 'DELETE' })).status).toBe(400)
   })
 
+  it('makes every admin write visible on the next public request', async () => {
+    const target = (id: string) => api<{ source?: { title: string } }>(`/api/content/target?kind=source&id=${id}`, { auth: false })
+    const entity = await create({ title: 'kit-test javni izvor', type: 'website' })
+    expect((await target(entity.id)).body.source?.title).toBe('kit-test javni izvor')
+
+    await api(`${BASE}/${entity.id}`, { method: 'PATCH', body: { title: 'kit-test javni izvor izmijenjen', revision: 1 } })
+    expect((await target(entity.id)).body.source?.title).toBe('kit-test javni izvor izmijenjen')
+
+    await api(`${BASE}/${entity.id}`, { method: 'DELETE' })
+    expect((await target(entity.id)).status).toBe(410)
+
+    await api(`${BASE}/${entity.id}?mode=hard`, { method: 'DELETE' })
+    expect((await target(entity.id)).status).toBe(404)
+  })
+
   it('looks up labels for select menus and refuses malformed lookups', async () => {
     const entity = await create({ title: 'kit-test Kajkavski rječnik', type: 'dictionary' })
     expect((await api<{ items: unknown[] }>('/api/admin/lookup/source?q=kajkavski')).body.items)

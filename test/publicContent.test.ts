@@ -1,0 +1,363 @@
+import { describe, expect, it, vi } from 'vitest'
+import {
+  ATLAS_REGION_SLUG,
+  PublicContentUnavailableError,
+  buildPublicContent,
+  createSnapshotStore
+} from '../server/utils/publicContent'
+import type { AreaRow, ItemRow, PublicContentRows } from '../server/utils/publicContent'
+import {
+  atlasOverview,
+  contentTarget,
+  heritageItemDetail,
+  heritageList,
+  municipalityPage,
+  resolveContentId,
+  resolveHeritageItem,
+  resolveMunicipality,
+  resolveSettlement,
+  settlementPage
+} from '../server/utils/publicAtlas'
+import { contentSitemap, sitemapEntries, sitemapXml } from '../server/utils/sitemap'
+
+// The public read layer without a database: snapshot rules, route resolution, API shapes, sitemap and the
+// stale-while-revalidate store. test/publicContent.integration.test.ts runs the same layer on Postgres.
+const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+const ID = {
+  region: id(1), town: id(2), kalnik: id(3), archivedMunicipality: id(4), outside: id(5),
+  krizevci: id(10), apatovec: id(11), kalnikSettlement: id(12), archivedSettlement: id(13), underArchived: id(14), draftSettlement: id(15), outsideSettlement: id(16),
+  church: id(20), chapel: id(21), oldCategory: id(22),
+  source: id(30), archivedSource: id(31),
+  ana: id(40), kapela: id(41), loose: id(42), archivedItem: id(43), inArchived: id(44), oldCategoryItem: id(46), outsideItem: id(47)
+}
+const T = '2026-11-01T10:00:00+00:00'
+
+function area(row: Partial<AreaRow> & Pick<AreaRow, 'id' | 'kind' | 'name'>): AreaRow {
+  return { parent_id: null, slug: null, official_code: null, latitude: null, longitude: null, status: 'published', updated_at: T, ...row }
+}
+function item(row: Partial<ItemRow> & Pick<ItemRow, 'id' | 'name' | 'slug' | 'municipality_id'>): ItemRow {
+  return {
+    category_id: ID.church, settlement_id: null, locality: null, verification: 'unverified', heritage_status: null, registry_number: null,
+    period: null, description: null, research_notes: '', latitude: null, longitude: null, noindex: false, credits: [], status: 'published',
+    updated_at: T, ...row
+  }
+}
+
+function rows(): PublicContentRows {
+  return {
+    areas: [
+      area({ id: ID.region, kind: 'region', name: 'Potkalničko prigorje', slug: ATLAS_REGION_SLUG }),
+      area({ id: ID.kalnik, kind: 'municipality', name: 'Kalnik', slug: 'opcina-kalnik' }),
+      area({ id: ID.town, kind: 'town', name: 'Križevci', slug: 'grad-krizevci', updated_at: '2026-10-30T23:00:00+00:00' }),
+      area({ id: ID.archivedMunicipality, kind: 'municipality', name: 'Stara', slug: 'opcina-stara', status: 'archived' }),
+      area({ id: ID.outside, kind: 'municipality', name: 'Vani', slug: 'opcina-vani' }),
+      area({ id: ID.krizevci, kind: 'settlement', name: 'Križevci', slug: 'krizevci', parent_id: ID.town, official_code: '032379', latitude: 46.02, longitude: 16.54 }),
+      area({ id: ID.apatovec, kind: 'settlement', name: 'Apatovec', slug: 'apatovec', parent_id: ID.town, official_code: '000299' }),
+      area({ id: ID.kalnikSettlement, kind: 'settlement', name: 'Kalnik', slug: 'kalnik', parent_id: ID.kalnik }),
+      area({ id: ID.archivedSettlement, kind: 'settlement', name: 'Staro selo', slug: 'staro-selo', parent_id: ID.town, status: 'archived' }),
+      area({ id: ID.underArchived, kind: 'settlement', name: 'Pod arhivom', slug: 'pod-arhivom', parent_id: ID.archivedMunicipality }),
+      area({ id: ID.outsideSettlement, kind: 'settlement', name: 'Vanjsko', slug: 'vanjsko', parent_id: ID.outside })
+    ],
+    areaRegions: [ID.town, ID.kalnik, ID.archivedMunicipality].map(area_id => ({ area_id, region_id: ID.region })),
+    categories: [
+      { id: ID.church, key: 'church', label_hr: 'Crkva', sort: 1, status: 'published' },
+      { id: ID.chapel, key: 'chapel', label_hr: 'Kapela', sort: 2, status: 'published' },
+      { id: ID.oldCategory, key: 'old', label_hr: 'Staro', sort: 3, status: 'archived' }
+    ],
+    sources: [
+      { id: ID.source, title: 'Registar', type: 'official_registry', url: 'https://example.com/r', status: 'published' },
+      { id: ID.archivedSource, title: 'Stari izvor', type: 'other', url: null, status: 'archived' }
+    ],
+    items: [
+      item({ id: ID.ana, name: 'Crkva sv. Ane', slug: 'crkva-sv-ane', municipality_id: ID.town, settlement_id: ID.krizevci, verification: 'verified', period: '18. st.', credits: [{ name: 'Ana', kind: 'contribution' }, { bad: true }, { name: ' ' }] }),
+      item({ id: ID.kapela, name: 'Kapela sv. Marka', slug: 'kapela', category_id: ID.chapel, municipality_id: ID.town, settlement_id: ID.apatovec, noindex: true }),
+      item({ id: ID.loose, name: 'Raspelo', slug: 'raspelo', category_id: ID.chapel, municipality_id: ID.kalnik }),
+      item({ id: ID.archivedItem, name: 'Srušena', slug: 'srusena', municipality_id: ID.town, settlement_id: ID.krizevci, status: 'archived' }),
+      item({ id: ID.inArchived, name: 'U starom', slug: 'u-staro', municipality_id: ID.town, settlement_id: ID.archivedSettlement }),
+      item({ id: ID.oldCategoryItem, name: 'Bivša kategorija', slug: 'bivsa', category_id: ID.oldCategory, municipality_id: ID.kalnik, settlement_id: ID.kalnikSettlement }),
+      item({ id: ID.outsideItem, name: 'Vanjska', slug: 'vanjska', municipality_id: ID.outside, settlement_id: ID.outsideSettlement })
+    ],
+    itemSources: [{ item_id: ID.ana, source_id: ID.source, position: 0 }, { item_id: ID.ana, source_id: ID.archivedSource, position: 1 }, { item_id: ID.ana, source_id: id(99), position: 2 }],
+    legacyIds: [
+      { kind: 'heritage_item', legacy_id: 'križevci-crkva-sv-ane', entity_id: ID.ana },
+      { kind: 'heritage_item', legacy_id: 'krizevci-crkva-sv-ane', entity_id: ID.ana },
+      { kind: 'heritage_item', legacy_id: 'staro', entity_id: ID.archivedItem },
+      { kind: 'area', legacy_id: 'krizevci', entity_id: ID.town },
+      { kind: 'area', legacy_id: '000299', entity_id: ID.apatovec },
+      { kind: 'source', legacy_id: 'registar', entity_id: ID.source }
+    ],
+    slugHistory: [
+      { kind: 'area', namespace: 'lau', scope_id: null, slug: 'grad-stari', entity_id: ID.town },
+      { kind: 'area', namespace: 'settlement', scope_id: null, slug: 'stari-krizevci', entity_id: ID.krizevci },
+      { kind: 'area', namespace: 'settlement', scope_id: null, slug: 'bivse', entity_id: ID.archivedSettlement },
+      { kind: 'area', namespace: 'lau', scope_id: null, slug: 'apatovec-stari', entity_id: ID.apatovec },
+      { kind: 'heritage_item', namespace: '', scope_id: ID.krizevci, slug: 'stara-crkva', entity_id: ID.ana },
+      { kind: 'heritage_item', namespace: '', scope_id: ID.apatovec, slug: 'preseljena', entity_id: ID.ana },
+      { kind: 'heritage_item', namespace: '', scope_id: ID.krizevci, slug: 'stara-srusena', entity_id: ID.archivedItem }
+    ]
+  }
+}
+
+const content = buildPublicContent(rows(), { loadedAt: 0 })
+
+describe('public content snapshot', () => {
+  it('keeps the region members in scope, towns first, with labels from kind and name', () => {
+    expect(content.region).toEqual({ id: ID.region, slug: ATLAS_REGION_SLUG, name: 'Potkalničko prigorje' })
+    expect(content.municipalities.map(m => [m.slug, m.label, m.kind])).toEqual([
+      ['grad-krizevci', 'Grad Križevci', 'town'],
+      ['opcina-kalnik', 'Općina Kalnik', 'municipality']
+    ])
+    expect(content.settlements.map(s => s.slug)).toEqual(['apatovec', 'kalnik', 'krizevci'])
+    expect(content.settlementById.get(ID.krizevci)).toMatchObject({ code: '032379', centroid: { lat: 46.02, lng: 16.54 }, municipalityId: ID.town })
+  })
+
+  it('shows only published items under live places and remembers where archived ones were', () => {
+    expect(content.items.map(i => i.slug)).toEqual(['bivsa', 'crkva-sv-ane', 'kapela', 'raspelo'])
+    expect(content.gone.ids).toEqual(new Set([ID.archivedMunicipality, ID.archivedSettlement, ID.underArchived, ID.archivedSource, ID.archivedItem, ID.inArchived]))
+    expect(content.gone.areas).toEqual(new Set(['lau/opcina-stara', 'settlement/staro-selo', 'settlement/pod-arhivom']))
+    expect(content.gone.items).toEqual(new Set([`${ID.krizevci}/srusena`, `${ID.archivedSettlement}/u-staro`]))
+  })
+
+  it('uses the old item id as the correction ref, keeps published sources in order and only named credits', () => {
+    const ana = content.itemById.get(ID.ana)!
+    expect(ana.ref).toBe('krizevci-crkva-sv-ane')
+    expect(content.itemById.get(ID.loose)!.ref).toBe(ID.loose)
+    expect(ana.sourceIds).toEqual([ID.source])
+    expect(ana.credits).toEqual([{ name: 'Ana', kind: 'contribution' }])
+  })
+
+  it('is empty without a published region', () => {
+    const data = rows()
+    data.areas[0]!.status = 'archived'
+    const empty = buildPublicContent(data)
+    expect(empty.region).toBeNull()
+    expect([empty.municipalities, empty.settlements, empty.items].map(list => list.length)).toEqual([0, 0, 0])
+    expect(atlasOverview(empty)).toBeNull()
+  })
+})
+
+describe('public route resolution', () => {
+  it('resolves towns and municipalities by current, old and archived slug', () => {
+    expect(resolveMunicipality(content, 'grad-krizevci')).toMatchObject({ status: 'ok', value: { id: ID.town } })
+    expect(resolveMunicipality(content, 'grad-stari')).toEqual({ status: 'redirect', path: '/potkalnicko-prigorje/istrazi/grad-krizevci' })
+    expect(resolveMunicipality(content, 'opcina-stara')).toEqual({ status: 'gone' })
+    expect(resolveMunicipality(content, 'opcina-vani')).toEqual({ status: 'not_found' })
+    // Slug history is per URL namespace: an old town slug does not answer for a settlement and vice versa.
+    expect(resolveMunicipality(content, 'krizevci')).toEqual({ status: 'not_found' })
+    expect(resolveMunicipality(content, 'apatovec-stari')).toEqual({ status: 'not_found' })
+  })
+
+  it('resolves settlements, including ones under an archived municipality', () => {
+    expect(resolveSettlement(content, 'krizevci')).toMatchObject({ status: 'ok', value: { id: ID.krizevci } })
+    expect(resolveSettlement(content, 'stari-krizevci')).toEqual({ status: 'redirect', path: '/potkalnicko-prigorje/naselja/krizevci' })
+    for (const slug of ['staro-selo', 'pod-arhivom', 'bivse']) expect(resolveSettlement(content, slug), slug).toEqual({ status: 'gone' })
+    for (const slug of ['vanjsko', 'nepostojece']) expect(resolveSettlement(content, slug), slug).toEqual({ status: 'not_found' })
+  })
+
+  it('redirects old settlement and item slugs and moved items to the current item page', () => {
+    const current = '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane'
+    expect(resolveHeritageItem(content, 'krizevci', 'crkva-sv-ane')).toMatchObject({ status: 'ok', value: { id: ID.ana } })
+    expect(resolveHeritageItem(content, 'stari-krizevci', 'crkva-sv-ane')).toEqual({ status: 'redirect', path: current })
+    expect(resolveHeritageItem(content, 'krizevci', 'stara-crkva')).toEqual({ status: 'redirect', path: current })
+    expect(resolveHeritageItem(content, 'stari-krizevci', 'stara-crkva')).toEqual({ status: 'redirect', path: current })
+    expect(resolveHeritageItem(content, 'apatovec', 'preseljena')).toEqual({ status: 'redirect', path: current })
+  })
+
+  it('answers gone for archived items and items under archived places, not found otherwise', () => {
+    for (const [settlement, slug] of [['krizevci', 'srusena'], ['krizevci', 'stara-srusena'], ['staro-selo', 'u-staro'], ['bivse', 'u-staro']]) {
+      expect(resolveHeritageItem(content, settlement!, slug!), `${settlement}/${slug}`).toEqual({ status: 'gone' })
+    }
+    for (const [settlement, slug] of [['krizevci', 'nema'], ['apatovec', 'crkva-sv-ane'], ['vanjsko', 'vanjska'], ['nema', 'crkva-sv-ane']]) {
+      expect(resolveHeritageItem(content, settlement!, slug!), `${settlement}/${slug}`).toEqual({ status: 'not_found' })
+    }
+  })
+
+  it('accepts UUIDs and old ids', () => {
+    expect(resolveContentId(content, 'heritage_item', ID.ana.toUpperCase())).toBe(ID.ana)
+    expect(resolveContentId(content, 'heritage_item', 'križevci-crkva-sv-ane')).toBe(ID.ana)
+    expect(resolveContentId(content, 'area', 'krizevci')).toBe(ID.town)
+    expect(resolveContentId(content, 'source', 'krizevci')).toBeNull()
+  })
+})
+
+describe('public atlas API shapes', () => {
+  it('summarizes the region with per-place counts', () => {
+    expect(atlasOverview(content)).toEqual({
+      region: content.region,
+      totals: { municipalities: 2, settlements: 3, items: 4, settlementsWithItems: 3 },
+      municipalities: [
+        { id: ID.town, slug: 'grad-krizevci', name: 'Križevci', label: 'Grad Križevci', kind: 'town', path: '/potkalnicko-prigorje/istrazi/grad-krizevci', stats: { settlements: 2, items: 2, settlementsWithItems: 2 } },
+        { id: ID.kalnik, slug: 'opcina-kalnik', name: 'Kalnik', label: 'Općina Kalnik', kind: 'municipality', path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', stats: { settlements: 1, items: 2, settlementsWithItems: 1 } }
+      ]
+    })
+  })
+
+  it('builds the municipality page with settlement counts and filterable categories only', () => {
+    const page = municipalityPage(content, content.municipalityById.get(ID.kalnik)!)
+    expect(page.settlements).toEqual([{ id: ID.kalnikSettlement, slug: 'kalnik', name: 'Kalnik', code: null, path: '/potkalnicko-prigorje/naselja/kalnik', itemCount: 1 }])
+    expect(page.categories).toEqual([{ key: 'chapel', label: 'Kapela', count: 1 }])
+  })
+
+  it('builds the settlement page with its item list', () => {
+    const page = settlementPage(content, content.settlementById.get(ID.krizevci)!)
+    expect(page.municipality.label).toBe('Grad Križevci')
+    expect(page.settlement.centroid).toEqual({ lat: 46.02, lng: 16.54 })
+    expect(page.items).toEqual([{
+      id: ID.ana, slug: 'crkva-sv-ane', name: 'Crkva sv. Ane', category: { key: 'church', label: 'Crkva' },
+      municipality: { id: ID.town, slug: 'grad-krizevci', label: 'Grad Križevci' },
+      settlement: { id: ID.krizevci, slug: 'krizevci', name: 'Križevci' },
+      locality: null, verification: 'verified', noindex: false, path: '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane'
+    }])
+  })
+
+  it('filters the heritage list by municipality slug and category key and refuses unknown filters', () => {
+    const all = heritageList(content)!
+    expect(all.total).toBe(4)
+    expect(all.categories).toEqual([{ key: 'chapel', label: 'Kapela', count: 2 }, { key: 'church', label: 'Crkva', count: 1 }])
+    expect(all.municipalities).toEqual([{ slug: 'grad-krizevci', label: 'Grad Križevci' }, { slug: 'opcina-kalnik', label: 'Općina Kalnik' }])
+    expect(heritageList(content, { municipality: 'opcina-kalnik', category: 'chapel' })!.items.map(i => [i.slug, i.path])).toEqual([['raspelo', null]])
+    expect(heritageList(content, { municipality: 'krizevci' })).toBeNull()
+    expect(heritageList(content, { category: 'old' })).toBeNull()
+  })
+
+  it('details an item with sources, dataset fields and the correction ref', () => {
+    expect(heritageItemDetail(content, content.itemById.get(ID.ana)!)).toMatchObject({
+      ref: 'krizevci-crkva-sv-ane', period: '18. st.', researchNotes: '', updatedAt: T,
+      sources: [{ id: ID.source, title: 'Registar', type: 'official_registry', url: 'https://example.com/r' }]
+    })
+  })
+
+  it('finds correction targets by old id or UUID and tells archived from unknown', () => {
+    expect(contentTarget(content, 'heritage_item', 'krizevci-crkva-sv-ane')).toMatchObject({ status: 'ok', value: { kind: 'heritage_item', item: { id: ID.ana, ref: 'krizevci-crkva-sv-ane' } } })
+    expect(contentTarget(content, 'area', 'krizevci')).toMatchObject({ status: 'ok', value: { area: { id: ID.town, areaKind: 'town', label: 'Grad Križevci' } } })
+    expect(contentTarget(content, 'area', '000299')).toMatchObject({ status: 'ok', value: { area: { id: ID.apatovec, areaKind: 'settlement', label: 'Apatovec', path: '/potkalnicko-prigorje/naselja/apatovec' } } })
+    expect(contentTarget(content, 'source', 'registar')).toEqual({ status: 'ok', value: { kind: 'source', source: { id: ID.source, title: 'Registar', type: 'official_registry', url: 'https://example.com/r' } } })
+    expect(contentTarget(content, 'heritage_item', 'staro')).toEqual({ status: 'gone' })
+    expect(contentTarget(content, 'source', ID.archivedSource)).toEqual({ status: 'gone' })
+    expect(contentTarget(content, 'area', ID.archivedSettlement)).toEqual({ status: 'gone' })
+    expect(contentTarget(content, 'heritage_item', ID.town)).toEqual({ status: 'not_found' })
+    expect(contentTarget(content, 'heritage_item', 'nema')).toEqual({ status: 'not_found' })
+  })
+})
+
+describe('content sitemap', () => {
+  it('lists static pages, live places and indexable item pages with lastmod', () => {
+    const entries = sitemapEntries(content)
+    expect(entries.slice(0, 3)).toEqual([{ path: '/' }, { path: '/en' }, { path: '/potkalnicko-prigorje' }])
+    expect(entries.slice(11)).toEqual([
+      { path: '/potkalnicko-prigorje/istrazi/grad-krizevci', lastmod: '2026-10-30' },
+      { path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', lastmod: '2026-11-01' },
+      { path: '/potkalnicko-prigorje/naselja/apatovec', lastmod: '2026-11-01' },
+      { path: '/potkalnicko-prigorje/naselja/kalnik', lastmod: '2026-11-01' },
+      { path: '/potkalnicko-prigorje/naselja/krizevci', lastmod: '2026-11-01' },
+      { path: '/potkalnicko-prigorje/bastina/kalnik/bivsa', lastmod: '2026-11-01' },
+      { path: '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane', lastmod: '2026-11-01' }
+    ])
+  })
+
+  it('renders escaped XML once per snapshot', () => {
+    expect(sitemapXml([{ path: '/a?b=1&c=2' }, { path: '/d', lastmod: '2026-11-02' }], 'https://x.test')).toBe(
+      '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+      + '  <url>\n    <loc>https://x.test/a?b=1&amp;c=2</loc>\n  </url>\n'
+      + '  <url>\n    <loc>https://x.test/d</loc>\n    <lastmod>2026-11-02</lastmod>\n  </url>\n</urlset>\n')
+    expect(contentSitemap(content)).toBe(contentSitemap(content))
+    expect(contentSitemap(content)).toContain('<loc>https://karlo-siladi.from.hr/potkalnicko-prigorje/naselja/krizevci</loc>')
+  })
+})
+
+describe('snapshot store', () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void
+    let reject!: (error: unknown) => void
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+  function setup() {
+    let clock = 0
+    const loads: Array<ReturnType<typeof deferred<string>>> = []
+    const onError = vi.fn()
+    const store = createSnapshotStore<string>({
+      ttlMs: 60_000, now: () => clock, onError,
+      load: () => {
+        const load = deferred<string>()
+        loads.push(load)
+        return load.promise
+      }
+    })
+    const tick = (ms: number) => {
+      clock += ms
+    }
+    return { store, loads, onError, tick }
+  }
+
+  it('shares one load on a cold start and serves the value while fresh', async () => {
+    const { store, loads } = setup()
+    const [a, b] = [store.get(), store.get()]
+    expect(loads).toHaveLength(1)
+    loads[0]!.resolve('v1')
+    expect(await Promise.all([a, b])).toEqual(['v1', 'v1'])
+    expect(await store.get()).toBe('v1')
+    expect(loads).toHaveLength(1)
+  })
+
+  it('serves a stale value while one background refresh runs', async () => {
+    const { store, loads, tick } = setup()
+    const first = store.get()
+    loads[0]!.resolve('v1')
+    await first
+    tick(60_000)
+    expect(await store.get()).toBe('v1')
+    expect(await store.get()).toBe('v1')
+    expect(loads).toHaveLength(2)
+    loads[1]!.resolve('v2')
+    await loads[1]!.promise
+    await Promise.resolve()
+    expect(await store.get()).toBe('v2')
+  })
+
+  it('waits for a new load after invalidation and ignores an older load that finishes later', async () => {
+    const { store, loads, tick } = setup()
+    const first = store.get()
+    loads[0]!.resolve('v1')
+    await first
+    tick(60_000)
+    await store.get() // starts a background refresh (load 1)
+    store.invalidate()
+    const after = store.get() // must not reuse the pre-invalidation load
+    expect(loads).toHaveLength(3)
+    loads[2]!.resolve('after-write')
+    expect(await after).toBe('after-write')
+    loads[1]!.resolve('before-write')
+    await loads[1]!.promise
+    await Promise.resolve()
+    expect(await store.get()).toBe('after-write')
+  })
+
+  it('keeps the last good value when a refresh fails and retries on the next request', async () => {
+    const { store, loads, onError } = setup()
+    const first = store.get()
+    loads[0]!.resolve('v1')
+    await first
+    store.invalidate()
+    const failed = store.get()
+    loads[1]!.reject(new Error('database down'))
+    expect(await failed).toBe('v1')
+    expect(onError).toHaveBeenCalled()
+    // Served as stale now: the next request answers at once and retries in the background.
+    expect(await store.get()).toBe('v1')
+    expect(loads).toHaveLength(3)
+  })
+
+  it('fails with PublicContentUnavailableError on a cold start without a database, then retries', async () => {
+    const { store, loads } = setup()
+    const cold = store.get()
+    loads[0]!.reject(new Error('database down'))
+    await expect(cold).rejects.toBeInstanceOf(PublicContentUnavailableError)
+    const retry = store.get()
+    loads[1]!.resolve('v1')
+    expect(await retry).toBe('v1')
+  })
+})

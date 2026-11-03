@@ -181,12 +181,18 @@ async function readInput(event: H3Event, def: AnyContentKindDefinition) {
   return readJsonObject(event, def.bodyLimit ?? CONTENT_BODY_LIMIT)
 }
 
+/** Every write makes the public snapshot reload on the next request; the kind's own hook runs after that. */
+async function afterWrite(event: H3Event, def: AnyContentKindDefinition) {
+  invalidatePublicContent()
+  await def.afterWrite?.(event)
+}
+
 export async function createContent(event: H3Event, def: AnyContentKindDefinition) {
   const { value, issues } = def.validate(editable(def, await readInput(event, def)))
   if (issues.length) invalid(issues)
   const { data, error } = await useDatabaseClient().from(def.table).insert(toRow(def, value)).select(selectList(def)).single()
   if (error) contentDatabaseError(def, error)
-  await def.afterWrite?.(event)
+  await afterWrite(event, def)
   setResponseStatus(event, 201)
   return { entity: toEntity(def, data as unknown as Row) }
 }
@@ -215,7 +221,7 @@ export async function updateContent(event: H3Event, def: AnyContentKindDefinitio
     // Someone saved between the read and the write.
     conflict(def, await requireRow(def, id))
   }
-  await def.afterWrite?.(event)
+  await afterWrite(event, def)
   return { entity: toEntity(def, saved[0]!) }
 }
 
@@ -239,7 +245,7 @@ async function archiveContent(event: H3Event, def: AnyContentKindDefinition, id:
   if (error) contentDatabaseError(def, error)
   const saved = (data ?? []) as unknown as Row[]
   if (!saved.length) fail(404, 'Not found', { message: 'Zapis nije pronađen.' })
-  await def.afterWrite?.(event)
+  await afterWrite(event, def)
   return { mode: 'archive' as const, entity: toEntity(def, saved[0]!) }
 }
 
@@ -258,7 +264,7 @@ async function hardDeleteContent(event: H3Event, def: AnyContentKindDefinition, 
     contentDatabaseError(def, error)
   }
   if (!data?.length) fail(404, 'Not found', { message: 'Zapis nije pronađen.' })
-  await def.afterWrite?.(event)
+  await afterWrite(event, def)
   return { mode: 'hard' as const, id }
 }
 
