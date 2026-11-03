@@ -9,7 +9,7 @@ import {
 import type { AnyContentKindDefinition } from './definition'
 import { findContentKind } from './registry'
 import {
-  conflict, contentDatabaseError, editable, fail, invalid, queryInteger, queryText, readRow, toEntity, toRow
+  conflict, contentAfterWrite, contentDatabaseError, editable, fail, invalid, queryInteger, queryText, readRow, toEntity, toRow
 } from './store'
 
 // Change history over `content_revisions`, which the database fills: `content_audit` copies the full
@@ -39,7 +39,7 @@ const LABEL_KEYS = ['name', 'title', 'label_hr', 'key']
 
 /** The editable API fields of a kind, in its field order, with `status`. */
 function historyFields(def: AnyContentKindDefinition) {
-  return [...Object.keys(def.fields), 'status']
+  return [...Object.keys(def.fields), ...(def.inputFields ?? []), 'status']
 }
 
 /** A stored snapshot (database columns) as the editable API fields. */
@@ -173,8 +173,11 @@ export async function restoreRevision(event: H3Event, def: AnyContentKindDefinit
     const rows = (saved ?? []) as Row[]
     // Someone saved between the read and the write.
     if (!rows.length) conflict(def, (await readRow(def, id)) ?? fail(404, 'Not found', { message: 'Zapis nije pronađen.' }))
-    await def.afterWrite?.(event)
-    return { unchanged: false, recreated: false, entity: toEntity(def, rows[0]!) }
+    await def.persistEntity?.(db, id, value as Row)
+    await contentAfterWrite(event, def)
+    const entity = toEntity(def, rows[0]!)
+    const extras = await def.loadEntity?.(db, entity) ?? {}
+    return { unchanged: false, recreated: false, entity: { ...entity, ...extras } }
   }
 
   // The row is gone: bring it back under its old id, continuing the revision count and keeping its creation time.
@@ -186,8 +189,11 @@ export async function restoreRevision(event: H3Event, def: AnyContentKindDefinit
     if (insertError.code === '23503') referenceFailure()
     contentDatabaseError(def, insertError)
   }
-  await def.afterWrite?.(event)
-  return { unchanged: false, recreated: true, entity: toEntity(def, created as Row) }
+  await def.persistEntity?.(db, id, value as Row)
+  await contentAfterWrite(event, def)
+  const entity = toEntity(def, created as Row)
+  const extras = await def.loadEntity?.(db, entity) ?? {}
+  return { unchanged: false, recreated: true, entity: { ...entity, ...extras } }
 }
 
 function logError(error: { code?: string, message: string }): never {

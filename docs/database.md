@@ -214,6 +214,12 @@ The database keeps the invariants, so direct SQL edits behave the same as admin 
 
 Rollback is app-only: the old app ignores these routes, and rows written through them stay valid content rows.
 
+## Admin places (Mjesta, no migration)
+
+`/admin/mjesta` (kind `area`) adds no migration. It reads and writes the `areas` table and `area_regions` from `20261103010000_content_tables.sql` and `20261103020000_seed_content.sql` through the generic content API. Region membership is edited as `regionIds` on the API and synced to `area_regions` after each save; history snapshots hold only the main row, so restoring an older revision does not roll back membership until a later save (the admin reloads membership on GET). Every write calls `invalidatePublicContent()` so atlas pages pick up hierarchy, slugs and region scope on the next request.
+
+Deploy after the content seed migration is applied (503 `not-migrated` until then). `node scripts/test-challenges.mjs` runs `test/adminAreas.integration.test.ts` on its disposable Postgres: create with region membership, the `kind=lau` list filter, references and GET with `regionIds`.
+
 ## Change history (no migration)
 
 The history screens (`/admin/povijest` and the drawer on every resource page) add no migration. They read `content_revisions` and write only through the content tables, so nothing new has to be deployed to the database and the previous app is unaffected. Deploy after `20261103010000_content_tables.sql` (the routes answer 503 `not-migrated` until then).
@@ -221,7 +227,7 @@ The history screens (`/admin/povijest` and the drawer on every resource page) ad
 - Every audit row holds the full row (minus `search_text`) as `data`. The API compares consecutive snapshots of one `(entity_kind, entity_id)` in the order of `content_revisions_entity`, so no history table or column is added. A delete is recorded with revision `old.revision + 1`.
 - Restoring updates the live row with `revision = <expected>` (or inserts it again if it was deleted) and lets the triggers do the rest, so the result is an ordinary `update` or `insert` revision by actor `admin`. A recreated row gets `revision = newest recorded revision + 1` and its original `created_at`, so the count never repeats and ordering by `id` stays the order of events. The history does not mark a revision as a restore; it shows what changed.
 - A snapshot holds only the row. State kept in other tables (for example `heritage_item_sources`, `area_regions`) is not part of it, so a kind that edits such links needs them added to its registry definition before restore is complete for that kind.
-- Rows of kinds without an admin resource yet (`word`, `area`, `heritage_item`, `heritage_category`, including the `import` baselines) are listed in the global log but cannot be opened or restored.
+- Rows of kinds without an admin resource yet (`heritage_item`, `heritage_category`, including the `import` baselines) are listed in the global log but cannot be opened or restored until their resource exists.
 - `content_revisions` is append-only for the app: nothing deletes or edits it. Contributor-credit redaction (a later plan step) will have to scrub the snapshots it appears in.
 
 Rollback is app-only; the table and its rows stay.

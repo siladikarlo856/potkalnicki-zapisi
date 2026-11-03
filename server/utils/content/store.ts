@@ -3,7 +3,7 @@ import type { ContentErrorData, ContentIssue, ContentList, ContentLookupItem, Co
 import {
   CONTENT_BODY_LIMIT, CONTENT_LOOKUP_LIMIT, CONTENT_PAGE_SIZES, CONTENT_SEARCH_MAX, CONTENT_STATUSES, contentFold, isUuid
 } from '../../../shared/utils/content/common'
-import type { AnyContentKindDefinition } from './definition'
+import type { AnyContentKindDefinition, ContentFilter } from './definition'
 
 // Generic admin operations over one registry definition. The database owns the invariants:
 // `revision`, `updated_at` and `search_text` are set by the `content_before_write` trigger, every
@@ -56,7 +56,7 @@ export function toRow(def: AnyContentKindDefinition, value: Row) {
 
 /** Only the editable fields and `status`: ids, revisions and timestamps are never taken from a client. */
 export function editable(def: AnyContentKindDefinition, source: Row) {
-  const keys = [...Object.keys(def.fields), 'status']
+  const keys = [...Object.keys(def.fields), ...(def.inputFields ?? []), 'status']
   return Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]))
 }
 
@@ -163,7 +163,9 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
       if (name === 'status') continue
       const value = queryText(query[name], name)
       if (!value) continue
-      request = request.eq(filter.column, value)
+      const expanded = (filter as ContentFilter).in?.[value]
+      if (expanded) request = request.in(filter.column, [...expanded])
+      else request = request.eq(filter.column, value)
     }
     if (statusFilter) {
       if (def.adapter?.statusFilter) def.adapter.statusFilter(statusFilter as ContentStatus, (column, value) => {
@@ -194,10 +196,13 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
 
 export async function getContent(def: AnyContentKindDefinition, id: string) {
   const row = await requireRow(def, id)
-  const { data, error } = await useDatabaseClient().from('content_legacy_ids')
+  const db = useDatabaseClient()
+  const { data, error } = await db.from('content_legacy_ids')
     .select('legacy_id').eq('kind', def.kind).eq('entity_id', id).order('legacy_id')
   if (error) contentDatabaseError(def, error)
-  return { entity: toEntity(def, row), legacyIds: (data ?? []).map(entry => entry.legacy_id as string) }
+  const entity = toEntity(def, row)
+  const extras = await def.loadEntity?.(db, entity) ?? {}
+  return { entity: { ...entity, ...extras }, legacyIds: (data ?? []).map(entry => entry.legacy_id as string) }
 }
 
 async function readInput(event: H3Event, def: AnyContentKindDefinition) {
@@ -205,7 +210,7 @@ async function readInput(event: H3Event, def: AnyContentKindDefinition) {
 }
 
 /** Every write makes the public snapshot reload on the next request; the kind's own hook runs after that. */
-async function afterWrite(event: H3Event, def: AnyContentKindDefinition) {
+export async function contentAfterWrite(event: H3Event, def: AnyContentKindDefinition) {
   invalidatePublicContent()
   await def.afterWrite?.(event)
 }
@@ -218,9 +223,11 @@ export async function createContent(event: H3Event, def: AnyContentKindDefinitio
   if (def.adapter?.createId) row.id = def.adapter.createId(value)
   const { data, error } = await useDatabaseClient().from(def.table).insert(row).select(selectList(def)).single()
   if (error) contentDatabaseError(def, error)
-  await afterWrite(event, def)
+  const saved = toEntity(def, data as unknown as Row)
+  await def.persistEntity?.(useDatabaseClient(), saved.id as string, value as Row)
+  await contentAfterWrite(event, def)
   setResponseStatus(event, 201)
-  return { entity: toEntity(def, data as unknown as Row) }
+  return { entity: { ...saved, ...(await def.loadEntity?.(useDatabaseClient(), saved) ?? {}) } }
 }
 
 /**
@@ -247,8 +254,11 @@ export async function updateContent(event: H3Event, def: AnyContentKindDefinitio
     // Someone saved between the read and the write.
     conflict(def, await requireRow(def, id))
   }
-  await afterWrite(event, def)
-  return { entity: toEntity(def, saved[0]!) }
+  const entity = toEntity(def, saved[0]!)
+  await def.persistEntity?.(useDatabaseClient(), id, value as Row)
+  await contentAfterWrite(event, def)
+  const extras = await def.loadEntity?.(useDatabaseClient(), entity) ?? {}
+  return { entity: { ...entity, ...extras } }
 }
 
 export async function contentReferences(def: AnyContentKindDefinition, id: string): Promise<ContentReferences> {
@@ -273,7 +283,7 @@ async function archiveContent(event: H3Event, def: AnyContentKindDefinition, id:
   if (error) contentDatabaseError(def, error)
   const saved = (data ?? []) as unknown as Row[]
   if (!saved.length) fail(404, 'Not found', { message: 'Zapis nije pronađen.' })
-  await afterWrite(event, def)
+  await contentAfterWrite(event, def)
   return { mode: 'archive' as const, entity: toEntity(def, saved[0]!) }
 }
 
@@ -292,7 +302,7 @@ async function hardDeleteContent(event: H3Event, def: AnyContentKindDefinition, 
     contentDatabaseError(def, error)
   }
   if (!data?.length) fail(404, 'Not found', { message: 'Zapis nije pronađen.' })
-  await afterWrite(event, def)
+  await contentAfterWrite(event, def)
   return { mode: 'hard' as const, id }
 }
 
@@ -336,7 +346,7 @@ export async function lookupContent(event: H3Event, def: AnyContentKindDefinitio
       const entity = toEntity(def, row)
       return {
         id: entity.id as string,
-        label: def.adapter?.lookupLabel?.(row) ?? String(row[def.labelColumn] ?? ''),
+        label: def.lookupLabel?.(row) ?? def.adapter?.lookupLabel?.(row) ?? String(row[def.labelColumn] ?? ''),
         status: entity.status as ContentStatus
       }
     })

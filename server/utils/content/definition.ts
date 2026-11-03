@@ -7,6 +7,8 @@ import type { ContentKind, ContentReferenceGroup, ContentStatus, ContentValidati
 export interface ContentFilter {
   column: string
   values: readonly string[]
+  /** When the filter value is a key here, the list query uses `in` with these column values. */
+  in?: Record<string, readonly string[]>
 }
 
 /** Maps tables that do not follow the generic status column (e.g. heritage_words uses active + archived_at). */
@@ -41,6 +43,8 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   references?(db: SupabaseClient, id: string): Promise<ContentReferenceGroup[]>
   /** Runs after every successful write, e.g. to invalidate a public content cache. */
   afterWrite?(event: H3Event): void | Promise<void>
+  /** Optional label formatter for lookup menus (defaults to `labelColumn`). */
+  lookupLabel?(row: Record<string, unknown>): string
   /**
    * Editable fields a history restore leaves at their current value, because they select the row
    * rather than describe it (e.g. `isCurrent` of a challenge template).
@@ -49,6 +53,12 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   /** Request body cap in bytes; defaults to CONTENT_BODY_LIMIT. */
   bodyLimit?: number
   adapter?: ContentKindAdapter
+  /** Validated API fields that are not columns on the main table (synced in `persistEntity`). */
+  inputFields?: readonly string[]
+  /** Loads API fields not stored on the main row (e.g. region membership). */
+  loadEntity?(db: SupabaseClient, entity: Record<string, unknown> & { id: string }): Promise<Record<string, unknown>>
+  /** Persists API fields not stored on the main row after a successful save or restore. */
+  persistEntity?(db: SupabaseClient, id: string, value: Record<string, unknown>): Promise<void>
 }
 
 export function defineContentKind<V extends { status: ContentStatus }>(definition: ContentKindDefinition<V>) {

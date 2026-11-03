@@ -15,6 +15,7 @@ const props = defineProps<{
   resource: AdminResource<T, F>
 }>()
 defineSlots<{
+  toolbar?(): unknown
   fields?(props: { state: F, entity: T | null }): unknown
   advanced?(props: { state: F, entity: T | null }): unknown
   dialog?(props: {
@@ -218,6 +219,8 @@ const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranic
     >
       {{ resource.labels.description }}
     </p>
+
+    <slot name="toolbar" />
 
     <div
       class="flex flex-wrap items-center gap-2"

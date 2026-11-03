@@ -1,0 +1,89 @@
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+import { describe, expect, it } from 'vitest'
+import { fetch, setup } from '@nuxt/test-utils/e2e'
+import type { ContentList, ContentReferences } from '../shared/utils/content/common'
+import type { Area } from '../shared/utils/content/area'
+
+const url = process.env.TEST_CHALLENGE_API_URL
+const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
+const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
+const SECRET = 'content-kit-review-secret-0123456789'
+
+if (url) await setup({
+  rootDir: fileURLToPath(new URL('..', import.meta.url)), server: true, setupTimeout: 300_000,
+  env: { NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET }
+})
+
+function sql(input: string) {
+  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
+  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
+}
+
+let ip = 0
+async function api<T = Record<string, unknown>>(path: string, init: { method?: string, body?: unknown, auth?: boolean } = {}) {
+  const headers: Record<string, string> = { 'x-forwarded-for': `192.0.2.${++ip % 250}` }
+  if (init.auth !== false) headers.authorization = `Bearer ${SECRET}`
+  if (init.body !== undefined) headers['content-type'] = 'application/json'
+  const response = await fetch(path, { method: init.method ?? 'GET', headers, body: init.body === undefined ? undefined : JSON.stringify(init.body) })
+  const text = await response.text()
+  return { status: response.status, body: (text ? JSON.parse(text) : null) as T & { data?: Record<string, unknown> } }
+}
+
+const BASE = '/api/admin/content/area'
+
+function kitTestRegion() {
+  const county = sql(`select id from areas where kind = 'county' limit 1`)
+  return sql(`insert into public.areas (kind, parent_id, name, status) values ('region', '${county}', 'kit-test regija ' || gen_random_uuid()::text, 'draft') returning id`).toLowerCase()
+}
+
+describe.skipIf(!url)('admin areas API over real Postgres', () => {
+  it('creates a draft settlement with region membership', async () => {
+    const region = kitTestRegion()
+    const town = sql(`select id from areas where kind = 'town' and slug = 'grad-krizevci' limit 1`)
+    const response = await api<{ entity: Area }>(BASE, {
+      method: 'POST',
+      body: {
+        kind: 'settlement',
+        name: 'kit-test Naselje',
+        parentId: town,
+        slug: 'kit-test-naselje',
+        status: 'draft',
+        regionIds: [region]
+      }
+    })
+    expect(response.status, JSON.stringify(response.body)).toBe(201)
+    expect(response.body.entity).toMatchObject({ name: 'kit-test Naselje', kind: 'settlement', regionIds: [region] })
+    expect(sql(`select count(*) from area_regions where area_id = '${response.body.entity.id}' and region_id = '${region}'`)).toBe('1')
+  })
+
+  it('lists with the lau kind filter and blocks delete when referenced', async () => {
+    const list = await api<ContentList<Area>>(`${BASE}?kind=lau&size=25`)
+    expect(list.status).toBe(200)
+    expect(list.body.rows.every(row => row.kind === 'town' || row.kind === 'municipality')).toBe(true)
+
+    const town = list.body.rows[0]!
+    const refs = await api<ContentReferences>(`${BASE}/${town.id}/references`)
+    if (refs.body.blocking) {
+      expect((await api(`${BASE}/${town.id}?mode=hard`, { method: 'DELETE' })).status).toBe(409)
+    }
+  })
+
+  it('returns region ids on GET', async () => {
+    const region = kitTestRegion()
+    const country = sql(`select id from areas where kind = 'country' limit 1`)
+    const created = await api<{ entity: Area }>(BASE, {
+      method: 'POST',
+      body: {
+        kind: 'county',
+        name: 'kit-test Županija',
+        parentId: country,
+        status: 'draft',
+        regionIds: [region]
+      }
+    })
+    expect(created.status).toBe(201)
+    const loaded = await api<{ entity: Area, legacyIds: string[] }>(`${BASE}/${created.body.entity.id}`)
+    expect(loaded.body.entity.regionIds).toEqual([region])
+  })
+})

@@ -3,6 +3,7 @@ import type { ContentKind } from '../../../shared/utils/content/common'
 import { isContentKind } from '../../../shared/utils/content/common'
 import type { AnyContentKindDefinition } from './definition'
 import { challengeTemplateKind } from './kinds/challengeTemplate'
+import { areaKind } from './kinds/area'
 import { sourceKind } from './kinds/source'
 import { wordKind } from './kinds/word'
 
@@ -12,6 +13,7 @@ import { wordKind } from './kinds/word'
 // means adding a definition here and a page that uses the client kit; no new routes.
 
 const REGISTRY: Record<ContentKind, AnyContentKindDefinition> = {
+  area: areaKind,
   source: sourceKind,
   challenge_template: challengeTemplateKind,
   word: wordKind

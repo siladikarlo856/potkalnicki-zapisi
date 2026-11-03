@@ -28,7 +28,9 @@ describe('history vocabulary', () => {
   it('labels every editable field of every registered kind and the status values', () => {
     for (const kind of CONTENT_KINDS) {
       const def = findContentKind(kind)!
-      expect(Object.keys(HISTORY_FIELDS[kind]).sort(), kind).toEqual(Object.keys(def.fields).sort())
+      expect(Object.keys(HISTORY_FIELDS[kind]).sort(), kind).toEqual(
+        [...Object.keys(def.fields), ...(def.inputFields ?? [])].sort()
+      )
     }
     expect(Object.keys(historyFieldMeta('source', 'status').values!).sort()).toEqual([...CONTENT_STATUSES].sort())
     expect(Object.keys(historyFieldMeta('source', 'type').values!).sort()).toEqual([...SOURCE_TYPES].sort())

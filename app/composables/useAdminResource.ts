@@ -43,6 +43,8 @@ export interface AdminResource<T extends ContentEntity = ContentEntity, F extend
   }
   columns: AdminColumn[]
   filters?: AdminFilter[]
+  /** Like `filters`, but only in the URL and API query — not shown as a select. */
+  hiddenFilters?: AdminFilter[]
   defaultSort: string
   /** A fresh form for "Novo". */
   blank(): F
@@ -139,7 +141,7 @@ export function adminListState(query: LocationQuery, resource: AdminResource): A
   const sort = single(query.sort) ?? ''
   const sortKeys = [...resource.columns.map(column => column.sort).filter(Boolean), ...ADMIN_COMMON_SORTS]
   const filters: Record<string, string | undefined> = {}
-  for (const filter of [...(resource.filters ?? []), { key: 'status', options: CONTENT_STATUSES.map(value => ({ value })) }]) {
+  for (const filter of [...(resource.filters ?? []), ...(resource.hiddenFilters ?? []), { key: 'status', options: CONTENT_STATUSES.map(value => ({ value })) }]) {
     const value = single(query[filter.key])
     filters[filter.key] = filter.options.some(option => option.value === value) ? value : undefined
   }

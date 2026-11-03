@@ -1,6 +1,7 @@
 import type { ContentKind, ContentList } from './common'
 import { CONTENT_STATUS_LABELS } from './common'
 import { challengeContentEntries } from './challengeTemplate'
+import { AREA_KIND_LABELS } from './area'
 import { SOURCE_TYPE_LABELS } from './source'
 
 // Change history of the content admin: the shapes of the history API, the vocabulary the screens
@@ -75,6 +76,18 @@ export interface HistoryFieldMeta {
  * ship a history that shows raw field names.
  */
 export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta>> = {
+  area: {
+    kind: { label: 'Vrsta', values: AREA_KIND_LABELS },
+    parentId: { label: 'Nadređeno mjesto' },
+    name: { label: 'Naziv' },
+    slug: { label: 'Slug' },
+    officialCode: { label: 'Službeni kod (DGU)' },
+    geonamesId: { label: 'GeoNames ID' },
+    latitude: { label: 'Geografska širina' },
+    longitude: { label: 'Geografska dužina' },
+    description: { label: 'Opis' },
+    regionIds: { label: 'Regije' }
+  },
   source: {
     title: { label: 'Naslov' },
     type: { label: 'Vrsta', values: SOURCE_TYPE_LABELS },
