@@ -181,7 +181,7 @@ Apply it through the normal migration-first workflow. The previously deployed ap
 
 ## Word areas from the areas table
 
-`20261103040000_word_areas.sql` links words to the `areas` table introduced in `20261103010000_content_tables.sql`. It sorts after `20261103030000_word_admin_columns.sql` and depends on both; if another migration lands first with a later timestamp, rename this file to sort after it.
+`20261103120000_word_areas.sql` links words to the `areas` table introduced in `20261103010000_content_tables.sql`. It depends on that file and on `20261103030000_word_admin_columns.sql`, and on nothing newer. Its version was originally `20261103040000`; it merged after `20261103100000_challenge_templates.sql` had already been applied to production, so the workflow's history check refused the older version ("Found local migration files to be inserted before the last migration on remote database"). It was renamed to sort after every migration then on `main`, including `20261103110000_contributions_inbox.sql`, which it runs after; its backfill updates `heritage_words` with `content_apply_submission` enabled, and that trigger ignores rows that carry no submission. Production never had the old version in its history, so nothing needs repairing. Never rename a migration that has been applied.
 
 What it adds:
 

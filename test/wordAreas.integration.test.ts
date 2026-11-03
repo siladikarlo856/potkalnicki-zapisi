@@ -3,7 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 
-// Word areas from the areas table (20261103040000_word_areas.sql) on a real Postgres. Run with
+// Word areas from the areas table (20261103120000_word_areas.sql) on a real Postgres. Run with
 // `node scripts/test-challenges.mjs`, which provisions a disposable Postgres and PostgREST, applies
 // every migration and removes both afterwards. Skipped everywhere else.
 // Every test adds its own words and areas with fresh UUIDs; it never touches the seeded data.
