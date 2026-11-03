@@ -144,18 +144,27 @@ async function restore(entity: T) {
   await list.refresh()
 }
 
+async function refresh() {
+  await list.refresh()
+}
+
 function rowActions(entity: T): DropdownMenuItem[][] {
   const publicPath = entity.status === 'published' ? props.resource.publicPath?.(entity) : undefined
+  const extra = props.resource.rowActions?.(entity, { refresh }) ?? []
+  // A locked row keeps both actions visible, disabled, with the reason.
+  const locked = props.resource.lockedReason?.(entity)
+  const lock = locked ? { disabled: true, description: locked } : {}
   return [
     [
       { label: 'Uredi', icon: 'i-lucide-pencil', onSelect: () => openEdit(entity.id) },
       { label: 'Povijest', icon: 'i-lucide-history', onSelect: () => openHistory(entity.id) },
       ...(publicPath ? [{ label: 'Otvori javno', icon: 'i-lucide-external-link', to: publicPath, target: '_blank' }] : [])
     ],
+    ...(extra.length ? [extra] : []),
     [entity.status === 'archived'
       ? { label: 'Vrati iz arhive', icon: 'i-lucide-archive-restore', onSelect: () => restore(entity) }
-      : { label: 'Arhiviraj', icon: 'i-lucide-archive', onSelect: () => archive(entity) }],
-    [{ label: 'Obriši', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => askDelete(entity) }]
+      : { label: 'Arhiviraj', icon: 'i-lucide-archive', onSelect: () => archive(entity), ...lock }],
+    [{ label: 'Obriši', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => askDelete(entity), ...lock }]
   ]
 }
 

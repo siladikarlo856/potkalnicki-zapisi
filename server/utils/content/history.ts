@@ -148,11 +148,14 @@ export async function restoreRevision(event: H3Event, def: AnyContentKindDefinit
   const target = data as unknown as RevisionRow | null
   if (!target) fail(404, 'Not found', { message: 'Verzija nije pronađena.' })
 
+  const current = await readRow(def, id)
+  // Fields the kind keeps on a restore (e.g. which challenge template is current) stay as they are now.
+  const now = current ? projected(def, current) : {}
+  const kept = Object.fromEntries((def.restoreKeeps ?? []).filter(field => field in now).map(field => [field, now[field]]))
   // The stored version must still satisfy today's rules; the validator also normalizes it.
-  const { value, issues } = def.validate(projected(def, target.data))
+  const { value, issues } = def.validate({ ...projected(def, target.data), ...kept })
   if (issues.length) invalid(issues, 'Ta se verzija ne može vratiti jer više ne zadovoljava pravila uređivanja.')
 
-  const current = await readRow(def, id)
   if (current) {
     const expected = positiveInteger(body.revision)
     if (!expected) invalid([{ path: '', message: 'Nedostaje revizija zapisa; učitaj ga ponovno.' }], 'Nedostaje revizija zapisa.')

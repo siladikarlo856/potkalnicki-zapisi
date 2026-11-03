@@ -2,6 +2,7 @@ import type { H3Event } from 'h3'
 import type { ContentKind } from '../../../shared/utils/content/common'
 import { isContentKind } from '../../../shared/utils/content/common'
 import type { AnyContentKindDefinition } from './definition'
+import { challengeTemplateKind } from './kinds/challengeTemplate'
 import { sourceKind } from './kinds/source'
 
 // The content registry: one definition per entity kind tells the generic admin handlers
@@ -10,7 +11,8 @@ import { sourceKind } from './kinds/source'
 // means adding a definition here and a page that uses the client kit; no new routes.
 
 const REGISTRY: Record<ContentKind, AnyContentKindDefinition> = {
-  source: sourceKind
+  source: sourceKind,
+  challenge_template: challengeTemplateKind
 }
 
 export function contentKind(kind: ContentKind) {

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { CONTENT_KINDS, CONTENT_STATUSES } from '../shared/utils/content/common'
 import {
   HISTORY_ACTIONS, HISTORY_ACTION_LABELS, HISTORY_ACTOR_LABELS, HISTORY_ACTOR_PATTERN, HISTORY_ACTORS, HISTORY_FIELDS, HISTORY_KINDS, HISTORY_KIND_META,
-  diffSnapshots, formatHistoryValue, historyFieldMeta, isHistoryKind
+  diffSnapshots, expandHistoryChange, formatHistoryValue, historyFieldMeta, isHistoryKind
 } from '../shared/utils/content/history'
+import { challengeContentEntries } from '../shared/utils/content/challengeTemplate'
+import sample from '../content/heritage/challenge.json'
 import { SOURCE_TYPES } from '../shared/utils/content/source'
 import { findContentKind } from '../server/utils/content/registry'
 
@@ -88,5 +90,59 @@ describe('formatHistoryValue', () => {
     expect(formatHistoryValue({ label: 'x' }, true)).toBe('Da')
     expect(formatHistoryValue({ label: 'x' }, 0)).toBe('0')
     expect(formatHistoryValue({ label: 'x' }, ['a'])).toBe('["a"]')
+  })
+})
+
+describe('expandHistoryChange', () => {
+  const template = sampleTemplate()
+
+  function sampleTemplate() {
+    const { version: _version, ...content } = sample
+    return content
+  }
+
+  it('shows a plain field as one formatted row', () => {
+    expect(expandHistoryChange(historyFieldMeta('source', 'type'), { field: 'type', before: null, after: 'dictionary' })).toEqual([
+      { key: 'type', label: 'Vrsta', before: '—', after: 'Rječnik', beforeEmpty: true, afterEmpty: false }
+    ])
+    expect(expandHistoryChange(historyFieldMeta('challenge_template', 'isCurrent'), { field: 'isCurrent', before: false, after: true }))
+      .toMatchObject([{ label: 'Trenutni izazov', before: 'Ne', after: 'Da' }])
+  })
+
+  it('lists only the changed parts of a challenge set, labelled by round and question', () => {
+    const meta = historyFieldMeta('challenge_template', 'content')
+    const after = structuredClone(template)
+    after.rounds[1]!.questions[2]!.prompt.en = 'Changed prompt'
+    after.rounds[0]!.questions[0]!.correct = 2
+    after.sample = false
+    expect(expandHistoryChange(meta, { field: 'content', before: template, after })).toEqual([
+      expect.objectContaining({ label: 'Pitanja · Uzorak', before: 'Da', after: 'Ne' }),
+      expect.objectContaining({ label: 'Pitanja · Krug 1, pitanje 1, točan odgovor', before: '1. kuća', after: '3. sat' }),
+      expect.objectContaining({ label: 'Pitanja · Krug 2, pitanje 3 (en)', after: 'Changed prompt' })
+    ])
+  })
+
+  it('shows a moved question as a changed order, and removed and added parts', () => {
+    const meta = historyFieldMeta('challenge_template', 'content')
+    const moved = structuredClone(template)
+    moved.rounds[0]!.questions.reverse()
+    expect(expandHistoryChange(meta, { field: 'content', before: template, after: moved }).map(row => row.label))
+      .toEqual(['Pitanja · Krug 1, redoslijed pitanja'])
+
+    const removed = structuredClone(template)
+    removed.rounds[2]!.questions.pop()
+    const rows = expandHistoryChange(meta, { field: 'content', before: template, after: removed })
+    expect(rows.filter(row => row.afterEmpty).map(row => row.label)).toContain('Pitanja · Krug 3, pitanje 5 (hr)')
+    expect(rows.every(row => !row.beforeEmpty)).toBe(true)
+  })
+
+  it('lists the filled-in parts of a creation and tolerates malformed history data', () => {
+    const meta = historyFieldMeta('challenge_template', 'content')
+    const rows = expandHistoryChange(meta, { field: 'content', before: null, after: template })
+    expect(rows[0]).toMatchObject({ label: 'Pitanja · Naslov (hr)', before: '—', after: 'Izazov zavičaja — uzorak', beforeEmpty: true })
+    expect(rows.every(row => !row.afterEmpty)).toBe(true)
+    expect(expandHistoryChange(meta, { field: 'content', before: { rounds: 'x' }, after: { title: 5, rounds: [null, { questions: [{ options: 'x' }] }] } }))
+      .toEqual(expect.any(Array))
+    expect(challengeContentEntries(undefined).map(entry => entry.key)).toEqual(['title.hr', 'title.en', 'rounds'])
   })
 })

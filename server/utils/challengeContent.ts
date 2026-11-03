@@ -1,33 +1,9 @@
-import content from '../../content/heritage/challenge.json'
 import type { WordEntry } from '../../app/types/heritage'
 import type { ChallengeContent, QuizChallengeInput } from '../../shared/utils/challenge'
+import { challengeSummary, validateChallengeContent } from '../../shared/utils/content/challengeTemplate'
 
-// Fail the build/start rather than silently publishing a malformed editorial file.
-export function validateChallengeContent(input: unknown): ChallengeContent {
-  const value = input as ChallengeContent
-  const text = (v: unknown) => !!v && typeof v === 'object'
-    && ['hr', 'en'].every(lang => typeof (v as Record<string, unknown>)[lang] === 'string'
-      && ((v as Record<string, string>)[lang]?.trim().length ?? 0) > 0
-      && ((v as Record<string, string>)[lang]?.length ?? 0) <= 2000)
-  const ids = new Set<string>()
-  if (!value || !Number.isInteger(value.version) || value.version < 1 || typeof value.sample !== 'boolean'
-    || !text(value.title) || !Array.isArray(value.rounds) || !value.rounds.length || value.rounds.length > 10) throw new Error('Invalid challenge content')
-  for (const round of value.rounds) {
-    if (!round.id || !text(round.topic) || !Array.isArray(round.questions) || !round.questions.length || round.questions.length > 20) throw new Error('Invalid challenge round')
-    for (const question of round.questions) {
-      if (!question.id || ids.has(question.id) || question.mechanic !== 'multiple-choice'
-        || !text(question.prompt) || !text(question.explanation) || !Array.isArray(question.options)
-        || question.options.length < 2 || question.options.length > 4 || !question.options.every(text)
-        || !Number.isInteger(question.correct) || question.correct < 0 || question.correct >= question.options.length
-        || ['hr', 'en'].some(lang => new Set(question.options.map(o => o[lang as 'hr' | 'en'].trim().toLocaleLowerCase(lang))).size !== question.options.length)) throw new Error('Invalid challenge question')
-      ids.add(question.id)
-    }
-  }
-  if (Buffer.byteLength(JSON.stringify(value)) > 256 * 1024) throw new Error('Challenge content too large')
-  return value
-}
-
-export const currentChallengeContent = validateChallengeContent(content)
+// Challenge snapshots built on the server. Fixed challenges copy the current template
+// (challengeTemplates.ts); quiz challenges are rebuilt here from the words just played.
 
 export function quizChallengeContent(input: QuizChallengeInput, activeWords: readonly WordEntry[]): ChallengeContent {
   const fail = () => {
@@ -76,11 +52,12 @@ export function quizChallengeContent(input: QuizChallengeInput, activeWords: rea
   })
 }
 
-export function challengeOverview() {
+/** What the challenge introduction shows before anyone joins: no questions, answers or explanations. */
+export function challengeOverview(content: ChallengeContent) {
   return {
-    title: currentChallengeContent.title,
-    sample: currentChallengeContent.sample,
-    rounds: currentChallengeContent.rounds.map(r => ({ topic: r.topic, count: r.questions.length })),
-    maxScore: currentChallengeContent.rounds.reduce((n, r) => n + r.questions.length * 100, 0)
+    title: content.title,
+    sample: content.sample,
+    rounds: content.rounds.map(r => ({ topic: r.topic, count: r.questions.length })),
+    maxScore: challengeSummary(content).maxScore
   }
 }

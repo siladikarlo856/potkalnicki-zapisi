@@ -1,4 +1,5 @@
 import type { LocationQuery, LocationQueryRaw } from 'vue-router'
+import type { DropdownMenuItem } from '@nuxt/ui'
 import type {
   ContentEntity, ContentErrorData, ContentIssue, ContentKind, ContentList, ContentReferences, ContentStatus
 } from '~~/shared/utils/content/common'
@@ -53,6 +54,18 @@ export interface AdminResource<T extends ContentEntity = ContentEntity, F extend
   label(entity: T): string
   /** Public page of the entity, when it has one. */
   publicPath?(entity: T): string | undefined
+  /**
+   * Extra row-menu actions for this resource (shown after Uredi). `refresh` reloads the list after
+   * the action has saved something.
+   */
+  rowActions?(entity: T, context: { refresh: () => Promise<void> }): DropdownMenuItem[]
+  /**
+   * Why the row can be neither archived nor deleted right now (e.g. the current challenge template);
+   * the row menu then shows both actions disabled with this reason. The API refuses them anyway.
+   */
+  lockedReason?(entity: T): string | undefined
+  /** Dialog width: `wide` for nested editors (rounds and questions, word variants). */
+  dialogWidth?: 'default' | 'wide'
 }
 
 export function defineAdminResource<T extends ContentEntity, F extends object>(resource: AdminResource<T, F>) {

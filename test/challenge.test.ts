@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { WordEntry } from '../app/types/heritage'
 import { challengeNickname } from '../shared/utils/challenge'
-import { challengeOverview, currentChallengeContent, quizChallengeContent, validateChallengeContent } from '../server/utils/challengeContent'
+import { challengeOverview, quizChallengeContent } from '../server/utils/challengeContent'
+import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
+import sample from '../content/heritage/challenge.json'
+
+// The seeded current template, as a fixed challenge snapshots it (version from the template revision).
+const currentChallengeContent = validateChallengeContent(sample)
 
 const words: WordEntry[] = [
   { id: 'hiza', headword: 'hiža', meaning: { hr: 'kuća', en: 'house' }, variants: [], status: 'placeholder', sources: [] },
@@ -13,16 +18,18 @@ describe('challenge editorial contract and nickname validation', () => {
   it('ships fifteen labelled sample multiple-choice questions without leaking them in the overview', () => {
     expect(currentChallengeContent.sample).toBe(true)
     expect(currentChallengeContent.rounds.map(r => r.questions.length)).toEqual([5, 5, 5])
-    expect(challengeOverview()).toMatchObject({ sample: true, maxScore: 1500 })
-    expect(challengeOverview().rounds.every(r => Object.keys(r).sort().join(',') === 'count,topic')).toBe(true)
+    expect(challengeOverview(currentChallengeContent)).toMatchObject({ sample: true, maxScore: 1500 })
+    expect(challengeOverview(currentChallengeContent).rounds.every(r => Object.keys(r).sort().join(',') === 'count,topic')).toBe(true)
+    expect(JSON.stringify(challengeOverview(currentChallengeContent))).not.toMatch(/correct|explanation|options/)
   })
   it('rejects malformed content before it can create a challenge', () => {
     const content = structuredClone(currentChallengeContent)
     content.rounds[0]!.questions[0]!.correct = 4
-    expect(() => validateChallengeContent(content)).toThrow('Invalid challenge question')
+    expect(() => validateChallengeContent(content)).toThrow('Invalid challenge content: rounds.0.questions.0.correct: Označi točan odgovor.')
     content.rounds[0]!.questions[0]!.correct = 0
     content.rounds[0]!.questions[0]!.options.splice(1)
-    expect(() => validateChallengeContent(content)).toThrow('Invalid challenge question')
+    expect(() => validateChallengeContent(content)).toThrow('Invalid challenge content: rounds.0.questions.0.options: Pitanje treba barem 2 ponuđena odgovora.')
+    expect(() => validateChallengeContent({ ...sample, version: 0 })).toThrow('Invalid challenge content: version')
   })
   it('accepts Croatian letters and normalizes whitespace; rejects markup, control characters and invalid length', () => {
     expect(challengeNickname('  Željko  Š.  ')).toBe('Željko Š.')

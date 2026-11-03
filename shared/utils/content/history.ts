@@ -1,5 +1,6 @@
 import type { ContentKind, ContentList } from './common'
 import { CONTENT_STATUS_LABELS } from './common'
+import { challengeContentEntries } from './challengeTemplate'
 import { SOURCE_TYPE_LABELS } from './source'
 
 // Change history of the content admin: the shapes of the history API, the vocabulary the screens
@@ -12,7 +13,7 @@ import { SOURCE_TYPE_LABELS } from './source'
  * `ContentKind` because history also lists kinds whose admin resource is not built yet (the
  * imported areas, heritage items and categories, and words).
  */
-export const HISTORY_KINDS = ['area', 'heritage_category', 'heritage_item', 'source', 'word'] as const
+export const HISTORY_KINDS = ['area', 'challenge_template', 'heritage_category', 'heritage_item', 'source', 'word'] as const
 export type HistoryKind = typeof HISTORY_KINDS[number]
 
 export function isHistoryKind(value: unknown): value is HistoryKind {
@@ -42,16 +43,30 @@ export interface HistoryKindMeta {
 
 export const HISTORY_KIND_META: Record<HistoryKind, HistoryKindMeta> = {
   area: { singular: 'Mjesto', plural: 'Mjesta', adminPath: '/admin/mjesta' },
+  challenge_template: { singular: 'Izazov', plural: 'Izazovi', adminPath: '/admin/izazovi' },
   heritage_category: { singular: 'Kategorija baštine', plural: 'Kategorije baštine', adminPath: '/admin/kategorije' },
   heritage_item: { singular: 'Zapis baštine', plural: 'Zapisi baštine', adminPath: '/admin/bastina' },
   source: { singular: 'Izvor', plural: 'Izvori', adminPath: '/admin/izvori' },
   word: { singular: 'Riječ', plural: 'Riječi', adminPath: '/admin/rijeci' }
 }
 
+/** One labelled part of a structured value (see `HistoryFieldMeta.entries`). */
+export interface HistoryEntry {
+  /** Stable across versions (e.g. built from round and question ids), so a moved part is not a change. */
+  key: string
+  label: string
+  value: string
+}
+
 /** A field as the history shows it: a Croatian label and, for coded values, a label per value. */
 export interface HistoryFieldMeta {
   label: string
   values?: Record<string, string>
+  /**
+   * Splits a structured value (a whole challenge set) into labelled parts, so the history lists the
+   * parts that changed instead of two large JSON blobs. See `expandHistoryChange`.
+   */
+  entries?(value: unknown): HistoryEntry[]
 }
 
 /**
@@ -65,6 +80,11 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
     type: { label: 'Vrsta', values: SOURCE_TYPE_LABELS },
     url: { label: 'Poveznica' },
     note: { label: 'Napomena' }
+  },
+  challenge_template: {
+    name: { label: 'Naziv' },
+    content: { label: 'Pitanja', entries: challengeContentEntries },
+    isCurrent: { label: 'Trenutni izazov' }
   }
 }
 
@@ -82,6 +102,55 @@ export function formatHistoryValue(meta: HistoryFieldMeta, value: unknown): stri
   if (typeof value === 'boolean') return value ? 'Da' : 'Ne'
   if (typeof value === 'number') return String(value)
   return JSON.stringify(value)
+}
+
+/** A change as the history shows it: a label and both values already formatted. */
+export interface HistoryChangeRow {
+  key: string
+  label: string
+  before: string
+  after: string
+  beforeEmpty: boolean
+  afterEmpty: boolean
+}
+
+function isEmpty(value: unknown) {
+  return value === null || value === undefined || value === ''
+}
+
+/**
+ * The rows the history shows for one changed field: one row for a plain field, or one row per
+ * changed part for a field with `entries` (in the order of the newer version, then removed parts).
+ */
+export function expandHistoryChange(meta: HistoryFieldMeta, change: HistoryChange): HistoryChangeRow[] {
+  if (!meta.entries) {
+    return [{
+      key: change.field,
+      label: meta.label,
+      before: formatHistoryValue(meta, change.before),
+      after: formatHistoryValue(meta, change.after),
+      beforeEmpty: isEmpty(change.before),
+      afterEmpty: isEmpty(change.after)
+    }]
+  }
+  const before = new Map(isEmpty(change.before) ? [] : meta.entries(change.before).map(entry => [entry.key, entry]))
+  const after = isEmpty(change.after) ? [] : meta.entries(change.after)
+  const row = (key: string, label: string, was = '', now = ''): HistoryChangeRow => ({
+    key: `${change.field}:${key}`,
+    label: `${meta.label} · ${label}`,
+    before: was || '—',
+    after: now || '—',
+    beforeEmpty: !was,
+    afterEmpty: !now
+  })
+  const rows: HistoryChangeRow[] = []
+  for (const entry of after) {
+    const was = before.get(entry.key)
+    before.delete(entry.key)
+    if ((was?.value ?? '') !== entry.value) rows.push(row(entry.key, entry.label, was?.value, entry.value))
+  }
+  for (const was of before.values()) if (was.value) rows.push(row(was.key, was.label, was.value))
+  return rows
 }
 
 /** One field that differs between two versions of a row, in API (camelCase) form. */

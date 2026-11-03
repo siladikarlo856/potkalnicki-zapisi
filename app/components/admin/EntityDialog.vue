@@ -191,7 +191,7 @@ function formatDate(value: string) {
     :description="entity ? resource.label(entity) : resource.labels.description"
     :dismissible="false"
     :close="false"
-    :ui="{ content: 'sm:max-w-2xl', footer: 'flex-wrap justify-end' }"
+    :ui="{ content: resource.dialogWidth === 'wide' ? 'sm:max-w-4xl' : 'sm:max-w-2xl', footer: 'flex-wrap justify-end' }"
     data-test="admin-entity-dialog"
     @close:prevent="requestClose"
   >

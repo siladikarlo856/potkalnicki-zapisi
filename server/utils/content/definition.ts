@@ -29,6 +29,11 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   references?(db: SupabaseClient, id: string): Promise<ContentReferenceGroup[]>
   /** Runs after every successful write, e.g. to invalidate a public content cache. */
   afterWrite?(event: H3Event): void | Promise<void>
+  /**
+   * Editable fields a history restore leaves at their current value, because they select the row
+   * rather than describe it (e.g. `isCurrent` of a challenge template).
+   */
+  restoreKeeps?: ReadonlyArray<Extract<Exclude<keyof V, 'status'>, string>>
   /** Request body cap in bytes; defaults to CONTENT_BODY_LIMIT. */
   bodyLimit?: number
 }

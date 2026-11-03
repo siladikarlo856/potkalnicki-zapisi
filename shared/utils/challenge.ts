@@ -7,8 +7,12 @@ export interface ChallengeQuestion {
   correct: number
   explanation: ChallengeText
 }
+/** A challenge set; `heritage_challenges.content` stores one as an immutable snapshot. */
 export interface ChallengeContent {
+  /** For a template snapshot, the template's revision; quiz-built snapshots use 1. */
   version: number
+  /** The challenge template a fixed challenge was created from (absent for quiz-built ones). */
+  templateId?: string
   sample: boolean
   title: ChallengeText
   rounds: { id: string, topic: ChallengeText, questions: ChallengeQuestion[] }[]

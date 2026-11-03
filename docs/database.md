@@ -203,6 +203,24 @@ The history screens (`/admin/povijest` and the drawer on every resource page) ad
 
 Rollback is app-only; the table and its rows stay.
 
+## Challenge templates
+
+`20261103100000_challenge_templates.sql` moves the fixed challenge sets ("Izazov zavičaja") from `content/heritage/challenge.json` into `heritage_challenge_templates`, edited at `/admin/izazovi`. It sorts after `20261103030000_word_admin_columns.sql` and uses the content-table helpers of `20261103010000_content_tables.sql`; if another migration lands first with a later timestamp, rename this file to sort after it before merging.
+
+What it adds:
+
+- `heritage_challenge_templates`: `name`, `content` (the challenge set: `sample`, `title`, `rounds`, without `version`), `is_current`, and the content-table conventions: UUID `id`, `status` (`draft`, `published`, `archived`), managed `revision`, `created_at`/`updated_at` and an accent-folded `search_text` from the name (`content_before_write('name')`). A check keeps the content's outline (an object with a boolean `sample`, a `title` object and 1–10 rounds, no `version` or `templateId`) and caps `content::text` at 256 KiB; the app validates the full shape with the same rules as the admin dialog.
+- The "current" rules: at most one template is current (`heritage_challenge_templates_current`, a partial unique index) and it is published (`heritage_challenge_templates_current_published`). The `heritage_challenge_templates_current_rules` trigger makes a switch one statement: setting `is_current` on a template demotes the previous one first. It refuses, with Croatian messages the admin shows as they are, to switch the current template off, unpublish or archive it, or delete it, so new challenges always have one.
+- History: `content_audit('challenge_template')` writes every insert, update and delete to `content_revisions` (`entity_kind = 'challenge_template'`), so the history drawer and restore work as for sources. A restore keeps the row's current `is_current`.
+- RLS on, no grants for `public`, `anon` or `authenticated`, `service_role` only, like every other table.
+- The seed: the sample set from `content/heritage/challenge.json` as "Izazov zavičaja — uzorak", published and current, with id `content_uuid('challenge_template:sample')` in every environment and an `insert` revision by actor `import`. It is inserted only when that id is missing (not with `on conflict do nothing`, because the BEFORE trigger would demote the current template before a conflict is detected), and it is made current only when no template is current yet, so a replay changes nothing. `test/challengeTemplates.test.ts` (part of `pnpm test`) keeps the seed equal to the JSON file.
+
+A new fixed challenge copies the current template's content into `heritage_challenges.content`, with `version` set to the template's `revision` and `templateId` to its id. Existing challenges keep their snapshots and are never rewritten; quiz-result challenges do not use templates.
+
+Apply it through the normal migration-first workflow. The previously deployed app still reads `content/heritage/challenge.json` and ignores the table, so migrating first is safe, and an app rollback keeps the table and its rows: do not drop it. Deploy the new app only after the migration: it reads the current template from the table, and until the table exists the challenge introduction and fixed-challenge creation answer 503 (joining and playing existing challenges are unaffected). After rollout, verify that `select name, status, is_current, revision from public.heritage_challenge_templates;` gives the one sample row (published, current, revision 1), that `anon` and `authenticated` get `permission denied`, and that a new fixed challenge's `content->>'templateId'` is that row's id.
+
+`node scripts/test-challenges.mjs` runs `test/challengeTemplates.integration.test.ts` on its disposable Postgres: the seed and its import revision, the one-statement switch, the refusals for the current template (and the declarative checks without the trigger), the content outline and size checks, revision and search, public-role denial, the admin API (create, list, edit, conflict, archive, delete), and switching the current template through the API so that the next challenge uses it, plus a restore that keeps it current.
+
 ## Failure and recovery
 
 Open **GitHub → Actions → Production database and deploy → failing run → Migrate then promote production branch**. The history step shows version numbers, and the Supabase CLI reports the failed migration and database error. Missing baseline entries, unknown remote migrations, missing earlier versions, authentication/connection errors, SQL errors, branch divergence, or branch protection failures stop the job. Subsequent branch promotion is skipped on migration failure; `production` remains at its last promoted commit.

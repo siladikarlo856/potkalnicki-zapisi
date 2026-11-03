@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ContentKind } from '~~/shared/utils/content/common'
 import type { HistoryAction, HistoryChange } from '~~/shared/utils/content/history'
-import { formatHistoryValue, historyFieldMeta } from '~~/shared/utils/content/history'
+import { expandHistoryChange, historyFieldMeta } from '~~/shared/utils/content/history'
 
 // The fields one revision changed, each as "before → after". A creation lists only the values it
 // started with and a deletion the values the row had when it was removed.
@@ -11,17 +11,8 @@ const props = defineProps<{
   changes: HistoryChange[]
 }>()
 
-const rows = computed(() => props.changes.map((change) => {
-  const meta = historyFieldMeta(props.kind, change.field)
-  return {
-    field: change.field,
-    label: meta.label,
-    before: formatHistoryValue(meta, change.before),
-    after: formatHistoryValue(meta, change.after),
-    beforeEmpty: change.before === null || change.before === undefined || change.before === '',
-    afterEmpty: change.after === null || change.after === undefined || change.after === ''
-  }
-}))
+// A structured field (a challenge set) lists each changed part on its own row.
+const rows = computed(() => props.changes.flatMap(change => expandHistoryChange(historyFieldMeta(props.kind, change.field), change)))
 </script>
 
 <template>
@@ -38,9 +29,9 @@ const rows = computed(() => props.changes.map((change) => {
   >
     <div
       v-for="row in rows"
-      :key="row.field"
+      :key="row.key"
       class="flex flex-col gap-1"
-      :data-test="`history-change-${row.field}`"
+      :data-test="`history-change-${row.key}`"
     >
       <dt class="text-xs font-medium uppercase tracking-wide text-muted">
         {{ row.label }}

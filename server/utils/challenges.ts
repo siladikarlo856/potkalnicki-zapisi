@@ -2,7 +2,8 @@ import { createHash, randomBytes } from 'node:crypto'
 import type { H3Event } from 'h3'
 import type { ChallengeContent, ChallengeState, QuizChallengeInput } from '../../shared/utils/challenge'
 import { challengeNickname } from '../../shared/utils/challenge'
-import { currentChallengeContent, quizChallengeContent } from './challengeContent'
+import { quizChallengeContent } from './challengeContent'
+import { currentChallengeContent } from './challengeTemplates'
 
 const BODY_LIMIT = 8192
 
@@ -50,7 +51,8 @@ export async function enterChallenge(event: H3Event, create: boolean) {
   const body = await challengeBody(event)
   const nickname = challengeNickname(body.nickname)
   if (!nickname) throw createError({ statusCode: 400, statusMessage: 'Invalid nickname' })
-  let content: ChallengeContent = currentChallengeContent
+  // Only creation needs content: a join plays the snapshot stored with the challenge.
+  let content: ChallengeContent | null = null
   let quiz: QuizChallengeInput | null = null
   if (create && body.quiz !== undefined) {
     quiz = body.quiz as QuizChallengeInput
@@ -59,6 +61,8 @@ export async function enterChallenge(event: H3Event, create: boolean) {
     } catch {
       throw createError({ statusCode: 400, statusMessage: 'Invalid quiz challenge' })
     }
+  } else if (create) {
+    content = await currentChallengeContent()
   }
   const code = create ? randomBytes(12).toString('base64url') : challengeCode(event)
   const existing = participantHash(event, code)
@@ -67,7 +71,7 @@ export async function enterChallenge(event: H3Event, create: boolean) {
   let state = await challengeRpc(create ? 'create' : 'join', code, hash, {
     nickname, ...(create ? { content } : {})
   })
-  if (quiz) state = await completeQuizChallenge(code, hash, content, quiz.results)
+  if (quiz) state = await completeQuizChallenge(code, hash, content!, quiz.results)
   if (token) setCookie(event, `heritage_${code}`, token, {
     httpOnly: true, secure: !import.meta.dev && getRequestURL(event).protocol === 'https:',
     sameSite: 'lax', path: `/api/challenges/${code}`, maxAge: 365 * 86400
