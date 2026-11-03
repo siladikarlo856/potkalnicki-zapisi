@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SubmissionType } from '~~/shared/utils/submission'
-import { heritageItemById } from '~~/shared/utils/atlasData'
+import type { ContentTargetResponse } from '~~/shared/types/publicAtlas'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -19,10 +19,22 @@ const pickerCards: { kind: PickerKind, type?: SubmissionType, soon?: boolean }[]
   { kind: 'photo', soon: true }
 ]
 
-const correctionItem = computed(() => {
+const correctionTargetId = computed(() => {
   const raw = route.query.zapis
-  if (typeof raw !== 'string') return undefined
-  return heritageItemById(raw)
+  return typeof raw === 'string' ? raw : undefined
+})
+
+const { data: correctionTarget } = await useAsyncData(
+  () => `correction-target-${correctionTargetId.value ?? 'none'}`,
+  () => (correctionTargetId.value
+    ? $fetch<ContentTargetResponse>('/api/content/target', { query: { kind: 'heritage_item', id: correctionTargetId.value } })
+    : Promise.resolve(null)),
+  { watch: [correctionTargetId] }
+)
+
+const correctionItem = computed(() => {
+  const target = correctionTarget.value
+  return target?.kind === 'heritage_item' ? target.item : undefined
 })
 
 const selectedKind = computed(() => {
@@ -150,7 +162,7 @@ useSeoMeta({
         <HeritageSubmissionForm
           :word="prefillWord"
           :fixed-type="fixedType"
-          :target-ref="correctionItem?.id"
+          :target-ref="correctionItem?.ref"
           :correction-item-name="correctionItem?.name"
           hide-type-picker
         />

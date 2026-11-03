@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { municipalityBySlug } from '~~/shared/utils/atlasData'
+import type { AtlasMunicipalityResponse } from '~~/shared/types/publicAtlas'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -7,42 +7,26 @@ defineI18nRoute({ locales: ['hr'] })
 const route = useRoute()
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { atlas, municipalityName, municipalityStats, heritageForSettlement, settlementPath, categoryLabel } = useAtlas()
+const { settlementPath } = useAtlas()
 
-const municipality = computed(() => municipalityBySlug(String(route.params.opcina)))
+const municipalitySlug = computed(() => String(route.params.opcina))
+const { data: page } = await useAtlasFetch<AtlasMunicipalityResponse>(
+  () => `/api/atlas/municipalities/${municipalitySlug.value}`
+)
 
-if (!municipalityBySlug(String(route.params.opcina))) {
-  throw createError({ statusCode: 404, statusMessage: 'Općina nije pronađena' })
-}
+const municipality = computed(() => page.value?.municipality)
+const stats = computed(() => page.value?.stats)
 
-const stats = computed(() => (municipality.value ? municipalityStats(municipality.value.id) : null))
+const settlements = computed(() => (page.value?.settlements ?? []).map(s => ({
+  ...s,
+  to: settlementPath(s.slug)
+})).sort((a, b) => a.name.localeCompare(b.name, 'hr')))
 
-const settlements = computed(() => {
-  if (!municipality.value) return []
-  return atlas.value.settlements
-    .filter(s => s.municipalityId === municipality.value!.id)
-    .map(s => ({
-      ...s,
-      itemCount: heritageForSettlement(s.id).length,
-      to: settlementPath(s.slug)
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'hr'))
-})
-
-const categoryBreakdown = computed(() => {
-  if (!municipality.value) return []
-  const counts = new Map<string, number>()
-  for (const item of atlas.value.heritage.filter(h => h.municipalityId === municipality.value!.id)) {
-    counts.set(item.category, (counts.get(item.category) ?? 0) + 1)
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || categoryLabel(a[0]).localeCompare(categoryLabel(b[0]), 'hr'))
-    .map(([category, count]) => ({ category, count, label: categoryLabel(category) }))
-})
+const categoryBreakdown = computed(() => page.value?.categories ?? [])
 
 useSeoMeta({
-  title: () => municipality.value ? `${municipalityName(municipality.value.id)} · Potkalnički zapisi` : '',
-  description: () => municipality.value && stats.value
+  title: () => municipality.value ? `${municipality.value.label} · Potkalnički zapisi` : '',
+  description: () => stats.value
     ? t('pz.explore.municipalityDescription', { settlements: stats.value.settlements, items: stats.value.items })
     : ''
 })
@@ -51,7 +35,7 @@ useSeoMeta({
 <template>
   <div v-if="municipality && stats">
     <UPageHero
-      :title="municipalityName(municipality.id)"
+      :title="municipality.label"
       :description="t('pz.explore.municipalityDescription', { settlements: stats.settlements, items: stats.items })"
       :links="[{ label: t('pz.explore.allRegions'), to: localePath('/potkalnicko-prigorje/istrazi'), color: 'neutral', variant: 'ghost' }]"
       :ui="{ container: 'py-12 sm:py-16' }"
@@ -65,7 +49,7 @@ useSeoMeta({
       <ul class="flex flex-wrap gap-2">
         <li
           v-for="row in categoryBreakdown"
-          :key="row.category"
+          :key="row.key"
         >
           <UBadge
             variant="subtle"

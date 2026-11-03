@@ -7,7 +7,10 @@ import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
 import { createClient } from '@supabase/supabase-js'
 import type { AdminWord, PublicWords, WordInput } from '../shared/utils/word'
 import atlasPrerenderRoutes from '../content/atlas/prerender-routes.json'
-import { getAtlas, settlementByCode } from '../shared/utils/atlasData'
+import { getAtlas, heritageItemByRoute, settlementByCode } from '../shared/utils/atlasData'
+import { buildPublicContent } from '../server/utils/publicContent'
+import { sitemapEntries, SITE_URL } from '../server/utils/sitemap'
+import { fakeContentRows } from './helpers/fakeContentSeed'
 
 const SECRET = 'test-review-secret-0123456789'
 const SESSION_PASSWORD = 'test-admin-session-password-0123456789'
@@ -294,7 +297,7 @@ describe('word admin and public word APIs', () => {
     expect((await readPublic()).words.find(w => w.id === word.entry.id)?.headword).toBe('promotion test word')
   })
 
-  it('retains an unmapped canonical place as a private note without guessing a sample area', async () => {
+  it('maps a seeded atlas settlement from geonames without name guessing when promoting a submission', async () => {
     expect((await submit({ ...valid, text: 'unmapped catalog promotion', placeId: 'geonames:3194545' })).status).toBe(201)
     const submission = (await listAll()).find(s => s.text === 'unmapped catalog promotion')!
     const response = await request(`/api/review/submissions/${submission.id}/word`, { method: 'POST', secret: SECRET })
@@ -302,7 +305,7 @@ describe('word admin and public word APIs', () => {
     const word = await response.json() as AdminWord
     wordIds.push(word.entry.id)
     expect(word.submissionPlace).toBe('Nemčevec (geonames:3194545)')
-    expect(word.entry.variants[0]?.usages).toEqual([])
+    expect(word.entry.variants[0]?.usages).toMatchObject([{ areaId: expect.stringMatching(/^[0-9a-f-]{36}$/), confidence: 'reported' }])
     expect(word.active).toBe(false)
   })
 
@@ -960,6 +963,23 @@ function metaContent(html: string, key: string) {
   return tag?.match(/content="([^"]*)"/)?.[1]
 }
 
+describe('atlas SSR pages', () => {
+  it('serves every prerendered atlas route with 200', async () => {
+    for (const path of atlasPrerenderRoutes as string[]) {
+      expect((await fetch(path)).status, path).toBe(200)
+    }
+  })
+
+  it('keeps SEO on a heritage item page', async () => {
+    const path = '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka'
+    const item = heritageItemByRoute('kalnik', 'crkva-sv-brcka')!
+    const html = await (await fetch(path)).text()
+    expect(metaContent(html, 'og:title')).toBe(`${item.name} · Potkalnički zapisi`)
+    expect(metaContent(html, 'robots')).toBe('index, follow')
+    expect(html).toContain('data-testid="heritage-status-unverified"')
+  })
+})
+
 describe('public discovery, sharing metadata and error pages', () => {
   it('publishes only public localized routes in the sitemap and blocks private routes in robots.txt', async () => {
     const sitemap = await (await fetch('/sitemap.xml')).text()
@@ -967,11 +987,14 @@ describe('public discovery, sharing metadata and error pages', () => {
     const noindexPaths = new Set(getAtlas().heritage
       .filter(item => item.noindex && item.settlementCode)
       .map(item => `/potkalnicko-prigorje/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`))
-    expect(urls).toEqual([
+    const expected = sitemapEntries(buildPublicContent(fakeContentRows(), {}))
+      .map(entry => SITE_URL + entry.path)
+    expect(urls.sort()).toEqual(expected.sort())
+    expect(expected).toEqual([
       'https://karlo-siladi.from.hr/',
       'https://karlo-siladi.from.hr/en',
       ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
-    ])
+    ].sort())
     expect(sitemap).not.toContain('/heritage')
     expect(sitemap).not.toContain('/en/potkalnicko-prigorje')
 
@@ -982,9 +1005,8 @@ describe('public discovery, sharing metadata and error pages', () => {
     expect(robots).toContain('Sitemap: https://karlo-siladi.from.hr/sitemap.xml')
   })
 
-  it('keeps serving the committed sitemap while it exists, ahead of the database sitemap route', async () => {
-    const committed = await readFile(fileURLToPath(new URL('../public/sitemap.xml', import.meta.url)), 'utf8')
-    expect(await (await fetch('/sitemap.xml')).text()).toBe(committed)
+  it('does not keep a static sitemap.xml in public/', async () => {
+    await expect(readFile(fileURLToPath(new URL('../public/sitemap.xml', import.meta.url)), 'utf8')).rejects.toThrow()
   })
 
   it.each([
@@ -1138,12 +1160,12 @@ describe('public atlas API', () => {
     }
   })
 
-  // The fake database has no content tables, like a cold start while the database is unreachable.
-  it.skipIf(real)('answers 503 without a snapshot and does not let the error be cached', async () => {
-    for (const path of ['/api/atlas/overview', '/api/atlas/heritage', '/api/atlas/settlements/apatovec', '/api/content/target?id=krizevci-crkva-sv-ane']) {
+  // The fake database serves the atlas seed through the same snapshot loader as production.
+  it.skipIf(real)('serves the atlas API from the fake content tables', async () => {
+    for (const path of ['/api/atlas/overview', '/api/atlas/heritage', '/api/atlas/settlements/apatovec', '/api/content/target?id=kalnik-crkva-sv-brcka']) {
       const response = await request(path)
-      expect(response.status, path).toBe(503)
-      expect(response.headers.get('cache-control'), path).toBe('no-store')
+      expect(response.status, path).toBe(200)
+      expect(response.headers.get('cache-control'), path).toBe('public, max-age=60, stale-while-revalidate=300')
     }
   })
 

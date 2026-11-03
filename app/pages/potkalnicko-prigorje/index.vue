@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AtlasOverviewResponse } from '~~/shared/types/publicAtlas'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
@@ -6,6 +7,7 @@ defineI18nRoute({ locales: ['hr'] })
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+const { municipalityPath } = useAtlas()
 
 useSeoMeta({
   title: () => t('pz.home.seoTitle'),
@@ -14,7 +16,7 @@ useSeoMeta({
   description: () => t('pz.home.heroDescription')
 })
 
-const { municipalityName, municipalityPath, municipalityStats, atlas } = useAtlas()
+const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
 
 const discoveryCards = computed(() => [
   { key: 'speech' as const, icon: 'i-lucide-message-circle', soon: true, to: undefined },
@@ -23,12 +25,12 @@ const discoveryCards = computed(() => [
   { key: 'stories' as const, icon: 'i-lucide-book-heart', soon: true, to: undefined }
 ])
 
-const regions = computed(() => atlas.value.municipalities.map(m => ({
+const regions = computed(() => (overview.value?.municipalities ?? []).map(m => ({
   id: m.id,
   slug: m.slug,
-  ...municipalityStats(m.id),
+  ...m.stats,
   to: municipalityPath(m.slug),
-  label: municipalityName(m.id)
+  label: m.label
 })))
 </script>
 

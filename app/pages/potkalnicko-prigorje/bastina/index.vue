@@ -1,27 +1,47 @@
 <script setup lang="ts">
+import type { AtlasHeritageListResponse } from '~~/shared/types/publicAtlas'
+
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
 
 const { t } = useI18n()
-const { atlas, municipalityName, itemPath, categoryLabel, settlementByCode } = useAtlas()
+const localePath = useLocalePath()
 
-const municipalityFilter = ref<string>('all')
-const categoryFilter = ref<string>('all')
+const municipalityFilter = ref('all')
+const categoryFilter = ref('all')
 
-const categories = computed(() => {
-  const set = new Set(atlas.value.heritage.map(item => item.category))
-  return [...set].sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b), 'hr'))
+const listQuery = computed(() => {
+  const query: Record<string, string> = {}
+  if (municipalityFilter.value !== 'all') query.municipality = municipalityFilter.value
+  if (categoryFilter.value !== 'all') query.category = categoryFilter.value
+  return query
 })
 
-const filtered = computed(() => atlas.value.heritage.filter((item) => {
-  if (municipalityFilter.value !== 'all' && item.municipalityId !== municipalityFilter.value) return false
-  if (categoryFilter.value !== 'all' && item.category !== categoryFilter.value) return false
-  return true
-}))
+const { data: list, error: listError } = await useFetch<AtlasHeritageListResponse>('/api/atlas/heritage', { query: listQuery })
+watchEffect(() => {
+  if (listError.value) {
+    throw createError({
+      statusCode: listError.value.statusCode ?? 500,
+      statusMessage: listError.value.statusMessage ?? 'Request failed',
+      fatal: true
+    })
+  }
+})
+
+const filtered = computed(() => list.value?.items ?? [])
+
+const municipalityOptions = computed(() => [
+  { label: t('pz.heritage.filterAll'), value: 'all' },
+  ...(list.value?.municipalities ?? []).map(m => ({ label: m.label, value: m.slug }))
+])
+
+const categoryOptions = computed(() => [
+  { label: t('pz.heritage.filterAll'), value: 'all' },
+  ...(list.value?.categories ?? []).map(c => ({ label: c.label, value: c.key }))
+])
 
 function locationLabel(item: (typeof filtered.value)[number]) {
-  const settlement = item.settlementCode ? settlementByCode(item.settlementCode) : undefined
-  const parts = [settlement?.name, item.locality].filter(Boolean)
+  const parts = [item.settlement?.name, item.locality].filter(Boolean)
   return parts.length ? parts.join(' · ') : t('pz.heritage.locationPending')
 }
 
@@ -46,10 +66,7 @@ useSeoMeta({
         <UFormField :label="t('pz.heritage.filterMunicipality')">
           <USelect
             v-model="municipalityFilter"
-            :items="[
-              { label: t('pz.heritage.filterAll'), value: 'all' },
-              ...atlas.municipalities.map(m => ({ label: municipalityName(m.id), value: m.id }))
-            ]"
+            :items="municipalityOptions"
             class="min-w-48"
             data-testid="heritage-filter-municipality"
           />
@@ -57,10 +74,7 @@ useSeoMeta({
         <UFormField :label="t('pz.heritage.filterCategory')">
           <USelect
             v-model="categoryFilter"
-            :items="[
-              { label: t('pz.heritage.filterAll'), value: 'all' },
-              ...categories.map(c => ({ label: categoryLabel(c), value: c }))
-            ]"
+            :items="categoryOptions"
             class="min-w-48"
             data-testid="heritage-filter-category"
           />
@@ -76,8 +90,8 @@ useSeoMeta({
           :key="item.id"
         >
           <ULink
-            v-if="itemPath(item)"
-            :to="itemPath(item)"
+            v-if="item.path"
+            :to="localePath(item.path)"
             class="block px-4 py-3 hover:bg-elevated/40"
           >
             <div class="flex flex-wrap items-start justify-between gap-2">
@@ -86,10 +100,10 @@ useSeoMeta({
                   {{ item.name }}
                 </p>
                 <p class="text-sm text-muted">
-                  {{ categoryLabel(item.category) }} · {{ locationLabel(item) }} · {{ municipalityName(item.municipalityId) }}
+                  {{ item.category.label }} · {{ locationLabel(item) }} · {{ item.municipality.label }}
                 </p>
               </div>
-              <PzHeritageStatusBadge />
+              <PzHeritageStatusBadge :verification="item.verification" />
             </div>
           </ULink>
           <div
@@ -102,10 +116,10 @@ useSeoMeta({
                   {{ item.name }}
                 </p>
                 <p class="text-sm text-muted">
-                  {{ categoryLabel(item.category) }} · {{ locationLabel(item) }} · {{ municipalityName(item.municipalityId) }}
+                  {{ item.category.label }} · {{ locationLabel(item) }} · {{ item.municipality.label }}
                 </p>
               </div>
-              <PzHeritageStatusBadge />
+              <PzHeritageStatusBadge :verification="item.verification" />
             </div>
           </div>
         </li>

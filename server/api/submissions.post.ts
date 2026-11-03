@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid submission', data: { issues: localizePlaceIssues([{ field: 'place', code }], result.value.locale) } })
   }
   if (result.value.type === 'correction' && result.value.targetRef) {
-    assertKnownCorrectionTarget(result.value.targetRef)
+    await assertKnownCorrectionTarget(result.value.targetRef)
   }
   if (result.value.wordId) await assertActiveWord(result.value.wordId, result.value.locale)
   await insertSubmission({

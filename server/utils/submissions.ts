@@ -1,6 +1,17 @@
 import type { H3Event } from 'h3'
-import { heritageItemById } from '~~/shared/utils/atlasData'
+import { contentTarget } from './publicAtlas'
 import { placeById } from './places'
+
+export async function assertKnownCorrectionTarget(targetRef: string) {
+  const result = contentTarget(await getPublicContent(), 'heritage_item', targetRef)
+  if (result.status !== 'ok') {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid submission',
+      data: { issues: [{ field: 'targetRef', code: 'invalid' }] }
+    })
+  }
+}
 
 const TABLE = 'heritage_submissions'
 // Supabase's API returns at most 1000 rows per request (max_rows), so the list is read in pages.
@@ -150,16 +161,6 @@ export async function deleteSubmission(id: number) {
     .select('id')
   if (error) databaseError(error)
   return data.length > 0
-}
-
-export function assertKnownCorrectionTarget(targetRef: string) {
-  if (!heritageItemById(targetRef)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid submission',
-      data: { issues: [{ field: 'targetRef', code: 'invalid' }] }
-    })
-  }
 }
 
 export function submissionIdParam(event: H3Event) {

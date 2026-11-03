@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { AtlasOverviewResponse } from '~~/shared/types/publicAtlas'
+
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
 
 const { t } = useI18n()
-const { atlas, municipalityName, municipalityPath, municipalityStats } = useAtlas()
+const { municipalityPath } = useAtlas()
 
 useSeoMeta({
   title: () => t('pz.explore.seoTitle'),
@@ -12,10 +14,12 @@ useSeoMeta({
   ogDescription: () => t('pz.explore.intro')
 })
 
-const regions = computed(() => atlas.value.municipalities.map(m => ({
+const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
+
+const regions = computed(() => (overview.value?.municipalities ?? []).map(m => ({
   ...m,
-  label: municipalityName(m.id),
-  stats: municipalityStats(m.id),
+  label: m.label,
+  stats: m.stats,
   to: municipalityPath(m.slug)
 })))
 </script>

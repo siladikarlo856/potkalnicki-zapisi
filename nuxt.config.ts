@@ -1,5 +1,4 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import atlasPrerenderRoutes from './content/atlas/prerender-routes.json'
 
 export default defineNuxtConfig({
   modules: [
@@ -46,35 +45,22 @@ export default defineNuxtConfig({
     }
   },
 
-  // Pages are prerendered to static HTML; the /api routes run in the Node server build.
+  // Static marketing and games pages are prerendered at build time; atlas and other database-backed
+  // routes render on the server per request. The /api routes run in the Node server build.
   routeRules: {
     '/': { prerender: true },
     '/en': { prerender: true },
-    '/potkalnicko-prigorje': { prerender: true },
     '/potkalnicko-prigorje/igre/kartice': { prerender: true },
     '/potkalnicko-prigorje/igre/kviz': { prerender: true },
     '/potkalnicko-prigorje/igre/**': { prerender: true },
     '/potkalnicko-prigorje/doprinesi': { prerender: true },
     '/potkalnicko-prigorje/o-projektu': { prerender: true },
     '/potkalnicko-prigorje/privatnost': { prerender: true },
-    '/potkalnicko-prigorje/istrazi': { prerender: true },
-    '/potkalnicko-prigorje/istrazi/**': { prerender: true },
-    '/potkalnicko-prigorje/naselja/**': { prerender: true },
-    '/potkalnicko-prigorje/bastina': { prerender: true },
-    '/potkalnicko-prigorje/bastina/**': { prerender: true },
     '/admin/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
     '/api/**': { headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }
   },
 
   compatibilityDate: '2026-06-30',
-
-  hooks: {
-    'nitro:config'(nitroConfig) {
-      nitroConfig.prerender = nitroConfig.prerender ?? {}
-      const existing = nitroConfig.prerender.routes ?? []
-      nitroConfig.prerender.routes = [...existing, ...atlasPrerenderRoutes]
-    }
-  },
 
   eslint: {
     config: {

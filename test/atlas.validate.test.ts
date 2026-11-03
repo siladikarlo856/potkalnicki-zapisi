@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { getAtlas, settlementByCode } from '../shared/utils/atlasData'
 import { isAsciiId } from '../shared/utils/atlasSlug'
@@ -43,20 +42,6 @@ describe('atlas content import', () => {
       if (unmappedIds.has(item.legacyId)) {
         expect(item.settlementCode).toBeNull()
       }
-    }
-  })
-
-  it('matches sitemap to prerender route list', () => {
-    const routes = JSON.parse(readFileSync('content/atlas/prerender-routes.json', 'utf8')) as string[]
-    const sitemap = readFileSync('public/sitemap.xml', 'utf8')
-    const noindexPaths = atlas.heritage
-      .filter(item => item.noindex && item.settlementCode)
-      .map(item => `/potkalnicko-prigorje/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`)
-    expect(noindexPaths.length).toBeGreaterThan(0)
-    for (const path of ['/', '/en', ...routes]) {
-      const loc = `<loc>https://karlo-siladi.from.hr${path}</loc>`
-      if (noindexPaths.includes(path)) expect(sitemap).not.toContain(loc)
-      else expect(sitemap).toContain(loc)
     }
   })
 })

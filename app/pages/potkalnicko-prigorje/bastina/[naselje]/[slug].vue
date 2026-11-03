@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { heritageItemByRoute } from '~~/shared/utils/atlasData'
+import type { AtlasHeritageItemResponse } from '~~/shared/types/publicAtlas'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -7,46 +7,51 @@ defineI18nRoute({ locales: ['hr'] })
 const route = useRoute()
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { atlas, municipalityName, categoryLabel, settlementByCode } = useAtlas()
 
-const item = heritageItemByRoute(String(route.params.naselje), String(route.params.slug))
-if (!item) {
-  throw createError({ statusCode: 404, statusMessage: 'Zapis nije pronađen' })
-}
-const heritageItem = item
+const settlementSlug = computed(() => String(route.params.naselje))
+const itemSlug = computed(() => String(route.params.slug))
+const { data: payload } = await useAtlasFetch<AtlasHeritageItemResponse>(
+  () => `/api/atlas/heritage/${settlementSlug.value}/${itemSlug.value}`
+)
 
-const settlement = settlementByCode(heritageItem.settlementCode!)!
-const municipality = atlas.value.municipalities.find(m => m.id === heritageItem.municipalityId)!
-const sources = heritageItem.sourceIds.map(id => atlas.value.sources.find(s => s.id === id)!).filter(Boolean)
+const heritageItem = computed(() => payload.value?.item)
 
-const correctionTo = computed(() => localePath({
-  path: '/potkalnicko-prigorje/doprinesi',
-  query: { vrsta: 'ispravak', zapis: heritageItem.id }
-}))
+const correctionTo = computed(() => heritageItem.value
+  ? localePath({
+      path: '/potkalnicko-prigorje/doprinesi',
+      query: { vrsta: 'ispravak', zapis: heritageItem.value.ref }
+    })
+  : undefined)
 
 useSeoMeta({
-  title: () => `${heritageItem.name} · Potkalnički zapisi`,
-  description: () => heritageItem.researchNotes.slice(0, 160),
-  robots: () => heritageItem.noindex ? 'noindex, follow' : 'index, follow'
+  title: () => heritageItem.value ? `${heritageItem.value.name} · Potkalnički zapisi` : '',
+  ogTitle: () => heritageItem.value ? `${heritageItem.value.name} · Potkalnički zapisi` : '',
+  description: () => heritageItem.value?.researchNotes.slice(0, 160) ?? '',
+  ogDescription: () => heritageItem.value?.researchNotes.slice(0, 160) ?? '',
+  robots: () => heritageItem.value?.noindex ? 'noindex, follow' : 'index, follow'
 })
 
 function locationLine() {
-  return [settlement.name, heritageItem.locality].filter(Boolean).join(' · ')
+  if (!heritageItem.value) return ''
+  return [heritageItem.value.settlement?.name, heritageItem.value.locality].filter(Boolean).join(' · ')
 }
 </script>
 
 <template>
-  <div data-testid="heritage-item-page">
+  <div
+    v-if="heritageItem"
+    data-testid="heritage-item-page"
+  >
     <UPageHero
       :title="heritageItem.name"
       :ui="{ container: 'py-12 sm:py-16' }"
     >
       <template #description>
         <div class="mt-4 flex flex-wrap items-center gap-2">
-          <PzHeritageStatusBadge :label="t('pz.heritage.statusUnverified')" />
+          <PzHeritageStatusBadge :verification="heritageItem.verification" />
           <UBadge
             variant="subtle"
-            :label="categoryLabel(heritageItem.category)"
+            :label="heritageItem.category.label"
           />
         </div>
       </template>
@@ -68,10 +73,10 @@ function locationLine() {
           </dt>
           <dd class="font-medium text-highlighted">
             <ULink
-              :to="localePath(`/potkalnicko-prigorje/istrazi/${municipality.slug}`)"
+              :to="localePath(`/potkalnicko-prigorje/istrazi/${heritageItem.municipality.slug}`)"
               class="text-primary"
             >
-              {{ municipalityName(heritageItem.municipalityId) }}
+              {{ heritageItem.municipality.label }}
             </ULink>
           </dd>
         </div>
@@ -93,7 +98,7 @@ function locationLine() {
     >
       <ul class="list-disc space-y-2 pl-5 text-sm text-default">
         <li
-          v-for="source in sources"
+          v-for="source in heritageItem.sources"
           :key="source.id"
         >
           <ULink
@@ -116,6 +121,7 @@ function locationLine() {
       </p>
       <div class="mt-4 flex flex-wrap gap-3">
         <UButton
+          v-if="correctionTo"
           :to="correctionTo"
           :label="t('pz.heritage.suggestCorrection')"
           color="neutral"
@@ -124,10 +130,11 @@ function locationLine() {
         />
       </div>
       <ULink
+        v-if="heritageItem.settlement"
         class="mt-4 inline-flex text-sm text-primary"
-        :to="localePath(`/potkalnicko-prigorje/naselja/${settlement.slug}`)"
+        :to="localePath(`/potkalnicko-prigorje/naselja/${heritageItem.settlement.slug}`)"
       >
-        {{ t('pz.heritage.backToSettlement', { name: settlement.name }) }}
+        {{ t('pz.heritage.backToSettlement', { name: heritageItem.settlement.name }) }}
       </ULink>
     </UPageSection>
   </div>

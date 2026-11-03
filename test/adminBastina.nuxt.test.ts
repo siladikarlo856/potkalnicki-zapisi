@@ -22,6 +22,22 @@ const correction = {
 }
 
 registerEndpoint('/api/review/submissions', () => [correction])
+registerEndpoint('/api/content/target', () => ({
+  kind: 'heritage_item' as const,
+  item: {
+    ref: 'kalnik-crkva-sv-brcka',
+    id: 'test-id',
+    slug: 'crkva-sv-brcka',
+    name: 'Crkva sv. Brcka',
+    category: { key: 'church', label: 'Crkva' },
+    municipality: { id: 'm', slug: 'opcina-kalnik', label: 'Općina Kalnik' },
+    settlement: { id: 's', slug: 'kalnik', name: 'Kalnik' },
+    locality: null,
+    verification: 'unverified' as const,
+    noindex: false,
+    path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka'
+  }
+}))
 
 describe('admin bastina', () => {
   it('shows the correction target in the table', async () => {

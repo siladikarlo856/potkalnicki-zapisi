@@ -1,13 +1,14 @@
 import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { fakeContentRows } from './fakeContentSeed'
 
-// A small stand-in for Supabase's REST API (PostgREST) for submissions, words and the daily word
-// schedule, so the
-// API tests run in CI without Docker. The real supabase-js client talks to it, and it enforces the
-// same role boundary as supabase/migrations: public keys have no access. It also models word
-// activation's approval side effect. supabase.local.test.ts and the real-stack API run check
-// actual RLS, constraints, seed data and transactional approval against Postgres.
+// A small stand-in for Supabase's REST API (PostgREST) for submissions, words, the daily word
+// schedule and the atlas content tables, so the API tests run in CI without Docker. The real
+// supabase-js client talks to it, and it enforces the same role boundary as supabase/migrations:
+// public keys have no access. It also models word activation's approval side effect.
+// supabase.local.test.ts and the real-stack API run check actual RLS, constraints, seed data and
+// transactional approval against Postgres.
 
 export const SERVICE_ROLE_KEY = 'sb_secret_test-server-only-0123456789'
 
@@ -65,12 +66,17 @@ export async function startFakeSupabase() {
   const rows: Row[] = []
   const words: Row[] = []
   const daily: Row[] = []
-  // Minimal published area fixture for database-backed word promotion. The real migration
-  // supplies deterministic UUIDs; the fake only needs the same GeoNames lookup contract.
-  const areas: Row[] = [{
-    id: '00000000-0000-4000-8000-000000000001', name: 'Sveti Petar Orehovec', kind: 'municipality',
-    parent_id: null, geonames_id: '3194024', official_code: null, status: 'published'
-  }]
+  const seed = fakeContentRows()
+  const areas: Row[] = seed.areas.map(row => ({ ...row }))
+  const contentTables: Record<string, Row[]> = {
+    '/rest/v1/area_regions': seed.areaRegions.map(row => ({ ...row })),
+    '/rest/v1/heritage_categories': seed.categories.map(row => ({ ...row })),
+    '/rest/v1/sources': seed.sources.map(row => ({ ...row })),
+    '/rest/v1/heritage_items': seed.items.map(row => ({ ...row })),
+    '/rest/v1/heritage_item_sources': seed.itemSources.map(row => ({ ...row })),
+    '/rest/v1/content_legacy_ids': seed.legacyIds.map(row => ({ ...row })),
+    '/rest/v1/content_slug_history': seed.slugHistory.map(row => ({ ...row }))
+  }
   let nextId = 1
   // One-shot hook run just before the next daily upsert, to simulate losing a race.
   let beforeDailyUpsert: (() => void) | null = null
@@ -82,15 +88,18 @@ export async function startFakeSupabase() {
     const ids = new Set(projected.map(area => String(area.id)))
     const entry = row.entry as Row | undefined
     const variants = Array.isArray(entry?.variants) ? entry.variants as Row[] : []
-    const areaIds = variants.flatMap(variant => Array.isArray(variant.usages) ? variant.usages as Row[] : [])
-      .map(usage => String(usage.areaId ?? ''))
-    for (const areaId of areaIds) {
-      const area = areas.find(candidate => candidate.id === areaId)
-      if (area && !ids.has(areaId)) {
-        projected.push({ id: area.id, name: area.name, kind: area.kind, parentId: area.parent_id })
-        ids.add(areaId)
+    const usageAreaIds = variants.flatMap(variant => Array.isArray(variant.usages) ? variant.usages as Row[] : [])
+      .map(usage => String(usage.areaId ?? '')).filter(Boolean)
+    function addAreaChain(areaId: string) {
+      let current = areas.find(candidate => String(candidate.id) === areaId)
+      while (current && !ids.has(String(current.id))) {
+        projected.push({ id: current.id, name: current.name, kind: current.kind, parentId: current.parent_id })
+        ids.add(String(current.id))
+        const parentId = current.parent_id ? String(current.parent_id) : ''
+        current = parentId ? areas.find(candidate => String(candidate.id) === parentId) : undefined
       }
     }
+    for (const areaId of usageAreaIds) addAreaChain(areaId)
   }
 
   const server = createServer(async (request, response) => {
@@ -101,13 +110,14 @@ export async function startFakeSupabase() {
 
     const isWords = url.pathname === '/rest/v1/heritage_words'
     const isDaily = url.pathname === '/rest/v1/heritage_daily_words'
-    const isAreas = url.pathname === '/rest/v1/areas'
     const isSubmissions = url.pathname === '/rest/v1/heritage_submissions'
-    if ((!isWords && !isDaily && !isAreas && !isSubmissions) || role === 'none') {
+    const contentTable = contentTables[url.pathname]
+    const isAreas = url.pathname === '/rest/v1/areas'
+    const table = isDaily ? daily : isWords ? words : isSubmissions ? rows : isAreas ? areas : contentTable
+    if (!table || role === 'none') {
       return reply(response, 401, { message: 'Invalid API key' })
     }
-
-    const table = isDaily ? daily : isWords ? words : isAreas ? areas : rows
+    const contentReadOnly = Boolean(contentTable) || isAreas
     function project(row: Row) {
       const select = url.searchParams.get('select') ?? '*'
       return select === '*' ? row : Object.fromEntries(select.split(',').map(key => [key, row[key]]))
@@ -135,6 +145,10 @@ export async function startFakeSupabase() {
       daily.push(row)
       return reply(response, 201, prefer.includes('return=representation') ? [project(row)] : undefined)
     }
+    if (contentReadOnly && request.method !== 'GET') {
+      return reply(response, 405, { message: 'Method not allowed' })
+    }
+
     if (request.method === 'POST') {
       const body = await readJson(request) as Row
       if (isWords && body.submission_id && words.some(w => w.submission_id === body.submission_id)) return reply(response, 409, { code: '23505', message: 'duplicate submission' })
@@ -157,8 +171,11 @@ export async function startFakeSupabase() {
       const limit = Math.min(Number(url.searchParams.get('limit') ?? 1000), 1000)
       const range = String(request.headers.range ?? '').match(/^(\d+)-(\d+)$/)
       const [from, to] = range ? [Number(range[1]), Math.min(Number(range[2]), Number(range[1]) + 999)] : [offset, offset + limit - 1]
-      const sorted = ordered(visible, url.searchParams.get('order')) ?? [...visible].sort((a, b) =>
-        String(b.created_at).localeCompare(String(a.created_at)) || Number(b.id) - Number(a.id))
+      const sorted = ordered(visible, url.searchParams.get('order')) ?? [...visible].sort((a, b) => {
+        const byCreated = String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))
+        if (byCreated) return byCreated
+        return String(a.id ?? '').localeCompare(String(b.id ?? ''))
+      })
       return reply(response, 200, sorted.slice(from, to + 1).map(project))
     }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { heritageItemById, settlementByCode } from '~~/shared/utils/atlasData'
+import type { ContentTargetResponse } from '~~/shared/types/publicAtlas'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
@@ -23,6 +23,7 @@ const busyId = ref<number>()
 const error = ref('')
 
 const expanded = ref<Record<string, boolean>>({})
+const targetLabels = ref<Record<string, { label: string, to?: string }>>({})
 const columns = computed<TableColumn<Submission>[]>(() => [
   { id: 'info', meta: { class: { th: 'w-12', td: 'w-12' } } },
   { id: 'target', header: t('review.bastina.fields.target') },
@@ -51,14 +52,27 @@ function api<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH' | 'DE
 
 function targetMeta(ref: string | null) {
   if (!ref) return { label: '—', to: undefined as string | undefined }
-  const item = heritageItemById(ref)
-  if (!item) return { label: t('review.bastina.unknownTarget', { id: ref }), to: undefined }
-  const settlement = item.settlementCode ? settlementByCode(item.settlementCode) : undefined
-  const label = settlement ? `${item.name} · ${settlement.name}` : item.name
-  const to = settlement
-    ? localePath(`/potkalnicko-prigorje/bastina/${settlement.slug}/${item.slug}`)
-    : undefined
-  return { label, to }
+  return targetLabels.value[ref] ?? { label: t('review.bastina.unknownTarget', { id: ref }), to: undefined }
+}
+
+async function resolveTargetLabels(refs: string[]) {
+  const unique = [...new Set(refs)]
+  const next: typeof targetLabels.value = {}
+  await Promise.all(unique.map(async (ref) => {
+    try {
+      const target = await $fetch<ContentTargetResponse>('/api/content/target', { query: { kind: 'heritage_item', id: ref } })
+      if (target.kind !== 'heritage_item') {
+        next[ref] = { label: t('review.bastina.unknownTarget', { id: ref }) }
+        return
+      }
+      const item = target.item
+      const label = item.settlement ? `${item.name} · ${item.settlement.name}` : item.name
+      next[ref] = { label, to: item.path ? localePath(item.path) : undefined }
+    } catch {
+      next[ref] = { label: t('review.bastina.unknownTarget', { id: ref }) }
+    }
+  }))
+  targetLabels.value = next
 }
 
 async function load() {
@@ -68,6 +82,7 @@ async function load() {
     submissions.value = await api<Submission[]>('/api/review/submissions', {
       query: { status: filter.value, type: 'correction' }
     })
+    await resolveTargetLabels(submissions.value.flatMap(row => row.targetRef ? [row.targetRef] : []))
   } catch (err) {
     submissions.value = []
     error.value = errorMessage(err, t('review.loadError'))
