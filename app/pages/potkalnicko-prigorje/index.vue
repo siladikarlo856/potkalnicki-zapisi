@@ -55,30 +55,7 @@ const regions = computed(() => atlas.value.municipalities.map(m => ({
       :title="t('pz.home.discoveryTitle')"
       :ui="{ root: 'border-t border-default' }"
     >
-      <UCard
-        variant="soft"
-        class="mb-4"
-        data-testid="daily-word-soon"
-      >
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div class="space-y-2">
-            <div class="flex flex-wrap gap-2">
-              <UBadge
-                :label="t('pz.home.dailyWord')"
-                variant="subtle"
-              />
-              <UBadge
-                :label="t('pz.home.soon')"
-                color="neutral"
-                variant="subtle"
-              />
-            </div>
-            <p class="text-sm text-muted">
-              {{ t('pz.home.dailyWordHint') }}
-            </p>
-          </div>
-        </div>
-      </UCard>
+      <HeritageDailyWord />
 
       <div class="grid gap-4 sm:grid-cols-2">
         <UCard
