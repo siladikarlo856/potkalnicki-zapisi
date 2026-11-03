@@ -51,7 +51,7 @@ async function promote(submission: Submission) {
   error.value = ''
   try {
     const word = await api<{ entry: { id: string } }>(`/api/review/submissions/${submission.id}/word`, { method: 'POST' })
-    await navigateTo({ path: '/admin/rijeci', query: { edit: word.entry.id } })
+    await navigateTo({ path: '/admin/rijeci', query: { uredi: word.entry.id } })
   } catch (err) {
     error.value = errorMessage(err, t('review.actionError'))
   } finally {
@@ -228,7 +228,7 @@ onMounted(load)
                   data-testid="submission-word"
                 >
                   <ULink
-                    :to="{ path: '/admin/rijeci', query: { edit: submission.wordId } }"
+                    :to="{ path: '/admin/rijeci', query: { uredi: submission.wordId } }"
                     class="text-primary underline underline-offset-2"
                     lang="hr"
                   >

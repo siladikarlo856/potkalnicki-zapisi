@@ -53,9 +53,10 @@ function labelOf(def: AnyContentKindDefinition | undefined, data: Row, entityId:
     const value = data[key]
     if (typeof value === 'string' && value.trim()) return value
   }
-  // Words keep their headword inside the JSON entry.
+  if (def?.adapter?.lookupLabel) return def.adapter.lookupLabel(data)
+  // Kinds without a registry definition keep their title inside JSON (e.g. words before registration).
   const entry = data.entry
-  if (!def && typeof entry === 'object' && entry !== null) {
+  if (typeof entry === 'object' && entry !== null) {
     const headword = (entry as Row).headword
     if (typeof headword === 'string' && headword.trim()) return headword
   }

@@ -9,6 +9,18 @@ export interface ContentFilter {
   values: readonly string[]
 }
 
+/** Maps tables that do not follow the generic status column (e.g. heritage_words uses active + archived_at). */
+export interface ContentKindAdapter {
+  columns: Record<string, string>
+  toEntity(row: Record<string, unknown>): Record<string, unknown> & { id: string, status: ContentStatus, revision: number }
+  toRow(value: Record<string, unknown>): Record<string, unknown>
+  archivePatch(): Record<string, unknown>
+  /** Push filter conditions for the list query; `status` is the API filter value. */
+  statusFilter?(status: ContentStatus, apply: (column: string, value: unknown) => void): void
+  lookupLabel?(row: Record<string, unknown>): string
+  createId?(value: Record<string, unknown>): string
+}
+
 export interface ContentKindDefinition<V extends { status: ContentStatus } = { status: ContentStatus }> {
   kind: ContentKind
   table: string
@@ -17,7 +29,7 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   /** The column that names a row in lookups, references and messages. */
   labelColumn: string
   /** The shared validator, also used by the admin dialog. */
-  validate(input: unknown): ContentValidation<V>
+  validate(input: unknown, id?: string): ContentValidation<V>
   /** Sort key accepted in `?sort=` (prefix `-` for descending) → column; `status`, `updatedAt` and `createdAt` are common. */
   sorts: Record<string, string>
   defaultSort: string
@@ -36,6 +48,7 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   restoreKeeps?: ReadonlyArray<Extract<Exclude<keyof V, 'status'>, string>>
   /** Request body cap in bytes; defaults to CONTENT_BODY_LIMIT. */
   bodyLimit?: number
+  adapter?: ContentKindAdapter
 }
 
 export function defineContentKind<V extends { status: ContentStatus }>(definition: ContentKindDefinition<V>) {

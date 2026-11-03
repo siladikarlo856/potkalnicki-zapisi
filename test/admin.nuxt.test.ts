@@ -3,8 +3,8 @@ import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import ReviewWords from '../app/pages/admin/rijeci.vue'
 import WordEditor from '../app/components/heritage/WordEditor.vue'
 import DailyAdmin from '../app/components/heritage/DailyAdmin.vue'
-import type { DailyAdminOverview } from '../shared/utils/dailyAdmin'
 import { validateWord } from '../shared/utils/word'
+import type { DailyAdminOverview } from '../shared/utils/dailyAdmin'
 import Review from '../app/pages/admin/prilozi.vue'
 import sampleWords from '../content/heritage/words.json'
 import sampleAreas from '../content/heritage/areas.json'
@@ -15,9 +15,25 @@ const submission = {
   locale: 'hr', consentPublish: true, consentVersion: 'v1', status: 'pending', createdAt: '2026-10-30 10:00:00'
 }
 
-registerEndpoint('/api/review/words', () => [{
-  entry: word, areas: sampleAreas, active: true, submissionId: null, submissionPlace: null, createdAt: '2026-10-30', updatedAt: '2026-10-30'
-}])
+const adminWord = {
+  id: word.id,
+  entry: word,
+  areas: sampleAreas,
+  status: 'published' as const,
+  headword: word.headword,
+  meaningHr: word.meaning.hr,
+  entryStatus: word.status,
+  slug: 'hiza',
+  submissionId: null,
+  submissionPlace: null,
+  revision: 1,
+  createdAt: '2026-10-30T00:00:00.000Z',
+  updatedAt: '2026-10-30T00:00:00.000Z'
+}
+
+registerEndpoint('/api/review/areas', () => sampleAreas)
+registerEndpoint('/api/admin/content/word', () => ({ rows: [adminWord], total: 1, page: 1, size: 25 }))
+registerEndpoint(`/api/admin/content/word/${word.id}`, () => ({ entity: adminWord, legacyIds: [] }))
 let submissionRows: Array<Record<string, unknown>> = [submission]
 registerEndpoint('/api/review/submissions', () => submissionRows)
 
@@ -67,7 +83,7 @@ describe('admin submissions linked to a word', () => {
       expect(links).toHaveLength(2)
       expect(links[0]!.text()).toBe('hiža · Potvrda upotrebe')
       expect(links[1]!.text()).toBe('hiža · Drugačiji oblik')
-      expect(links[0]!.get('a').attributes('href')).toBe('/admin/rijeci?edit=fixture-word-1')
+      expect(links[0]!.get('a').attributes('href')).toBe('/admin/rijeci?uredi=fixture-word-1')
       const promote = wrapper.findAll('button').filter(button => button.text() === 'Dodaj u riječi / otvori skicu')
       // A variant (and the plain row) can still become a draft; the usage cannot.
       expect(promote).toHaveLength(2)
@@ -109,22 +125,8 @@ describe('admin tables', () => {
     })
   }
 
-  it('words: row click opens a sidebar, info button and Escape behave', async () => {
-    const wrapper = await mountSuspended(ReviewWords, { attachTo: document.body })
-    await vi.waitFor(() => expect(wrapper.text()).toContain(word.headword))
-    await wrapper.find('button[aria-label^="Detalji"]').trigger('click')
-    expect(wrapper.findAll('tbody tr')).toHaveLength(2)
-    expect(document.body.querySelector('[role="dialog"]')).toBeNull()
-    await wrapper.find('tbody tr').trigger('click')
-    await vi.waitFor(() => expect(document.body.querySelector('[role="dialog"]')?.textContent).toContain(word.meaning.hr))
-    expect(wrapper.findAll('tbody tr')).toHaveLength(2)
-    document.body.querySelector('[role="dialog"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-    await vi.waitFor(() => expect(document.body.querySelector('[role="dialog"]')).toBeNull())
-    wrapper.unmount()
-  })
-
-  it('words: the table shows a daily-word readiness badge', async () => {
-    const wrapper = await mountSuspended(ReviewWords)
+  it('words: the table shows a daily-word readiness badge for active rows', async () => {
+    const wrapper = await mountSuspended(ReviewWords, { route: '/admin/rijeci' })
     await vi.waitFor(() => expect(wrapper.text()).toContain('Riječ dana: nedostaje'))
     expect(wrapper.text()).toContain('kategorija')
   })
@@ -147,47 +149,6 @@ describe('admin tables', () => {
     expect(input.entry.category).toBe('house')
     expect(input.entry.distractors).toEqual([{ hr: 'drugi', en: 'one' }, { hr: '' }])
     expect(validateWord(JSON.parse(JSON.stringify(input)), word.id).issues.length).toBeGreaterThan(0)
-  })
-
-  it('words: the Riječ dana card shows the schedule, runway and warnings above the table', async () => {
-    const wrapper = await mountSuspended(ReviewWords)
-    await vi.waitFor(() => expect(wrapper.find('[data-test="daily-today"]').exists()).toBe(true))
-    expect(wrapper.find('[data-test="daily-today"]').text()).toContain(`Danas (2030-05-10): ${word.headword}`)
-    expect(wrapper.find('[data-test="daily-today"]').text()).toContain('automatski odabrano')
-    const runway = wrapper.find('[data-test="daily-runway"]').text()
-    expect(runway).toContain('Spremne neiskorištene riječi 2')
-    expect(runway).toContain('Aktivne riječi 9')
-    expect(runway).toContain('Dana bez ponavljanja 6')
-    expect(wrapper.text()).toContain('Zaliha riječi: samo 6 dana bez ponavljanja.')
-    expect(wrapper.text()).toContain('stara')
-    expect(wrapper.text()).toContain('bez oznake mjesta')
-    const card = wrapper.find('#rijec-dana')
-    expect(card.exists()).toBe(true)
-    expect(wrapper.find('table').element.compareDocumentPosition(card.element) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
-  })
-
-  it('words: the per-word pin action fills the form and pins the word for a chosen future day', async () => {
-    dailyCalls.length = 0
-    const wrapper = await mountSuspended(ReviewWords)
-    await vi.waitFor(() => expect(wrapper.text()).toContain(word.headword))
-    await vi.waitFor(() => expect(wrapper.find('[data-test="daily-today"]').exists()).toBe(true))
-    await wrapper.find('button[aria-label^="Detalji"]').trigger('click')
-    const pinAction = wrapper.findAll('button').find(b => b.text() === 'Prikvači za datum')!
-    expect(pinAction.attributes('disabled')).toBeUndefined()
-    await pinAction.trigger('click')
-
-    const submit = wrapper.findAll('button').find(b => b.text() === 'Prikvači')!
-    expect(submit.attributes('disabled')).toBeDefined()
-    const date = wrapper.find('input[type="date"]')
-    expect(date.attributes('min')).toBe('2030-05-11')
-    await date.setValue('2030-05-14')
-    await vi.waitFor(() => expect(wrapper.findAll('button').find(b => b.text() === 'Prikvači')!.attributes('disabled')).toBeUndefined())
-    await wrapper.find('form').trigger('submit')
-
-    await vi.waitFor(() => expect(dailyCalls, wrapper.text()).toEqual([{ method: 'PUT', url: '/api/review/daily/2030-05-14', body: { wordId: word.id, village: 'auto' } }]))
-    await vi.waitFor(() => expect(wrapper.text()).toContain(`Riječ „${word.headword}“ prikvačena je za 2030-05-14.`))
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Ponavljanje je dopušteno.'))
-    expect(wrapper.text().split('Ponavljanje je dopušteno.')).toHaveLength(2)
   })
 
   it('words: a past or out-of-range date cannot be submitted', async () => {

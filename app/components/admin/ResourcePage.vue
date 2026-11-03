@@ -17,6 +17,14 @@ const props = defineProps<{
 defineSlots<{
   fields?(props: { state: F, entity: T | null }): unknown
   advanced?(props: { state: F, entity: T | null }): unknown
+  dialog?(props: {
+    editId: string | undefined
+    creating: boolean
+    prefill: Partial<F>
+    visible: boolean
+    closeDialog: () => Promise<unknown>
+    refresh: () => Promise<unknown>
+  }): unknown
 } & {
   [cell: `${string}-cell`]: ((props: { row: T }) => unknown) | undefined
 }>()
@@ -300,11 +308,16 @@ const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranic
         </slot>
       </template>
       <template #status-cell="{ row }">
-        <UBadge
-          :label="CONTENT_STATUS_LABELS[row.original.status]"
-          :color="ADMIN_STATUS_COLORS[row.original.status]"
-          variant="subtle"
-        />
+        <slot
+          name="status-cell"
+          :row="row.original"
+        >
+          <UBadge
+            :label="CONTENT_STATUS_LABELS[row.original.status]"
+            :color="ADMIN_STATUS_COLORS[row.original.status]"
+            variant="subtle"
+          />
+        </slot>
       </template>
       <template #updatedAt-cell="{ row }">
         <span class="text-sm text-dimmed">{{ formatDate(row.original.updatedAt) }}</span>
@@ -352,6 +365,7 @@ const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranic
     </div>
 
     <AdminEntityDialog
+      v-if="!$slots.dialog"
       v-model:open="dialogOpen"
       :resource="resource"
       :entity-id="editId"
@@ -374,6 +388,16 @@ const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranic
         />
       </template>
     </AdminEntityDialog>
+    <slot
+      v-else
+      name="dialog"
+      :edit-id="editId"
+      :creating="creating"
+      :prefill="prefill"
+      :visible="dialogOpen"
+      :close-dialog="closeDialog"
+      :refresh="() => list.refresh()"
+    />
 
     <AdminHistoryDrawer
       v-if="shownHistoryId"

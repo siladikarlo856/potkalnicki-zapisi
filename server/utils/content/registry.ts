@@ -4,6 +4,7 @@ import { isContentKind } from '../../../shared/utils/content/common'
 import type { AnyContentKindDefinition } from './definition'
 import { challengeTemplateKind } from './kinds/challengeTemplate'
 import { sourceKind } from './kinds/source'
+import { wordKind } from './kinds/word'
 
 // The content registry: one definition per entity kind tells the generic admin handlers
 // (server/api/admin/content/[kind]/*) which table to use, how to validate and project a row,
@@ -12,7 +13,8 @@ import { sourceKind } from './kinds/source'
 
 const REGISTRY: Record<ContentKind, AnyContentKindDefinition> = {
   source: sourceKind,
-  challenge_template: challengeTemplateKind
+  challenge_template: challengeTemplateKind,
+  word: wordKind
 }
 
 export function contentKind(kind: ContentKind) {

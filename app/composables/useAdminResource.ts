@@ -64,8 +64,8 @@ export interface AdminResource<T extends ContentEntity = ContentEntity, F extend
    * the row menu then shows both actions disabled with this reason. The API refuses them anyway.
    */
   lockedReason?(entity: T): string | undefined
-  /** Dialog width: `wide` for nested editors (rounds and questions, word variants). */
-  dialogWidth?: 'default' | 'wide'
+  /** Dialog width: `wide` for nested editors; `full` for the word editor. */
+  dialogWidth?: 'default' | 'wide' | 'full'
 }
 
 export function defineAdminResource<T extends ContentEntity, F extends object>(resource: AdminResource<T, F>) {

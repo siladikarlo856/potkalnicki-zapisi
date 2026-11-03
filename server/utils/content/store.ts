@@ -29,18 +29,26 @@ export function invalid(issues: ContentIssue[], message = 'Provjeri označena po
 }
 
 function columnsOf(def: AnyContentKindDefinition) {
-  return { ...COMMON_COLUMNS, ...def.fields } as Record<string, string>
+  return def.adapter?.columns ?? { ...COMMON_COLUMNS, ...def.fields }
 }
 
 export function selectList(def: AnyContentKindDefinition) {
-  return [...new Set(Object.values(columnsOf(def)))].join(',')
+  const columns = columnsOf(def)
+  const dbColumns = new Set(Object.values(columns))
+  if (def.adapter) {
+    dbColumns.add('active')
+    dbColumns.add('archived_at')
+  }
+  return [...dbColumns].join(',')
 }
 
 export function toEntity(def: AnyContentKindDefinition, row: Row): ContentEntityRecord {
+  if (def.adapter) return def.adapter.toEntity(row) as ContentEntityRecord
   return Object.fromEntries(Object.entries(columnsOf(def)).map(([field, column]) => [field, row[column] ?? null])) as ContentEntityRecord
 }
 
 export function toRow(def: AnyContentKindDefinition, value: Row) {
+  if (def.adapter) return def.adapter.toRow(value)
   const row: Row = { status: value.status }
   for (const [field, column] of Object.entries(def.fields as Record<string, string>)) row[column] = value[field]
   return row
@@ -139,17 +147,32 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
   if (!sortColumn) fail(400, 'Invalid sort', { message: 'Parametar sort nije ispravan.' })
 
   const filters = { status: { column: 'status', values: CONTENT_STATUSES as readonly string[] }, ...def.filters }
-  const conditions: Array<[column: string, value: string]> = []
+  const statusFilter = queryText(query.status, 'status')
+  if (statusFilter && !(CONTENT_STATUSES as readonly string[]).includes(statusFilter)) {
+    fail(400, 'Invalid status', { message: 'Parametar status nije ispravan.' })
+  }
   for (const [name, filter] of Object.entries(filters)) {
+    if (name === 'status') continue
     const value = queryText(query[name], name)
     if (!value) continue
     if (!filter.values.includes(value)) fail(400, `Invalid ${name}`, { message: `Parametar ${name} nije ispravan.` })
-    conditions.push([filter.column, value])
   }
-  // The same conditions for the page and, when the page is past the end, for the count alone.
   const filtered = (head: boolean) => {
     let request = useDatabaseClient().from(def.table).select(head ? 'id' : selectList(def), { count: 'exact', head })
-    for (const [column, value] of conditions) request = request.eq(column, value)
+    for (const [name, filter] of Object.entries(filters)) {
+      if (name === 'status') continue
+      const value = queryText(query[name], name)
+      if (!value) continue
+      request = request.eq(filter.column, value)
+    }
+    if (statusFilter) {
+      if (def.adapter?.statusFilter) def.adapter.statusFilter(statusFilter as ContentStatus, (column, value) => {
+        if (value === 'not.null') request = request.not(column, 'is', null)
+        else if (value === null) request = request.is(column, null)
+        else request = request.eq(column, value)
+      })
+      else request = request.eq('status', statusFilter)
+    }
     if (q) request = request.ilike('search_text', searchPattern(q))
     return request
   }
@@ -188,9 +211,12 @@ async function afterWrite(event: H3Event, def: AnyContentKindDefinition) {
 }
 
 export async function createContent(event: H3Event, def: AnyContentKindDefinition) {
-  const { value, issues } = def.validate(editable(def, await readInput(event, def)))
+  const body = editable(def, await readInput(event, def))
+  const { value, issues } = def.validate(body)
   if (issues.length) invalid(issues)
-  const { data, error } = await useDatabaseClient().from(def.table).insert(toRow(def, value)).select(selectList(def)).single()
+  const row = toRow(def, value)
+  if (def.adapter?.createId) row.id = def.adapter.createId(value)
+  const { data, error } = await useDatabaseClient().from(def.table).insert(row).select(selectList(def)).single()
   if (error) contentDatabaseError(def, error)
   await afterWrite(event, def)
   setResponseStatus(event, 201)
@@ -211,7 +237,7 @@ export async function updateContent(event: H3Event, def: AnyContentKindDefinitio
   const current = await requireRow(def, id)
   if (current.revision !== revision) conflict(def, current)
 
-  const { value, issues } = def.validate({ ...editable(def, toEntity(def, current)), ...editable(def, body) })
+  const { value, issues } = def.validate({ ...editable(def, toEntity(def, current)), ...editable(def, body) }, id)
   if (issues.length) invalid(issues)
   const { data, error } = await useDatabaseClient().from(def.table).update(toRow(def, value))
     .eq('id', id).eq('revision', revision).select(selectList(def))
@@ -239,8 +265,10 @@ export async function contentReferences(def: AnyContentKindDefinition, id: strin
 /** Hides a row publicly while keeping its references and history. Archiving twice is a no-op. */
 async function archiveContent(event: H3Event, def: AnyContentKindDefinition, id: string) {
   const current = await requireRow(def, id)
-  if (current.status === 'archived') return { mode: 'archive' as const, entity: toEntity(def, current) }
-  const { data, error } = await useDatabaseClient().from(def.table).update({ status: 'archived' })
+  const currentEntity = toEntity(def, current)
+  if (currentEntity.status === 'archived') return { mode: 'archive' as const, entity: currentEntity }
+  const patch = def.adapter?.archivePatch() ?? { status: 'archived' }
+  const { data, error } = await useDatabaseClient().from(def.table).update(patch)
     .eq('id', id).select(selectList(def))
   if (error) contentDatabaseError(def, error)
   const saved = (data ?? []) as unknown as Row[]
@@ -287,16 +315,30 @@ export async function lookupContent(event: H3Event, def: AnyContentKindDefinitio
   const ids = idsText ? idsText.split(',') : []
   if (ids.length > MAX_LOOKUP_IDS || !ids.every(isUuid)) fail(400, 'Invalid ids', { message: 'Parametar ids nije ispravan.' })
 
-  let request = useDatabaseClient().from(def.table).select(`id,status,${def.labelColumn}`)
+  let request = useDatabaseClient().from(def.table).select(def.adapter ? selectList(def) : `id,status,${def.labelColumn}`)
   if (ids.length) {
     request = request.in('id', ids.map(id => id.toLowerCase()))
   } else {
-    request = request.neq('status', 'archived')
+    if (def.adapter?.statusFilter) {
+      def.adapter.statusFilter('published', (column, value) => {
+        if (value === null) request = request.is(column, null)
+        else request = request.eq(column, value)
+      })
+    } else {
+      request = request.neq('status', 'archived')
+    }
     if (q) request = request.ilike('search_text', searchPattern(q))
   }
-  const { data, error } = await request.order(def.labelColumn).order('id').limit(ids.length || CONTENT_LOOKUP_LIMIT)
+  const { data, error } = await request.order(def.adapter ? 'search_text' : def.labelColumn).order('id').limit(ids.length || CONTENT_LOOKUP_LIMIT)
   if (error) contentDatabaseError(def, error)
   return {
-    items: ((data ?? []) as unknown as Row[]).map(row => ({ id: row.id as string, label: String(row[def.labelColumn] ?? ''), status: row.status as ContentStatus }))
+    items: ((data ?? []) as unknown as Row[]).map((row) => {
+      const entity = toEntity(def, row)
+      return {
+        id: entity.id as string,
+        label: def.adapter?.lookupLabel?.(row) ?? String(row[def.labelColumn] ?? ''),
+        status: entity.status as ContentStatus
+      }
+    })
   }
 }

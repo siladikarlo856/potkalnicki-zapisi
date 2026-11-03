@@ -101,7 +101,7 @@ describe.skipIf(!url)('change history over real Postgres', () => {
     expect((await history(source.id, '?before=abc')).status).toBe(400)
   })
 
-  it('answers 404 for an unknown row, a non-UUID id and a kind without an admin resource', async () => {
+  it('answers 404 for an unknown row and a non-UUID id', async () => {
     expect((await history('0a4f3d2e-8b1c-4d5e-9f60-718293a4b5c6')).status).toBe(404)
     expect((await history('not-a-uuid')).status).toBe(404)
     expect((await api('/api/admin/content/word/0a4f3d2e-8b1c-4d5e-9f60-718293a4b5c6/revisions')).status).toBe(404)
@@ -220,7 +220,7 @@ describe.skipIf(!url)('change history over real Postgres', () => {
     expect(imported.body.rows[0]).toMatchObject({ kind: 'heritage_item', actor: 'import', registered: false })
     expect(imported.body.rows[0]!.label).not.toBe(imported.body.rows[0]!.entityId)
     const words = await api<HistoryLog>('/api/admin/history?kind=word&size=25')
-    expect(words.body.rows[0]).toMatchObject({ kind: 'word', registered: false })
+    expect(words.body.rows[0]).toMatchObject({ kind: 'word', registered: true })
     expect(words.body.rows[0]!.label).not.toBe(words.body.rows[0]!.entityId)
 
     const one = await api<HistoryLog>(`/api/admin/history?entity=${unique.id.toUpperCase()}`)

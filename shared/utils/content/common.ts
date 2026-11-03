@@ -7,7 +7,7 @@
  * and, later, `heritage_submissions.target_kind`), so one name follows a row everywhere.
  * A kind is added here when its admin resource is built.
  */
-export const CONTENT_KINDS = ['source', 'challenge_template'] as const
+export const CONTENT_KINDS = ['source', 'challenge_template', 'word'] as const
 export type ContentKind = typeof CONTENT_KINDS[number]
 
 export function isContentKind(value: unknown): value is ContentKind {

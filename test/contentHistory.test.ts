@@ -37,7 +37,7 @@ describe('history vocabulary', () => {
 
   it('finds definitions of registered kinds only', () => {
     expect(findContentKind('source')?.table).toBe('sources')
-    expect(findContentKind('word')).toBeUndefined()
+    expect(findContentKind('word')?.table).toBe('heritage_words')
     expect(findContentKind('constructor')).toBeUndefined()
   })
 })
