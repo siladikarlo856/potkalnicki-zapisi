@@ -63,7 +63,7 @@ try {
     ? process.argv.slice(2)
     : [
         'test/challenge.integration.test.ts', 'test/dailyWord.integration.test.ts', 'test/content.integration.test.ts', 'test/contentSeed.integration.test.ts',
-        'test/wordColumns.integration.test.ts', 'test/wordAreas.integration.test.ts', 'test/adminContent.integration.test.ts', 'test/adminAreas.integration.test.ts', 'test/adminWords.integration.test.ts', 'test/contentHistory.integration.test.ts',
+        'test/wordColumns.integration.test.ts', 'test/wordAreas.integration.test.ts', 'test/adminContent.integration.test.ts', 'test/adminAreas.integration.test.ts', 'test/adminHeritage.integration.test.ts', 'test/adminWords.integration.test.ts', 'test/contentHistory.integration.test.ts',
         'test/challengeTemplates.integration.test.ts', 'test/publicContent.integration.test.ts', 'test/atlasPages.integration.test.ts'
       ]
   const child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--project=node', ...testFiles], {

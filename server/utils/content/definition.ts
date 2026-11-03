@@ -43,6 +43,8 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   references?(db: SupabaseClient, id: string): Promise<ContentReferenceGroup[]>
   /** Runs after every successful write, e.g. to invalidate a public content cache. */
   afterWrite?(event: H3Event): void | Promise<void>
+  enrichRows?(db: SupabaseClient, rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]>
+  toEntityExtra?(row: Record<string, unknown>): Record<string, unknown>
   /** Optional label formatter for lookup menus (defaults to `labelColumn`). */
   lookupLabel?(row: Record<string, unknown>): string
   /**

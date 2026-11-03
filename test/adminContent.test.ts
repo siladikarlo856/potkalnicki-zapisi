@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { contentFold, isContentKind, isUuid } from '../shared/utils/content/common'
+import { validateHeritageCategory } from '../shared/utils/content/category'
+import { validateHeritageItem } from '../shared/utils/content/heritageItem'
 import { SOURCE_LIMITS, SOURCE_TYPES, SOURCE_TYPE_LABELS, validateSource } from '../shared/utils/content/source'
 import { adminRouteScope } from '../server/utils/requestGuard'
 import sources from '../content/atlas/sources.json'
@@ -47,7 +49,31 @@ describe('content helpers', () => {
     expect(isUuid('6F1C1C36-3A5E-4B7F-9A52-0D3F0B6C1A10')).toBe(true)
     expect(isUuid('registar-kulturnih-dobara')).toBe(false)
     expect(isContentKind('source')).toBe(true)
+    expect(isContentKind('heritage_item')).toBe(true)
+    expect(isContentKind('heritage_category')).toBe(true)
     expect(isContentKind('sources')).toBe(false)
+  })
+})
+
+describe('validateHeritageCategory', () => {
+  it('requires key and Croatian label', () => {
+    const { issues } = validateHeritageCategory({ key: 'Bad Key', labelHr: 'Kapela' })
+    expect(issues.some(issue => issue.path === 'key')).toBe(true)
+  })
+})
+
+describe('validateHeritageItem', () => {
+  it('derives slug from name when omitted', () => {
+    const { value, issues } = validateHeritageItem({
+      name: 'Crkva sv. Ane',
+      categoryId: 'cb2f662f-3359-8378-b5f3-448d25991ec6',
+      municipalityId: '92140ed6-6420-81d0-8661-91ce0c257f5f',
+      verification: 'unverified',
+      researchNotes: '',
+      sourceIds: []
+    })
+    expect(issues).toEqual([])
+    expect(value.slug).toBe('crkva-sv-ane')
   })
 })
 

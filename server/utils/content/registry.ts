@@ -4,6 +4,8 @@ import { isContentKind } from '../../../shared/utils/content/common'
 import type { AnyContentKindDefinition } from './definition'
 import { challengeTemplateKind } from './kinds/challengeTemplate'
 import { areaKind } from './kinds/area'
+import { heritageCategoryKind } from './kinds/heritageCategory'
+import { heritageItemKind } from './kinds/heritageItem'
 import { sourceKind } from './kinds/source'
 import { wordKind } from './kinds/word'
 
@@ -16,7 +18,9 @@ const REGISTRY: Record<ContentKind, AnyContentKindDefinition> = {
   area: areaKind,
   source: sourceKind,
   challenge_template: challengeTemplateKind,
-  word: wordKind
+  word: wordKind,
+  heritage_category: heritageCategoryKind,
+  heritage_item: heritageItemKind
 }
 
 export function contentKind(kind: ContentKind) {

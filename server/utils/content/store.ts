@@ -44,7 +44,9 @@ export function selectList(def: AnyContentKindDefinition) {
 
 export function toEntity(def: AnyContentKindDefinition, row: Row): ContentEntityRecord {
   if (def.adapter) return def.adapter.toEntity(row) as ContentEntityRecord
-  return Object.fromEntries(Object.entries(columnsOf(def)).map(([field, column]) => [field, row[column] ?? null])) as ContentEntityRecord
+  const entity = Object.fromEntries(Object.entries(columnsOf(def)).map(([field, column]) => [field, row[column] ?? null])) as ContentEntityRecord
+  if (def.toEntityExtra) Object.assign(entity, def.toEntityExtra(row))
+  return entity
 }
 
 export function toRow(def: AnyContentKindDefinition, value: Row) {
@@ -155,7 +157,8 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
     if (name === 'status') continue
     const value = queryText(query[name], name)
     if (!value) continue
-    if (!filter.values.includes(value)) fail(400, `Invalid ${name}`, { message: `Parametar ${name} nije ispravan.` })
+    if (filter.values.length && !filter.values.includes(value)) fail(400, `Invalid ${name}`, { message: `Parametar ${name} nije ispravan.` })
+    if (!filter.values.length && !isUuid(value)) fail(400, `Invalid ${name}`, { message: `Parametar ${name} nije ispravan.` })
   }
   const filtered = (head: boolean) => {
     let request = useDatabaseClient().from(def.table).select(head ? 'id' : selectList(def), { count: 'exact', head })
@@ -191,7 +194,9 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
     return { rows: [], total: counted.count ?? 0, page, size }
   }
   if (error) contentDatabaseError(def, error)
-  return { rows: ((data ?? []) as unknown as Row[]).map(row => toEntity(def, row)), total: count ?? 0, page, size }
+  let rows = (data ?? []) as unknown as Row[]
+  if (def.enrichRows) rows = await def.enrichRows(useDatabaseClient(), rows) as Row[]
+  return { rows: rows.map(row => toEntity(def, row)), total: count ?? 0, page, size }
 }
 
 export async function getContent(def: AnyContentKindDefinition, id: string) {

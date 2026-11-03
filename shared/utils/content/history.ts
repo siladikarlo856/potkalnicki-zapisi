@@ -3,6 +3,7 @@ import { CONTENT_STATUS_LABELS } from './common'
 import { challengeContentEntries } from './challengeTemplate'
 import { AREA_KIND_LABELS } from './area'
 import { SOURCE_TYPE_LABELS } from './source'
+import { HERITAGE_STATUS_LABELS, HERITAGE_VERIFICATION_LABELS } from './heritageItem'
 
 // Change history of the content admin: the shapes of the history API, the vocabulary the screens
 // use (kind and field labels) and the pure helpers that turn two row snapshots into a field diff.
@@ -102,6 +103,30 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
   word: {
     entry: { label: 'Kartica riječi' },
     areas: { label: 'Područja' }
+  },
+  heritage_category: {
+    key: { label: 'Ključ' },
+    labelHr: { label: 'Naziv (hr)' },
+    labelEn: { label: 'Naziv (en)' },
+    sort: { label: 'Redoslijed' }
+  },
+  heritage_item: {
+    name: { label: 'Naziv' },
+    slug: { label: 'Adresa (slug)' },
+    categoryId: { label: 'Kategorija' },
+    municipalityId: { label: 'Grad ili općina' },
+    settlementId: { label: 'Naselje' },
+    locality: { label: 'Lokalitet' },
+    verification: { label: 'Status provjere', values: HERITAGE_VERIFICATION_LABELS },
+    heritageStatus: { label: 'Status u registru', values: HERITAGE_STATUS_LABELS },
+    registryNumber: { label: 'Registarski broj' },
+    period: { label: 'Razdoblje' },
+    description: { label: 'Opis' },
+    researchNotes: { label: 'Bilješke istraživanja' },
+    latitude: { label: 'Geografska širina' },
+    longitude: { label: 'Geografska dužina' },
+    noindex: { label: 'Noindex' },
+    sourceIds: { label: 'Izvori' }
   }
 }
 

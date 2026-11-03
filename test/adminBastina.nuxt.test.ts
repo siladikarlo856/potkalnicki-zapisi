@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import AdminBastina from '../app/pages/admin/bastina.vue'
+import AdminBastinaCorrections from '../app/pages/admin/bastina-ispravci.vue'
 
 const correction = {
   id: 12,
@@ -41,7 +41,7 @@ registerEndpoint('/api/content/target', () => ({
 
 describe('admin bastina', () => {
   it('shows the correction target in the table', async () => {
-    const page = await mountSuspended(AdminBastina)
+    const page = await mountSuspended(AdminBastinaCorrections)
     await vi.waitFor(() => expect(page.text()).toContain('Crkva sv. Brcka'))
     expect(page.text()).toContain('Kalnik')
     expect(page.find('[data-testid="admin-bastina-table"]').exists()).toBe(true)

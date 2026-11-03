@@ -214,10 +214,10 @@ describe.skipIf(!url)('change history over real Postgres', () => {
     expect(log.body.rows.some(row => row.entityId === unique.id && row.label === 'history-test Zapisnik dnevnik' && row.actor === 'admin')).toBe(true)
     expect(log.body.rows.map(row => row.id)).toEqual([...log.body.rows.map(row => row.id)].sort((a, b) => b - a))
 
-    // Seed migrations record their rows with the actor `import`, for kinds without an admin resource too.
+    // Seed migrations record their rows with the actor `import`; heritage items now have admin CRUD too.
     const imported = await api<HistoryLog>('/api/admin/history?actor=import&kind=heritage_item&size=25')
     expect(imported.body.total).toBeGreaterThan(0)
-    expect(imported.body.rows[0]).toMatchObject({ kind: 'heritage_item', actor: 'import', registered: false })
+    expect(imported.body.rows[0]).toMatchObject({ kind: 'heritage_item', actor: 'import', registered: true })
     expect(imported.body.rows[0]!.label).not.toBe(imported.body.rows[0]!.entityId)
     const words = await api<HistoryLog>('/api/admin/history?kind=word&size=25')
     expect(words.body.rows[0]).toMatchObject({ kind: 'word', registered: true })

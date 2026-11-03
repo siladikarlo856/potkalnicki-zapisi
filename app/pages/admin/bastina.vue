@@ -1,315 +1,130 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
-import type { ContentTargetResponse } from '~~/shared/types/publicAtlas'
+import {
+  HERITAGE_STATUS_LABELS, HERITAGE_STATUSES, HERITAGE_VERIFICATION_LABELS, HERITAGE_VERIFICATIONS,
+  validateHeritageItem, type HeritageItem, type HeritageItemValue
+} from '~~/shared/utils/content/heritageItem'
+import type { HeritageCategory } from '~~/shared/utils/content/category'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
+useSeoMeta({ title: 'Baština', robots: 'noindex, nofollow' })
 
-const { t, locale } = useI18n()
-const confirm = useAdminConfirm()
+type ItemForm = HeritageItemValue
+
 const localePath = useLocalePath()
 
-useSeoMeta({
-  title: () => t('review.bastina.title'),
-  robots: 'noindex, nofollow'
+const { data: categoriesData } = useFetch<{ rows: HeritageCategory[] }>('/api/admin/content/heritage_category', {
+  query: { size: 100, sort: 'sort' },
+  server: false
+})
+const categoryOptions = computed(() => (categoriesData.value?.rows ?? []).map(row => ({ label: row.labelHr, value: row.id })))
+
+const verificationOptions = HERITAGE_VERIFICATIONS.map(value => ({ label: HERITAGE_VERIFICATION_LABELS[value], value }))
+const heritageStatusOptions = [{ label: '—', value: '__none__' }, ...HERITAGE_STATUSES.map(value => ({ label: HERITAGE_STATUS_LABELS[value], value }))]
+
+const resource = defineAdminResource<HeritageItem, ItemForm>({
+  kind: 'heritage_item',
+  icon: 'i-lucide-landmark',
+  dialogWidth: 'wide',
+  labels: {
+    title: 'Baština',
+    description: 'Crkve, kapele, križevi i drugi zapisi sakralne baštine Potkalničkog prigorja.',
+    create: 'Novi zapis',
+    edit: 'Uredi zapis baštine',
+    empty: 'Još nema zapisa baštine.',
+    search: 'Pretraži zapise'
+  },
+  columns: [
+    { key: 'name', label: 'Naziv', sort: 'name' },
+    { key: 'categoryLabel', label: 'Kategorija', hideBelow: 'sm' },
+    { key: 'verification', label: 'Provjera', sort: 'verification', hideBelow: 'md' }
+  ],
+  filters: [
+    { key: 'categoryId', label: 'Kategorija', options: [] },
+    { key: 'verification', label: 'Status provjere', options: verificationOptions }
+  ],
+  defaultSort: 'name',
+  blank: () => ({
+    name: '', slug: '', categoryId: '', municipalityId: '', settlementId: null, locality: null,
+    verification: 'unverified', heritageStatus: null, registryNumber: null, period: null, description: null,
+    researchNotes: '', latitude: null, longitude: null, noindex: false, sourceIds: [], status: 'published'
+  }),
+  toForm: item => ({
+    name: item.name,
+    slug: item.slug,
+    categoryId: item.categoryId,
+    municipalityId: item.municipalityId,
+    settlementId: item.settlementId,
+    locality: item.locality,
+    verification: item.verification,
+    heritageStatus: item.heritageStatus ?? '__none__',
+    registryNumber: item.registryNumber,
+    period: item.period,
+    description: item.description,
+    researchNotes: item.researchNotes,
+    latitude: item.latitude,
+    longitude: item.longitude,
+    noindex: item.noindex,
+    sourceIds: item.sourceIds ?? [],
+    status: item.status
+  }),
+  validate: form => validateHeritageItem({
+    ...form,
+    heritageStatus: form.heritageStatus === '__none__' ? null : form.heritageStatus
+  }).issues,
+  label: item => item.name,
+  publicPath: item => item.settlementSlug ? localePath(`/potkalnicko-prigorje/bastina/${item.settlementSlug}/${item.slug}`) : undefined
 })
 
-type Filter = SubmissionStatus | 'all'
-
-const filter = ref<Filter>('pending')
-const submissions = ref<Submission[]>([])
-const loading = ref(false)
-const busyId = ref<number>()
-const error = ref('')
-
-const expanded = ref<Record<string, boolean>>({})
-const targetLabels = ref<Record<string, { label: string, to?: string }>>({})
-const columns = computed<TableColumn<Submission>[]>(() => [
-  { id: 'info', meta: { class: { th: 'w-12', td: 'w-12' } } },
-  { id: 'target', header: t('review.bastina.fields.target') },
-  { id: 'text', header: t('review.fields.text') },
-  { id: 'status', header: t('review.fields.status') },
-  { id: 'createdAt', header: t('review.fields.sent'), meta: { class: { th: 'hidden md:table-cell', td: 'hidden md:table-cell' } } }
-])
-
-const filters = computed(() => (['pending', 'approved', 'rejected', 'all'] as const)
-  .map(value => ({ label: t(`review.statuses.${value}`), value })))
-
-function errorMessage(err: unknown, fallback: string) {
-  const statusCode = (err as { statusCode?: number }).statusCode
-  if (statusCode === 401) {
-    navigateTo('/admin/prijava')
-    return t('review.wrongPassword')
-  }
-  if (statusCode === 503) return t('review.notConfigured')
-  if (statusCode === 429) return t('review.tooMany')
-  return fallback
-}
-
-function api<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE', body?: Record<string, unknown>, query?: Record<string, string> } = {}) {
-  return $fetch<T>(path, options)
-}
-
-function targetMeta(ref: string | null) {
-  if (!ref) return { label: '—', to: undefined as string | undefined }
-  return targetLabels.value[ref] ?? { label: t('review.bastina.unknownTarget', { id: ref }), to: undefined }
-}
-
-async function resolveTargetLabels(refs: string[]) {
-  const unique = [...new Set(refs)]
-  const next: typeof targetLabels.value = {}
-  await Promise.all(unique.map(async (ref) => {
-    try {
-      const target = await $fetch<ContentTargetResponse>('/api/content/target', { query: { kind: 'heritage_item', id: ref } })
-      if (target.kind !== 'heritage_item') {
-        next[ref] = { label: t('review.bastina.unknownTarget', { id: ref }) }
-        return
-      }
-      const item = target.item
-      const label = item.settlement ? `${item.name} · ${item.settlement.name}` : item.name
-      next[ref] = { label, to: item.path ? localePath(item.path) : undefined }
-    } catch {
-      next[ref] = { label: t('review.bastina.unknownTarget', { id: ref }) }
-    }
-  }))
-  targetLabels.value = next
-}
-
-async function load() {
-  loading.value = true
-  error.value = ''
-  try {
-    submissions.value = await api<Submission[]>('/api/review/submissions', {
-      query: { status: filter.value, type: 'correction' }
-    })
-    await resolveTargetLabels(submissions.value.flatMap(row => row.targetRef ? [row.targetRef] : []))
-  } catch (err) {
-    submissions.value = []
-    error.value = errorMessage(err, t('review.loadError'))
-  } finally {
-    loading.value = false
-  }
-}
-
-async function act(submission: Submission, action: SubmissionStatus | 'delete') {
-  if (action === 'delete' && !await confirm({
-    title: t('review.confirmDeleteTitle', { id: submission.id }),
-    description: t('review.confirmDelete'),
-    confirmLabel: t('review.delete'),
-    color: 'error'
-  })) return
-  if (action === 'rejected' && !await confirm({
-    title: t('review.confirmRejectTitle', { id: submission.id }),
-    description: t('review.confirmReject'),
-    confirmLabel: t('review.reject')
-  })) return
-  busyId.value = submission.id
-  error.value = ''
-  try {
-    if (action === 'delete') {
-      await api(`/api/review/submissions/${submission.id}`, { method: 'DELETE' })
-    } else {
-      await api(`/api/review/submissions/${submission.id}`, { method: 'PATCH', body: { status: action } })
-    }
-    await load()
-  } catch (err) {
-    error.value = errorMessage(err, t('review.actionError'))
-  } finally {
-    busyId.value = undefined
-  }
-}
-
-function formatDate(value: string) {
-  return new Date(`${value.replace(' ', 'T')}Z`).toLocaleString(locale.value === 'hr' ? 'hr-HR' : 'en-GB')
-}
-
-const statusColor = { pending: 'warning', approved: 'success', rejected: 'neutral' } as const
-
-watch(filter, load)
-
-onMounted(load)
+watch(categoryOptions, (options) => {
+  const categoryFilter = resource.filters?.find(entry => entry.key === 'categoryId')
+  if (categoryFilter) categoryFilter.options = options
+}, { immediate: true })
 </script>
 
 <template>
-  <AdminPanel
-    :title="t('review.bastina.title')"
-    :description="t('review.bastina.intro')"
-    icon="i-lucide-landmark"
-    width="wide"
-  >
-    <template #actions>
-      <UButton
-        :label="t('review.refresh')"
-        icon="i-lucide-refresh-cw"
-        color="neutral"
-        variant="subtle"
-        :loading="loading"
-        @click="load"
+  <AdminResourcePage :resource="resource">
+    <template #toolbar-after="{ state, setQuery }">
+      <div
+        v-if="categoryOptions.length"
+        class="flex flex-wrap gap-2"
+        data-testid="admin-bastina-category-chips"
+      >
+        <UButton
+          size="sm"
+          :color="state.filters.categoryId ? 'neutral' : 'primary'"
+          :variant="state.filters.categoryId ? 'outline' : 'solid'"
+          label="Sve kategorije"
+          @click="setQuery({ filters: { ...state.filters, categoryId: undefined } })"
+        />
+        <UButton
+          v-for="option in categoryOptions"
+          :key="option.value"
+          size="sm"
+          :color="state.filters.categoryId === option.value ? 'primary' : 'neutral'"
+          :variant="state.filters.categoryId === option.value ? 'solid' : 'outline'"
+          :label="option.label"
+          @click="setQuery({ filters: { ...state.filters, categoryId: option.value } })"
+        />
+      </div>
+    </template>
+
+    <template #categoryLabel-cell="{ row }">
+      {{ row.categoryLabel ?? '—' }}
+    </template>
+    <template #verification-cell="{ row }">
+      {{ HERITAGE_VERIFICATION_LABELS[row.verification] ?? row.verification }}
+    </template>
+
+    <template #fields="{ state: form, entity }">
+      <AdminHeritageItemFields
+        :state="form"
+        :entity-id="entity?.id"
+        :category-options="categoryOptions"
+        :verification-options="verificationOptions"
+        :heritage-status-options="heritageStatusOptions"
+        @update:state="Object.assign(form, $event)"
       />
     </template>
-    <div class="flex flex-col gap-6">
-      <UAlert
-        v-if="error"
-        :title="error"
-        icon="i-lucide-circle-alert"
-        color="error"
-        variant="subtle"
-        role="alert"
-      />
-
-      <UTabs
-        v-model="filter"
-        :items="filters"
-        :content="false"
-      />
-
-      <p
-        v-if="!loading && !submissions.length && !error"
-        class="text-muted"
-      >
-        {{ t('review.empty') }}
-      </p>
-
-      <UTable
-        v-model:expanded="expanded"
-        :data="submissions"
-        :columns="columns"
-        :loading="loading"
-        :get-row-id="row => String(row.id)"
-        :caption="t('review.bastina.tableCaption')"
-        class="rounded-lg ring ring-default"
-        data-testid="admin-bastina-table"
-        @select="(_event, row) => row.toggleExpanded()"
-      >
-        <template #info-cell="{ row }">
-          <UButton
-            icon="i-lucide-info"
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            :aria-label="t('review.details', { id: row.original.id })"
-            :aria-expanded="row.getIsExpanded()"
-            @click="row.toggleExpanded()"
-          />
-        </template>
-        <template #target-cell="{ row }">
-          <ULink
-            v-if="targetMeta(row.original.targetRef).to"
-            :to="targetMeta(row.original.targetRef).to!"
-            class="block max-w-[10rem] truncate text-primary sm:max-w-md"
-            data-testid="admin-bastina-target-link"
-          >
-            {{ targetMeta(row.original.targetRef).label }}
-          </ULink>
-          <span
-            v-else
-            class="block max-w-[10rem] truncate text-highlighted sm:max-w-md"
-            data-testid="admin-bastina-target-label"
-          >
-            {{ targetMeta(row.original.targetRef).label }}
-          </span>
-        </template>
-        <template #text-cell="{ row }">
-          <span class="block max-w-[10rem] truncate text-dimmed sm:max-w-md">{{ row.original.text }}</span>
-        </template>
-        <template #status-cell="{ row }">
-          <UBadge
-            :label="t(`review.statuses.${row.original.status}`)"
-            :color="statusColor[row.original.status]"
-            variant="subtle"
-          />
-        </template>
-        <template #createdAt-cell="{ row }">
-          <span class="text-sm text-dimmed">{{ formatDate(row.original.createdAt) }}</span>
-        </template>
-        <template #expanded="{ row: { original: submission } }">
-          <div class="flex flex-col gap-4">
-            <p class="text-sm text-dimmed">
-              #{{ submission.id }} · {{ formatDate(submission.createdAt) }}
-            </p>
-
-            <dl class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-              <dt class="text-muted">
-                {{ t('review.bastina.fields.target') }}
-              </dt>
-              <dd>
-                <ULink
-                  v-if="targetMeta(submission.targetRef).to"
-                  :to="targetMeta(submission.targetRef).to!"
-                  class="text-primary"
-                >
-                  {{ targetMeta(submission.targetRef).label }}
-                </ULink>
-                <span v-else>{{ targetMeta(submission.targetRef).label }}</span>
-                <span
-                  v-if="submission.targetRef"
-                  class="block text-xs text-muted"
-                >{{ submission.targetRef }}</span>
-              </dd>
-            </dl>
-
-            <p class="whitespace-pre-line text-highlighted">
-              {{ submission.text }}
-            </p>
-
-            <dl class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-              <dt class="text-muted">
-                {{ t('review.fields.name') }}
-              </dt>
-              <dd>{{ submission.name || t('review.anonymous') }}</dd>
-              <dt class="text-muted">
-                {{ t('review.fields.contact') }}
-              </dt>
-              <dd class="break-all">
-                {{ submission.contact || '—' }}
-              </dd>
-              <dt class="text-muted">
-                {{ t('review.fields.consent') }}
-              </dt>
-              <dd>{{ submission.consentPublish ? t('review.consentGiven', { version: submission.consentVersion }) : '—' }}</dd>
-            </dl>
-
-            <div class="flex flex-wrap gap-2">
-              <UButton
-                v-if="submission.status !== 'approved'"
-                :label="t('review.approve')"
-                icon="i-lucide-check"
-                color="success"
-                variant="subtle"
-                :disabled="busyId !== undefined"
-                @click="act(submission, 'approved')"
-              />
-              <UButton
-                v-if="submission.status !== 'rejected'"
-                :label="t('review.reject')"
-                icon="i-lucide-x"
-                color="neutral"
-                variant="subtle"
-                :disabled="busyId !== undefined"
-                @click="act(submission, 'rejected')"
-              />
-              <UButton
-                v-if="submission.status !== 'pending'"
-                :label="t('review.toPending')"
-                icon="i-lucide-undo-2"
-                color="neutral"
-                variant="ghost"
-                :disabled="busyId !== undefined"
-                @click="act(submission, 'pending')"
-              />
-              <UButton
-                :label="t('review.delete')"
-                icon="i-lucide-trash-2"
-                color="error"
-                variant="ghost"
-                class="sm:ml-auto"
-                :disabled="busyId !== undefined"
-                @click="act(submission, 'delete')"
-              />
-            </div>
-          </div>
-        </template>
-      </UTable>
-    </div>
-  </AdminPanel>
+  </AdminResourcePage>
 </template>

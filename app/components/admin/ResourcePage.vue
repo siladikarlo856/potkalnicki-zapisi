@@ -3,7 +3,7 @@ import { h, resolveComponent } from 'vue'
 import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import type { ContentEntity } from '~~/shared/utils/content/common'
 import { CONTENT_PAGE_SIZES, CONTENT_STATUSES, CONTENT_STATUS_LABELS } from '~~/shared/utils/content/common'
-import type { AdminFilter, AdminResource } from '~/composables/useAdminResource'
+import type { AdminFilter, AdminResource, AdminListState } from '~/composables/useAdminResource'
 
 // One admin list page for a content resource: search, filters, sortable columns, pagination,
 // empty/loading/error states and the row menu, with create/edit and delete in dialogs. List state
@@ -15,10 +15,10 @@ const props = defineProps<{
   resource: AdminResource<T, F>
 }>()
 defineSlots<{
-  toolbar?(): unknown
-  fields?(props: { state: F, entity: T | null }): unknown
-  advanced?(props: { state: F, entity: T | null }): unknown
-  dialog?(props: {
+  'toolbar'?(): unknown
+  'fields'?(props: { state: F, entity: T | null }): unknown
+  'advanced'?(props: { state: F, entity: T | null }): unknown
+  'dialog'?(props: {
     editId: string | undefined
     creating: boolean
     prefill: Partial<F>
@@ -26,6 +26,7 @@ defineSlots<{
     closeDialog: () => Promise<unknown>
     refresh: () => Promise<unknown>
   }): unknown
+  'toolbar-after'?(props: { state: AdminListState, setQuery: (patch: Parameters<ReturnType<typeof useAdminResource>['setQuery']>[0]) => Promise<unknown> }): unknown
 } & {
   [cell: `${string}-cell`]: ((props: { row: T }) => unknown) | undefined
 }>()
@@ -256,6 +257,12 @@ const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranic
         {{ total }} {{ total % 10 === 1 && total % 100 !== 11 ? 'zapis' : 'zapisa' }}
       </span>
     </div>
+
+    <slot
+      name="toolbar-after"
+      :state="state"
+      :set-query="setQuery"
+    />
 
     <UAlert
       v-if="listError"
