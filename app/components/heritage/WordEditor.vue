@@ -2,12 +2,11 @@
 import type { WordInput } from '~~/shared/utils/word'
 import { WORD_STATUSES, SOURCE_KINDS, MAX_DISTRACTORS, NOTE_LIMIT, DISTRACTOR_LIMIT } from '~~/shared/utils/word'
 import { DAILY_CATEGORIES } from '~~/shared/utils/dailyWord'
+import type { Area } from '~~/app/types/heritage'
 
 const model = defineModel<WordInput>({ required: true })
 const props = defineProps<{ busy: boolean }>()
 const emit = defineEmits<{ save: [active: boolean], cancel: [] }>()
-const areasJson = ref(JSON.stringify(model.value.areas, null, 2))
-const areaError = ref('')
 const { t } = useI18n()
 const categoryItems = computed(() => [{ label: 'Bez kategorije', value: '__none__' }, ...DAILY_CATEGORIES.map(value => ({ label: `${t(`daily.category.${value}`)} · ${value}`, value }))])
 const noteHr = computed({ get: () => model.value.entry.note?.hr ?? '', set: (hr: string) => {
@@ -19,23 +18,56 @@ const noteEn = computed({ get: () => model.value.entry.note?.en ?? '', set: (en:
 const tags = computed({ get: () => model.value.entry.tags?.join(', ') ?? '', set: (value: string) => {
   model.value.entry.tags = value.split(',').map(v => v.trim()).filter(Boolean)
 } })
-const areaOptions = computed(() => model.value.areas.map(area => ({ label: `${area.name} · ${area.kind}`, value: area.id })))
 const sourceOptions = computed(() => [{ label: 'Bez izvora', value: '__none__' }, ...model.value.entry.sources.map(source => ({ label: source.credit || source.id, value: source.id }))])
 
-function updateAreas() {
-  try {
-    const value = JSON.parse(areasJson.value)
-    if (!Array.isArray(value) || value.some(a => !a || typeof a.id !== 'string' || typeof a.name !== 'string')) throw new Error()
-    model.value.areas = value
-    areaError.value = ''
-    return true
-  } catch {
-    areaError.value = 'Područja trebaju biti JSON popis s ID-jem, nazivom, vrstom i parentId-jem.'
-    return false
+// Published areas from the database, used as the area picker source.
+const { data: dbAreas } = await useFetch<Area[]>('/api/review/areas', { default: () => [] as Area[] })
+// All areas available for selection: the DB list is the authoritative source.
+const allAreas = computed(() => dbAreas.value ?? [])
+const areaOptions = computed(() => allAreas.value.map(area => ({ label: `${area.name} · ${area.kind}`, value: area.id })))
+
+function hierarchyFor(ids: string[]) {
+  const byId = new Map(allAreas.value.map(area => [area.id, area]))
+  const included = new Set(ids)
+  for (const id of ids) {
+    let parentId = byId.get(id)?.parentId ?? null
+    while (parentId && !included.has(parentId)) {
+      included.add(parentId)
+      parentId = byId.get(parentId)?.parentId ?? null
+    }
   }
+  return allAreas.value.filter(area => included.has(area.id))
 }
+
+// Track which areas are included in the word's hierarchy.
+// The `areas` column is maintained by the DB trigger from entry usages; here we let the admin
+// pick areas directly for the hierarchy used by usage selects in the editor.
+const selectedAreaIds = ref<string[]>(model.value.areas.map(a => a.id))
+
+// When selected areas change, update the model areas so the usage selects have the right options.
+watch(selectedAreaIds, (ids) => {
+  model.value.areas = hierarchyFor(ids)
+}, { immediate: false })
+
+// When the model areas change externally (e.g. on load), sync selectedAreaIds.
+watch(() => model.value.areas, (areas) => {
+  const inModel = areas.map(a => a.id)
+  const inDb = allAreas.value.map(a => a.id)
+  // Keep only ids that the DB knows about; add any that are only in areas (legacy keys resolved to UUIDs)
+  const next = [...new Set([...inModel.filter(id => inDb.includes(id)), ...inModel])]
+  if (next.length !== selectedAreaIds.value.length || next.some((id, index) => id !== selectedAreaIds.value[index])) {
+    selectedAreaIds.value = next
+  }
+}, { immediate: true })
+
+function chooseArea(set: (id: string) => void, value: unknown) {
+  const id = String(value)
+  set(id)
+  if (!selectedAreaIds.value.includes(id)) selectedAreaIds.value = [...selectedAreaIds.value, id]
+}
+
 function save(active: boolean) {
-  if (updateAreas()) emit('save', active)
+  emit('save', active)
 }
 function addSource() {
   model.value.entry.sources.push({ id: crypto.randomUUID(), kind: 'editor', credit: '' })
@@ -196,7 +228,7 @@ function addVariant() {
             :model-value="example.areaId || '__none__'"
             :items="[{ label: 'Bez područja', value: '__none__' }, ...areaOptions]"
             class="w-full"
-            @update:model-value="value => example.areaId = value === '__none__' ? undefined : String(value)"
+            @update:model-value="value => value === '__none__' ? example.areaId = undefined : chooseArea(id => example.areaId = id, value)"
           />
         </UFormField>
         <UButton
@@ -266,9 +298,10 @@ function addVariant() {
         >
           <UFormField label="Područje upotrebe">
             <USelect
-              v-model="usage.areaId"
+              :model-value="usage.areaId"
               :items="areaOptions"
               class="w-full"
+              @update:model-value="value => chooseArea(id => usage.areaId = id, value)"
             />
           </UFormField>
           <UFormField label="Pouzdanost">
@@ -307,7 +340,7 @@ function addVariant() {
             icon="i-lucide-map-pin-plus"
             color="neutral"
             variant="outline"
-            @click="variant.usages.push({ areaId: model.areas[0]?.id ?? '', confidence: 'reported' })"
+            @click="variant.usages.push({ areaId: allAreas[0]?.id ?? '', confidence: 'reported' })"
           />
           <UButton
             label="Ukloni inačicu"
@@ -375,15 +408,17 @@ function addVariant() {
     </section>
 
     <UFormField
-      label="Definicije područja · napredno (JSON)"
-      :error="areaError || undefined"
-      description="Javni podaci. Za novo naselje dodaj objekt s jedinstvenim id, name, kind: settlement i parentId. Mogući dodatni parametri: alsoIn, centroid, boundaryRef, externalIds. Roditelji moraju biti u ovom popisu."
+      label="Područja upotrebe"
+      description="Odaberi područja čiji će se nazivi prikazivati u padajućim izbornicima za inačice i primjere. Hijerarhija (roditelji) dodaje se automatski. Područja koja nisu odabrana ovdje neće se moći dodijeliti inačicama."
     >
-      <UTextarea
-        v-model="areasJson"
-        :rows="8"
-        class="w-full font-mono text-xs"
-        @blur="updateAreas"
+      <USelectMenu
+        v-model="selectedAreaIds"
+        :items="areaOptions"
+        value-key="value"
+        multiple
+        searchable
+        placeholder="Odaberi područja…"
+        class="w-full"
       />
     </UFormField>
     <div class="flex flex-wrap gap-2 border-t border-default pt-4">

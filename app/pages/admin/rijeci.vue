@@ -3,7 +3,6 @@ import type { TableColumn } from '@nuxt/ui'
 import type { AdminWord, WordInput } from '~~/shared/utils/word'
 import { validateWord } from '~~/shared/utils/word'
 import { dailyReadiness } from '~~/shared/utils/dailyWord'
-import baseAreas from '~~/content/heritage/areas.json'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
@@ -117,7 +116,7 @@ function pinFor(word: AdminWord) {
 function create() {
   editorVersion.value++
   const id = crypto.randomUUID()
-  editor.value = validateWord({ entry: { headword: '', meaning: { hr: '' }, status: 'community', sources: [], variants: [{ id: crypto.randomUUID(), form: '', status: 'community', usages: [] }] }, areas: baseAreas, active: false }, id).value
+  editor.value = validateWord({ entry: { headword: '', meaning: { hr: '' }, status: 'community', sources: [], variants: [{ id: crypto.randomUUID(), form: '', status: 'community', usages: [] }] }, areas: [], active: false }, id).value
   editingId.value = undefined
   error.value = ''
   notice.value = ''

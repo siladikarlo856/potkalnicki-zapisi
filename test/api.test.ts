@@ -280,7 +280,7 @@ describe('word admin and public word APIs', () => {
     const word = await promoted.json() as AdminWord
     wordIds.push(word.entry.id)
     expect(word).toMatchObject({ active: false, submissionId: submission.id, submissionPlace: 'Sveti Petar Orehovec (geonames:3194024)', entry: { headword: 'promotion test word', meaning: { hr: '' }, status: 'community', sources: [{ kind: 'contribution', credit: 'Ana' }] } })
-    expect(word.entry.variants[0]?.usages).toMatchObject([{ areaId: 'hr-kkz-sveti-petar-orehovec', confidence: 'reported' }])
+    expect(word.entry.variants[0]?.usages).toMatchObject([{ areaId: expect.stringMatching(/^[0-9a-f-]{36}$/), confidence: 'reported' }])
     expect(JSON.stringify(word)).not.toContain(valid.contact)
     const repeat = await (await request(path, { method: 'POST', secret: SECRET })).json() as AdminWord
     expect(repeat.entry.id).toBe(word.entry.id)

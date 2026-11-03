@@ -179,6 +179,29 @@ Apply it through the normal migration-first workflow. The previously deployed ap
 
 `node scripts/test-challenges.mjs` runs `test/wordColumns.integration.test.ts` on its disposable Postgres: the backfilled slugs and baseline revisions of the seeded words, the id check (text, uppercase and suffixed ids refused), `content_slug` against `atlasSlug`, homograph suffixes and slug stability, revision and stale-update refusal, history rows (deletes included), archiving, slug history and the previous app's insert and update.
 
+## Word areas from the areas table
+
+`20261103040000_word_areas.sql` links words to the `areas` table introduced in `20261103010000_content_tables.sql`. It sorts after `20261103030000_word_admin_columns.sql` and depends on both; if another migration lands first with a later timestamp, rename this file to sort after it.
+
+What it adds:
+
+- `heritage_word_areas(word_id text → heritage_words, area_id uuid → areas)`: one row per unique area referenced by a word's entry (usages and examples). `word_id` is `ON DELETE CASCADE` (deleting a word drops its links); `area_id` is `ON DELETE RESTRICT` (an area referenced by a word cannot be deleted). RLS on; only `service_role` can read or write.
+- `resolve_area_id(text) → uuid`: resolves an area id string — tries a direct UUID cast, then looks up `content_legacy_ids` for kind `area`. Returns null for unknown values (old admin writes with stale legacy keys are silently ignored).
+- `word_entry_area_ids(jsonb) → uuid[]`: collects the distinct resolved area UUIDs from a word entry's `variants[].usages[].areaId` and `examples[].areaId`.
+- `areas_hierarchy_jsonb(uuid[]) → jsonb`: builds the full ancestor hierarchy (via recursive CTE) for a set of area UUIDs in the public `Area` shape (`{ id, name, kind, parentId, externalIds? }`). Used for the dual-written `areas` column.
+- `heritage_word_areas_project()` (`BEFORE INSERT OR UPDATE`) projects the legacy `areas` JSONB column from the `areas` table, while `heritage_word_areas_sync()` (`AFTER INSERT OR UPDATE`) syncs `heritage_word_areas`. Keeping projection in the original write avoids recursive updates and revision inflation. The column is kept until PR 14 so a rolled-back app renders correctly.
+- `GET /api/review/areas` (reviewer only): returns all published areas ordered by kind then name, for the word-editor area picker.
+
+**One-time backfill** (inside the migration): rewrites `variants[].usages[].areaId` and `examples[].areaId` in `heritage_words.entry` from legacy keys (e.g. `hr-kkz-krizevci`) to UUIDs via `content_legacy_ids`; rebuilds the `areas` JSONB column from the `areas` table; populates `heritage_word_areas`. Also rewrites `heritage_daily_words.village`, `snapshot.villageAreaId` and clue `areaIds` with the guard trigger disabled.
+
+**WordEditor** replaces the raw JSON textarea with a `USelectMenu` populated from `GET /api/review/areas`. The `areas` column is projected by the trigger on save.
+
+**Promotion** (`promoteSubmission`) no longer uses the hard-coded `PLACE_AREA_IDS` map; it queries `areas.geonames_id` for the submission's `place_id`. A case-insensitive exact name match on the submitted place is used only when no `place_id` was given, and only if it identifies exactly one published area.
+
+Apply through the normal migration-first workflow. The previously deployed app keeps working: its inserts omit `heritage_word_areas` (the trigger fills it); its reads of the `areas` column still work (projected by trigger); old admin writes with legacy area keys are tolerated. After rollout, verify `select count(*) from public.heritage_word_areas;` is non-zero and no seeded word has legacy keys remaining in `entry`.
+
+`node scripts/test-challenges.mjs` runs `test/wordAreas.integration.test.ts` on its disposable Postgres.
+
 ## Admin content API (no migration)
 
 The content admin kit (`/api/admin/content/:kind`, first used by `/admin/izvori`) adds no migration. It reads and writes the content tables created by `20261103010000_content_tables.sql` (see Content tables above: `sources`, `heritage_item_sources`, `content_legacy_ids`, `content_revisions` and their triggers) through the same server-only service-role key as the other routes. Deploy it only after that migration is applied: until then the routes answer 503 `not-migrated` and change nothing, and the rest of the site is unaffected.

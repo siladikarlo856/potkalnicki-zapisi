@@ -65,10 +65,33 @@ export async function startFakeSupabase() {
   const rows: Row[] = []
   const words: Row[] = []
   const daily: Row[] = []
+  // Minimal published area fixture for database-backed word promotion. The real migration
+  // supplies deterministic UUIDs; the fake only needs the same GeoNames lookup contract.
+  const areas: Row[] = [{
+    id: '00000000-0000-4000-8000-000000000001', name: 'Sveti Petar Orehovec', kind: 'municipality',
+    parent_id: null, geonames_id: '3194024', official_code: null, status: 'published'
+  }]
   let nextId = 1
   // One-shot hook run just before the next daily upsert, to simulate losing a race.
   let beforeDailyUpsert: (() => void) | null = null
   const requests: Array<{ method: string, role: string, path: string }> = []
+
+  function projectWordAreas(row: Row) {
+    if (!Array.isArray(row.areas)) row.areas = []
+    const projected = row.areas as Row[]
+    const ids = new Set(projected.map(area => String(area.id)))
+    const entry = row.entry as Row | undefined
+    const variants = Array.isArray(entry?.variants) ? entry.variants as Row[] : []
+    const areaIds = variants.flatMap(variant => Array.isArray(variant.usages) ? variant.usages as Row[] : [])
+      .map(usage => String(usage.areaId ?? ''))
+    for (const areaId of areaIds) {
+      const area = areas.find(candidate => candidate.id === areaId)
+      if (area && !ids.has(areaId)) {
+        projected.push({ id: area.id, name: area.name, kind: area.kind, parentId: area.parent_id })
+        ids.add(areaId)
+      }
+    }
+  }
 
   const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', 'http://localhost')
@@ -78,11 +101,13 @@ export async function startFakeSupabase() {
 
     const isWords = url.pathname === '/rest/v1/heritage_words'
     const isDaily = url.pathname === '/rest/v1/heritage_daily_words'
-    if ((!isWords && !isDaily && url.pathname !== '/rest/v1/heritage_submissions') || role === 'none') {
+    const isAreas = url.pathname === '/rest/v1/areas'
+    const isSubmissions = url.pathname === '/rest/v1/heritage_submissions'
+    if ((!isWords && !isDaily && !isAreas && !isSubmissions) || role === 'none') {
       return reply(response, 401, { message: 'Invalid API key' })
     }
 
-    const table = isDaily ? daily : isWords ? words : rows
+    const table = isDaily ? daily : isWords ? words : isAreas ? areas : rows
     function project(row: Row) {
       const select = url.searchParams.get('select') ?? '*'
       return select === '*' ? row : Object.fromEntries(select.split(',').map(key => [key, row[key]]))
@@ -117,8 +142,11 @@ export async function startFakeSupabase() {
       const row = isWords
         ? { submission_id: null, submission_place: null, ...body, created_at: now, updated_at: now }
         : { place_id: null, place_catalog_version: null, target_ref: null, word_id: null, intent: null, ...body, id: nextId++, status: 'pending', created_at: now, reviewed_at: null }
+      if (isWords) {
+        projectWordAreas(row)
+        activate(row)
+      }
       table.push(row)
-      if (isWords) activate(row)
       return reply(response, 201, request.headers.prefer?.includes('return=representation') ? [project(row)] : undefined)
     }
 
@@ -140,6 +168,7 @@ export async function startFakeSupabase() {
         const wasActive = row.active
         Object.assign(row, body)
         if (isWords) {
+          projectWordAreas(row)
           row.updated_at = new Date().toISOString()
           if (!wasActive) activate(row)
         }
@@ -151,7 +180,7 @@ export async function startFakeSupabase() {
     if (request.method === 'DELETE') {
       for (const row of visible) {
         table.splice(table.indexOf(row), 1)
-        if (!isWords) for (const word of words) if (word.submission_id === row.id) word.submission_id = null
+        if (isSubmissions) for (const word of words) if (word.submission_id === row.id) word.submission_id = null
       }
       return reply(response, 200, visible.map(row => ({ id: row.id })))
     }

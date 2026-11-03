@@ -2,15 +2,10 @@ import { randomUUID } from 'node:crypto'
 import type { H3Event } from 'h3'
 import type { AdminWord, WordInput } from '../../shared/utils/word'
 import { validateWord, WORD_BODY_LIMIT } from '../../shared/utils/word'
-import baseAreas from '../../content/heritage/areas.json'
 
 const WORD_TABLE = 'heritage_words'
-// Explicit bridge to the existing sample areas; other catalog places need editorial mapping.
-// Never infer a structured settlement's area from its possibly duplicated display name.
-const PLACE_AREA_IDS: Record<string, string> = {
-  'geonames:3197230': 'hr-kkz-krizevci',
-  'geonames:3194024': 'hr-kkz-sveti-petar-orehovec'
-}
+const AREAS_TABLE = 'areas'
+
 interface WordRow {
   id: string
   entry: WordInput['entry']
@@ -20,6 +15,16 @@ interface WordRow {
   submission_place: string | null
   created_at: string
   updated_at: string
+}
+
+interface AreaRow {
+  id: string
+  name: string
+  kind: string
+  parent_id: string | null
+  geonames_id: string | null
+  official_code: string | null
+  status: string
 }
 
 function adminWord(row: WordRow): AdminWord {
@@ -64,6 +69,54 @@ export async function saveWord(input: WordInput, id?: string) {
   return adminWord(data[0] as WordRow)
 }
 
+/** Look up an area by its GeoNames id (e.g. 'geonames:3197230') from the areas table. */
+async function areaByGeonamesId(placeId: string): Promise<AreaRow | null> {
+  // submission.place_id is stored as 'geonames:<numeric id>'
+  const match = /^geonames:(\d+)$/.exec(placeId)
+  if (!match) return null
+  const geonamesId = match[1]!
+  const { data, error } = await useDatabaseClient()
+    .from(AREAS_TABLE)
+    .select('id,name,kind,parent_id,geonames_id,official_code,status')
+    .eq('geonames_id', geonamesId)
+    .eq('status', 'published')
+    .limit(1)
+  if (error || !data?.length) return null
+  return data[0] as AreaRow
+}
+
+/** Look up an area by display name (case-insensitive Croatian locale). */
+async function areaByName(placeName: string): Promise<AreaRow | null> {
+  const { data, error } = await useDatabaseClient()
+    .from(AREAS_TABLE)
+    .select('id,name,kind,parent_id,geonames_id,official_code,status')
+    .eq('status', 'published')
+    .ilike('name', placeName.replace(/[\\%_]/g, '\\$&'))
+    .limit(2)
+  if (error || data?.length !== 1) return null
+  return data[0] as AreaRow
+}
+
+/**
+ * Fetch the published areas list for the admin area picker: all published areas ordered by
+ * kind (country → county → region → town/municipality → settlement) then by name.
+ */
+export async function listAdminAreas() {
+  const KIND_ORDER: Record<string, number> = { country: 0, county: 1, region: 2, town: 3, municipality: 3, settlement: 4 }
+  const { data, error } = await useDatabaseClient()
+    .from(AREAS_TABLE)
+    .select('id,name,kind,parent_id,geonames_id,official_code,status')
+    .eq('status', 'published')
+    .order('name')
+  if (error) databaseError(error)
+  const rows = (data as AreaRow[]).slice().sort((a, b) =>
+    (KIND_ORDER[a.kind] ?? 9) - (KIND_ORDER[b.kind] ?? 9) || a.name.localeCompare(b.name, 'hr'))
+  return rows.map(r => ({
+    id: r.id, name: r.name, kind: r.kind, parentId: r.parent_id ?? null,
+    externalIds: { ...(r.geonames_id ? { geonames: r.geonames_id } : {}), ...(r.official_code ? { dgu: r.official_code } : {}) }
+  }))
+}
+
 export async function promoteSubmission(id: number) {
   const client = useDatabaseClient()
   const existing = await client.from(WORD_TABLE).select('*').eq('submission_id', id)
@@ -83,18 +136,28 @@ export async function promoteSubmission(id: number) {
   const wordId = randomUUID()
   const isWord = submission.type === 'word' || submission.type === 'expression'
   const headword = isWord ? submission.text.slice(0, 200) : ''
-  const area = submission.place_id
-    ? baseAreas.find(a => a.id === PLACE_AREA_IDS[submission.place_id])
-    : baseAreas.find(a => a.name.toLocaleLowerCase('hr') === submission.place?.toLocaleLowerCase('hr'))
+
+  // Map submission.place_id (geonames:NNNN) to an area UUID from the database; name match only when no place_id was given.
+  let areaId: string | undefined
+  if (submission.place_id) {
+    const area = await areaByGeonamesId(submission.place_id)
+    if (area) areaId = area.id
+  } else if (submission.place) {
+    const area = await areaByName(submission.place)
+    if (area) areaId = area.id
+  }
+
+  // The areas column is left empty: the heritage_word_areas_sync trigger projects it from the areas
+  // table after the insert, using the areaId in the entry variants' usages.
   const draft = validateWord({
     active: false,
-    areas: baseAreas,
+    areas: [],
     entry: {
       headword, meaning: { hr: '' }, partOfSpeech: '', status: 'community',
       examples: !isWord || submission.text.length > 200 ? [{ text: submission.text }] : [],
       // Public source IDs deliberately do not encode the private submission ID.
       sources: [{ id: randomUUID(), kind: 'contribution', ...(submission.name ? { credit: submission.name } : {}) }],
-      variants: [{ id: randomUUID(), form: headword, status: 'community', usages: area ? [{ areaId: area.id, confidence: 'reported' }] : [] }]
+      variants: [{ id: randomUUID(), form: headword, status: 'community', usages: areaId ? [{ areaId, confidence: 'reported' }] : [] }]
     }
   }, wordId).value
   const inserted = await client.from(WORD_TABLE).insert({

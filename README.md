@@ -358,5 +358,4 @@ Local verification: use `supabase migration up --local` on an already running lo
 Follow-up TODOs:
 
 - Generalize the card-game engine to support games beyond this particular word model, after the first simple version.
-- Add catalog-backed area selection and conflict handling for shared area definitions; coordinate with the separate settlement-picker work.
 - Add deck pagination/selection if more than 100 active words are curated. The current game consumes the first bounded deck, ordered by stable ID.
