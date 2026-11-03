@@ -1,8 +1,13 @@
 // Rules for heritage submissions, shared by the form and the API so both check the same limits.
 
 import { isCorrectionTargetRefFormat } from './correctionReport'
+import type { ContributionKind, ContributionPayload } from './contribution'
+import { CONTRIBUTION_ALLOWED, isContributionKind, validateContributionPayload } from './contribution'
 
-export const SUBMISSION_TYPES = ['word', 'expression', 'memory', 'other', 'correction'] as const
+// 'proposal' is a suggestion for a new row (a heritage item, settlement, source or word); 'correction'
+// is a change to an existing one, either an old atlas id in `targetRef` or a structured `targetKind` +
+// `targetId` with a `payload` of the proposed fields.
+export const SUBMISSION_TYPES = ['word', 'expression', 'memory', 'other', 'correction', 'proposal'] as const
 export const SUBMISSION_STATUSES = ['pending', 'approved', 'rejected'] as const
 export const SUBMISSION_LOCALES = ['hr', 'en'] as const
 // What a contribution from the daily word says about its word: a local form, or "it is said here too".
@@ -29,6 +34,13 @@ export interface SubmissionInput {
   text: string
   type: SubmissionType | null
   targetRef: string | null
+  /** Structured corrections and proposals: what they are about and the proposed fields. */
+  targetKind: ContributionKind | null
+  /** A UUID, or an old id the server resolves (heritage items, settlements, sources). Null for proposals. */
+  targetId: string | null
+  payload: ContributionPayload | null
+  /** Revision of the target the sender saw; the server fills in the current one when it is missing. */
+  baseRevision: number | null
   placeId: string | null
   wordId: string | null
   intent: SubmissionIntent | null
@@ -50,14 +62,19 @@ export interface Submission extends Omit<SubmissionInput, 'consentPublish'> {
   status: SubmissionStatus
   createdAt: string
   reviewedAt: string | null
+  /** Set once an admin applied the correction or published the draft made from the proposal. */
+  appliedAt: string | null
+  appliedEntityId: string | null
 }
 
-export type SubmissionField = 'text' | 'type' | 'targetRef' | 'wordId' | 'intent' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
-export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid' | 'selectPlace' | 'refreshPlace' | 'outOfScope'
+export type SubmissionField = 'text' | 'type' | 'targetRef' | 'targetKind' | 'targetId' | 'payload' | 'baseRevision' | 'wordId' | 'intent' | 'place' | 'name' | 'contact' | 'consentPublish' | 'locale'
+export type SubmissionIssueCode = 'required' | 'tooShort' | 'tooLong' | 'invalid' | 'selectPlace' | 'refreshPlace' | 'outOfScope' | 'unknown' | 'links'
 
 export interface SubmissionIssue {
   field: SubmissionField
   code: SubmissionIssueCode
+  /** For a payload issue: the payload field it is about ('' for the payload as a whole). */
+  path?: string
 }
 
 export type SubmissionValidation
@@ -107,11 +124,46 @@ export function validateSubmission(input: unknown): SubmissionValidation {
     }
   }
 
-  if (type === 'correction' && !targetRef && !issues.some(issue => issue.field === 'targetRef')) {
+  const structured = body.targetKind !== undefined && body.targetKind !== null && body.targetKind !== ''
+  if (type === 'correction' && !targetRef && !structured && !issues.some(issue => issue.field === 'targetRef')) {
     issues.push({ field: 'targetRef', code: 'required' })
   }
   if (targetRef && type !== 'correction' && !issues.some(issue => issue.field === 'type')) {
     issues.push({ field: 'type', code: 'invalid' })
+  }
+
+  let targetKind: ContributionKind | null = null
+  let targetId: string | null = null
+  let payload: ContributionPayload | null = null
+  let baseRevision: number | null = null
+  if (structured || type === 'proposal') {
+    if (type !== 'correction' && type !== 'proposal') {
+      if (!issues.some(issue => issue.field === 'type')) issues.push({ field: 'type', code: 'invalid' })
+    } else if (!isContributionKind(body.targetKind)) {
+      issues.push({ field: 'targetKind', code: structured ? 'invalid' : 'required' })
+    } else if (!CONTRIBUTION_ALLOWED[body.targetKind].includes(type)) {
+      issues.push({ field: 'targetKind', code: 'outOfScope' })
+    } else {
+      targetKind = body.targetKind
+      if (type === 'correction') {
+        if (targetRef) issues.push({ field: 'targetRef', code: 'invalid' })
+        const rawId = typeof body.targetId === 'string' ? body.targetId.trim().toLowerCase() : ''
+        if (!rawId) issues.push({ field: 'targetId', code: 'required' })
+        else if (!isCorrectionTargetRefFormat(rawId)) issues.push({ field: 'targetId', code: 'invalid' })
+        else targetId = rawId
+      } else if (body.targetId !== undefined && body.targetId !== null && body.targetId !== '') {
+        issues.push({ field: 'targetId', code: 'invalid' })
+      }
+      const checked = validateContributionPayload(targetKind, type, body.payload)
+      for (const issue of checked.issues) issues.push({ field: 'payload', code: issue.code, path: issue.path })
+      payload = checked.value
+      if (body.baseRevision !== undefined && body.baseRevision !== null) {
+        if (type === 'correction' && typeof body.baseRevision === 'number' && Number.isSafeInteger(body.baseRevision) && body.baseRevision >= 1) baseRevision = body.baseRevision
+        else issues.push({ field: 'baseRevision', code: 'invalid' })
+      }
+    }
+  } else if (body.payload !== undefined && body.payload !== null) {
+    issues.push({ field: 'payload', code: 'invalid' })
   }
 
   let wordId: string | null = null
@@ -126,7 +178,7 @@ export function validateSubmission(input: unknown): SubmissionValidation {
   }
   // A link only means something with a word; corrections have their own target and never concern a word.
   if (intent && !wordId && !issues.some(issue => issue.field === 'wordId')) issues.push({ field: 'wordId', code: 'required' })
-  if (wordId && type === 'correction' && !issues.some(issue => issue.field === 'type')) issues.push({ field: 'type', code: 'invalid' })
+  if (wordId && (type === 'correction' || type === 'proposal') && !issues.some(issue => issue.field === 'type')) issues.push({ field: 'type', code: 'invalid' })
 
   // Cached old clients must refresh/reselect instead of submitting arbitrary location text.
   if (body.place !== undefined && body.place !== null && body.place !== '') {
@@ -148,5 +200,5 @@ export function validateSubmission(input: unknown): SubmissionValidation {
 
   if (issues.length || !locale) return { ok: false, issues }
 
-  return { ok: true, value: { text, type, targetRef, placeId, wordId, intent, name, contact, consentPublish: true, locale } }
+  return { ok: true, value: { text, type, targetRef, targetKind, targetId, payload, baseRevision, placeId, wordId, intent, name, contact, consentPublish: true, locale } }
 }

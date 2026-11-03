@@ -1,23 +1,26 @@
 import type { H3Event } from 'h3'
+import type { ContributionKind, ContributionPayload } from '../../shared/utils/contribution'
 import { contentTarget } from './publicAtlas'
 import { placeById } from './places'
 
+/** A correction sent with an old atlas id: the item it points at, as its UUID. Unknown and gone items are refused. */
 export async function assertKnownCorrectionTarget(targetRef: string) {
   const result = contentTarget(await getPublicContent(), 'heritage_item', targetRef)
-  if (result.status !== 'ok') {
+  if (result.status !== 'ok' || result.value.kind !== 'heritage_item') {
     throw createError({
       statusCode: 400,
       statusMessage: 'Invalid submission',
       data: { issues: [{ field: 'targetRef', code: 'invalid' }] }
     })
   }
+  return result.value.item.id
 }
 
 const TABLE = 'heritage_submissions'
 // Supabase's API returns at most 1000 rows per request (max_rows), so the list is read in pages.
 const PAGE_SIZE = 1000
 
-interface SubmissionRow {
+export interface SubmissionRow {
   id: number
   text: string
   type: SubmissionType | null
@@ -25,6 +28,12 @@ interface SubmissionRow {
   place_id: string | null
   place_catalog_version: string | null
   target_ref: string | null
+  target_kind?: ContributionKind | null
+  target_id?: string | null
+  payload?: ContributionPayload | null
+  base_revision?: number | null
+  applied_at?: string | null
+  applied_entity_id?: string | null
   word_id?: string | null
   intent?: SubmissionIntent | null
   name: string | null
@@ -45,6 +54,8 @@ function placeContext(id: string) {
 export interface ResolvedSubmissionInput extends SubmissionInput {
   place: string | null
   placeCatalogVersion: string | null
+  /** Duplicate fingerprint of a structured correction or proposal; see contributions.ts. */
+  fingerprint?: string | null
 }
 
 // Postgres returns ISO timestamps; the review page expects UTC "YYYY-MM-DD HH:MM:SS".
@@ -52,12 +63,18 @@ function formatTime(value: string) {
   return new Date(value).toISOString().slice(0, 19).replace('T', ' ')
 }
 
-function toSubmission(row: SubmissionRow, headwords: ReadonlyMap<string, string>): Submission {
+export function toSubmission(row: SubmissionRow, headwords: ReadonlyMap<string, string>): Submission {
   return {
     id: Number(row.id),
     text: row.text,
     type: row.type,
     targetRef: row.target_ref ?? null,
+    targetKind: row.target_kind ?? null,
+    targetId: row.target_id ?? null,
+    payload: row.payload ?? null,
+    baseRevision: row.base_revision ?? null,
+    appliedAt: row.applied_at ? formatTime(row.applied_at) : null,
+    appliedEntityId: row.applied_entity_id ?? null,
     wordId: row.word_id ?? null,
     intent: row.intent ?? null,
     wordHeadword: row.word_id ? headwords.get(row.word_id) ?? null : null,
@@ -91,8 +108,11 @@ export async function insertSubmission(input: ResolvedSubmissionInput) {
     consent_publish: input.consentPublish,
     consent_version: PRIVACY_NOTICE_VERSION,
     locale: input.locale,
-    // Only sent when set, so ordinary submissions still work before the word-link migration is applied.
-    ...(input.wordId ? { word_id: input.wordId, intent: input.intent } : {})
+    // Only sent when set, so ordinary submissions still work before the word-link and inbox migrations are applied.
+    ...(input.wordId ? { word_id: input.wordId, intent: input.intent } : {}),
+    ...(input.targetKind
+      ? { target_kind: input.targetKind, target_id: input.targetId, payload: input.payload, base_revision: input.baseRevision, fingerprint: input.fingerprint ?? null }
+      : {})
   })
   if (error) databaseError(error)
 }

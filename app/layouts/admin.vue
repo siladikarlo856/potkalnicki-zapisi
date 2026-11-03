@@ -5,7 +5,11 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex, nofollow' }]
 })
 
-const nav = ADMIN_NAV
+// The inbox badge counts pending submissions; the layout stays usable when the count cannot be read.
+const { data: summary } = useFetch<{ pending: number }>('/api/admin/inbox/summary', { server: false, key: 'admin-inbox-summary' })
+const nav = computed(() => ADMIN_NAV.map(item => item.to === '/admin/prijedlozi' && summary.value?.pending
+  ? { ...item, badge: summary.value.pending }
+  : item))
 
 async function signOut() {
   await $fetch('/api/admin/session', { method: 'DELETE' })

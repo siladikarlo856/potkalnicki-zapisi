@@ -72,12 +72,13 @@ function wordStatusLabel(word: Word) {
 
 <template>
   <AdminResourcePage :resource="resource">
-    <template #dialog="{ visible, editId, prefill, closeDialog, refresh }">
+    <template #dialog="{ visible, editId, prefill, proposalId, closeDialog, refresh }">
       <AdminWordDialog
         :visible="visible"
         :resource="resource"
         :entity-id="editId"
         :prefill="prefill"
+        :proposal-id="proposalId"
         @saved="refresh()"
         @closed="closeDialog()"
       />

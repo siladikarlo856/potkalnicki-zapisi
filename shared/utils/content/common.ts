@@ -81,7 +81,7 @@ export interface ContentLookupItem {
 
 /** The `data` of an error response from the admin content API. */
 export interface ContentErrorData {
-  code?: 'invalid' | 'revision-conflict' | 'duplicate' | 'referenced' | 'not-migrated'
+  code?: 'invalid' | 'revision-conflict' | 'duplicate' | 'referenced' | 'not-migrated' | 'applied' | 'stale-proposal'
   /** Croatian text for the admin screen. */
   message?: string
   issues?: ContentIssue[]

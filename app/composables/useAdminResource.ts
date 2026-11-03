@@ -156,8 +156,8 @@ export function adminListState(query: LocationQuery, resource: AdminResource): A
 
 /**
  * List state in the URL (`q`, filters, `page`, `size`, `sort`), the list request that follows it,
- * and the dialog deep links (`?uredi=<uuid>`, `?novo=1&<field>=<prefill>`, `?povijest=<uuid>` for the
- * history drawer).
+ * and the dialog deep links (`?uredi=<uuid>`, `?novo=1&<field>=<prefill>`, `?prijedlog=<id>` for applying a
+ * submission in the dialog, `?povijest=<uuid>` for the history drawer).
  */
 export function useAdminResource<T extends ContentEntity, F extends object>(resource: AdminResource<T, F>) {
   const route = useRoute()
@@ -227,6 +227,12 @@ export function useAdminResource<T extends ContentEntity, F extends object>(reso
     return isUuid(id) ? id : undefined
   })
 
+  /** `?prijedlog=<submissionId>`: the dialog shows that correction or proposal and applies it on save. */
+  const proposalId = computed(() => {
+    const id = Number(single(route.query.prijedlog))
+    return Number.isSafeInteger(id) && id >= 1 ? id : undefined
+  })
+
   // One overlay at a time: opening a dialog or the history closes the others.
   function openEdit(id: string) {
     return replaceQuery({ uredi: id, novo: undefined, povijest: undefined })
@@ -241,7 +247,7 @@ export function useAdminResource<T extends ContentEntity, F extends object>(reso
     return replaceQuery({ povijest: undefined })
   }
   function closeDialog() {
-    const reset: LocationQueryRaw = { uredi: undefined, novo: undefined }
+    const reset: LocationQueryRaw = { uredi: undefined, novo: undefined, prijedlog: undefined }
     for (const key of Object.keys(prefill.value)) reset[key] = undefined
     return replaceQuery(reset)
   }
@@ -249,7 +255,7 @@ export function useAdminResource<T extends ContentEntity, F extends object>(reso
   return {
     state, setQuery, setPage, clear, isFiltered,
     list, listError,
-    editId, creating, prefill, openEdit, openCreate, closeDialog,
+    editId, creating, prefill, proposalId, openEdit, openCreate, closeDialog,
     historyId, openHistory, closeHistory
   }
 }

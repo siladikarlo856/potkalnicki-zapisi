@@ -125,22 +125,28 @@ export async function promoteSubmission(id: number) {
 
   // Only the fields needed for a draft are read. Contact never enters the word store.
   const { data, error } = await client.from('heritage_submissions')
-    .select('id,text,type,intent,place,place_id,name,consent_publish').eq('id', id)
+    .select('id,text,type,intent,place,place_id,name,consent_publish,target_kind,payload').eq('id', id)
   if (error) databaseError(error)
   const submission = data[0]
   if (!submission) throw createError({ statusCode: 404, statusMessage: 'Submission not found' })
   if (submission.type === 'correction') throw createError({ statusCode: 400, statusMessage: 'Not a word submission' })
+  // A structured proposal for a new word carries its fields in the payload; a proposal for anything else is no word.
+  const proposal = submission.type === 'proposal' && submission.target_kind === 'word'
+    ? (submission.payload ?? {}) as Record<string, string | undefined>
+    : null
+  if (submission.type === 'proposal' && !proposal) throw createError({ statusCode: 400, statusMessage: 'Not a word submission' })
   // "Used in my village too" confirms an existing word; turning it into a draft would duplicate that word.
   if (submission.intent === 'usage') throw createError({ statusCode: 400, statusMessage: 'Usage confirmations are not new words' })
   if (!submission.consent_publish) throw createError({ statusCode: 400, statusMessage: 'Publication consent required' })
   const wordId = randomUUID()
-  const isWord = submission.type === 'word' || submission.type === 'expression'
-  const headword = isWord ? submission.text.slice(0, 200) : ''
+  const isWord = !!proposal || submission.type === 'word' || submission.type === 'expression'
+  const headword = proposal ? (proposal.headword ?? '').slice(0, 200) : isWord ? submission.text.slice(0, 200) : ''
+  const placeId = proposal?.placeId ?? submission.place_id
 
-  // Map submission.place_id (geonames:NNNN) to an area UUID from the database; name match only when no place_id was given.
+  // Map the place (geonames:NNNN) to an area UUID from the database; name match only when no place id was given.
   let areaId: string | undefined
-  if (submission.place_id) {
-    const area = await areaByGeonamesId(submission.place_id)
+  if (placeId) {
+    const area = await areaByGeonamesId(placeId)
     if (area) areaId = area.id
   } else if (submission.place) {
     const area = await areaByName(submission.place)
@@ -153,8 +159,10 @@ export async function promoteSubmission(id: number) {
     active: false,
     areas: [],
     entry: {
-      headword, meaning: { hr: '' }, partOfSpeech: '', status: 'community',
-      examples: !isWord || submission.text.length > 200 ? [{ text: submission.text }] : [],
+      headword, meaning: { hr: proposal?.meaningHr ?? '' }, partOfSpeech: '', status: 'community',
+      examples: proposal
+        ? (proposal.example ? [{ text: proposal.example }] : [])
+        : !isWord || submission.text.length > 200 ? [{ text: submission.text }] : [],
       // Public source IDs deliberately do not encode the private submission ID.
       sources: [{ id: randomUUID(), kind: 'contribution', ...(submission.name ? { credit: submission.name } : {}) }],
       variants: [{ id: randomUUID(), form: headword, status: 'community', usages: areaId ? [{ areaId, confidence: 'reported' }] : [] }]

@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends ContentEntity, F extends object">
 import type { FormError } from '@nuxt/ui'
+import type { InboxDetail } from '~~/shared/types/inbox'
 import type { ContentEntity, ContentIssue, ContentStatus } from '~~/shared/utils/content/common'
 import { CONTENT_STATUS_LABELS } from '~~/shared/utils/content/common'
 import type { AdminResource } from '~/composables/useAdminResource'
@@ -13,6 +14,8 @@ const props = defineProps<{
   entityId?: string
   /** Initial values for a new entity (from `?novo=1&<field>=…`). */
   prefill?: Partial<F>
+  /** A correction or proposal from the inbox (`?prijedlog=<id>`): shown above the form and applied on save. */
+  proposalId?: number
 }>()
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ saved: [entity: T] }>()
@@ -37,6 +40,8 @@ const formIssues = ref<string[]>([])
 const conflict = ref<T | null>(null) as Ref<T | null>
 const nextStatus = ref<ContentStatus>('published')
 const addAnother = ref(false)
+const proposal = ref<InboxDetail | null>(null)
+const proposalCredit = ref(true)
 
 const isEdit = computed(() => !!props.entityId)
 const title = computed(() => isEdit.value ? props.resource.labels.edit : props.resource.labels.create)
@@ -52,10 +57,30 @@ function reset(value: F) {
   form.value?.clear()
 }
 
+/**
+ * Loads the submission named by `?prijedlog=`. A correction for this entity puts its proposed values into the form
+ * (the saved baseline stays as it was, so the dialog counts as changed); a proposal's draft only shows its context.
+ */
+async function loadProposal() {
+  proposal.value = null
+  proposalCredit.value = true
+  if (!props.proposalId) return
+  try {
+    const detail = await $fetch<InboxDetail>(`/api/admin/inbox/${props.proposalId}`)
+    proposal.value = detail
+    if (detail.patch && detail.submission.targetId === props.entityId && !detail.submission.appliedAt) {
+      state.value = { ...state.value, ...detail.patch } as F
+    }
+  } catch (error) {
+    failure.value = adminApiError(error).message
+  }
+}
+
 async function load() {
   if (!props.entityId) {
     entity.value = null
     legacyIds.value = []
+    proposal.value = null
     reset({ ...props.resource.blank(), ...props.prefill })
     return
   }
@@ -66,6 +91,7 @@ async function load() {
     entity.value = result.entity
     legacyIds.value = result.legacyIds
     reset(props.resource.toForm(result.entity))
+    await loadProposal()
   } catch (error) {
     entity.value = null
     failure.value = adminApiError(error).message
@@ -74,7 +100,7 @@ async function load() {
   }
 }
 
-watch(() => [open.value, props.entityId] as const, ([isOpen]) => {
+watch(() => [open.value, props.entityId, props.proposalId] as const, ([isOpen]) => {
   if (isOpen) load()
 }, { immediate: true })
 
@@ -99,11 +125,19 @@ async function save(revisionOverride?: number) {
   saving.value = true
   failure.value = ''
   try {
-    const body = { ...state.value, status: nextStatus.value }
+    const body: Record<string, unknown> = { ...state.value, status: nextStatus.value }
+    // Saving applies the submission, in the same write: a correction on any save, a proposal's draft when published.
+    const submission = proposal.value?.submission
+    if (entity.value && submission && !submission.appliedAt && submission.status !== 'rejected'
+      && (submission.type === 'correction' || nextStatus.value === 'published')) {
+      body.applySubmissionId = submission.id
+      body.applyCredit = proposalCredit.value
+    }
     const result = entity.value
       ? await api.update(entity.value.id, { ...body, revision: revisionOverride ?? entity.value.revision })
       : await api.create(body)
     conflict.value = null
+    if (body.applySubmissionId) proposal.value = null
     toast.add({ title: 'Spremljeno', description: props.resource.label(result.entity), color: 'success', icon: 'i-lucide-check' })
     emit('saved', result.entity)
     if (addAnother.value && !entity.value) {
@@ -226,6 +260,11 @@ function formatDate(value: string) {
         class="flex flex-col gap-4"
         @submit="save()"
       >
+        <AdminProposalBanner
+          v-if="proposal"
+          v-model:credit="proposalCredit"
+          :detail="proposal"
+        />
         <UAlert
           v-if="conflict"
           color="warning"

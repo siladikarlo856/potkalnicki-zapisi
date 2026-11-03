@@ -57,6 +57,9 @@ export default defineNuxtConfig({
     '/potkalnicko-prigorje/o-projektu': { prerender: true },
     '/potkalnicko-prigorje/privatnost': { prerender: true },
     '/admin/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    // The unified inbox replaced the submissions list and the heritage corrections queue.
+    '/admin/prilozi': { redirect: { to: '/admin/prijedlozi', statusCode: 301 } },
+    '/admin/bastina-ispravci': { redirect: { to: '/admin/prijedlozi?targetKind=heritage_item&status=all', statusCode: 301 } },
     '/api/**': { headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }
   },
 

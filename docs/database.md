@@ -232,6 +232,20 @@ The history screens (`/admin/povijest` and the drawer on every resource page) ad
 
 Rollback is app-only; the table and its rows stay.
 
+## Corrections and proposals inbox rollout
+
+`20261103110000_contributions_inbox.sql` is expand-only and sorts after every earlier migration (it needs `content_legacy_ids` and the content tables from `20261103010000_content_tables.sql`). Apply it before deploying the matching app. The previously deployed app ignores everything it adds, so migrating first is safe; roll back the app first and leave the columns.
+
+What it adds:
+
+- `heritage_submissions`: the `proposal` type, `target_kind` / `target_id`, `payload` (jsonb, at most 16 KiB), `base_revision`, `applied_at` / `applied_entity_id`, `credit_ref` and a duplicate `fingerprint`, with check constraints for the shape of a correction or proposal. Existing item corrections are backfilled (`target_kind = 'heritage_item'`, `target_id` resolved through `content_legacy_ids`; a correction whose item is gone keeps `target_id` null and its `target_ref`).
+- `source_submission_id` on `heritage_items`, `areas` and `sources` (rows created from a proposal), next to the existing `heritage_words.submission_id`.
+- Transient columns `apply_submission_id` / `apply_credit` and the `before insert or update` trigger `content_apply_submission()` on those tables and on words. A write that carries `apply_submission_id` is applied atomically: the trigger checks that the submission exists, is not rejected, has consent, is not applied yet and targets that row (a correction) or created it (a proposal), then sets `approved`, `applied_at`, `applied_entity_id`, adds the credit (a named, consenting contributor; sources carry none) and clears the transient columns. A failure rolls the whole write back, so an entity is never changed without its submission being marked applied, and a submission is never applied twice. Publishing a draft that has `source_submission_id` applies its proposal the same way. The function is revoked from public roles.
+- `content_audit` now passes `app.submission_id` (`<entityId>:<submissionId>`), so the revision row of an applied change is attributed to the submission. The same attribution works for rows written through PostgREST, which cannot set session settings on their own.
+- `heritage_submission_withdraw` (before delete, and on reject) now also unpublishes what a proposal created to draft and strips the credit, and `redact_submission_credit(submission_id)` (granted to `service_role` only) removes a credit entry from the live row and from every `content_revisions` snapshot of it. The withdrawal trigger calls it when a submission is deleted and when a proposal is rejected, so direct SQL deletes redact the same way. To remove a credit without deleting the submission, run `select public.redact_submission_credit(<id>);` as `service_role`.
+
+The sidecar `heritage_item_sources` is not part of the atomic apply: correction payloads cannot change sources. `node scripts/test-challenges.mjs test/contentApply.integration.test.ts` proves the trigger in SQL and `test/adminInbox.integration.test.ts` the whole inbox flow on the disposable Postgres.
+
 ## Challenge templates
 
 `20261103100000_challenge_templates.sql` moves the fixed challenge sets ("Izazov zavičaja") from `content/heritage/challenge.json` into `heritage_challenge_templates`, edited at `/admin/izazovi`. It sorts after `20261103030000_word_admin_columns.sql` and uses the content-table helpers of `20261103010000_content_tables.sql`; if another migration lands first with a later timestamp, rename this file to sort after it before merging.

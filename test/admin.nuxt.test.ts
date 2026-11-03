@@ -5,7 +5,7 @@ import WordEditor from '../app/components/heritage/WordEditor.vue'
 import DailyAdmin from '../app/components/heritage/DailyAdmin.vue'
 import { validateWord } from '../shared/utils/word'
 import type { DailyAdminOverview } from '../shared/utils/dailyAdmin'
-import Review from '../app/pages/admin/prilozi.vue'
+import Review from '../app/pages/admin/prijedlozi.vue'
 import sampleWords from '../content/heritage/words.json'
 import sampleAreas from '../content/heritage/areas.json'
 
@@ -35,7 +35,12 @@ registerEndpoint('/api/review/areas', () => sampleAreas)
 registerEndpoint('/api/admin/content/word', () => ({ rows: [adminWord], total: 1, page: 1, size: 25 }))
 registerEndpoint(`/api/admin/content/word/${word.id}`, () => ({ entity: adminWord, legacyIds: [] }))
 let submissionRows: Array<Record<string, unknown>> = [submission]
-registerEndpoint('/api/review/submissions', () => submissionRows)
+// The inbox adds what a row points at and what was made from it; plain contributions have neither.
+registerEndpoint('/api/admin/inbox', () => ({
+  rows: submissionRows.map(row => ({ targetKind: null, targetId: null, payload: null, baseRevision: null, appliedAt: null, appliedEntityId: null, target: null, created: null, canDraft: row.intent !== 'usage', ...row })),
+  total: submissionRows.length, page: 1, size: 25, counts: { pending: submissionRows.length }
+}))
+registerEndpoint('/api/admin/inbox/summary', () => ({ pending: submissionRows.length }))
 
 const pinned = { day: '2030-05-12', wordId: 'gone', headword: 'stara', active: false, source: 'pinned' as const, village: 'none', resolved: false, resolvedAt: null, replacedWordIds: [] }
 const dailyOverview: DailyAdminOverview = {
@@ -72,8 +77,9 @@ describe('admin submissions linked to a word', () => {
 
   it('shows the linked word and intent, links to the word editor and hides promotion for a usage', async () => {
     submissionRows = [usage, variant, { ...submission, id: 23, text: 'Plain one' }]
+    let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
     try {
-      const wrapper = await mountSuspended(Review)
+      wrapper = await mountSuspended(Review)
       await vi.waitFor(() => expect(wrapper.text()).toContain('Usage confirmation'))
       // Badges next to the text, so the editor sees the kind without opening the row.
       expect(wrapper.text()).toContain('Potvrda upotrebe')
@@ -90,19 +96,22 @@ describe('admin submissions linked to a word', () => {
       expect(wrapper.findAll('[data-testid="usage-note"]')).toHaveLength(1)
       expect(wrapper.get('[data-testid="usage-note"]').text()).toContain('ne pretvara u novu skicu')
     } finally {
+      wrapper?.unmount()
       submissionRows = [submission]
     }
   })
 
   it('falls back to the word id when the headword is unknown and shows nothing for an unlinked row', async () => {
     submissionRows = [{ ...usage, wordHeadword: null }, { ...submission, id: 24, text: 'Unlinked' }]
+    let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
     try {
-      const wrapper = await mountSuspended(Review)
+      wrapper = await mountSuspended(Review)
       await vi.waitFor(() => expect(wrapper.text()).toContain('Usage confirmation'))
       for (const info of wrapper.findAll('button[aria-label^="Detalji"]')) await info.trigger('click')
       expect(wrapper.findAll('[data-testid="submission-word"]')).toHaveLength(1)
       expect(wrapper.get('[data-testid="submission-word"]').text()).toContain('fixture-word-1')
     } finally {
+      wrapper?.unmount()
       submissionRows = [submission]
     }
   })
@@ -122,6 +131,7 @@ describe('admin tables', () => {
       expect(wrapper.findAll('tbody tr')).toHaveLength(1)
       await wrapper.find('tbody tr').trigger('click')
       expect(wrapper.findAll('tbody tr')).toHaveLength(2)
+      wrapper.unmount()
     })
   }
 

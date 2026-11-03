@@ -4,7 +4,7 @@ import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { UApp } from '#components'
 import AdminSources from '../app/pages/admin/izvori.vue'
 import AdminDeleteDialog from '../app/components/admin/DeleteDialog.vue'
-import Review from '../app/pages/admin/prilozi.vue'
+import Review from '../app/pages/admin/prijedlozi.vue'
 import { adminListState } from '../app/composables/useAdminResource'
 import type { AdminResource } from '../app/composables/useAdminResource'
 import type { ContentReferences } from '../shared/utils/content/common'
@@ -81,8 +81,12 @@ const submission = {
   id: 7, text: 'Moja riječ', type: null, targetRef: null, place: null, placeId: null, name: null, contact: null,
   locale: 'hr', consentPublish: true, consentVersion: 'v1', status: 'pending', createdAt: '2026-10-30 10:00:00'
 }
-registerEndpoint('/api/review/submissions', () => [submission])
-registerEndpoint('/api/review/submissions/7', {
+registerEndpoint('/api/admin/inbox', () => ({
+  rows: [{ ...submission, targetKind: null, targetId: null, payload: null, baseRevision: null, appliedAt: null, appliedEntityId: null, target: null, created: null, canDraft: true }],
+  total: 1, page: 1, size: 25, counts: { pending: 1 }
+}))
+registerEndpoint('/api/admin/inbox/summary', () => ({ pending: 1 }))
+registerEndpoint('/api/admin/inbox/7', {
   method: 'DELETE',
   handler: (event) => {
     record(event)
@@ -242,12 +246,12 @@ describe('admin confirmations', () => {
   it('asks in a dialog, not window.confirm, before deleting a submission', async () => {
     const native = vi.fn(() => true)
     vi.stubGlobal('confirm', native)
-    wrapper = await mountInApp(Review, {}, '/admin/prilozi')
+    wrapper = await mountInApp(Review, {}, '/admin/prijedlozi')
     await vi.waitFor(() => expect(wrapper!.text()).toContain('Moja riječ'))
     await wrapper.find('button[aria-label^="Detalji"]').trigger('click')
 
     buttonIn(wrapper.element, 'Obriši')!.click()
-    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Trajno obrisati prijavu #7?'))
+    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Obrisati prijedlog #7?'))
     dialog()!.querySelector<HTMLButtonElement>('[data-test="admin-confirm-cancel"]')!.click()
     await vi.waitFor(() => expect(dialog()).toBeUndefined())
     expect(calls.filter(call => call.method === 'DELETE')).toEqual([])
@@ -255,7 +259,7 @@ describe('admin confirmations', () => {
     buttonIn(wrapper.element, 'Obriši')!.click()
     await vi.waitFor(() => expect(dialog()?.querySelector('[data-test="admin-confirm-accept"]')).not.toBeNull())
     dialog()!.querySelector<HTMLButtonElement>('[data-test="admin-confirm-accept"]')!.click()
-    await vi.waitFor(() => expect(calls.filter(call => call.method === 'DELETE')).toEqual([expect.objectContaining({ path: '/api/review/submissions/7' })]))
+    await vi.waitFor(() => expect(calls.filter(call => call.method === 'DELETE')).toEqual([expect.objectContaining({ path: '/api/admin/inbox/7' })]))
     expect(native).not.toHaveBeenCalled()
     vi.unstubAllGlobals()
   })

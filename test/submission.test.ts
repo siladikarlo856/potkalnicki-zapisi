@@ -14,7 +14,7 @@ describe('validateSubmission', () => {
     const result = validateSubmission({ ...valid, text: '  kaj  ', type: '', place: '  ', name: 'Ana ', contact: undefined })
     expect(result).toEqual({
       ok: true,
-      value: { text: 'kaj', type: null, targetRef: null, placeId: null, wordId: null, intent: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
+      value: { text: 'kaj', type: null, targetRef: null, targetKind: null, targetId: null, payload: null, baseRevision: null, placeId: null, wordId: null, intent: null, name: 'Ana', contact: null, consentPublish: true, locale: 'hr' }
     })
   })
 

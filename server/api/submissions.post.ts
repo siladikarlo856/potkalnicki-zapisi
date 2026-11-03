@@ -1,4 +1,23 @@
+import type { ContributionKind } from '../../shared/utils/contribution'
+
 const MAX_BODY_BYTES = 16 * 1024
+// A visitor may send a few corrections about one record, not dozens.
+const TARGET_LIMIT = { max: 3, windowSeconds: 24 * 60 * 60 }
+
+function invalidIssue(field: SubmissionIssue['field'], code: SubmissionIssue['code'], path?: string) {
+  return createError({ statusCode: 400, statusMessage: 'Invalid submission', data: { issues: [{ field, code, ...(path ? { path } : {}) }] } })
+}
+
+// A proposal for a heritage item or settlement names rows a draft is built from: they must exist and be public.
+async function assertProposalReferences(kind: ContributionKind, payload: Record<string, string>) {
+  if (kind === 'heritage_item') {
+    if (!await assertPublishedRows('heritage_categories', payload.categoryId ? [payload.categoryId] : [])) throw invalidIssue('payload', 'invalid', 'categoryId')
+    const places = [payload.settlementId, payload.municipalityId].filter(Boolean) as string[]
+    if (!await assertPublishedRows('areas', places)) throw invalidIssue('payload', 'invalid', payload.settlementId ? 'settlementId' : 'municipalityId')
+  } else if (kind === 'area' && !await assertPublishedRows('areas', [payload.parentId!], ['town', 'municipality'])) {
+    throw invalidIssue('payload', 'invalid', 'parentId')
+  }
+}
 
 export default defineEventHandler(async (event) => {
   const { submissionRateLimit } = useRuntimeConfig(event)
@@ -36,15 +55,55 @@ export default defineEventHandler(async (event) => {
     const code = place && resolveActivePlace(result.value.placeId) ? 'outOfScope' : 'invalid'
     throw createError({ statusCode: 400, statusMessage: 'Invalid submission', data: { issues: localizePlaceIssues([{ field: 'place', code }], result.value.locale) } })
   }
-  if (result.value.type === 'correction' && result.value.targetRef) {
-    await assertKnownCorrectionTarget(result.value.targetRef)
+  const input = result.value
+  // Above 1000 pending submissions the form says "try later": a flood must not fill the free-tier database.
+  await assertPendingCapacity()
+  if (input.type === 'correction' && input.targetRef) {
+    // The old form: an atlas id in targetRef. It is stored with its resolved target like a structured one.
+    input.targetKind = 'heritage_item'
+    input.targetId = await assertKnownCorrectionTarget(input.targetRef)
   }
-  if (result.value.wordId) await assertActiveWord(result.value.wordId, result.value.locale)
+  if (input.wordId) await assertActiveWord(input.wordId, input.locale)
+
+  let fingerprint: string | null = null
+  let throttleKey = ''
+  const structured = !!input.targetKind && !!input.payload
+  if (structured) {
+    // A form that sent no valid render-time token is a script; one that was too quick or too old gets a
+    // silent success so it learns nothing. Without a configured secret the check is skipped.
+    const token = checkFormToken(event, body?.formToken)
+    if (token === 'invalid') throw invalidIssue('payload', 'invalid', 'formToken')
+    if (token === 'too-fast' || token === 'expired') {
+      setResponseStatus(event, 201)
+      return { ok: true }
+    }
+    assertLinkCap(input)
+    if (input.type === 'correction') {
+      const target = await resolveContributionTarget(input.targetKind!, input.targetId!)
+      if (!target) throw invalidIssue('targetId', 'invalid')
+      input.targetId = target.id
+      input.baseRevision ??= target.revision
+      input.targetRef = target.id
+    } else {
+      await assertProposalReferences(input.targetKind!, input.payload!)
+    }
+    throttleKey = `${key}|${input.type}|${input.targetKind}|${input.targetId ?? ''}`
+    if (isRateLimited('submission-targets', throttleKey, TARGET_LIMIT.max, TARGET_LIMIT.windowSeconds)) {
+      throw createError({ statusCode: 429, statusMessage: 'Too many submissions' })
+    }
+    fingerprint = submissionFingerprint(input, input.targetId)
+    if (await isRecentDuplicate(fingerprint)) {
+      setResponseStatus(event, 201)
+      return { ok: true }
+    }
+  }
   await insertSubmission({
-    ...result.value,
+    ...input,
+    fingerprint,
     place: selected ? placeSnapshot(selected) : null,
     placeCatalogVersion: selected ? PLACE_CATALOG_VERSION : null
   })
+  if (throttleKey) countRateLimit('submission-targets', throttleKey, TARGET_LIMIT.windowSeconds)
   setResponseStatus(event, 201)
   return { ok: true }
 })

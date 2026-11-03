@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { InboxDetail } from '~~/shared/types/inbox'
 import type { ContentStatus } from '~~/shared/utils/content/common'
 import { wordStatusToActive } from '~~/shared/utils/content/word'
 import type { Word, WordValue } from '~~/shared/utils/content/word'
@@ -10,6 +11,8 @@ const props = defineProps<{
   resource: AdminResource<Word, WordValue>
   entityId?: string
   prefill?: Partial<WordValue>
+  /** A word correction from the inbox (`?prijedlog=<id>`): its changes are put into the entry and applied on save. */
+  proposalId?: number
   visible: boolean
 }>()
 const emit = defineEmits<{ saved: [entity: Word], closed: [] }>()
@@ -25,6 +28,8 @@ const loading = ref(false)
 const saving = ref(false)
 const failure = ref('')
 const conflict = ref<Word | null>(null)
+const proposal = ref<InboxDetail | null>(null)
+const proposalCredit = ref(true)
 
 const isEdit = computed(() => !!props.entityId)
 const title = computed(() => isEdit.value ? props.resource.labels.edit : props.resource.labels.create)
@@ -60,8 +65,27 @@ function resetFromEntity(word: Word | null, prefill?: Partial<WordValue>) {
   model.value = word ? toInput(word) : blankWord(prefill)
 }
 
+async function loadProposal() {
+  proposal.value = null
+  proposalCredit.value = true
+  if (!props.proposalId) return
+  try {
+    const detail = await $fetch<InboxDetail>(`/api/admin/inbox/${props.proposalId}`)
+    proposal.value = detail
+    const entry = detail.patch?.entry as WordInput['entry'] | undefined
+    if (entry && model.value && detail.submission.targetId === props.entityId && !detail.submission.appliedAt) {
+      // The editor reads its model once per key, so it is rebuilt with the proposed entry.
+      model.value = { ...model.value, entry }
+      editorVersion.value++
+    }
+  } catch (error) {
+    failure.value = adminApiError(error).message
+  }
+}
+
 async function load() {
   if (!props.entityId) {
+    proposal.value = null
     entity.value = null
     resetFromEntity(null, props.prefill)
     return
@@ -72,6 +96,7 @@ async function load() {
     const result = await api.get(props.entityId)
     entity.value = result.entity
     resetFromEntity(result.entity)
+    await loadProposal()
   } catch (error) {
     entity.value = null
     failure.value = adminApiError(error).message
@@ -80,7 +105,7 @@ async function load() {
   }
 }
 
-watch(() => [props.visible, props.entityId] as const, ([visible]) => {
+watch(() => [props.visible, props.entityId, props.proposalId] as const, ([visible]) => {
   if (visible) load()
 }, { immediate: true })
 
@@ -103,11 +128,17 @@ async function saveWithStatus(status: ContentStatus) {
   saving.value = true
   failure.value = ''
   try {
-    const body = { entry: model.value.entry, areas: model.value.areas, status }
+    const body: Record<string, unknown> = { entry: model.value.entry, areas: model.value.areas, status }
+    const submission = proposal.value?.submission
+    if (entity.value && submission && !submission.appliedAt && submission.status !== 'rejected' && submission.type === 'correction') {
+      body.applySubmissionId = submission.id
+      body.applyCredit = proposalCredit.value
+    }
     const result = entity.value
       ? await api.update(entity.value.id, { ...body, revision: conflict.value?.revision ?? entity.value.revision })
       : await api.create(body)
     conflict.value = null
+    if (body.applySubmissionId) proposal.value = null
     toast.add({ title: 'Spremljeno', description: props.resource.label(result.entity), color: 'success', icon: 'i-lucide-check' })
     emit('saved', result.entity)
     close()
@@ -171,6 +202,11 @@ async function overwrite() {
         v-else
         class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-6"
       >
+        <AdminProposalBanner
+          v-if="proposal"
+          v-model:credit="proposalCredit"
+          :detail="proposal"
+        />
         <UAlert
           v-if="conflict"
           color="warning"

@@ -210,6 +210,23 @@ export async function getContent(def: AnyContentKindDefinition, id: string) {
   return { entity: { ...entity, ...extras }, legacyIds: (data ?? []).map(entry => entry.legacy_id as string) }
 }
 
+const APPLY_KINDS = new Set<string>(['word', 'heritage_item', 'area', 'source'])
+
+/**
+ * `applySubmissionId` (and `applyCredit`: false leaves the contributor out of the credits) turn an update into
+ * the apply of a correction or the publication of a proposal's draft. They are not fields of the entity: the
+ * database trigger (content_apply_submission) checks them, approves the submission and clears the columns,
+ * all in the same statement as the update.
+ */
+function applyColumns(def: AnyContentKindDefinition, body: Row) {
+  const id = body.applySubmissionId
+  if (id === undefined || id === null) return {}
+  if (!APPLY_KINDS.has(def.kind) || typeof id !== 'number' || !Number.isSafeInteger(id) || id < 1) {
+    invalid([{ path: '', message: 'Prijedlog se ne može primijeniti na ovaj zapis.' }], 'Prijedlog se ne može primijeniti na ovaj zapis.')
+  }
+  return { apply_submission_id: id, apply_credit: body.applyCredit !== false }
+}
+
 async function readInput(event: H3Event, def: AnyContentKindDefinition) {
   return readJsonObject(event, def.bodyLimit ?? CONTENT_BODY_LIMIT)
 }
@@ -251,7 +268,7 @@ export async function updateContent(event: H3Event, def: AnyContentKindDefinitio
 
   const { value, issues } = def.validate({ ...editable(def, toEntity(def, current)), ...editable(def, body) }, id)
   if (issues.length) invalid(issues)
-  const { data, error } = await useDatabaseClient().from(def.table).update(toRow(def, value))
+  const { data, error } = await useDatabaseClient().from(def.table).update({ ...toRow(def, value), ...applyColumns(def, body) })
     .eq('id', id).eq('revision', revision).select(selectList(def))
   if (error) contentDatabaseError(def, error)
   const saved = (data ?? []) as unknown as Row[]

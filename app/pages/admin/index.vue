@@ -4,10 +4,10 @@ defineI18nRoute({ locales: ['hr'] })
 useSeoMeta({ title: 'Pregled', robots: 'noindex, nofollow' })
 
 const tiles = [
-  { title: 'Prilozi', description: 'Pregledaj i odobri priloge zajednice.', icon: 'i-lucide-inbox', to: '/admin/prilozi' },
+  { title: 'Prijedlozi', description: 'Ispravci i prijedlozi novih zapisa od zajednice.', icon: 'i-lucide-inbox', to: '/admin/prijedlozi' },
   { title: 'Riječi', description: 'Uredi skice i aktivne kartice.', icon: 'i-lucide-book-open', to: '/admin/rijeci' },
   { title: 'Riječ dana', description: 'Raspored, zaliha riječi i prikvačeni dani.', icon: 'i-lucide-calendar-days', to: '/admin/rijec-dana' },
-  { title: 'Baština: ispravci', description: 'Ispravci zapisa iz inventara.', icon: 'i-lucide-landmark', to: '/admin/bastina' },
+  { title: 'Baština', description: 'Crkve, kapele, križevi i drugi zapisi sakralne baštine.', icon: 'i-lucide-landmark', to: '/admin/bastina' },
   { title: 'Izvori', description: 'Registri, studije i radovi na koje se pozivaju zapisi.', icon: 'i-lucide-library', to: '/admin/izvori' },
   { title: 'Izazovi', description: 'Skupovi pitanja za izazove prijatelja i trenutni izazov.', icon: 'i-lucide-trophy', to: '/admin/izazovi' },
   { title: 'Povijest', description: 'Tko je i kada mijenjao sadržaj; vrati raniju verziju.', icon: 'i-lucide-history', to: '/admin/povijest' }

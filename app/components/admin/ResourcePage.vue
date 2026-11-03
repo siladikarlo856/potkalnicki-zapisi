@@ -22,6 +22,7 @@ defineSlots<{
     editId: string | undefined
     creating: boolean
     prefill: Partial<F>
+    proposalId: number | undefined
     visible: boolean
     closeDialog: () => Promise<unknown>
     refresh: () => Promise<unknown>
@@ -35,7 +36,7 @@ const UButton = resolveComponent('UButton')
 const {
   state, setQuery, setPage, clear, isFiltered,
   list, listError,
-  editId, creating, prefill, openEdit, openCreate, closeDialog,
+  editId, creating, prefill, proposalId, openEdit, openCreate, closeDialog,
   historyId, openHistory, closeHistory
 } = useAdminResource(props.resource)
 const api = useAdminContentApi<T>(props.resource.kind)
@@ -380,6 +381,7 @@ const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranic
       :resource="resource"
       :entity-id="editId"
       :prefill="creating ? prefill : undefined"
+      :proposal-id="proposalId"
       @saved="list.refresh()"
     >
       <template #fields="fieldProps">
@@ -404,6 +406,7 @@ const pageSizes = CONTENT_PAGE_SIZES.map(value => ({ label: `${value} po stranic
       :edit-id="editId"
       :creating="creating"
       :prefill="prefill"
+      :proposal-id="proposalId"
       :visible="dialogOpen"
       :close-dialog="closeDialog"
       :refresh="() => list.refresh()"
