@@ -7,7 +7,7 @@ import settlements from './fixtures/atlas/settlements.json'
 import heritage from './fixtures/atlas/heritage.json'
 import prerenderRoutes from './fixtures/atlas/prerender-routes.json'
 import { createSnapshotStore, loadPublicContent } from '../server/utils/publicContent'
-import { contentTarget, resolveHeritageItem, resolveMunicipality, resolveSettlement } from '../server/utils/publicAtlas'
+import { contentTarget, personDetail, personList, resolveHeritageItem, resolveMunicipality, resolvePerson, resolveSettlement, settlementPage } from '../server/utils/publicAtlas'
 import { sitemapEntries, SITE_URL } from '../server/utils/sitemap'
 
 // The public read layer on a real Postgres and PostgREST with every migration and the atlas import applied.
@@ -127,6 +127,49 @@ describe.skipIf(!url)('public read layer on Postgres', () => {
     content = await load()
     expect(content.municipalities).toEqual([])
     expect(resolveMunicipality(content, `opcina-${tag}`)).toEqual({ status: 'not_found' })
+  })
+
+  it('serves persons: live rules, old slugs, archiving and no private columns', async () => {
+    const tag = randomBytes(4).toString('hex')
+    const region = `test-${tag}`
+    const id = { region: randomUUID(), m: randomUUID(), a: randomUUID(), item: randomUUID(), person: randomUUID(), draft: randomUUID() }
+    const load = () => loadPublicContent(service, { regionSlug: region })
+    sql(`
+      insert into public.areas (id, kind, parent_id, name, slug, status) values
+        ('${id.region}', 'region', public.content_uuid('area:hr-kkz'), 'Test ${tag}', '${region}', 'published'),
+        ('${id.m}', 'municipality', public.content_uuid('area:hr-kkz'), 'Testna ${tag}', 'opcina-${tag}', 'published');
+      insert into public.areas (id, kind, parent_id, name, slug, status) values
+        ('${id.a}', 'settlement', '${id.m}', 'Prvo ${tag}', 'prvo-${tag}', 'published');
+      insert into public.area_regions (area_id, region_id) values ('${id.m}', '${id.region}');
+      insert into public.heritage_items (id, name, slug, category_id, municipality_id, settlement_id, status) values
+        ('${id.item}', 'Kapela ${tag}', 'kapela', public.content_uuid('heritage_category:chapel'), '${id.m}', '${id.a}', 'published');
+      insert into public.persons (id, name, slug, role, born_year, died, died_year, research_notes, verification, status) values
+        ('${id.person}', 'Osoba ${tag}', 'osoba-${tag}', 'učitelj', 1800, '1870.', 1870, 'PRIVATNO-${tag}', 'unverified', 'published'),
+        ('${id.draft}', 'Nacrt ${tag}', 'nacrt-${tag}', '', null, '1900.', 1900, '', 'unverified', 'draft');
+      insert into public.person_areas (person_id, area_id, role, position) values
+        ('${id.person}', '${id.a}', 'rodjen', 0), ('${id.person}', public.content_uuid('area:hr-kkz'), 'zivio', 1),
+        ('${id.draft}', '${id.a}', 'rodjen', 0);
+      insert into public.person_heritage_items (person_id, item_id, relation, position) values ('${id.person}', '${id.item}', 'kapela mu je posvećena', 0);
+      insert into public.person_sources (person_id, source_id, position) values ('${id.person}', public.content_uuid('source:registar-kulturnih-dobara'), 0);`)
+
+    let content = await load()
+    expect(content.persons.map(p => [p.slug, p.areaLinks.length, p.itemLinks.length, p.sourceIds.length])).toEqual([[`osoba-${tag}`, 1, 1, 1]])
+    expect(resolvePerson(content, `nacrt-${tag}`)).toEqual({ status: 'not_found' })
+    expect(personList(content)!.persons.map(p => p.years)).toEqual(['1800–1870'])
+    expect(settlementPage(content, content.settlementById.get(id.a)!).persons.map(p => p.name)).toEqual([`Osoba ${tag}`])
+    expect(JSON.stringify([content.persons, personDetail(content, content.persons[0]!)])).not.toContain('PRIVATNO')
+    expect(contentTarget(content, 'person', id.person)).toMatchObject({ status: 'ok', value: { kind: 'person', person: { ref: id.person } } })
+
+    sql(`update public.persons set slug = 'osoba-nova-${tag}' where id = '${id.person}';`)
+    content = await load()
+    expect(resolvePerson(content, `osoba-${tag}`)).toEqual({ status: 'redirect', path: `/potkalnicko-prigorje/osobe/osoba-nova-${tag}` })
+
+    sql(`update public.persons set status = 'archived' where id = '${id.person}';`)
+    content = await load()
+    expect(content.persons).toEqual([])
+    expect(resolvePerson(content, `osoba-nova-${tag}`)).toEqual({ status: 'gone' })
+    expect(resolvePerson(content, `osoba-${tag}`)).toEqual({ status: 'gone' })
+    expect(contentTarget(content, 'person', id.person)).toEqual({ status: 'gone' })
   })
 
   it('shows a write on the next request after invalidation', async () => {

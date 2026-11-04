@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AtlasItemStatus } from '../../shared/types/atlas'
 import type { PublicCredit, PublicMunicipalityKind } from '../../shared/types/publicAtlas'
 import { isCorrectionTargetRefFormat } from '../../shared/utils/correctionReport'
+import { PERSON_AREA_ROLES, type PersonAreaRole } from '../../shared/utils/content/person'
 
 // The public read layer over the content tables: one in-process snapshot of everything the public atlas
 // shows, built from the database and served stale-while-revalidate. Admin writes call
@@ -22,7 +23,7 @@ export const PUBLIC_CONTENT_TTL_MS = 60_000
 
 const PAGE = 1000
 const VISIBLE = ['published', 'archived']
-const LEGACY_KINDS = ['area', 'heritage_item', 'heritage_category', 'source']
+const LEGACY_KINDS = ['area', 'heritage_item', 'heritage_category', 'source', 'person']
 
 type Status = 'published' | 'archived'
 
@@ -64,6 +65,28 @@ export interface ItemRow {
   updated_at: string
 }
 export interface ItemSourceRow { item_id: string, source_id: string, position: number }
+/** A person row as the public snapshot reads it: never `research_notes`, `clue` or `search_text`. */
+export interface PersonRow {
+  id: string
+  name: string
+  slug: string
+  role: string
+  bio: string | null
+  born: string | null
+  born_year: number | null
+  born_place: string | null
+  died: string
+  died_year: number
+  died_place: string | null
+  open_questions: string | null
+  verification: AtlasItemStatus
+  noindex: boolean
+  status: Status
+  updated_at: string
+}
+export interface PersonAreaRow { person_id: string, area_id: string, role: string, position: number }
+export interface PersonItemRow { person_id: string, item_id: string, relation: string, position: number }
+export interface PersonSourceRow { person_id: string, source_id: string, position: number }
 export interface LegacyIdRow { kind: string, legacy_id: string, entity_id: string }
 export interface SlugHistoryRow { kind: string, namespace: string, scope_id: string | null, slug: string, entity_id: string }
 
@@ -77,6 +100,11 @@ export interface PublicContentRows {
   itemSources: ItemSourceRow[]
   legacyIds: LegacyIdRow[]
   slugHistory: SlugHistoryRow[]
+  /** Person tables; absent in rows built before persons existed (treated as none). */
+  persons?: PersonRow[]
+  personAreas?: PersonAreaRow[]
+  personItems?: PersonItemRow[]
+  personSources?: PersonSourceRow[]
 }
 
 export interface SnapshotMunicipality {
@@ -137,13 +165,37 @@ export interface SnapshotItem {
   updatedAt: string
 }
 
+/** A historical person. Only live links are kept: areas and items that are published and in scope. */
+export interface SnapshotPerson {
+  id: string
+  slug: string
+  name: string
+  role: string
+  bio: string | null
+  born: string | null
+  bornYear: number | null
+  bornPlace: string | null
+  died: string
+  diedYear: number
+  diedPlace: string | null
+  openQuestions: string | null
+  verification: AtlasItemStatus
+  noindex: boolean
+  areaLinks: Array<{ areaId: string, role: PersonAreaRole }>
+  itemLinks: Array<{ itemId: string, relation: string }>
+  sourceIds: string[]
+  updatedAt: string
+}
+
 /** Where an archived (gone) row used to be reachable, so its old URL answers 410. */
 export interface GoneRoutes {
   /** `${namespace}/${slug}` of archived towns, municipalities and settlements */
   areas: Set<string>
   /** `${settlementId}/${slug}` of archived items */
   items: Set<string>
-  /** ids of every gone area, item and source */
+  /** slugs of archived persons */
+  persons: Set<string>
+  /** ids of every gone area, item, source and person */
   ids: Set<string>
 }
 
@@ -153,11 +205,19 @@ export interface PublicContent {
   municipalities: SnapshotMunicipality[]
   settlements: SnapshotSettlement[]
   items: SnapshotItem[]
+  /** Live persons, by name */
+  persons: SnapshotPerson[]
   categories: Map<string, SnapshotCategory>
   sources: Map<string, SnapshotSource>
   municipalityById: Map<string, SnapshotMunicipality>
   settlementById: Map<string, SnapshotSettlement>
   itemById: Map<string, SnapshotItem>
+  personById: Map<string, SnapshotPerson>
+  personBySlug: Map<string, SnapshotPerson>
+  /** area id → ids of live persons linked to that area, in display order */
+  personsByArea: Map<string, string[]>
+  /** item id → ids of live persons linked to that item, in display order */
+  personsByItem: Map<string, string[]>
   /** `${namespace}/${slug}` → area id, namespace 'lau' (towns and municipalities) or 'settlement' */
   areaBySlug: Map<string, string>
   /** `${settlementId}/${slug}` → item id */
@@ -198,6 +258,64 @@ function publicCredits(value: unknown): PublicCredit[] {
   })
 }
 
+const AREA_ROLES = new Set<string>(PERSON_AREA_ROLES)
+
+/**
+ * Persons of the snapshot. Drafts are never loaded; an archived person is gone (410). A published person
+ * is live when at least one linked area is live (D13 needs a source too, which the admin enforces on
+ * publish, so it is not re-checked here). Links to areas or items that are not live are dropped.
+ */
+function buildPersons(
+  rows: PublicContentRows,
+  context: { areaState: Map<string, boolean>, itemById: Map<string, SnapshotItem>, sources: Map<string, SnapshotSource>, gone: GoneRoutes }
+) {
+  const { areaState, itemById, sources, gone } = context
+  const byPerson = <T extends { person_id: string, position: number }>(links: T[] | undefined) => {
+    const map = new Map<string, T[]>()
+    for (const link of [...(links ?? [])].sort((a, b) => a.position - b.position)) {
+      map.set(link.person_id, [...(map.get(link.person_id) ?? []), link])
+    }
+    return map
+  }
+  const areaLinks = byPerson(rows.personAreas)
+  const itemLinks = byPerson(rows.personItems)
+  const sourceLinks = byPerson(rows.personSources)
+
+  const persons: SnapshotPerson[] = []
+  for (const p of rows.persons ?? []) {
+    if (p.status !== 'published') {
+      gone.ids.add(p.id)
+      gone.persons.add(p.slug)
+      continue
+    }
+    const areas = (areaLinks.get(p.id) ?? [])
+      .filter(link => areaState.get(link.area_id) === true && AREA_ROLES.has(link.role))
+      .map(link => ({ areaId: link.area_id, role: link.role as PersonAreaRole }))
+    if (!areas.length) continue
+    persons.push({
+      id: p.id, slug: p.slug, name: p.name, role: p.role, bio: p.bio, born: p.born, bornYear: p.born_year, bornPlace: p.born_place,
+      died: p.died, diedYear: p.died_year, diedPlace: p.died_place, openQuestions: p.open_questions, verification: p.verification,
+      noindex: p.noindex, areaLinks: areas,
+      itemLinks: (itemLinks.get(p.id) ?? []).filter(link => itemById.has(link.item_id)).map(link => ({ itemId: link.item_id, relation: link.relation })),
+      sourceIds: (sourceLinks.get(p.id) ?? []).filter(link => sources.has(link.source_id)).map(link => link.source_id),
+      updatedAt: p.updated_at
+    })
+  }
+  persons.sort(byName)
+
+  const personsByArea = new Map<string, string[]>()
+  const personsByItem = new Map<string, string[]>()
+  for (const person of persons) {
+    for (const areaId of new Set(person.areaLinks.map(link => link.areaId))) {
+      personsByArea.set(areaId, [...(personsByArea.get(areaId) ?? []), person.id])
+    }
+    for (const { itemId } of person.itemLinks) {
+      personsByItem.set(itemId, [...(personsByItem.get(itemId) ?? []), person.id])
+    }
+  }
+  return { persons, personsByArea, personsByItem }
+}
+
 export interface BuildOptions {
   /** The region whose members are in scope; tests use their own. */
   regionSlug?: string
@@ -210,7 +328,7 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
   const regionRow = rows.areas.find(a => a.kind === 'region' && a.slug === regionSlug && a.status === 'published')
   const members = new Set(regionRow ? rows.areaRegions.filter(r => r.region_id === regionRow.id).map(r => r.area_id) : [])
 
-  const gone: GoneRoutes = { areas: new Set(), items: new Set(), ids: new Set() }
+  const gone: GoneRoutes = { areas: new Set(), items: new Set(), persons: new Set(), ids: new Set() }
   const municipalities: SnapshotMunicipality[] = []
   const settlements: SnapshotSettlement[] = []
   const areaBySlug = new Map<string, string>()
@@ -300,11 +418,16 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
   settlements.sort(byName)
   items.sort(byName)
 
+  const { persons, personsByArea, personsByItem } = buildPersons(rows, { areaState, itemById: new Map(items.map(i => [i.id, i])), sources, gone })
+
   const slugHistory = new Map(rows.slugHistory.map(h => [slugHistoryKey(h.kind, h.namespace, h.scope_id, h.slug), h.entity_id]))
   const region = regionRow ? { id: regionRow.id, slug: regionSlug, name: regionRow.name } : null
 
   return {
-    region, municipalities, settlements, items, categories, sources,
+    region, municipalities, settlements, items, persons, categories, sources,
+    personById: new Map(persons.map(p => [p.id, p])),
+    personBySlug: new Map(persons.map(p => [p.slug, p])),
+    personsByArea, personsByItem,
     municipalityById: new Map(municipalities.map(m => [m.id, m])),
     settlementById: new Map(settlements.map(s => [s.id, s])),
     itemById: new Map(items.map(i => [i.id, i])),
@@ -326,7 +449,7 @@ async function readAll<T>(read: (from: number, to: number) => Page<T>) {
 
 /** Reads every row the snapshot needs (published and archived only; drafts never leave the database). */
 export async function loadPublicContentRows(client: SupabaseClient): Promise<PublicContentRows> {
-  const [areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory] = await Promise.all([
+  const [areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources] = await Promise.all([
     readAll<AreaRow>((from, to) => client.from('areas')
       .select('id,kind,parent_id,name,slug,official_code,latitude,longitude,credits,status,updated_at')
       .in('kind', ['region', 'town', 'municipality', 'settlement']).in('status', VISIBLE).order('id').range(from, to)),
@@ -339,9 +462,16 @@ export async function loadPublicContentRows(client: SupabaseClient): Promise<Pub
     readAll<ItemSourceRow>((from, to) => client.from('heritage_item_sources').select('item_id,source_id,position').order('item_id').order('position').range(from, to)),
     readAll<LegacyIdRow>((from, to) => client.from('content_legacy_ids').select('kind,legacy_id,entity_id').in('kind', LEGACY_KINDS).order('kind').order('legacy_id').range(from, to)),
     readAll<SlugHistoryRow>((from, to) => client.from('content_slug_history').select('kind,namespace,scope_id,slug,entity_id')
-      .in('kind', ['area', 'heritage_item']).order('created_at').order('slug').range(from, to))
+      .in('kind', ['area', 'heritage_item', 'person']).order('created_at').order('slug').range(from, to)),
+    // research_notes, clue and search_text are private or not public yet: never selected.
+    readAll<PersonRow>((from, to) => client.from('persons')
+      .select('id,name,slug,role,bio,born,born_year,born_place,died,died_year,died_place,open_questions,verification,noindex,status,updated_at')
+      .in('status', VISIBLE).order('id').range(from, to)),
+    readAll<PersonAreaRow>((from, to) => client.from('person_areas').select('person_id,area_id,role,position').order('person_id').order('position').range(from, to)),
+    readAll<PersonItemRow>((from, to) => client.from('person_heritage_items').select('person_id,item_id,relation,position').order('person_id').order('position').range(from, to)),
+    readAll<PersonSourceRow>((from, to) => client.from('person_sources').select('person_id,source_id,position').order('person_id').order('position').range(from, to))
   ])
-  return { areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory }
+  return { areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources }
 }
 
 export async function loadPublicContent(client: SupabaseClient, options: Omit<BuildOptions, 'loadedAt'> = {}) {

@@ -17,6 +17,7 @@ describe('atlas sitemap parity (in-memory snapshot)', () => {
     const expected = [
       'https://karlo-siladi.from.hr/',
       'https://karlo-siladi.from.hr/en',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
       ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
     ]
     expect(urls.sort()).toEqual(expected.sort())

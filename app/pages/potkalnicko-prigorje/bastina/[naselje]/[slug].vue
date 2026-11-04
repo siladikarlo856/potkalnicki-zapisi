@@ -122,6 +122,17 @@ function locationLine() {
       </ul>
     </UPageSection>
 
+    <UPageSection
+      v-if="heritageItem.persons.length"
+      :title="t('pz.persons.related')"
+      :ui="{ root: 'border-t border-default' }"
+    >
+      <PersonsList
+        :persons="heritageItem.persons"
+        testid="heritage-persons"
+      />
+    </UPageSection>
+
     <UPageSection :ui="{ root: 'border-t border-default' }">
       <p class="text-sm text-muted">
         {{ t('pz.heritage.noDescriptionYet') }}

@@ -17,6 +17,7 @@ const { data: page } = await useAtlasFetch<AtlasMunicipalityResponse>(
 const proposalOpen = ref(false)
 const municipality = computed(() => page.value?.municipality)
 const stats = computed(() => page.value?.stats)
+const persons = computed(() => page.value?.persons ?? [])
 
 const settlements = computed(() => (page.value?.settlements ?? []).map(s => ({
   ...s,
@@ -83,6 +84,17 @@ useSeoMeta({
           </ULink>
         </li>
       </ul>
+    </UPageSection>
+
+    <UPageSection
+      v-if="persons.length"
+      :title="t('pz.persons.fromThisPlace')"
+      :ui="{ root: 'border-t border-default' }"
+    >
+      <PersonsList
+        :persons="persons"
+        testid="municipality-persons"
+      />
     </UPageSection>
 
     <UPageSection :ui="{ root: 'border-t border-default' }">

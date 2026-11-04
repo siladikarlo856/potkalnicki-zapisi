@@ -241,10 +241,10 @@ describe('public atlas API shapes', () => {
 })
 
 describe('content sitemap', () => {
-  it('lists static pages, live places and indexable item pages with lastmod', () => {
+  it('lists static pages, /osobe, live places and indexable item pages with lastmod', () => {
     const entries = sitemapEntries(content)
     expect(entries.slice(0, 3)).toEqual([{ path: '/' }, { path: '/en' }, { path: '/potkalnicko-prigorje' }])
-    expect(entries.slice(11)).toEqual([
+    expect(entries.slice(12)).toEqual([
       { path: '/potkalnicko-prigorje/istrazi/grad-krizevci', lastmod: '2026-10-30' },
       { path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', lastmod: '2026-11-01' },
       { path: '/potkalnicko-prigorje/naselja/apatovec', lastmod: '2026-11-01' },

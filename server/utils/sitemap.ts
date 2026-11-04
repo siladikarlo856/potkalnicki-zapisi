@@ -1,9 +1,9 @@
 import { pzRoutes } from '../../shared/utils/appRoutes'
-import { heritageItemPath, atlasMunicipalityPath, atlasSettlementPath } from './publicAtlas'
+import { heritageItemPath, atlasMunicipalityPath, atlasPersonPath, atlasSettlementPath } from './publicAtlas'
 import type { PublicContent } from './publicContent'
 
 // The sitemap built from the public content snapshot: the static pages, then every live town or
-// municipality, settlement and indexable item page. Drafts, archived rows, noindex items and items without
+// municipality, settlement, indexable item and indexable person page, plus /osobe. Drafts, archived rows, noindex items and items without
 // a settlement are left out. Served by server/routes/sitemap.xml.ts, which stays shadowed while
 // public/sitemap.xml exists (static files win in Nitro).
 
@@ -33,6 +33,8 @@ export function sitemapEntries(content: PublicContent): SitemapEntry[] {
   const day = (timestamp: string) => timestamp.slice(0, 10)
   return [
     ...STATIC_SITEMAP_PATHS.map(path => ({ path })),
+    { path: pzRoutes.persons },
+    ...content.persons.filter(p => !p.noindex).map(p => ({ path: atlasPersonPath(p.slug), lastmod: day(p.updatedAt) })),
     ...content.municipalities.map(m => ({ path: atlasMunicipalityPath(m.slug), lastmod: day(m.updatedAt) })),
     ...content.settlements.map(s => ({ path: atlasSettlementPath(s.slug), lastmod: day(s.updatedAt) })),
     ...content.items.flatMap((item) => {

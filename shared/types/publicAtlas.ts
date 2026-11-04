@@ -62,6 +62,51 @@ export interface PublicSource {
   url: string | null
 }
 
+/** A person as listed on place and item pages. `years` is "1588–1619"; `path` the person page. */
+export interface PublicPersonRef {
+  id: string
+  slug: string
+  name: string
+  years: string
+  role: string
+  path: string
+}
+
+export interface PublicPersonListItem extends PublicPersonRef {
+  /** The first linked place (settlement name or "Grad Križevci"); null never happens for a live person */
+  place: string
+  /** Slugs of the towns and municipalities the person is linked to, for the unit filter */
+  municipalitySlugs: string[]
+}
+
+export type PublicPersonRole = 'rodjen' | 'zivio' | 'djelovao' | 'umro' | 'pokopan'
+
+export interface PublicPersonPlaceGroup {
+  role: PublicPersonRole
+  /** "Rođen/a", "Živio/la", ... */
+  label: string
+  places: Array<{ id: string, name: string, path: string }>
+}
+
+export interface PublicPerson extends PublicPersonListItem {
+  /** Stable id for correction submissions (their `targetId`) */
+  ref: string
+  born: string | null
+  died: string
+  /** Free-text places outside the area, shown as plain text */
+  bornPlace: string | null
+  diedPlace: string | null
+  bio: string | null
+  openQuestions: string | null
+  verification: AtlasItemStatus
+  noindex: boolean
+  /** Linked places grouped by role, in the fixed role order; roles without places are left out */
+  placeGroups: PublicPersonPlaceGroup[]
+  heritage: Array<{ id: string, name: string, path: string | null, relation: string, verification: AtlasItemStatus }>
+  sources: PublicSource[]
+  updatedAt: string
+}
+
 export interface PublicHeritageItem extends PublicHeritageListItem {
   /**
    * Stable id for correction submissions (their `targetId`): the old item id for imported items
@@ -76,6 +121,8 @@ export interface PublicHeritageItem extends PublicHeritageListItem {
   coordinates: { lat: number, lng: number } | null
   credits: PublicCredit[]
   sources: PublicSource[]
+  /** "Povezane osobe": live persons linked to this item */
+  persons: PublicPersonRef[]
   updatedAt: string
 }
 
@@ -90,6 +137,8 @@ export interface AtlasMunicipalityResponse {
   stats: PublicPlaceStats
   settlements: Array<PublicSettlementRef & { itemCount: number }>
   categories: Array<PublicCategoryRef & { count: number }>
+  /** Persons linked to the unit or to one of its settlements */
+  persons: PublicPersonRef[]
 }
 
 export interface AtlasSettlementResponse {
@@ -101,6 +150,8 @@ export interface AtlasSettlementResponse {
   }
   municipality: PublicMunicipalityRef
   items: PublicHeritageListItem[]
+  /** "Osobe iz ovog mjesta" */
+  persons: PublicPersonRef[]
 }
 
 export interface AtlasHeritageListResponse {
@@ -109,6 +160,17 @@ export interface AtlasHeritageListResponse {
   categories: Array<PublicCategoryRef & { count: number }>
   municipalities: Array<Pick<PublicMunicipalityRef, 'slug' | 'label'>>
   total: number
+}
+
+export interface AtlasPersonListResponse {
+  persons: PublicPersonListItem[]
+  /** Unit filter options: towns and municipalities that have at least one person */
+  municipalities: Array<Pick<PublicMunicipalityRef, 'slug' | 'label'>>
+  total: number
+}
+
+export interface AtlasPersonResponse {
+  person: PublicPerson
 }
 
 export interface AtlasHeritageItemResponse {
@@ -135,6 +197,7 @@ export type ContentTargetResponse
   = | { kind: 'heritage_item', item: PublicHeritageListItem & { ref: string } }
     | { kind: 'area', area: PublicAreaTarget }
     | { kind: 'source', source: PublicSource }
+    | { kind: 'person', person: PublicPersonListItem & { ref: string } }
 
 /** GET /api/content/suggest-options: the published rows a suggestion form picks from (ids are content UUIDs). */
 export interface SuggestOptionsResponse {

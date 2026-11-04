@@ -11,5 +11,6 @@ export const pzRoutes = {
   about: `${PZ_ROOT}/o-projektu`,
   privacy: `${PZ_ROOT}/privatnost`,
   explore: `${PZ_ROOT}/istrazi`,
-  heritage: `${PZ_ROOT}/bastina`
+  heritage: `${PZ_ROOT}/bastina`,
+  persons: `${PZ_ROOT}/osobe`
 } as const

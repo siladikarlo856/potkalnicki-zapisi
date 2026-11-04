@@ -9,6 +9,9 @@ import {
   heritageList,
   isContentTargetKind,
   municipalityPage,
+  personDetail,
+  personList,
+  resolvePerson,
   resolveHeritageItem,
   resolveMunicipality,
   resolveSettlement,
@@ -16,13 +19,19 @@ import {
   settlementPage,
   suggestOptions
 } from '../../server/utils/publicAtlas'
-import { fakeContentRows } from './fakeContentSeed'
+import { fakeRowsWithPersons } from './fakePersons'
 
 let cached: ReturnType<typeof buildPublicContent> | undefined
 
 function content() {
-  cached ??= buildPublicContent(fakeContentRows(), {})
+  cached ??= buildPublicContent(fakeRowsWithPersons(), {})
   return cached
+}
+
+function resolvePersonValue(slug: string) {
+  const result = resolvePerson(content(), slug)
+  if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Person not found' })
+  return result.value
 }
 
 function heritageItemResponse(settlement: string, slug: string) {
@@ -83,6 +92,25 @@ export function registerAtlasApiEndpoints() {
     const result = resolveSettlement(content(), 'kalnik')
     if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Settlement not found' })
     return settlementPage(content(), result.value)
+  })
+  registerEndpoint('/api/atlas/persons', (event) => {
+    const list = personList(content(), { municipality: getQuery(event).opcina })
+    if (!list) throw createError({ statusCode: 400, statusMessage: 'Unknown municipality' })
+    return list
+  })
+  registerEndpoint('/api/atlas/persons/:slug', (event) => {
+    const result = resolvePerson(content(), getRouterParam(event, 'slug') ?? '')
+    if (result.status === 'redirect') return { redirect: result.path }
+    if (result.status === 'gone') throw createError({ statusCode: 410, statusMessage: 'Content has been removed' })
+    if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Person not found' })
+    return { person: personDetail(content(), result.value) }
+  })
+  // registerEndpoint hands handlers no router params, so the slugs the tests open are registered by name too.
+  registerEndpoint('/api/atlas/persons/ivan-kalnican', () => ({ person: personDetail(content(), resolvePersonValue('ivan-kalnican')) }))
+  registerEndpoint('/api/atlas/municipalities/opcina-gornja-rijeka', () => {
+    const result = resolveMunicipality(content(), 'opcina-gornja-rijeka')
+    if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Municipality not found' })
+    return municipalityPage(content(), result.value)
   })
   registerEndpoint('/api/content/target', (event) => {
     const query = getQuery(event)

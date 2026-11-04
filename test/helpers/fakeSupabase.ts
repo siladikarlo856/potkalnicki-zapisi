@@ -75,7 +75,11 @@ export async function startFakeSupabase() {
     '/rest/v1/heritage_items': seed.items.map(row => ({ ...row })),
     '/rest/v1/heritage_item_sources': seed.itemSources.map(row => ({ ...row })),
     '/rest/v1/content_legacy_ids': seed.legacyIds.map(row => ({ ...row })),
-    '/rest/v1/content_slug_history': seed.slugHistory.map(row => ({ ...row }))
+    '/rest/v1/content_slug_history': seed.slugHistory.map(row => ({ ...row })),
+    '/rest/v1/persons': [],
+    '/rest/v1/person_areas': [],
+    '/rest/v1/person_heritage_items': [],
+    '/rest/v1/person_sources': []
   }
   let nextId = 1
   // One-shot hook run just before the next daily upsert, to simulate losing a race.

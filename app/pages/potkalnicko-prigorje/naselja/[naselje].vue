@@ -18,6 +18,7 @@ const proposalOpen = ref(false)
 const formatDate = (iso: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'long' }).format(new Date(iso))
 const settlement = computed(() => page.value?.settlement)
 const municipality = computed(() => page.value?.municipality)
+const persons = computed(() => page.value?.persons ?? [])
 
 const items = computed(() => (page.value?.items ?? []).map(item => ({
   ...item,
@@ -98,6 +99,17 @@ useSeoMeta({
       >
         {{ t('pz.heritage.emptySettlement') }}
       </p>
+    </UPageSection>
+
+    <UPageSection
+      v-if="persons.length"
+      :title="t('pz.persons.fromThisPlace')"
+      :ui="{ root: 'border-t border-default' }"
+    >
+      <PersonsList
+        :persons="persons"
+        testid="settlement-persons"
+      />
     </UPageSection>
 
     <UPageSection :ui="{ root: 'border-t border-default' }">

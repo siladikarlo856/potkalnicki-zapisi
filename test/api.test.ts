@@ -982,6 +982,7 @@ describe('public discovery, sharing metadata and error pages', () => {
     expect(expected).toEqual([
       'https://karlo-siladi.from.hr/',
       'https://karlo-siladi.from.hr/en',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
       ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
     ].sort())
     expect(sitemap).not.toContain('/heritage')
