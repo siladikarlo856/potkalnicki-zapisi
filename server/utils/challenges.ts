@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { H3Event } from 'h3'
-import type { ChallengeContent, ChallengeState, QuizChallengeInput } from '../../shared/utils/challenge'
+import type { ChallengeContent, ChallengeMeta, ChallengeState, QuizChallengeInput } from '../../shared/utils/challenge'
+import type { CardKey } from '../../shared/utils/learn/types'
+import { validateChallengeContent } from '../../shared/utils/content/challengeTemplate'
 import { challengeNickname } from '../../shared/utils/challenge'
 import { quizChallengeContent, generatedChallengeContent, parseGenerateInput } from './challengeContent'
 import { currentChallengeContent } from './challengeTemplates'
@@ -113,10 +115,51 @@ async function completeQuizChallenge(code: string, hash: string, content: Challe
   return completed!
 }
 
+function challengeMetaFromContent(content: unknown): ChallengeMeta | null {
+  if (typeof content !== 'object' || content === null || Array.isArray(content)) return null
+  const meta = (content as { meta?: unknown }).meta
+  if (typeof meta !== 'object' || meta === null || Array.isArray(meta)) return null
+  const source = (meta as { source?: unknown }).source
+  if (source !== 'random' && source !== 'set' && source !== 'quiz') return null
+  return meta as ChallengeMeta
+}
+
+export function challengeQuestionCards(content: ChallengeContent): CardKey[] {
+  const seen = new Set<CardKey>()
+  const cards: CardKey[] = []
+  for (const question of content.rounds.flatMap(round => round.questions)) {
+    if (!question.card || seen.has(question.card)) continue
+    seen.add(question.card)
+    cards.push(question.card)
+  }
+  return cards
+}
+
 export async function readChallenge(event: H3Event) {
   challengeLimit(event, 'action')
   const code = challengeCode(event)
-  return challengeRpc('state', code, participantHash(event, code))
+  const state = await challengeRpc('state', code, participantHash(event, code))
+  let meta: ChallengeMeta | null = null
+  try {
+    const { data, error } = await useDatabaseClient().from('heritage_challenges').select('content').eq('code', code).maybeSingle()
+    if (!error && data?.content) meta = challengeMetaFromContent(data.content)
+  } catch {
+    meta = null
+  }
+  return { ...state, meta } satisfies ChallengeState
+}
+
+export async function readChallengeQuestionCards(event: H3Event): Promise<{ cards: CardKey[] }> {
+  challengeLimit(event, 'action')
+  const code = challengeCode(event)
+  const state = await challengeRpc('state', code, participantHash(event, code))
+  if (state.participant?.phase !== 'finished') {
+    throw createError({ statusCode: 409, statusMessage: 'Challenge not finished' })
+  }
+  const { data, error } = await useDatabaseClient().from('heritage_challenges').select('content').eq('code', code).maybeSingle()
+  if (error) databaseError(error)
+  if (!data?.content) throw createError({ statusCode: 404, statusMessage: 'Challenge not found' })
+  return { cards: challengeQuestionCards(validateChallengeContent(data.content)) }
 }
 
 export async function changeChallenge(event: H3Event, action: 'reveal' | 'answer' | 'continue') {

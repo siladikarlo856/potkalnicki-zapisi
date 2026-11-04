@@ -61,6 +61,8 @@ export interface ChallengeState {
   questionCount: number
   maxScore: number
   targetScore: number | null
+  /** Filled on GET /api/challenges/:code from the snapshot; omitted on action responses. */
+  meta?: ChallengeMeta | null
   rounds: ChallengeRound[]
   participant: null | {
     nickname: string

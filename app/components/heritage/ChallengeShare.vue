@@ -1,16 +1,44 @@
 <script setup lang="ts">
-import type { ChallengeState, QuizChallengeInput } from '../../../shared/utils/challenge'
+import type { ChallengeMeta, ChallengeState, QuizChallengeInput } from '../../../shared/utils/challenge'
+import { challengeInviteShareText } from '~/utils/shareResult'
 
-const props = defineProps<{ code?: string, quiz?: QuizChallengeInput, score?: number, total?: number }>()
-const { t } = useI18n()
+const props = defineProps<{
+  code?: string
+  quiz?: QuizChallengeInput
+  score?: number
+  total?: number
+  invite?: {
+    nickname: string
+    questionCount: number
+    closesAt: string
+    meta?: ChallengeMeta | null
+    targetScore?: number | null
+  }
+}>()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
+const { pool } = useCardPool()
 const origin = ref('')
 const createdCode = ref(props.code ?? '')
 const error = ref('')
 const nickname = ref('')
 const creating = ref(false)
 const link = computed(() => createdCode.value ? origin.value + localePath(`/potkalnicko-prigorje/izazov/${createdCode.value}`) : '')
-const shareText = computed(() => `${t('challenge.shareMessage')} ${link.value}`)
+const shareText = computed(() => {
+  if (props.invite && link.value) {
+    return challengeInviteShareText({
+      nickname: props.invite.nickname,
+      url: link.value,
+      questionCount: props.invite.questionCount,
+      closesAt: props.invite.closesAt,
+      meta: props.invite.meta,
+      pool: pool.value,
+      lang: locale.value === 'en' ? 'en' : 'hr',
+      targetScore: props.invite.targetScore
+    })
+  }
+  return `${t('challenge.shareMessage')} ${link.value}`
+})
 const shareLabels = computed(() => ({
   copy: t('challenge.copy'),
   copied: t('challenge.copied'),

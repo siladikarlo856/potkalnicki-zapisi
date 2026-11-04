@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { ChallengeState, ChallengeText } from '../../../shared/utils/challenge'
-import { DEFAULT_GENERATE } from '../../../shared/utils/challenge'
+import type { ChallengeState, ChallengeText } from '~~/shared/utils/challenge'
+import { DEFAULT_GENERATE } from '~~/shared/utils/challenge'
+import { challengeDifficultyLabel, challengeMetaTopicSummary } from '~~/shared/utils/challengeShare'
+import { pzRoutes } from '~~/shared/utils/appRoutes'
+import type { CardKey } from '~~/shared/utils/learn/types'
 
 const DEFAULT_OVERVIEW = {
   title: { hr: 'Brzi izazov', en: 'Quick challenge' } satisfies ChallengeText,
@@ -20,6 +23,7 @@ const DEFAULT_OVERVIEW = {
 const props = defineProps<{ code?: string }>()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
+const { pool } = useCardPool()
 const state = ref<ChallengeState | null>(null)
 const overview = ref<typeof DEFAULT_OVERVIEW | null>(null)
 const loading = ref(true)
@@ -42,6 +46,50 @@ const readyRound = computed(() => {
   return 0
 })
 const date = computed(() => state.value ? new Intl.DateTimeFormat(locale.value === 'en' ? 'en-GB' : 'hr-HR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(state.value.closesAt)) : '')
+const lang = computed(() => locale.value === 'en' ? 'en' as const : 'hr' as const)
+const metaChips = computed(() => {
+  const meta = state.value?.meta
+  if (!meta) return []
+  const chips: string[] = []
+  if (meta.topics?.length) chips.push(challengeMetaTopicSummary(meta, pool.value, lang.value))
+  if (meta.difficulty) chips.push(challengeDifficultyLabel(meta.difficulty, lang.value))
+  return chips
+})
+const shareInvite = computed(() => {
+  if (!state.value) return undefined
+  const nickname = participant.value?.nickname
+  if (!nickname && state.value.targetScore == null) return undefined
+  return {
+    nickname: nickname ?? t('challenge.shareHostFallback'),
+    questionCount: state.value.questionCount,
+    closesAt: state.value.closesAt,
+    meta: state.value.meta,
+    targetScore: state.value.targetScore
+  }
+})
+const learnCards = ref<CardKey[]>([])
+const learnHref = computed(() => {
+  if (!learnCards.value.length) return ''
+  const keys = learnCards.value.slice(0, 20).join(',')
+  return localePath(`${pzRoutes.learn}/sesija?kartice=${encodeURIComponent(keys)}`)
+})
+
+async function loadLearnCards() {
+  if (!props.code || participant.value?.phase !== 'finished') {
+    learnCards.value = []
+    return
+  }
+  try {
+    const response = await $fetch<{ cards: CardKey[] }>(`/api/challenges/${props.code}/cards`)
+    learnCards.value = response.cards
+  } catch {
+    learnCards.value = []
+  }
+}
+
+watch(() => participant.value?.phase, (phase) => {
+  if (phase === 'finished') void loadLearnCards()
+}, { immediate: true })
 
 function message(cause: unknown) {
   const e = cause as { status?: number, statusCode?: number, data?: { statusMessage?: string } }
@@ -151,6 +199,20 @@ onMounted(() => {
         >
           {{ t(props.code ? 'challenge.intro' : 'challenge.newIntro') }}
         </p>
+        <div
+          v-if="metaChips.length"
+          class="flex flex-wrap gap-2"
+          data-testid="challenge-meta-chips"
+        >
+          <UBadge
+            v-for="chip in metaChips"
+            :key="chip"
+            color="primary"
+            variant="subtle"
+          >
+            {{ chip }}
+          </UBadge>
+        </div>
         <p
           v-if="state"
           class="text-sm text-muted"
@@ -246,8 +308,14 @@ onMounted(() => {
           icon="i-lucide-flag"
           @click="entering = true"
         >
-          {{ t(props.code ? 'challenge.join' : 'challenge.start') }}
+          {{ t(props.code ? 'challenge.join' : 'challenge.playFirst') }}
         </UButton>
+        <p
+          v-if="props.code && !entering && state"
+          class="text-sm text-muted"
+        >
+          {{ t('challenge.shareLaterHint') }}
+        </p>
         <UCard v-else>
           <form
             class="space-y-5"
@@ -314,7 +382,7 @@ onMounted(() => {
               :loading="busy"
               @click="act('reveal')"
             >
-              {{ t(participant.index === 0 || state!.rounds.slice(0, readyRound).reduce((n, r) => n + r.count, 0) === participant.index ? 'challenge.beginRound' : 'challenge.nextQuestion') }}
+              {{ t(participant.index === 0 || state!.rounds.slice(0, readyRound).reduce((n, r) => n + r.count, 0) === participant.index ? 'challenge.playFirst' : 'challenge.nextQuestion') }}
             </UButton>
           </div>
         </UCard>
@@ -434,11 +502,22 @@ onMounted(() => {
               </div>
             </div>
           </UCard>
+          <UButton
+            v-if="learnHref"
+            :to="learnHref"
+            size="lg"
+            icon="i-lucide-book-open"
+            data-testid="challenge-learn-cards"
+          >
+            {{ t('challenge.learnQuestions') }}
+          </UButton>
         </div>
       </template>
       <HeritageChallengeShare
         v-if="state"
+        id="challenge-share"
         :code="state.code"
+        :invite="shareInvite"
       />
     </div>
   </UContainer>

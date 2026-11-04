@@ -134,8 +134,14 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     expect(game.sample).toBe(false)
     expect(game.questionCount).toBe(10)
     expect(game.maxScore).toBe(1000)
+    expect((await player.request(path(game, 'cards'))).status).toBe(409)
+    const landing = await state(await player.request(path(game)))
+    expect(landing.meta).toMatchObject({ source: 'random', difficulty: 'srednje', game: 'mjesovito' })
     const finished = await complete(player, game)
     expect(finished.participant?.phase).toBe('finished')
+    const cards = await (await player.request(path(game, 'cards'))).json() as { cards: string[] }
+    expect(cards.cards.length).toBeGreaterThan(0)
+    expect(new Set(cards.cards).size).toBe(cards.cards.length)
     const board = await (await client().request(path(game, 'leaderboard'))).json() as ChallengeLeaderboard
     expect(board.count).toBeGreaterThanOrEqual(1)
   })

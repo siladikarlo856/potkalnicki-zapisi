@@ -7,3 +7,11 @@ export function resultEmojiRow(results: readonly boolean[]): string {
 export function resultShareText(headline: string, results: readonly boolean[]): string {
   return `${headline}\n${resultEmojiRow(results)}`
 }
+
+export {
+  challengeDifficultyLabel,
+  challengeGameLabel,
+  challengeInviteShareText,
+  challengeMetaTopicSummary,
+  challengeTopicSummary
+} from '../../shared/utils/challengeShare'

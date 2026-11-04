@@ -309,4 +309,8 @@ export function activeRounds(topics: GenerateQuestionsOptions['topics'], pool: C
   return (['rijeci', 'mjesta', 'bastina'] as const).filter(id => roundActive(id, topics, pool) && gamesForRound(id, game).length)
 }
 
+export function generateGameEnabled(game: GenerateGameId, topics: GenerateQuestionsOptions['topics'], pool: CardPool): boolean {
+  return activeRounds(topics, pool, game).length > 0
+}
+
 export { ROUND_META }
