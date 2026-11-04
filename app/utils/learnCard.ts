@@ -1,5 +1,6 @@
 import type { WordEntry } from '~/types/heritage'
 import type { PoolWord } from '~~/shared/utils/learn/types'
+import { wordArchivePagePath } from '~~/shared/utils/speech'
 
 /** Map a pool word card to the shape WordFlipCard and WordCorrection expect. */
 export function poolWordToEntry(word: PoolWord): WordEntry {
@@ -20,7 +21,7 @@ export function poolWordToEntry(word: PoolWord): WordEntry {
 }
 
 export function wordArchivePath(word: PoolWord): string | undefined {
-  return word.slug ? `/potkalnicko-prigorje/govor/${word.slug}` : undefined
+  return word.slug ? wordArchivePagePath(word.slug) : undefined
 }
 
 export function settlementArchivePath(slug: string): string {

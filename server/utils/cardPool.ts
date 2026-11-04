@@ -1,4 +1,4 @@
-import type { WordEntry } from '../../app/types/heritage'
+import type { PublicWordEntry } from '../../shared/utils/word'
 import { contentFold } from '../../shared/utils/content/common'
 import { transparency, wordDifficulty } from '../../shared/utils/learn/difficulty'
 import {
@@ -41,13 +41,13 @@ function placeDifficulty(seat: boolean, itemCount: number): 1 | 2 | 3 {
   return 3
 }
 
-function wordVariants(entry: WordEntry): string[] {
+function wordVariants(entry: PublicWordEntry): string[] {
   const forms = entry.variants.map(v => v.form).filter(Boolean)
   if (!forms.includes(entry.headword)) return [entry.headword, ...forms]
   return forms.length ? forms : [entry.headword]
 }
 
-function buildWordCard(entry: WordEntry): PoolWord | null {
+function buildWordCard(entry: PublicWordEntry): PoolWord | null {
   if (entry.status === 'placeholder') return null
   const t = transparency(entry.headword, entry.meaning.hr)
   return {
@@ -63,7 +63,8 @@ function buildWordCard(entry: WordEntry): PoolWord | null {
     variants: wordVariants(entry),
     status: entry.status === 'verified' ? 'verified' : 'community',
     transparency: t,
-    difficulty: wordDifficulty(t)
+    difficulty: wordDifficulty(t),
+    ...(entry.slug ? { slug: entry.slug } : {})
   }
 }
 
@@ -174,7 +175,7 @@ function emptyPool(): CardPool {
   }
 }
 
-export function buildCardPool(content: PublicContent, words: WordEntry[]): CardPool {
+export function buildCardPool(content: PublicContent, words: PublicWordEntry[]): CardPool {
   if (!content.region) return emptyPool()
 
   const slugByMunicipalityId = municipalitySlugMap(content.municipalities)

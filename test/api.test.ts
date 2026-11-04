@@ -370,6 +370,45 @@ describe('word admin and public word APIs', () => {
     for (const limit of ['0', '101', '1.5', 'nope']) expect((await request(`/api/heritage/words?limit=${limit}`)).status).toBe(400)
     expect((await request('/api/review/submissions/999999999/word', { method: 'POST', secret: SECRET })).status).toBe(404)
   })
+
+  it('returns one public word by slug, 404 for unknown slugs, and redirect info for slug history', async () => {
+    const input = wordInput(true)
+    input.entry.headword = 'arhivska riječ'
+    input.entry.variants[0]!.form = 'arhivska riječ'
+    input.entry.category = 'food'
+    const word = await createWord(input)
+    const slug = 'arhivska-rijec'
+    const newSlug = 'arhivska-rijec-nova'
+    expect((await db.from('heritage_words').update({ slug }).eq('id', word.entry.id)).error).toBeNull()
+    expect((await readPublic(100)).words.some(w => w.id === word.entry.id && w.slug === slug)).toBe(true)
+    const page = await request(`/api/heritage/words/${slug}`)
+    expect(page.status).toBe(200)
+    const body = await page.json() as { word: { headword: string, slug: string }, related: unknown[] }
+    expect(body.word).toMatchObject({ headword: 'arhivska riječ', slug })
+    expect(Array.isArray(body.related)).toBe(true)
+    expect((await request('/api/heritage/words/nepostojeca-rijec')).status).toBe(404)
+    if (fake) {
+      fake.seedSlugHistory({ kind: 'word', namespace: '', scope_id: null, slug: 'stara-arhivska', entity_id: word.entry.id })
+    } else {
+      expect((await db.from('content_slug_history').insert({ kind: 'word', namespace: '', scope_id: null, slug: 'stara-arhivska', entity_id: word.entry.id })).error).toBeNull()
+    }
+    expect((await db.from('heritage_words').update({ slug: newSlug }).eq('id', word.entry.id)).error).toBeNull()
+    const redirect = await request('/api/heritage/words/stara-arhivska')
+    expect(redirect.status).toBe(200)
+    expect(await redirect.json()).toEqual({ redirect: `/potkalnicko-prigorje/govor/${newSlug}` })
+  })
+
+  it('includes public word archive paths in the sitemap', async () => {
+    const input = wordInput(true)
+    input.entry.headword = 'sitemap riječ'
+    input.entry.variants[0]!.form = 'sitemap riječ'
+    const word = await createWord(input)
+    const slug = 'sitemap-rijec'
+    expect((await db.from('heritage_words').update({ slug }).eq('id', word.entry.id)).error).toBeNull()
+    const sitemap = await (await fetch('/sitemap.xml')).text()
+    expect(sitemap).toContain(`${SITE_URL}/potkalnicko-prigorje/govor`)
+    expect(sitemap).toContain(`${SITE_URL}/potkalnicko-prigorje/govor/${slug}`)
+  })
 })
 
 describe('GET /api/learn/pool', () => {
@@ -969,13 +1008,20 @@ describe('public discovery, sharing metadata and error pages', () => {
     const noindexPaths = new Set(getAtlas().heritage
       .filter(item => item.noindex && item.settlementCode)
       .map(item => `/potkalnicko-prigorje/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`))
-    const expected = sitemapEntries(buildPublicContent(fakeContentRows(), {}))
+    const content = buildPublicContent(fakeContentRows(), {})
+    const { data: wordRows } = await db.from('heritage_words').select('slug,updated_at').eq('active', true).not('slug', 'is', null)
+    const wordEntries = (wordRows ?? [])
+      .filter(row => row.slug)
+      .map(row => ({ slug: String(row.slug), updatedAt: String(row.updated_at ?? new Date().toISOString()) }))
+    const expected = sitemapEntries(content, wordEntries)
       .map(entry => SITE_URL + entry.path)
     expect(urls.sort()).toEqual(expected.sort())
     expect(expected).toEqual([
       'https://karlo-siladi.from.hr/',
       'https://karlo-siladi.from.hr/en',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/govor',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
+      ...wordEntries.map(w => `https://karlo-siladi.from.hr/potkalnicko-prigorje/govor/${w.slug}`),
       ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
     ].sort())
     expect(sitemap).not.toContain('/heritage')

@@ -1,17 +1,28 @@
 import { randomUUID } from 'node:crypto'
-import type { AdminWord, WordInput } from '../../shared/utils/word'
+import type { Area } from '../../app/types/heritage'
+import type { AdminWord, PublicWordEntry, WordInput } from '../../shared/utils/word'
 import { validateWord } from '../../shared/utils/word'
+import type { WordPageRelated, WordPageResponse } from '../../shared/types/publicSpeech'
+import { wordArchivePagePath } from '../../shared/utils/speech'
 import { loadAreaIndex, projectAreas, withProjectedAreas } from './wordAreas'
 
 const WORD_TABLE = 'heritage_words'
+const SLUG_HISTORY_TABLE = 'content_slug_history'
 // The columns a word draft is read back with; heritage_words.areas is never read (see wordAreas.ts).
 const ADMIN_COLUMNS = 'id,entry,active,submission_id,submission_place,created_at,updated_at'
+const PUBLIC_COLUMNS = 'id,entry,slug,updated_at'
 const AREAS_TABLE = 'areas'
+
+type ResolvedWord
+  = | { status: 'ok', value: WordPageResponse }
+    | { status: 'redirect', path: string }
+    | { status: 'not_found' }
 
 interface WordRow {
   id: string
   entry: WordInput['entry']
   active: boolean
+  slug?: string | null
   submission_id: number | null
   submission_place: string | null
   created_at: string
@@ -149,11 +160,11 @@ export async function promoteSubmission(id: number) {
 export async function publicWords(limit?: number) {
   const client = useDatabaseClient()
   const pageSize = 1000
-  const words: WordInput['entry'][] = []
+  const words: PublicWordEntry[] = []
   const areas = new Map<string, WordInput['areas'][number]>()
   let from = 0
   while (true) {
-    let query = client.from(WORD_TABLE).select('id,entry').eq('active', true).order('id')
+    let query = client.from(WORD_TABLE).select('id,entry,slug').eq('active', true).order('id')
     if (limit !== undefined) {
       if (from > 0) break
       query = query.limit(limit)
@@ -167,11 +178,112 @@ export async function publicWords(limit?: number) {
       const parsed = validateWord({ entry: row.entry, areas: row.areas, active: true }, row.id)
       // Fail closed if a direct database edit has left an invalid active entry.
       if (parsed.issues.length) continue
-      words.push(parsed.value.entry)
+      const slug = typeof row.slug === 'string' && row.slug ? row.slug : undefined
+      if (!slug) console.warn(`publicWords: active word ${row.id} has no slug; skipping archive links`)
+      words.push({ ...parsed.value.entry, ...(slug ? { slug } : {}) })
       for (const area of parsed.value.areas) if (!areas.has(area.id)) areas.set(area.id, area)
     }
     if (limit !== undefined || rows.length < pageSize) break
     from += pageSize
   }
   return { words, areas: [...areas.values()] }
+}
+
+export interface WordSitemapEntry {
+  slug: string
+  updatedAt: string
+}
+
+/** Slugs for active words that have a public archive page. */
+export async function publicWordSitemap(): Promise<WordSitemapEntry[]> {
+  const client = useDatabaseClient()
+  const pageSize = 1000
+  const entries: WordSitemapEntry[] = []
+  let from = 0
+  while (true) {
+    const { data, error } = await client.from(WORD_TABLE)
+      .select('slug,updated_at')
+      .eq('active', true)
+      .not('slug', 'is', null)
+      .order('slug')
+      .range(from, from + pageSize - 1)
+    if (error) databaseError(error)
+    const rows = data ?? []
+    for (const row of rows) {
+      const slug = String(row.slug ?? '')
+      if (!slug) {
+        console.warn('publicWordSitemap: active word row missing slug')
+        continue
+      }
+      entries.push({ slug, updatedAt: String(row.updated_at) })
+    }
+    if (rows.length < pageSize) break
+    from += pageSize
+  }
+  return entries
+}
+
+async function parsedActiveWord(row: WordRow): Promise<{ entry: PublicWordEntry, areas: Area[] } | null> {
+  const client = useDatabaseClient()
+  const [projected] = await withProjectedAreas(client, [row])
+  if (!projected) return null
+  const parsed = validateWord({ entry: projected.entry, areas: projected.areas, active: true }, row.id)
+  if (parsed.issues.length) return null
+  const slug = typeof row.slug === 'string' && row.slug ? row.slug : undefined
+  return {
+    entry: { ...parsed.value.entry, ...(slug ? { slug } : {}) },
+    areas: parsed.value.areas
+  }
+}
+
+function relatedWords(all: PublicWordEntry[], target: PublicWordEntry, limit = 6): WordPageRelated[] {
+  const category = target.category
+  const peers = all.filter(w => w.id !== target.id && w.slug && (!category || w.category === category))
+  const pool = peers.length ? peers : all.filter(w => w.id !== target.id && w.slug)
+  return pool.slice(0, limit).map(w => ({
+    slug: w.slug!,
+    headword: w.headword,
+    meaning: w.meaning.hr,
+    path: wordArchivePagePath(w.slug!)
+  }))
+}
+
+export async function resolvePublicWord(slug: string): Promise<ResolvedWord> {
+  const trimmed = slug.trim()
+  if (!trimmed) return { status: 'not_found' }
+
+  const client = useDatabaseClient()
+  const live = await client.from(WORD_TABLE).select(PUBLIC_COLUMNS).eq('active', true).eq('slug', trimmed).limit(1)
+  if (live.error) databaseError(live.error)
+  const row = live.data?.[0] as WordRow | undefined
+  if (row) {
+    const parsed = await parsedActiveWord(row)
+    if (!parsed?.entry.slug) return { status: 'not_found' }
+    const { words } = await publicWords()
+    return {
+      status: 'ok',
+      value: {
+        word: parsed.entry,
+        areas: parsed.areas,
+        related: relatedWords(words, parsed.entry)
+      }
+    }
+  }
+
+  const history = await client.from(SLUG_HISTORY_TABLE)
+    .select('entity_id')
+    .eq('kind', 'word')
+    .eq('namespace', '')
+    .is('scope_id', null)
+    .eq('slug', trimmed)
+    .limit(1)
+  if (history.error) databaseError(history.error)
+  const entityId = history.data?.[0]?.entity_id
+  if (typeof entityId !== 'string' || !entityId) return { status: 'not_found' }
+
+  const current = await client.from(WORD_TABLE).select('slug').eq('id', entityId).eq('active', true).limit(1)
+  if (current.error) databaseError(current.error)
+  const currentSlug = current.data?.[0]?.slug
+  if (typeof currentSlug !== 'string' || !currentSlug) return { status: 'not_found' }
+  return { status: 'redirect', path: wordArchivePagePath(currentSlug) }
 }

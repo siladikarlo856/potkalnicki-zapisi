@@ -4,7 +4,7 @@ export const pzNavSections = {
   games: true,
   explore: true,
   heritage: true,
-  speech: false,
+  speech: true,
   contribute: true,
   about: true
 } as const

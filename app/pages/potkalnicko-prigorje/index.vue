@@ -19,7 +19,7 @@ useSeoMeta({
 const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
 
 const discoveryCards = computed(() => [
-  { key: 'speech' as const, icon: 'i-lucide-message-circle', soon: true, to: undefined },
+  { key: 'speech' as const, icon: 'i-lucide-message-circle', soon: false, to: localePath(`${pzRoutes.home}/govor`) },
   { key: 'heritage' as const, icon: 'i-lucide-landmark', soon: false, to: localePath(pzRoutes.heritage) },
   { key: 'places' as const, icon: 'i-lucide-users', soon: false, to: localePath(pzRoutes.explore) },
   { key: 'stories' as const, icon: 'i-lucide-book-heart', soon: true, to: undefined }

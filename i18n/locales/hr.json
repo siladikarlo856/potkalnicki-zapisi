@@ -929,6 +929,22 @@
       "back": "← Sve osobe",
       "updatedAt": "Zadnja izmjena: {date}"
     },
+    "speech": {
+      "title": "Naš govor",
+      "seoTitle": "Naš govor",
+      "allWords": "Sve riječi",
+      "searchPlaceholder": "Traži riječ",
+      "meaningTitle": "Značenje",
+      "variantsTitle": "Kako se kaže po selima",
+      "examplesTitle": "Primjeri",
+      "sourcesTitle": "Izvori",
+      "learnWord": "Uči ovu riječ",
+      "relatedTitle": "Slične riječi",
+      "statusVerified": "Provjereno",
+      "statusCommunity": "Od zajednice",
+      "empty": "Nema riječi koje odgovaraju pretrazi.",
+      "anonymousSource": "Anonimno"
+    },
     "games": {
       "hubTitle": "Igre i kvizovi",
       "hubDescription": "Izazovi prijatelja ili uči riječi našeg kraja.",

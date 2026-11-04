@@ -1,6 +1,8 @@
 import { pzRoutes } from '../../shared/utils/appRoutes'
+import { wordArchivePagePath } from '../../shared/utils/speech'
 import { heritageItemPath, atlasMunicipalityPath, atlasPersonPath, atlasSettlementPath } from './publicAtlas'
 import type { PublicContent } from './publicContent'
+import type { WordSitemapEntry } from './words'
 
 // The sitemap built from the public content snapshot: the static pages, then every live town or
 // municipality, settlement, indexable item and indexable person page, plus /osobe. Drafts, archived rows, noindex items and items without
@@ -21,7 +23,8 @@ export const STATIC_SITEMAP_PATHS = [
   pzRoutes.quiz,
   pzRoutes.privacy,
   pzRoutes.explore,
-  pzRoutes.heritage
+  pzRoutes.heritage,
+  `${pzRoutes.home}/govor`
 ]
 
 export interface SitemapEntry {
@@ -30,11 +33,12 @@ export interface SitemapEntry {
   lastmod?: string
 }
 
-export function sitemapEntries(content: PublicContent): SitemapEntry[] {
+export function sitemapEntries(content: PublicContent, words: readonly WordSitemapEntry[] = []): SitemapEntry[] {
   const day = (timestamp: string) => timestamp.slice(0, 10)
   return [
     ...STATIC_SITEMAP_PATHS.map(path => ({ path })),
     { path: pzRoutes.persons },
+    ...words.map(w => ({ path: wordArchivePagePath(w.slug), lastmod: day(w.updatedAt) })),
     ...content.persons.filter(p => !p.noindex).map(p => ({ path: atlasPersonPath(p.slug), lastmod: day(p.updatedAt) })),
     ...content.municipalities.map(m => ({ path: atlasMunicipalityPath(m.slug), lastmod: day(m.updatedAt) })),
     ...content.settlements.map(s => ({ path: atlasSettlementPath(s.slug), lastmod: day(s.updatedAt) })),
@@ -56,11 +60,14 @@ export function sitemapXml(entries: readonly SitemapEntry[], base = SITE_URL) {
 // One rendering per snapshot: a new snapshot (TTL refresh or invalidation after a write) renders anew.
 const rendered = new WeakMap<PublicContent, string>()
 
-export function contentSitemap(content: PublicContent) {
-  let xml = rendered.get(content)
-  if (xml === undefined) {
-    xml = sitemapXml(sitemapEntries(content))
-    rendered.set(content, xml)
+export function contentSitemap(content: PublicContent, words: readonly WordSitemapEntry[] = []) {
+  if (words.length === 0) {
+    let xml = rendered.get(content)
+    if (xml === undefined) {
+      xml = sitemapXml(sitemapEntries(content))
+      rendered.set(content, xml)
+    }
+    return xml
   }
-  return xml
+  return sitemapXml(sitemapEntries(content, words))
 }

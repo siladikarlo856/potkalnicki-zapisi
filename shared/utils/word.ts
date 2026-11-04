@@ -14,8 +14,10 @@ export interface AdminWord extends WordInput {
   updatedAt: string
 }
 
+export type PublicWordEntry = WordEntry & { slug?: string }
+
 export interface PublicWords {
-  words: WordEntry[]
+  words: PublicWordEntry[]
   areas: Area[]
 }
 

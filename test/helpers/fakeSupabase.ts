@@ -208,6 +208,9 @@ export async function startFakeSupabase() {
       beforeDailyUpsert = hook
     },
     seed: (row: Row) => rows.push({ ...row, id: nextId++, status: 'pending', created_at: new Date().toISOString(), reviewed_at: null }),
+    seedSlugHistory: (row: Row) => {
+      contentTables['/rest/v1/content_slug_history']!.push({ ...row })
+    },
     stop: () => new Promise<void>(resolve => server.close(() => resolve()))
   }
 }
