@@ -405,6 +405,18 @@ describe('word admin and public word APIs', () => {
   })
 })
 
+describe('GET /api/learn/pool', () => {
+  it('returns the card pool with short public caching', async () => {
+    const response = await request('/api/learn/pool')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toContain('max-age=60')
+    const body = await response.json() as { version: number, cards: unknown[], topics: unknown[] }
+    expect(body.version).toBe(1)
+    expect(Array.isArray(body.cards)).toBe(true)
+    expect(Array.isArray(body.topics)).toBe(true)
+  })
+})
+
 describe('GET /api/heritage/daily', () => {
   it('stays closed before a configured launch day and touches no data', async () => {
     const before = fake?.daily.length

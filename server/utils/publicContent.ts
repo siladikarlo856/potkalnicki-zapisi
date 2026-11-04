@@ -443,4 +443,5 @@ export async function getPublicContent(): Promise<PublicContent> {
 /** Call after every content write in this process, so the next public request reads the database again. */
 export function invalidatePublicContent() {
   store.invalidate()
+  void import('./cardPool').then(m => m.invalidateCardPool())
 }

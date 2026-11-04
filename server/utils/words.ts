@@ -146,19 +146,32 @@ export async function promoteSubmission(id: number) {
   return adminWord(inserted.data![0] as unknown as WordRow, projectAreas(draft.entry, await loadAreaIndex(client)))
 }
 
-export async function publicWords(limit: number) {
+export async function publicWords(limit?: number) {
   const client = useDatabaseClient()
-  const { data, error } = await client.from(WORD_TABLE)
-    .select('id,entry').eq('active', true).order('id').limit(limit)
-  if (error) databaseError(error)
+  const pageSize = 1000
   const words: WordInput['entry'][] = []
   const areas = new Map<string, WordInput['areas'][number]>()
-  for (const row of await withProjectedAreas(client, data)) {
-    const parsed = validateWord({ entry: row.entry, areas: row.areas, active: true }, row.id)
-    // Fail closed if a direct database edit has left an invalid active entry.
-    if (parsed.issues.length) continue
-    words.push(parsed.value.entry)
-    for (const area of parsed.value.areas) if (!areas.has(area.id)) areas.set(area.id, area)
+  let from = 0
+  while (true) {
+    let query = client.from(WORD_TABLE).select('id,entry').eq('active', true).order('id')
+    if (limit !== undefined) {
+      if (from > 0) break
+      query = query.limit(limit)
+    } else {
+      query = query.range(from, from + pageSize - 1)
+    }
+    const { data, error } = await query
+    if (error) databaseError(error)
+    const rows = data ?? []
+    for (const row of await withProjectedAreas(client, rows)) {
+      const parsed = validateWord({ entry: row.entry, areas: row.areas, active: true }, row.id)
+      // Fail closed if a direct database edit has left an invalid active entry.
+      if (parsed.issues.length) continue
+      words.push(parsed.value.entry)
+      for (const area of parsed.value.areas) if (!areas.has(area.id)) areas.set(area.id, area)
+    }
+    if (limit !== undefined || rows.length < pageSize) break
+    from += pageSize
   }
   return { words, areas: [...areas.values()] }
 }
