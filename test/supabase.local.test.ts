@@ -16,7 +16,7 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
   const admin = createClient(url || 'http://localhost', serviceRoleKey || 'service', options)
   let id = 0
   const wordId = randomUUID()
-  const wordRow = { id: wordId, entry: { id: wordId, headword: '', meaning: { hr: '' }, status: 'community', variants: [], sources: [] }, areas: [], active: false }
+  const wordRow = { id: wordId, entry: { id: wordId, headword: '', meaning: { hr: '' }, status: 'community', variants: [], sources: [] }, active: false }
 
   beforeAll(async () => {
     const { data, error } = await admin.from('heritage_submissions').insert(row).select('id').single()
@@ -137,7 +137,7 @@ describe.skipIf(!url)('heritage_submissions Row Level Security', () => {
       expect(sub.error).toBeNull()
       const wid = randomUUID()
       const entry = { id: wid, headword: 'x', meaning: { hr: 'y' }, partOfSpeech: 'imenica', status: 'community', variants: [{ id: `${wid}~x`, form: 'x', status: 'community', usages: [] }], sources: [{ id: 's1', kind: 'contribution', credit: 'Ana' }] }
-      expect((await admin.from('heritage_words').insert({ id: wid, entry, areas: [], active: true, submission_id: sub.data!.id })).error).toBeNull()
+      expect((await admin.from('heritage_words').insert({ id: wid, entry, active: true, submission_id: sub.data!.id })).error).toBeNull()
       return { sid: sub.data!.id as number, wid }
     }
     const rejectCase = await make('reject')

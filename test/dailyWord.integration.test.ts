@@ -38,7 +38,7 @@ function entry(id: string) {
 }
 async function addWords(count: number) {
   const ids = Array.from({ length: count }, () => randomUUID())
-  const { error } = await service.from('heritage_words').insert(ids.map(id => ({ id, entry: entry(id), areas: [], active: true })))
+  const { error } = await service.from('heritage_words').insert(ids.map(id => ({ id, entry: entry(id), active: true })))
   expect(error).toBeNull()
   return ids
 }

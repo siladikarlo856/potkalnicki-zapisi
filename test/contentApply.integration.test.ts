@@ -146,7 +146,7 @@ describe.skipIf(!url)('atomic apply of submissions on Postgres', () => {
 
     const wordId = crypto.randomUUID()
     const entry = { id: wordId, headword: 'kaj', meaning: { hr: 'što' }, partOfSpeech: 'zamjenica', status: 'community', sources: [{ id: 'izvor-1', kind: 'editor', credit: 'urednik' }], variants: [{ id: 'v1', form: 'kaj', status: 'community', usages: [] }] }
-    sql(`insert into public.heritage_words(id, entry, areas, active) values ('${wordId}', ${quote(JSON.stringify(entry))}::jsonb, '[]', true);`)
+    sql(`insert into public.heritage_words(id, entry, active) values ('${wordId}', ${quote(JSON.stringify(entry))}::jsonb, true);`)
     const wordSubmission = submission('correction', { kind: 'word', id: wordId })
     sql(`update public.heritage_words set apply_submission_id = ${wordSubmission} where id = '${wordId}';`)
     const sources = (json(`select entry from public.heritage_words where id = '${wordId}';`) as { sources: Array<Record<string, string>> }).sources

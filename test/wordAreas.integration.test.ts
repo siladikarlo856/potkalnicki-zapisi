@@ -68,7 +68,7 @@ describe.skipIf(!url)('heritage_word_areas on Postgres', () => {
     const { settlement } = seedPlaceChain(s)
     const id = randomUUID()
     const { error } = await service.from('heritage_words')
-      .insert({ id, entry: entry(id, `trigertest${s}`, [settlement]), areas: [], active: false })
+      .insert({ id, entry: entry(id, `trigertest${s}`, [settlement]), active: false })
       .select('*').single()
     expect(error).toBeNull()
     const row = sql(`select word_id, area_id::text from public.heritage_word_areas where word_id = ${quote(id)};`)
@@ -90,7 +90,7 @@ describe.skipIf(!url)('heritage_word_areas on Postgres', () => {
         usages: [{ areaId: 'hr-kkz-krizevci', confidence: 'reported' }] }]
     }
     const { error } = await service.from('heritage_words')
-      .insert({ id, entry: legacyEntry, areas: [], active: false })
+      .insert({ id, entry: legacyEntry, active: false })
     expect(error).toBeNull()
     const row = sql(`select area_id::text from public.heritage_word_areas where word_id = ${quote(id)};`)
     expect(row).toBe(krizevciUuid)
@@ -100,7 +100,7 @@ describe.skipIf(!url)('heritage_word_areas on Postgres', () => {
     const s = tag()
     const { settlement, municipality } = seedPlaceChain(s)
     const id = randomUUID()
-    await service.from('heritage_words').insert({ id, entry: entry(id, `updatetest${s}`, [settlement]), areas: [], active: false })
+    await service.from('heritage_words').insert({ id, entry: entry(id, `updatetest${s}`, [settlement]), active: false })
     expect(sql(`select count(*) from public.heritage_word_areas where word_id = ${quote(id)};`)).toBe('1')
     // Change usage to municipality
     const updated = entry(id, `updatetest${s}`, [municipality])
@@ -119,7 +119,7 @@ describe.skipIf(!url)('heritage_word_areas on Postgres', () => {
         usages: [{ areaId: 'stari-kljuc-koji-ne-postoji', confidence: 'reported' }] }]
     }
     const { error } = await service.from('heritage_words')
-      .insert({ id, entry: badEntry, areas: [], active: false })
+      .insert({ id, entry: badEntry, active: false })
     expect(error).toBeNull()
     expect(sql(`select count(*) from public.heritage_word_areas where word_id = ${quote(id)};`)).toBe('0')
   })
@@ -128,7 +128,7 @@ describe.skipIf(!url)('heritage_word_areas on Postgres', () => {
     const s = tag()
     const { settlement } = seedPlaceChain(s)
     const id = randomUUID()
-    await service.from('heritage_words').insert({ id, entry: entry(id, `cascade${s}`, [settlement]), areas: [], active: false })
+    await service.from('heritage_words').insert({ id, entry: entry(id, `cascade${s}`, [settlement]), active: false })
     expect(sql(`select count(*) from public.heritage_word_areas where word_id = ${quote(id)};`)).toBe('1')
     sql(`delete from public.heritage_words where id = ${quote(id)};`)
     expect(sql(`select count(*) from public.heritage_word_areas where word_id = ${quote(id)};`)).toBe('0')
@@ -138,23 +138,8 @@ describe.skipIf(!url)('heritage_word_areas on Postgres', () => {
     const s = tag()
     const { settlement } = seedPlaceChain(s)
     const id = randomUUID()
-    await service.from('heritage_words').insert({ id, entry: entry(id, `restrict${s}`, [settlement]), areas: [], active: false })
+    await service.from('heritage_words').insert({ id, entry: entry(id, `restrict${s}`, [settlement]), active: false })
     expect(failure(`delete from public.areas where id = ${quote(settlement)};`)).toMatch(/violates (RESTRICT setting|foreign key constraint)/)
-  })
-
-  it('dual-writes the areas column with the full hierarchy from the areas table', async () => {
-    const s = tag()
-    const { settlement, municipality, county, country } = seedPlaceChain(s)
-    const id = randomUUID()
-    await service.from('heritage_words').insert({ id, entry: entry(id, `dualwrite${s}`, [settlement]), areas: [], active: false })
-    const areasJson = sql(`select areas::text from public.heritage_words where id = ${quote(id)};`)
-    const areas: Array<{ id: string, kind: string }> = JSON.parse(areasJson)
-    const areaIds = new Set(areas.map(a => a.id))
-    // Settlement and all ancestors should be in the projected areas column
-    expect(areaIds).toContain(settlement)
-    expect(areaIds).toContain(municipality)
-    expect(areaIds).toContain(county)
-    expect(areaIds).toContain(country)
   })
 
   it('backfilled existing words: legacy keys in entry rewritten to UUIDs', () => {
@@ -216,7 +201,7 @@ describe.skipIf(!url)('heritage_word_areas on Postgres', () => {
       examples: [{ text: 'Primjer rečenice.', areaId: settlement }]
     }
     const { error } = await service.from('heritage_words')
-      .insert({ id, entry: entryWithExample, areas: [], active: false })
+      .insert({ id, entry: entryWithExample, active: false })
     expect(error).toBeNull()
     const row = sql(`select area_id::text from public.heritage_word_areas where word_id = ${quote(id)};`)
     expect(row).toBe(settlement)

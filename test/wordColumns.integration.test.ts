@@ -44,7 +44,7 @@ function entry(id: string, headword: string, extra: Record<string, unknown> = {}
 async function addWord(headword: string, fields: Record<string, unknown> = {}) {
   const id = randomUUID()
   const { data, error } = await service.from('heritage_words')
-    .insert({ id, entry: entry(id, headword), areas: [], active: false, ...fields }).select('*').single()
+    .insert({ id, entry: entry(id, headword), active: false, ...fields }).select('*').single()
   expect(error).toBeNull()
   return data!
 }
@@ -72,7 +72,7 @@ describe.skipIf(!url)('heritage_words admin columns on Postgres', () => {
   it('accepts only lowercase UUID ids', async () => {
     const id = randomUUID()
     for (const bad of ['hiza', id.toUpperCase(), `${id}-x`]) {
-      const { error } = await service.from('heritage_words').insert({ id: bad, entry: entry(bad, 'loše'), areas: [], active: false })
+      const { error } = await service.from('heritage_words').insert({ id: bad, entry: entry(bad, 'loše'), active: false })
       expect(error?.message).toMatch(/heritage_words_id_uuid/)
     }
     expect((await addWord(`dobro${tag()}`)).id).toMatch(UUID)
@@ -88,7 +88,7 @@ describe.skipIf(!url)('heritage_words admin columns on Postgres', () => {
   it('gives homographs distinct slugs and keeps a slug once set', async () => {
     const headword = `kaj${tag()}`
     const ids = [randomUUID(), randomUUID(), randomUUID()]
-    const { error } = await service.from('heritage_words').insert(ids.map(id => ({ id, entry: entry(id, headword), areas: [], active: false })))
+    const { error } = await service.from('heritage_words').insert(ids.map(id => ({ id, entry: entry(id, headword), active: false })))
     expect(error).toBeNull()
     expect(sql(`select string_agg(slug, ',' order by slug) from public.heritage_words where id in (${ids.map(quote).join(', ')});`))
       .toBe(`${headword},${headword}-2,${headword}-3`)
@@ -110,9 +110,9 @@ describe.skipIf(!url)('heritage_words admin columns on Postgres', () => {
     // Explicit slugs are kept, must be well formed and unique; a headword with no letters still gets one.
     const custom = `vlastiti-${tag()}`
     expect((await addWord(`x${tag()}`, { slug: custom })).slug).toBe(custom)
-    expect((await service.from('heritage_words').insert({ id: randomUUID(), entry: entry(randomUUID(), 'y'), areas: [], active: false, slug: custom })).error).not.toBeNull()
+    expect((await service.from('heritage_words').insert({ id: randomUUID(), entry: entry(randomUUID(), 'y'), active: false, slug: custom })).error).not.toBeNull()
     const badId = randomUUID()
-    expect((await service.from('heritage_words').insert({ id: badId, entry: entry(badId, 'y'), areas: [], active: false, slug: 'Loš Slug' })).error?.message).toMatch(/heritage_words_slug_format/)
+    expect((await service.from('heritage_words').insert({ id: badId, entry: entry(badId, 'y'), active: false, slug: 'Loš Slug' })).error?.message).toMatch(/heritage_words_slug_format/)
     expect((await addWord('?!')).slug).toMatch(/^rijec(-\d+)?$/)
   })
 
@@ -172,7 +172,7 @@ describe.skipIf(!url)('heritage_words admin columns on Postgres', () => {
   it('keeps the previous app working and the new helpers private', async () => {
     // Old admin save: update entry, areas and active without revision or slug.
     const word = await addWord(`stari${tag()}`)
-    const saved = await service.from('heritage_words').update({ entry: word.entry, areas: [], active: true }).eq('id', word.id).select('active,revision,slug')
+    const saved = await service.from('heritage_words').update({ entry: word.entry, active: true }).eq('id', word.id).select('active,revision,slug')
     expect(saved.data).toEqual([{ active: true, revision: 2, slug: word.slug }])
     for (const role of ['anon', 'authenticated']) {
       expect(failure(`set role ${role}; select public.content_slug('a');`)).toMatch(/permission denied/)

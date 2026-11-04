@@ -26,8 +26,8 @@ declare tpl public.heritage_words%rowtype;
 begin
   select * into tpl from public.heritage_words where submission_id is null limit 1;
   if not found then raise exception 'No template word to copy; apply the earlier word migrations first'; end if;
-  insert into public.heritage_words (id, entry, areas, active)
-  select i, jsonb_set(tpl.entry, '{id}', to_jsonb(i)), tpl.areas, true
+  insert into public.heritage_words (id, entry, active)
+  select i, jsonb_set(tpl.entry, '{id}', to_jsonb(i)), true
   from unnest(array['hiza', 'babica', 'zz-unrelated-test']) as i
   on conflict (id) do nothing;
   insert into public.heritage_daily_words (day, word_id, source) values ('2099-01-01', 'hiza', 'pinned');

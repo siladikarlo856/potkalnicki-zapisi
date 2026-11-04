@@ -173,7 +173,7 @@ describe.skipIf(!url)('corrections and proposals inbox over real Postgres', () =
     const wordId = crypto.randomUUID()
     const entry = { id: wordId, headword: `kaj${unique()}`, meaning: { hr: 'što' }, partOfSpeech: 'zamjenica', status: 'community', sources: [{ id: 'izvor-1', kind: 'editor', credit: 'urednik' }], variants: [] as unknown[] }
     entry.variants = [{ id: 'v1', form: entry.headword, status: 'community', usages: [] }]
-    sql(`insert into public.heritage_words(id, entry, areas, active) values ('${wordId}', '${JSON.stringify(entry).replace(/'/g, '\'\'')}'::jsonb, '[]', true);`)
+    sql(`insert into public.heritage_words(id, entry, active) values ('${wordId}', '${JSON.stringify(entry).replace(/'/g, '\'\'')}'::jsonb, true);`)
 
     expect((await submit({ type: 'correction', targetKind: 'word', targetId: wordId, payload: { meaningHr: 'što (upitno)', example: 'Kaj je to?' } })).status).toBe(201)
     const id = await latestSubmissionId('correction')
@@ -312,8 +312,8 @@ describe.skipIf(!url)('corrections and proposals inbox over real Postgres', () =
 
     // A settlement takes a correction through its UUID, and an old atlas id still resolves to the item's UUID.
     expect((await submit({ type: 'correction', targetKind: 'area', targetId: w.settlement, payload: { name: 'Apatovec (Gornji)' } })).status).toBe(201)
-    // The legacy target_ref is no longer written; the target is target_kind + target_id.
-    expect(sql(`select target_kind || ' ' || target_id || ' ' || coalesce(target_ref, '-') from public.heritage_submissions where id = (select max(id) from public.heritage_submissions where type = 'correction');`)).toBe(`area ${w.settlement} -`)
+    // The target is target_kind + target_id (the legacy target_ref column is gone).
+    expect(sql(`select target_kind || ' ' || target_id from public.heritage_submissions where id = (select max(id) from public.heritage_submissions where type = 'correction');`)).toBe(`area ${w.settlement}`)
     const legacy = sql('select legacy_id from public.content_legacy_ids where kind = \'heritage_item\' limit 1;')
     const legacyId = sql(`select entity_id from public.content_legacy_ids where kind = 'heritage_item' and legacy_id = '${legacy}';`)
     expect((await submit({ type: 'correction', targetKind: 'heritage_item', targetId: legacy, payload: { period: '19. stoljeće' } })).status).toBe(201)
