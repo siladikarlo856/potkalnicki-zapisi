@@ -3,7 +3,7 @@
 // Nothing here reaches public content: an admin applies an approved correction through the target's own
 // edit dialog, or opens a draft from a proposal (docs/database.md, "Corrections and proposals inbox").
 
-export const CONTRIBUTION_KINDS = ['word', 'heritage_item', 'area', 'source'] as const
+export const CONTRIBUTION_KINDS = ['word', 'heritage_item', 'area', 'source', 'person'] as const
 export type ContributionKind = typeof CONTRIBUTION_KINDS[number]
 export const CONTRIBUTION_MODES = ['correction', 'proposal'] as const
 export type ContributionMode = typeof CONTRIBUTION_MODES[number]
@@ -21,14 +21,16 @@ export const CONTRIBUTION_ALLOWED: Record<ContributionKind, readonly Contributio
   word: ['correction', 'proposal'],
   heritage_item: ['correction', 'proposal'],
   area: ['correction', 'proposal'],
-  source: ['proposal']
+  source: ['proposal'],
+  person: ['correction', 'proposal']
 }
 
 export const CONTRIBUTION_KIND_LABELS: Record<ContributionKind, string> = {
   word: 'Riječ',
   heritage_item: 'Zapis baštine',
   area: 'Naselje',
-  source: 'Izvor'
+  source: 'Izvor',
+  person: 'Osoba'
 }
 
 /** The admin page whose dialogs edit each kind; the inbox deep-links there. */
@@ -36,7 +38,8 @@ export const CONTRIBUTION_ADMIN_PATHS: Record<ContributionKind, string> = {
   word: '/admin/rijeci',
   heritage_item: '/admin/bastina',
   area: '/admin/mjesta',
-  source: '/admin/izvori'
+  source: '/admin/izvori',
+  person: '/admin/osobe'
 }
 
 export const SOURCE_PROPOSAL_TYPES = [
@@ -120,6 +123,24 @@ export const CONTRIBUTION_FIELDS: { [K in ContributionKind]: { [M in Contributio
       text('year', 'Godina', 20),
       { key: 'url', label: 'Poveznica', type: 'url', max: 1000 },
       long('note', 'Napomena', 1000)
+    ]
+  },
+  person: {
+    correction: [
+      text('name', 'Ime', 200, { apply: true }),
+      text('born', 'Rođen/a', 60, { apply: true }),
+      text('died', 'Umro/la', 60, { apply: true }),
+      text('role', 'Uloga', 200, { apply: true }),
+      long('bio', 'Biografija', 2000, { apply: true }),
+      { key: 'sourceUrl', label: 'Izvor (URL)', type: 'url', max: 1000 }
+    ],
+    proposal: [
+      text('name', 'Ime', 200, { required: true }),
+      text('born', 'Rođen/a', 60, { required: true }),
+      text('died', 'Umro/la', 60, { required: true }),
+      uuid('settlementId', 'Mjesto u našem kraju', { required: true }),
+      long('significance', 'Zašto je važna', 2000, { required: true }),
+      { key: 'sourceUrl', label: 'Izvor (URL)', type: 'url', max: 1000, required: true }
     ]
   }
 }
@@ -205,6 +226,9 @@ export function validateContributionPayload(kind: ContributionKind, mode: Contri
     issues.push({ path: value.variantForm ? 'variantPlaceId' : 'variantForm', code: 'required' })
   }
   if (kind === 'heritage_item' && mode === 'proposal' && !value.settlementId && !value.municipalityId && !issues.some(issue => issue.path === 'settlementId')) {
+    issues.push({ path: 'settlementId', code: 'required' })
+  }
+  if (kind === 'person' && mode === 'proposal' && !value.settlementId && !issues.some(issue => issue.path === 'settlementId')) {
     issues.push({ path: 'settlementId', code: 'required' })
   }
   // Word fields are plain dictionary text, so a link there is never legitimate.

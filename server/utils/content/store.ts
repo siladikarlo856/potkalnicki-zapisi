@@ -215,7 +215,7 @@ export async function getContent(def: AnyContentKindDefinition, id: string) {
   return { entity: { ...entity, ...extras }, legacyIds: (data ?? []).map(entry => entry.legacy_id as string) }
 }
 
-const APPLY_KINDS = new Set<string>(['word', 'heritage_item', 'area', 'source'])
+const APPLY_KINDS = new Set<string>(['word', 'heritage_item', 'area', 'source', 'person'])
 
 /**
  * `applySubmissionId` (and `applyCredit`: false leaves the contributor out of the credits) turn an update into

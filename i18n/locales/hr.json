@@ -297,7 +297,8 @@
         "heritage_item": "Novi zapis baštine",
         "area": "Naselje ili mjesto",
         "source": "Izvor ili literatura",
-        "word": "Nova riječ"
+        "word": "Nova riječ",
+        "person": "Nova osoba"
       },
       "correctionHelp": "Promijeni samo ono što nije točno; polja koja ne dirneš ne šaljemo.",
       "choose": "Odaberi…",

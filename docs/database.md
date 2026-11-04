@@ -320,6 +320,10 @@ The dry run prevents history disagreements from applying an early subset of pend
 
 If migration succeeded but promotion was rejected, correct branch permissions/divergence and retry: already tracked migrations are skipped. If promotion succeeded but Hostinger failed to build, fix the build or redeploy the same `production` commit in Hostinger. The workflow does not automatically roll back schema or app code. Inspect any rollback for schema compatibility.
 
+## Persons content (WP17)
+
+`20261104010000_persons.sql` adds the `persons` table and sidecars `person_areas`, `person_heritage_items` and `person_sources`, widens `content_legacy_ids`, `content_slug_history` and `heritage_submissions.target_kind` to accept kind `person`, and wires audit, slug history and proposal apply/withdraw like other content rows. Apply before deploying the matching app. The previously deployed app ignores the tables; nothing reads them until WP18 ships public pages. After rollout, verify `\dt public.person*` lists four tables with RLS enabled and that `anon` gets `permission denied`.
+
 ## Manual fallback
 
 Keep Hostinger auto-deployment **off** throughout this procedure. Do the baseline verification above first. In a checkout of the exact commit to deploy, link and review history and the pending plan:

@@ -10,7 +10,7 @@ const valid = { text: 'Kapela se zove drugačije.', consentPublish: true, locale
 
 describe('who may submit what', () => {
   it('lets words, heritage items and settlements take both, sources only proposals, and nothing else exist', () => {
-    expect(CONTRIBUTION_KINDS).toEqual(['word', 'heritage_item', 'area', 'source'])
+    expect(CONTRIBUTION_KINDS).toEqual(['word', 'heritage_item', 'area', 'source', 'person'])
     expect(CONTRIBUTION_ALLOWED.word).toEqual(['correction', 'proposal'])
     expect(CONTRIBUTION_ALLOWED.heritage_item).toEqual(['correction', 'proposal'])
     expect(CONTRIBUTION_ALLOWED.area).toEqual(['correction', 'proposal'])

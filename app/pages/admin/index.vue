@@ -8,6 +8,7 @@ const tiles = [
   { title: 'Riječi', description: 'Uredi skice i aktivne kartice.', icon: 'i-lucide-book-open', to: '/admin/rijeci' },
   { title: 'Riječ dana', description: 'Raspored, zaliha riječi i prikvačeni dani.', icon: 'i-lucide-calendar-days', to: '/admin/rijec-dana' },
   { title: 'Baština', description: 'Crkve, kapele, križevi i drugi zapisi sakralne baštine.', icon: 'i-lucide-landmark', to: '/admin/bastina' },
+  { title: 'Osobe', description: 'Povijesne osobe — kartice, izvori i veze na mjesta i baštinu.', icon: 'i-lucide-user-round', to: '/admin/osobe' },
   { title: 'Izvori', description: 'Registri, studije i radovi na koje se pozivaju zapisi.', icon: 'i-lucide-library', to: '/admin/izvori' },
   { title: 'Izazovi', description: 'Skupovi pitanja za izazove prijatelja i trenutni izazov.', icon: 'i-lucide-trophy', to: '/admin/izazovi' },
   { title: 'Povijest', description: 'Tko je i kada mijenjao sadržaj; vrati raniju verziju.', icon: 'i-lucide-history', to: '/admin/povijest' }

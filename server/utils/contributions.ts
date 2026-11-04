@@ -8,7 +8,7 @@ import type { SubmissionInput } from '../../shared/utils/submission'
 // hardening that sits on top of the existing honeypot, per-IP limit and 16 KB cap (README, "Corrections
 // and proposals"): per-target throttle, duplicate fingerprint, link cap, minimum fill time, pending cap.
 
-const LEGACY_KINDS: Partial<Record<ContributionKind, string>> = { heritage_item: 'heritage_item', area: 'area', source: 'source' }
+const LEGACY_KINDS: Partial<Record<ContributionKind, string>> = { heritage_item: 'heritage_item', area: 'area', source: 'source', person: 'person' }
 
 export interface ContributionTarget {
   id: string
@@ -31,7 +31,7 @@ export async function resolveContributionTarget(kind: ContributionKind, value: s
     if (!data) return null
     id = String(data.entity_id)
   }
-  const table = { word: 'heritage_words', heritage_item: 'heritage_items', area: 'areas', source: 'sources' }[kind]
+  const table = { word: 'heritage_words', heritage_item: 'heritage_items', area: 'areas', source: 'sources', person: 'persons' }[kind]
   let request = db.from(table).select('id,revision').eq('id', id)
   if (kind === 'word') request = request.eq('active', true)
   else request = request.eq('status', 'published')

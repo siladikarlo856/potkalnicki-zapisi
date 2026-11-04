@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { contentFold, isContentKind, isUuid } from '../shared/utils/content/common'
 import { validateHeritageCategory } from '../shared/utils/content/category'
 import { validateHeritageItem } from '../shared/utils/content/heritageItem'
+import { validatePerson } from '../shared/utils/content/person'
 import { SOURCE_LIMITS, SOURCE_TYPES, SOURCE_TYPE_LABELS, validateSource } from '../shared/utils/content/source'
 import { adminRouteScope } from '../server/utils/requestGuard'
 import sources from './fixtures/atlas/sources.json'
@@ -50,7 +51,7 @@ describe('content helpers', () => {
     expect(isUuid('registar-kulturnih-dobara')).toBe(false)
     expect(isContentKind('source')).toBe(true)
     expect(isContentKind('heritage_item')).toBe(true)
-    expect(isContentKind('heritage_category')).toBe(true)
+    expect(isContentKind('person')).toBe(true)
     expect(isContentKind('sources')).toBe(false)
   })
 })
@@ -74,6 +75,34 @@ describe('validateHeritageItem', () => {
     })
     expect(issues).toEqual([])
     expect(value.slug).toBe('crkva-sv-ane')
+  })
+})
+
+describe('validatePerson', () => {
+  it('requires a source to publish and warns when clue contains the name', () => {
+    const { issues: publishIssues } = validatePerson({
+      name: 'Ana Anić',
+      slug: 'ana-anic',
+      died: '1900.',
+      diedYear: 1900,
+      clue: 'Ana je bila učiteljica',
+      sourceIds: [],
+      status: 'published'
+    })
+    expect(publishIssues.some(issue => issue.path === 'sourceIds')).toBe(true)
+    expect(publishIssues.some(issue => issue.path === 'clue')).toBe(true)
+
+    const { issues } = validatePerson({
+      name: 'Ana Anić',
+      slug: 'ana-anic',
+      died: '1900.',
+      diedYear: 1900,
+      clue: 'učiteljica iz Prigorja',
+      verification: 'unverified',
+      sourceIds: ['6f1c1c36-3a5e-4b7f-9a52-0d3f0b6c1a10'],
+      status: 'published'
+    })
+    expect(issues).toEqual([])
   })
 })
 

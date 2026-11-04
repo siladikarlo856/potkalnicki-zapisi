@@ -32,6 +32,7 @@ const TARGET_SELECT: Record<ContributionKind, { table: string, columns: string, 
     status: row => row.archived_at ? 'archived' : row.active ? 'published' : 'draft'
   },
   heritage_item: { table: 'heritage_items', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
+  person: { table: 'persons', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
   area: { table: 'areas', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
   source: { table: 'sources', columns: 'id,revision,status,title', label: row => String(row.title), status: row => row.status as ContentStatus }
 }
@@ -64,7 +65,7 @@ async function targetsOf(rows: Row[]) {
 async function createdBy(ids: number[]) {
   const found = new Map<number, InboxCreated>()
   if (!ids.length) return found
-  for (const kind of ['heritage_item', 'area', 'source'] as const) {
+  for (const kind of ['heritage_item', 'area', 'source', 'person'] as const) {
     const spec = TARGET_SELECT[kind]
     for (const row of await readByIds(spec.table, `${spec.columns},source_submission_id`, ids.map(String), 'source_submission_id')) {
       found.set(Number(row.source_submission_id), { kind, id: String(row.id), label: spec.label(row), status: spec.status(row) })
@@ -182,6 +183,13 @@ function placeName(placeId: string | undefined) {
   return place ? `${place.name}${place.municipality ? ` · ${place.municipality}` : ''}` : placeId
 }
 
+function yearFromText(text: string | undefined, which: 'first' | 'last' = 'first') {
+  if (!text) return null
+  const years = text.match(/\b(?:1[0-9]{3}|20[0-9]{2})\b/g)
+  if (!years) return null
+  return Number(which === 'last' ? years[years.length - 1] : years[0])
+}
+
 function changeList(kind: ContributionKind, mode: 'correction' | 'proposal', payload: ContributionPayload, current: (key: string) => string | null, shown: (key: string, value: string) => string): ContributionChange[] {
   return contributionFields(kind, mode)
     .filter(field => payload[field.key] !== undefined)
@@ -212,6 +220,27 @@ async function correctionDetail(kind: ContributionKind, targetId: string, payloa
     const current = (key: string) => ({ meaningHr: entry.meaning?.hr, meaningEn: entry.meaning?.en, partOfSpeech: entry.partOfSpeech })[key as 'meaningHr'] ?? null
     const next = applyWordCorrection(record.entry as Parameters<typeof applyWordCorrection>[0], payload, await areaIdByGeonames(payload.variantPlaceId), randomUUID)
     return { changes: changeList(kind, 'correction', payload, current, shown).map(change => ({ ...change, applicable: !['locationHint'].includes(change.field) })), patch: { entry: next } }
+  }
+
+  if (kind === 'person') {
+    const current = (key: string) => {
+      const value = ({
+        name: record.name, born: record.born, died: record.died, role: record.role, bio: record.bio
+      } as Record<string, unknown>)[key]
+      return typeof value === 'string' && value ? value : null
+    }
+    const patch: Record<string, unknown> = {}
+    for (const field of contributionFields(kind, 'correction')) {
+      if (field.apply && payload[field.key] !== undefined) patch[field.key] = payload[field.key]
+    }
+    if (payload.born !== undefined) {
+      patch.bornYear = yearFromText(payload.born)
+    }
+    if (payload.died !== undefined) {
+      const year = yearFromText(payload.died, 'last')
+      if (year) patch.diedYear = year
+    }
+    return { changes: changeList(kind, 'correction', payload, current, shown), patch }
   }
 
   const current = (key: string) => {
@@ -360,6 +389,29 @@ export async function draftFromProposal(id: number): Promise<InboxDraftResult> {
       kind: 'settlement', parent_id: payload.parentId, name: payload.name,
       slug: await suggestContentSlug(db, table, atlasSlug(payload.name!) || 'naselje', null), status: 'draft'
     }
+  } else if (proposalKind === 'person') {
+    table = 'persons'
+    const { data: settlement, error } = await db.from('areas').select('id').eq('id', payload.settlementId!).eq('kind', 'settlement').maybeSingle()
+    if (error) databaseError(error)
+    if (!settlement) staleProposal()
+    const diedYear = yearFromText(payload.died, 'last')
+    const bornYear = yearFromText(payload.born)
+    if (!diedYear || (bornYear && bornYear > diedYear)) {
+      fail(422, 'Proposal needs a valid year', { code: 'invalid', message: 'Prijedlog nema upotrebljivu godinu smrti. Odbij ga ili dodaj osobu ručno.' })
+    }
+    const note = [payload.sourceUrl && `Izvor: ${payload.sourceUrl}`, payload.significance].filter(Boolean).join('\n\n')
+    values = {
+      name: payload.name,
+      slug: await suggestContentSlug(db, table, atlasSlug(payload.name!) || 'osoba', null),
+      born: payload.born ?? null,
+      born_year: bornYear,
+      died: payload.died!,
+      died_year: diedYear,
+      bio: payload.significance ?? null,
+      role: (payload.significance ?? '').slice(0, 200),
+      research_notes: note,
+      status: 'draft'
+    }
   } else {
     table = 'sources'
     const note = [payload.author && `Autor: ${payload.author}`, payload.year && `Godina: ${payload.year}`, payload.note].filter(Boolean).join('\n')
@@ -377,6 +429,13 @@ export async function draftFromProposal(id: number): Promise<InboxDraftResult> {
     }
     contentDatabaseError(contentKind(proposalKind), error)
   }
+  const createdId = data.id as string
+  if (proposalKind === 'person' && payload.settlementId) {
+    const { error: linkError } = await db.from('person_areas').insert({
+      person_id: createdId, area_id: payload.settlementId, role: 'djelovao', position: 0
+    })
+    if (linkError) contentDatabaseError(contentKind('person'), linkError)
+  }
   invalidatePublicContent()
-  return { kind: proposalKind, id: data.id as string, created: true }
+  return { kind: proposalKind, id: createdId, created: true }
 }

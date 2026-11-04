@@ -16,6 +16,8 @@ async function assertProposalReferences(kind: ContributionKind, payload: Record<
     if (!await assertPublishedRows('areas', places)) throw invalidIssue('payload', 'invalid', payload.settlementId ? 'settlementId' : 'municipalityId')
   } else if (kind === 'area' && !await assertPublishedRows('areas', [payload.parentId!], ['town', 'municipality'])) {
     throw invalidIssue('payload', 'invalid', 'parentId')
+  } else if (kind === 'person' && !await assertPublishedRows('areas', [payload.settlementId!], ['settlement'])) {
+    throw invalidIssue('payload', 'invalid', 'settlementId')
   }
 }
 

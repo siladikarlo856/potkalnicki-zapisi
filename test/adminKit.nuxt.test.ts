@@ -3,6 +3,7 @@ import { h } from 'vue'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { UApp } from '#components'
 import AdminSources from '../app/pages/admin/izvori.vue'
+import AdminPersons from '../app/pages/admin/osobe.vue'
 import AdminDeleteDialog from '../app/components/admin/DeleteDialog.vue'
 import Review from '../app/pages/admin/prijedlozi.vue'
 import { adminListState } from '../app/composables/useAdminResource'
@@ -39,6 +40,13 @@ registerEndpoint('/api/admin/content/source', {
   handler: (event) => {
     record(event)
     return { rows: [source, draft], total: 2, page: 1, size: 25 }
+  }
+})
+registerEndpoint('/api/admin/content/person', {
+  method: 'GET',
+  handler: (event) => {
+    record(event)
+    return { rows: [], total: 0, page: 1, size: 25 }
   }
 })
 registerEndpoint('/api/admin/content/source', {
@@ -239,6 +247,14 @@ describe('admin delete dialog', () => {
     wrapper = await mountInApp(AdminDeleteDialog, { resource, entity: source, open: true })
     await vi.waitFor(() => expect(dialog()?.textContent).toContain('Ništa ne upućuje na ovaj zapis.'))
     expect(dialog()?.querySelector<HTMLButtonElement>('[data-test="admin-hard-delete"]')?.disabled).toBe(false)
+  })
+})
+
+describe('AdminPersons resource page', () => {
+  it('loads the osobe list through the shared admin kit', async () => {
+    wrapper = await mountInApp(AdminPersons, {}, '/admin/osobe')
+    await vi.waitFor(() => expect(wrapper!.text()).toContain('Osobe'))
+    expect(calls.some(call => call.path === '/api/admin/content/person')).toBe(true)
   })
 })
 

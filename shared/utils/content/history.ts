@@ -4,6 +4,7 @@ import { challengeContentEntries } from './challengeTemplate'
 import { AREA_KIND_LABELS } from './area'
 import { SOURCE_TYPE_LABELS } from './source'
 import { HERITAGE_STATUS_LABELS, HERITAGE_VERIFICATION_LABELS } from './heritageItem'
+import { PERSON_AREA_ROLE_LABELS } from './person'
 
 // Change history of the content admin: the shapes of the history API, the vocabulary the screens
 // use (kind and field labels) and the pure helpers that turn two row snapshots into a field diff.
@@ -15,7 +16,7 @@ import { HERITAGE_STATUS_LABELS, HERITAGE_VERIFICATION_LABELS } from './heritage
  * `ContentKind` because history also lists kinds whose admin resource is not built yet (the
  * imported areas, heritage items and categories, and words).
  */
-export const HISTORY_KINDS = ['area', 'challenge_template', 'heritage_category', 'heritage_item', 'source', 'word'] as const
+export const HISTORY_KINDS = ['area', 'challenge_template', 'heritage_category', 'heritage_item', 'person', 'source', 'word'] as const
 export type HistoryKind = typeof HISTORY_KINDS[number]
 
 export function isHistoryKind(value: unknown): value is HistoryKind {
@@ -48,6 +49,7 @@ export const HISTORY_KIND_META: Record<HistoryKind, HistoryKindMeta> = {
   challenge_template: { singular: 'Izazov', plural: 'Izazovi', adminPath: '/admin/izazovi' },
   heritage_category: { singular: 'Kategorija baštine', plural: 'Kategorije baštine', adminPath: '/admin/kategorije' },
   heritage_item: { singular: 'Zapis baštine', plural: 'Zapisi baštine', adminPath: '/admin/bastina' },
+  person: { singular: 'Osoba', plural: 'Osobe', adminPath: '/admin/osobe' },
   source: { singular: 'Izvor', plural: 'Izvori', adminPath: '/admin/izvori' },
   word: { singular: 'Riječ', plural: 'Riječi', adminPath: '/admin/rijeci' }
 }
@@ -126,6 +128,26 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
     latitude: { label: 'Geografska širina' },
     longitude: { label: 'Geografska dužina' },
     noindex: { label: 'Noindex' },
+    sourceIds: { label: 'Izvori' }
+  },
+  person: {
+    name: { label: 'Ime' },
+    slug: { label: 'Slug' },
+    role: { label: 'Uloga' },
+    clue: { label: 'Natuknica' },
+    bio: { label: 'Biografija' },
+    born: { label: 'Rođen/a (prikaz)' },
+    bornYear: { label: 'Godina rođenja' },
+    bornPlace: { label: 'Mjesto rođenja' },
+    died: { label: 'Smrt (prikaz)' },
+    diedYear: { label: 'Godina smrti' },
+    diedPlace: { label: 'Mjesto smrti' },
+    openQuestions: { label: 'Što još provjeravamo' },
+    researchNotes: { label: 'Bilješke istraživanja' },
+    verification: { label: 'Status provjere', values: HERITAGE_VERIFICATION_LABELS },
+    noindex: { label: 'Noindex' },
+    areaLinks: { label: 'Mjesta', values: PERSON_AREA_ROLE_LABELS },
+    itemLinks: { label: 'Povezana baština' },
     sourceIds: { label: 'Izvori' }
   }
 }
