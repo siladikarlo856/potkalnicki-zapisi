@@ -4,6 +4,7 @@ import { challengeNickname } from '../shared/utils/challenge'
 import { challengeOverview, generatedChallengeContent, parseGenerateInput, quizChallengeContent } from '../server/utils/challengeContent'
 import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
 import { mulberry32 } from '../shared/utils/games/rng'
+import { generateQuestions } from '../shared/utils/games/questions'
 import { fixtureCardPool } from './fixtures/gamePool'
 import sample from './fixtures/heritage/challenge.json'
 
@@ -76,7 +77,9 @@ describe('challenge editorial contract and nickname validation', () => {
   it('validates generate input and builds random challenges with meta and card fields', () => {
     const pool = fixtureCardPool()
     expect(() => parseGenerateInput({ topics: ['osobe'], game: 'mjesovito', difficulty: 'srednje', length: 10 }, pool)).toThrow()
-    expect(() => parseGenerateInput({ topics: ['rijeci'], game: 'karta-koje', difficulty: 'srednje', length: 10 }, pool)).toThrow()
+    expect(() => parseGenerateInput({ topics: ['mjesta'], game: 'karta-koje', difficulty: 'srednje', length: 10 }, pool)).not.toThrow()
+    const mapQuestion = generateQuestions('karta-koje', pool, { topics: ['mjesta'], difficulty: 'srednje', count: 1, rng: mulberry32(1) })[0]
+    expect(mapQuestion?.display).toMatchObject({ type: 'map-target', point: { lat: expect.any(Number), lng: expect.any(Number) } })
     const input = parseGenerateInput({ topics: ['rijeci', 'mjesta', 'bastina'], game: 'mjesovito', difficulty: 'srednje', length: 10 }, pool)
     const content = generatedChallengeContent(input, pool, mulberry32(1))
     expect(content.sample).toBe(false)

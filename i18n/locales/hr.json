@@ -707,6 +707,8 @@
     "gameWord": "Kak se to veli?",
     "gameMunicipality": "Kojoj općini pripada?",
     "gameChurch": "Gdje je ta crkva?",
+    "gameMapWhich": "Koje je ovo selo?",
+    "gameMapFind": "Pronađi selo (4 točke)",
     "difficultyLabel": "Težina",
     "difficulty": {
       "lako": "Lako",

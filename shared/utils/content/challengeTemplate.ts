@@ -2,7 +2,8 @@ import type { ChallengeContent, ChallengeMeta, ChallengeQuestion, ChallengeText 
 import type { ContentEntity, ContentIssue, ContentStatus, ContentValidation } from './common'
 import { contentStatus, isRecord, isUuid, issueCollector } from './common'
 import { CARD_KEY, type CardKey, type TopicId } from '../learn/types'
-import { CHALLENGEABLE_GAMES, type Difficulty } from '../games/types'
+import { CHALLENGEABLE_GAMES, type Difficulty, type QuestionDisplay } from '../games/types'
+import { MAP_FRAME } from '../games/mapFrame'
 
 // Challenge templates (Izazovi): the fixed challenge sets an admin edits. The current template is
 // copied into every new fixed challenge as an immutable snapshot (`heritage_challenges.content`).
@@ -33,6 +34,60 @@ const CHALLENGE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
 const TOPIC_ID = /^[a-z0-9-]{1,40}$/
 const DIFFICULTIES = new Set<Difficulty>(['lako', 'srednje', 'tesko'])
 const LANGUAGES = [['hr', 'hrvatski'], ['en', 'engleski']] as const
+const MAP_LAT_MIN = MAP_FRAME.south - 0.05
+const MAP_LAT_MAX = MAP_FRAME.north + 0.05
+const MAP_LNG_MIN = MAP_FRAME.west - 0.05
+const MAP_LNG_MAX = MAP_FRAME.east + 0.05
+
+function mapCoordinateInBounds(lat: number, lng: number) {
+  return lat >= MAP_LAT_MIN && lat <= MAP_LAT_MAX && lng >= MAP_LNG_MIN && lng <= MAP_LNG_MAX
+}
+
+/** Validates optional map layout on a challenge question (admin snapshots and generated content). */
+export function validateQuestionDisplay(
+  value: unknown,
+  path: string,
+  optionCount: number,
+  prefix: string,
+  add: (path: string, message: string) => void
+): QuestionDisplay | undefined {
+  if (value === undefined) return undefined
+  if (!isRecord(value)) {
+    add(`${prefix}${path}.display`, 'Prikaz karte nije ispravan.')
+    return undefined
+  }
+  if (value.type === 'map-target') {
+    const point = isRecord(value.point) ? value.point : null
+    const lat = point?.lat
+    const lng = point?.lng
+    if (typeof lat !== 'number' || typeof lng !== 'number' || !mapCoordinateInBounds(lat, lng)) {
+      add(`${prefix}${path}.display`, 'Točka na karti nije u području.')
+      return undefined
+    }
+    return { type: 'map-target', point: { lat, lng } }
+  }
+  if (value.type === 'map-points') {
+    if (!Array.isArray(value.points) || value.points.length !== optionCount) {
+      add(`${prefix}${path}.display`, 'Točke na karti moraju odgovarati odgovorima.')
+      return undefined
+    }
+    const points: { lat: number, lng: number }[] = []
+    for (let i = 0; i < value.points.length; i++) {
+      const raw = value.points[i]
+      const pt = isRecord(raw) ? raw : null
+      const lat = pt?.lat
+      const lng = pt?.lng
+      if (typeof lat !== 'number' || typeof lng !== 'number' || !mapCoordinateInBounds(lat, lng)) {
+        add(`${prefix}${path}.display.points.${i}`, 'Točka na karti nije u području.')
+        return undefined
+      }
+      points.push({ lat, lng })
+    }
+    return { type: 'map-points', points }
+  }
+  add(`${prefix}${path}.display`, 'Prikaz karte nije ispravan.')
+  return undefined
+}
 
 /**
  * A challenge set as stored in a template: the snapshot shape without `version` and `templateId`,
@@ -134,6 +189,7 @@ export function validateChallengeTemplateContent(input: unknown, prefix = ''): C
         card = item.card as CardKey
       }
     }
+    const display = validateQuestionDisplay(item.display, path, options.length, prefix, check.add)
     const base: ChallengeQuestion = {
       id: questionId,
       mechanic: CHALLENGE_MECHANIC,
@@ -142,7 +198,8 @@ export function validateChallengeTemplateContent(input: unknown, prefix = ''): C
       correct: typeof correct === 'number' && Number.isInteger(correct) ? correct : 0,
       explanation: text(`${path}.explanation`, item.explanation, 'Objašnjenje')
     }
-    return card === undefined ? base : { ...base, card }
+    const withCard = card === undefined ? base : { ...base, card }
+    return display === undefined ? withCard : { ...withCard, display }
   }
 
   const meta = (value: unknown): ChallengeMeta | undefined => {

@@ -303,6 +303,31 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     expect((await anon.rpc('heritage_challenge_scoreboard', { p_code: game.code })).error).not.toBeNull()
   })
 
+  it('passes optional map display through heritage_challenge_state', async () => {
+    const content = validateChallengeContent({
+      version: 1,
+      sample: false,
+      title: { hr: 'Karta', en: 'Map' },
+      rounds: [{
+        id: 'map',
+        topic: { hr: 'Mjesta', en: 'Places' },
+        questions: [{
+          id: 'map-target-1',
+          mechanic: 'multiple-choice',
+          prompt: { hr: 'Koje je ovo selo?', en: 'Which village?' },
+          options: [{ hr: 'A', en: 'A' }, { hr: 'B', en: 'B' }],
+          correct: 0,
+          explanation: { hr: 'A', en: 'A' },
+          display: { type: 'map-target', point: { lat: 46.05, lng: 16.5 } }
+        }]
+      }]
+    })
+    const { player, game } = await aged(0, 7, content)
+    await state(await player.request(path(game, 'reveal'), {}))
+    const live = await state(await player.request(path(game)))
+    expect(live.question?.display).toEqual({ type: 'map-target', point: { lat: 46.05, lng: 16.5 } })
+  })
+
   it('bounds payloads and options, validates nicknames, rejects cross-origin writes and rate limits creation and joins', async () => {
     const creator = client()
     for (let i = 0; i < 3; i++) expect((await creator.request('/api/challenges', { nickname: 'Ana' })).status).toBe(201)

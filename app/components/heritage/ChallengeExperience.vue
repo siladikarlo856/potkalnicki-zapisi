@@ -56,6 +56,14 @@ const metaChips = computed(() => {
   if (meta.difficulty) chips.push(challengeDifficultyLabel(meta.difficulty, lang.value))
   return chips
 })
+const mapDifficulty = computed(() => state.value?.meta?.difficulty ?? 'srednje')
+const mapPlaces = computed(() => pool.value.cards.filter(c => c.kind === 'place'))
+const mapMunicipalities = computed(() => pool.value.municipalities)
+const pendingMapChoice = ref<number | null>(null)
+
+watch(question, () => {
+  pendingMapChoice.value = null
+})
 const shareInvite = computed(() => {
   if (!state.value) return undefined
   const nickname = participant.value?.nickname
@@ -159,6 +167,12 @@ async function advance() {
   if (!participant.value) return
   await act('continue', { phase: participant.value.phase, index: participant.value.index })
   if (!error.value && participant.value?.phase === 'ready' && !state.value?.closed) await act('reveal')
+}
+
+function chooseMapOption(index: number) {
+  if (!question.value || busy.value || feedback.value || state.value?.closed) return
+  pendingMapChoice.value = index
+  void act('answer', { questionId: question.value.id, selected: index })
 }
 
 onMounted(() => {
@@ -410,6 +424,19 @@ onMounted(() => {
             <h2 class="text-xl leading-relaxed font-semibold">
               {{ text(question.prompt) }}
             </h2>
+            <GamesMapView
+              v-if="question.display"
+              :places="mapPlaces"
+              :municipalities="mapMunicipalities"
+              :difficulty="mapDifficulty"
+              mode="target"
+              layer-locked="karta"
+              :target-point="question.display.type === 'map-target' ? question.display.point : undefined"
+              :numbered-points="question.display.type === 'map-points' ? question.display.points : undefined"
+              :disabled="busy || !!feedback || !!state?.closed"
+              data-testid="challenge-map"
+              @select-index="chooseMapOption"
+            />
             <div
               class="grid gap-3"
               role="group"
@@ -418,8 +445,8 @@ onMounted(() => {
               <UButton
                 v-for="(option, index) in question.options"
                 :key="index"
-                :color="feedback ? index === feedback.correct ? 'success' : index === feedback.selected ? 'error' : 'neutral' : 'neutral'"
-                :variant="feedback && index === feedback.correct ? 'subtle' : 'outline'"
+                :color="feedback ? index === feedback.correct ? 'success' : index === feedback.selected ? 'error' : 'neutral' : pendingMapChoice === index ? 'primary' : 'neutral'"
+                :variant="feedback && index === feedback.correct ? 'subtle' : pendingMapChoice === index && !feedback ? 'solid' : 'outline'"
                 :disabled="busy || !!feedback || !!state?.closed"
                 size="lg"
                 class="justify-start whitespace-normal text-left"

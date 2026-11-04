@@ -49,7 +49,9 @@ const gameOptions = computed(() => ([
   { id: 'znacenje' as const, label: t('challenge.gameMeaning') },
   { id: 'rijec' as const, label: t('challenge.gameWord') },
   { id: 'opcina' as const, label: t('challenge.gameMunicipality') },
-  { id: 'crkva' as const, label: t('challenge.gameChurch') }
+  { id: 'crkva' as const, label: t('challenge.gameChurch') },
+  { id: 'karta-koje' as const, label: t('challenge.gameMapWhich') },
+  { id: 'karta-tocke' as const, label: t('challenge.gameMapFind') }
 ]))
 
 function gameEnabled(id: GenerateGameId) {

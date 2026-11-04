@@ -1,5 +1,5 @@
 import type { CardKey, TopicId } from './learn/types'
-import type { Difficulty, GenerateGameId } from './games/types'
+import type { Difficulty, GenerateGameId, QuestionDisplay } from './games/types'
 
 export type ChallengeText = { hr: string, en: string }
 export interface ChallengeMeta {
@@ -16,6 +16,7 @@ export interface ChallengeQuestion {
   correct: number
   explanation: ChallengeText
   card?: CardKey
+  display?: QuestionDisplay
 }
 /** A challenge set; `heritage_challenges.content` stores one as an immutable snapshot. */
 /** Published challenge set as shown on the create form and in GET /api/challenges/sets (no questions). */
@@ -87,6 +88,7 @@ export interface ChallengeState {
     options: ChallengeText[]
     round: number
     number: number
+    display?: QuestionDisplay
   }
   feedback: null | {
     selected: number | null

@@ -60,7 +60,8 @@ function toChallengeQuestion(question: GameQuestion): ChallengeQuestion {
     options: question.options,
     correct: question.correct,
     explanation: question.explanation,
-    card: question.card
+    card: question.card,
+    ...(question.display ? { display: question.display } : {})
   }
 }
 

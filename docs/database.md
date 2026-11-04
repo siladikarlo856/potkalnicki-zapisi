@@ -268,6 +268,12 @@ Apply it through the normal migration-first workflow. The previously deployed ap
 
 `node scripts/test-challenges.mjs` runs `test/challengeTemplates.integration.test.ts` on its disposable Postgres: the seed and its import revision, the one-statement switch, the refusals for the current template (and the declarative checks without the trigger), the content outline and size checks, revision and search, public-role denial, the admin API (create, list, edit, conflict, archive, delete), and switching the current template through the API so that the next challenge uses it, plus a restore that keeps it current.
 
+## Challenge question map display (WP15)
+
+`20261104040000_challenge_question_display.sql` replaces `public.heritage_challenge_state` so the current question object includes `'display', q->'display'` when present in the challenge snapshot. Question bodies in `heritage_challenges.content` may already carry a `display` field (`map-target` or `map-points`); `heritage_challenge_questions` flattened them before, but the state RPC omitted them until this migration.
+
+Rollout: migrate first. A previously deployed app ignores the extra key on the question object and keeps playing plain multiple-choice challenges. The new app treats a missing `display` as a text-only question. Existing snapshots without `display` are unchanged. Deploy the app only after the migration so map challenges receive coordinates during play. Merge this migration only on the captain's word (it replaces `heritage_challenge_state`).
+
 ## Retiring the content files (contract)
 
 The last step of the content admin plan (PR 14) retires everything the database replaced. It ships one small migration and no destructive one.

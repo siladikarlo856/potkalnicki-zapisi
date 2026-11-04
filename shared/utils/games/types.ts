@@ -1,7 +1,7 @@
 import type { CardKey, TopicId } from '../learn/types'
 
 export type Difficulty = 'lako' | 'srednje' | 'tesko'
-export type GameId = 'znacenje' | 'rijec' | 'opcina' | 'crkva' | 'karta' | 'karta-koje' | 'osoba' | 'klub-mjesto' | 'klub-liga' | 'klub-odakle' | 'sela-i-opcine' | 'nabroji' | 'grupiraj' | 'bez-greske'
+export type GameId = 'znacenje' | 'rijec' | 'opcina' | 'crkva' | 'karta' | 'karta-koje' | 'karta-tocke' | 'osoba' | 'klub-mjesto' | 'klub-liga' | 'klub-odakle' | 'sela-i-opcine' | 'nabroji' | 'grupiraj' | 'bez-greske'
 
 export type QuestionDisplay
   = | { type: 'map-target', point: { lat: number, lng: number } }
@@ -21,7 +21,7 @@ export interface GameQuestion {
   optionCards?: CardKey[]
 }
 
-export const CHALLENGEABLE_GAMES = ['znacenje', 'rijec', 'opcina', 'crkva', 'klub-mjesto', 'klub-liga', 'klub-odakle'] as const satisfies readonly GameId[]
+export const CHALLENGEABLE_GAMES = ['znacenje', 'rijec', 'opcina', 'crkva', 'karta-koje', 'karta-tocke', 'klub-mjesto', 'klub-liga', 'klub-odakle'] as const satisfies readonly GameId[]
 export type ChallengeableGameId = typeof CHALLENGEABLE_GAMES[number]
 
 export type GenerateGameId = ChallengeableGameId | 'mjesovito'

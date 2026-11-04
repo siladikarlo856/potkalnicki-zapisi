@@ -13,7 +13,16 @@ const snapshot = (): ChallengeState => ({
   questionCount: 15, maxScore: 1500, targetScore: null,
   rounds: [{ topic: { hr: 'Riječi', en: 'Words' }, count: 5 }],
   participant: { nickname: 'Ana', phase, index: 0, total: 0, completedAt: null, rounds: [] },
-  question: phase === 'question' ? { id: 'q1', prompt: { hr: 'Pitanje?', en: 'Question?' }, options: ['A', 'B', 'C', 'D'].map(v => ({ hr: v, en: v })), round: 0, number: 1 } : null,
+  question: phase === 'question'
+    ? {
+        id: 'q1',
+        prompt: { hr: 'Koje je ovo selo?', en: 'Which village?' },
+        options: ['A', 'B', 'C', 'D'].map(v => ({ hr: v, en: v })),
+        round: 0,
+        number: 1,
+        display: { type: 'map-target', point: { lat: 46.05, lng: 16.5 } }
+      }
+    : null,
   feedback: null
 })
 registerEndpoint(`/api/challenges/${code}`, () => snapshot())
@@ -56,6 +65,7 @@ describe('hr early challenge sharing', () => {
     expect(share).toHaveBeenCalledWith({ title: 'Izazov zavičaja', url: link.value })
     expect(wrapper.get('[data-testid="challenge-whatsapp"]').attributes('href')).toContain('https://wa.me/?text=')
     expect(wrapper.get('[data-testid="challenge-viber"]').attributes('href')).toContain('viber://forward?text=')
+    if (nextPhase === 'question') expect(wrapper.find('[data-testid="challenge-map"]').exists()).toBe(true)
   })
 })
 

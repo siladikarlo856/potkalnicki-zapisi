@@ -8,6 +8,8 @@ const GAME_LABELS: Record<GenerateGameId, { hr: string, en: string }> = {
   'rijec': { hr: 'Kak se to veli?', en: 'Local word' },
   'opcina': { hr: 'Kojoj općini pripada?', en: 'Which municipality?' },
   'crkva': { hr: 'Gdje je ta crkva?', en: 'Where is the church?' },
+  'karta-koje': { hr: 'Koje je ovo selo?', en: 'Which village is this?' },
+  'karta-tocke': { hr: 'Pronađi selo', en: 'Find the village' },
   'klub-mjesto': { hr: 'Koji klub igra u mjestu?', en: 'Which club plays in the settlement?' },
   'klub-liga': { hr: 'U kojoj ligi klub igra u sezoni?', en: 'Which league does the club play in?' },
   'klub-odakle': { hr: 'Odakle je klub?', en: 'Where is the club from?' }

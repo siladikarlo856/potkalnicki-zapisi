@@ -47,4 +47,23 @@ describe('GamesMapView', () => {
     expect(pick.imageX).toBeCloseTo(target.x, 0)
     expect(pick.imageY).toBeCloseTo(target.y, 0)
   })
+
+  it('renders numbered dots for challenge map-points', async () => {
+    const page = await mountSuspended(MapView, {
+      props: {
+        places: [],
+        municipalities,
+        difficulty: 'srednje',
+        mode: 'target',
+        numberedPoints: [
+          { lat: 46.12, lng: 16.46 },
+          { lat: 46.11, lng: 16.47 },
+          { lat: 46.10, lng: 16.48 },
+          { lat: 46.09, lng: 16.49 }
+        ],
+        layerLocked: 'karta'
+      }
+    })
+    expect(page.findAll('[data-testid^="map-numbered-"]')).toHaveLength(4)
+  })
 })

@@ -11,6 +11,12 @@ const props = withDefaults(defineProps<{
   mode: 'find' | 'target' | 'learn'
   highlightId?: string
   singleTarget?: boolean
+  /** Challenge map-target: highlight one coordinate without settlement names. */
+  targetPoint?: { lat: number, lng: number }
+  /** Challenge map-points: numbered dots aligned with multiple-choice options. */
+  numberedPoints?: { lat: number, lng: number }[]
+  /** Lock the basemap layer (challenges always use Karta). */
+  layerLocked?: MapLayerId
   feedback?: { tap: { x: number, y: number }, target: { x: number, y: number }, km?: number } | null
   disabled?: boolean
 }>(), {
@@ -21,19 +27,25 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   pick: [payload: { placeId?: string, lat: number, lng: number, imageX: number, imageY: number }]
+  selectIndex: [index: number]
 }>()
 
 const { t } = useI18n()
 const colorMode = useColorMode()
 const { scores, setMapLayer } = useGameScores()
 
-const layerId = ref<MapLayerId>(scores.value.mapLayer ?? 'karta')
+const layerId = ref<MapLayerId>(props.layerLocked ?? scores.value.mapLayer ?? 'karta')
 const availableLayers = computed(() => MAP_LAYERS.filter(l => l.available))
 const activeLayer = computed(() => MAP_LAYERS.find(l => l.id === layerId.value) ?? MAP_LAYERS[0]!)
 
 watch(layerId, (id) => {
+  if (props.layerLocked) return
   if (MAP_LAYERS.find(l => l.id === id)?.available) setMapLayer(id)
 })
+
+watch(() => props.layerLocked, (locked) => {
+  if (locked) layerId.value = locked
+}, { immediate: true })
 
 const viewport = useTemplateRef<HTMLElement>('viewport')
 const scale = ref(1)
@@ -45,6 +57,8 @@ const sortedPlaces = computed(() =>
   [...props.places].sort((a, b) => a.name.localeCompare(b.name, 'hr')))
 
 const visibleDots = computed(() => {
+  if (props.numberedPoints?.length) return []
+  if (props.targetPoint) return []
   if (props.mode === 'learn') return props.places
   if (props.difficulty === 'tesko' && props.mode === 'find') return []
   if (props.singleTarget || props.mode === 'target') {
@@ -54,7 +68,27 @@ const visibleDots = computed(() => {
   return props.places
 })
 
-const showSeatLabels = computed(() => props.mode !== 'learn' && props.difficulty === 'lako')
+const challengeMarkers = computed(() => {
+  if (props.numberedPoints?.length) {
+    return props.numberedPoints.map((point, index) => ({
+      key: `numbered-${index}`,
+      ...project(point.lat, point.lng),
+      label: String(index + 1),
+      index
+    }))
+  }
+  if (props.targetPoint) {
+    const { x, y } = project(props.targetPoint.lat, props.targetPoint.lng)
+    return [{ key: 'target', x, y, label: undefined as string | undefined, index: undefined as number | undefined }]
+  }
+  return []
+})
+
+const showSeatLabels = computed(() =>
+  props.mode !== 'learn'
+  && props.difficulty === 'lako'
+  && !props.numberedPoints?.length
+  && !props.targetPoint)
 const showSettlementNames = computed(() => props.mode === 'learn')
 
 const legendUnits = computed(() => sortedMunicipalities(props.municipalities))
@@ -125,6 +159,14 @@ function pickPlaceAt(imageX: number, imageY: number): PoolPlace | undefined {
   return undefined
 }
 
+function pickNumberedAt(imageX: number, imageY: number): number | undefined {
+  for (const marker of challengeMarkers.value) {
+    if (marker.index === undefined) continue
+    if (Math.hypot(imageX - marker.x, imageY - marker.y) <= 18) return marker.index
+  }
+  return undefined
+}
+
 const pointers = new Map<number, { x: number, y: number }>()
 let panStart: { x: number, y: number, tx: number, ty: number } | null = null
 let pinchStart: { distance: number, scale: number } | null = null
@@ -176,6 +218,11 @@ function onPointerUp(event: PointerEvent) {
   if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8) return
   const image = screenToImage(event.clientX, event.clientY)
   if (!image) return
+  const numbered = pickNumberedAt(image.x, image.y)
+  if (numbered !== undefined) {
+    emit('selectIndex', numbered)
+    return
+  }
   const place = pickPlaceAt(image.x, image.y)
   const geo = unproject(image.x, image.y)
   emit('pick', { placeId: place?.id, lat: geo.lat, lng: geo.lng, imageX: image.x, imageY: image.y })
@@ -213,6 +260,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
   >
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div
+        v-if="!layerLocked"
         role="radiogroup"
         :aria-label="t('pz.map.layers')"
         class="inline-flex flex-wrap gap-1 rounded-lg bg-elevated p-1"
@@ -334,6 +382,37 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               {{ place.name }}
             </text>
           </g>
+          <g
+            v-for="marker in challengeMarkers"
+            :key="marker.key"
+          >
+            <circle
+              :cx="marker.x"
+              :cy="marker.y"
+              r="18"
+              fill="transparent"
+              class="pointer-events-auto cursor-pointer"
+              :data-testid="marker.index === undefined ? 'map-challenge-target' : `map-numbered-${marker.index + 1}`"
+            />
+            <circle
+              :cx="marker.x"
+              :cy="marker.y"
+              r="5"
+              fill="var(--ui-primary)"
+              stroke="var(--ui-bg)"
+              stroke-width="1.5"
+              class="pointer-events-none"
+            />
+            <text
+              v-if="marker.label"
+              :x="marker.x"
+              :y="marker.y + 4"
+              text-anchor="middle"
+              class="pointer-events-none fill-inverted text-[10px] font-bold"
+            >
+              {{ marker.label }}
+            </text>
+          </g>
           <g v-if="showSeatLabels">
             <text
               v-for="seat in legendUnits.map(seatLabel)"
@@ -376,7 +455,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
     </ul>
 
     <details
-      v-if="mode !== 'learn' && difficulty !== 'tesko'"
+      v-if="mode !== 'learn' && difficulty !== 'tesko' && !numberedPoints?.length && !targetPoint"
       class="rounded-lg bg-elevated p-2 text-sm"
     >
       <summary class="cursor-pointer font-medium text-highlighted">

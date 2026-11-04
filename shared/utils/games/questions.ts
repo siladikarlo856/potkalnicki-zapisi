@@ -194,6 +194,53 @@ function kartaKojeQuestion(pool: CardPool, place: PoolPlace, difficulty: Difficu
   }
 }
 
+function numberedPointOptions(count: number): { hr: string, en: string }[] {
+  return Array.from({ length: count }, (_, index) => ({
+    hr: `Točka ${index + 1}`,
+    en: `Point ${index + 1}`
+  }))
+}
+
+function kartaTockeQuestion(pool: CardPool, target: PoolPlace, difficulty: Difficulty, rng: Rng): GameQuestion | null {
+  const settlements = places(pool, target.topics.length ? target.topics : ['mjesta'])
+  let distractors: PoolPlace[]
+  if (difficulty === 'lako') {
+    const far = settlements.filter((s) => {
+      if (s.id === target.id) return false
+      return distanceKm(target.lat, target.lng, s.lat, s.lng) > 8
+    })
+    distractors = shuffled(far.length >= 3 ? far : settlements.filter(s => s.id !== target.id), rng).slice(0, 3)
+  } else if (difficulty === 'tesko') {
+    const ranked = settlements
+      .filter(s => s.id !== target.id)
+      .map(s => ({ s, d: distanceKm(target.lat, target.lng, s.lat, s.lng) }))
+    ranked.sort((a, b) => a.d - b.d)
+    distractors = ranked.slice(0, 3).map(r => r.s)
+  } else {
+    distractors = shuffled(settlements.filter(s => s.id !== target.id), rng).slice(0, 3)
+  }
+  if (distractors.length < 3) return null
+  const picked = shuffled([target, ...distractors], rng)
+  const correct = picked.findIndex(p => p.id === target.id)
+  const options = numberedPointOptions(4)
+  if (!optionsValid(options)) return null
+  const unit = municipalityFor(pool, target.municipalityId)
+  return {
+    id: questionId('karta-tocke', 'place', target.id),
+    gameId: 'karta-tocke',
+    card: `place:${target.id}:tocke` as CardKey,
+    prompt: { hr: `Gdje je ${target.name}?`, en: `Where is ${target.name}?` },
+    options,
+    correct,
+    explanation: {
+      hr: `${target.name} je točka ${correct + 1}.${unit ? ` (${unit.label})` : ''}`,
+      en: `${target.name} is point ${correct + 1}.${unit ? ` (${unit.label})` : ''}`
+    },
+    archivePath: atlasSettlementPath(target.slug),
+    display: { type: 'map-points', points: picked.map(p => ({ lat: p.lat, lng: p.lng })) }
+  }
+}
+
 function poolClubs(pool: CardPool, topics: GenerateQuestionsOptions['topics']): PoolClub[] {
   const slugs = slugMap(pool)
   return pool.cards.filter((c): c is PoolClub =>
@@ -352,6 +399,15 @@ function generateOne(
     return kartaKojeQuestion(pool, target, difficulty, rng)
   }
 
+  if (game === 'karta-tocke') {
+    const list = places(pool, topics).filter(p => !exclude.has(`place:${p.id}:tocke` as CardKey))
+    const target = targetKey
+      ? list.find(p => (`place:${p.id}:tocke` as CardKey) === targetKey)
+      : pickPlaceTarget(list, difficulty, rng)
+    if (!target) return null
+    return kartaTockeQuestion(pool, target, difficulty, rng)
+  }
+
   if (game === 'klub-mjesto') {
     const list = uniqueSettlementTargets(poolClubs(pool, topics)).filter(c => !exclude.has(`club:${c.id}:mjesto` as CardKey))
     const target = targetKey
@@ -407,6 +463,8 @@ export function generateQuestions(game: GameId, pool: CardPool, options: Generat
     candidates = churchItems(pool, topics).map(i => i.key)
   } else if (game === 'karta-koje') {
     candidates = places(pool, topics).map(p => p.key)
+  } else if (game === 'karta-tocke') {
+    candidates = places(pool, topics).map(p => `place:${p.id}:tocke` as CardKey)
   } else if (game === 'klub-mjesto') {
     candidates = uniqueSettlementTargets(poolClubs(pool, topics)).map(c => `club:${c.id}:mjesto` as CardKey)
   } else if (game === 'klub-liga') {
@@ -444,7 +502,12 @@ export function gamesForRound(roundId: keyof typeof ROUND_META, game: GenerateGa
     if (game === 'znacenje') return ['znacenje']
     return ['znacenje', 'rijec']
   }
-  if (roundId === 'mjesta') return game === 'opcina' || game === 'mjesovito' ? ['opcina'] : []
+  if (roundId === 'mjesta') {
+    if (game === 'opcina' || game === 'mjesovito') return ['opcina']
+    if (game === 'karta-koje') return ['karta-koje']
+    if (game === 'karta-tocke') return ['karta-tocke']
+    return []
+  }
   if (roundId === 'bastina') return game === 'crkva' || game === 'mjesovito' ? ['crkva'] : []
   if (roundId === 'sport') {
     if (game === 'klub-mjesto') return ['klub-mjesto']
