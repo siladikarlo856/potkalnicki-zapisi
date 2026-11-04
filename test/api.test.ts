@@ -166,6 +166,7 @@ describe('Potkalnički zapisi app home', () => {
     expect(window.document.body.textContent).toContain('Otkrij priče koje čine Potkalničko prigorje.')
     expect(html).toContain('data-testid="learn-play-switch"')
     expect(window.document.body.textContent).toContain('Uči riječi iz našeg kraja')
+    expect(html).toContain('Uči riječi iz našeg kraja')
     expect(html).toContain('/potkalnicko-prigorje/igre')
     expect(window.document.querySelector('#doprinos')).not.toBeNull()
     expect(window.document.querySelector('a[href="/potkalnicko-prigorje/doprinesi"]')).not.toBeNull()

@@ -17,8 +17,12 @@ let pending: Promise<void> | undefined
 let release: (() => void) | undefined
 let unavailable = false
 
-// Exercise the real useHeritage fetch and its reactive updates, with active rows from the
-// same fake Supabase REST server as the API suite. Production API filtering is covered there.
+function storedWord(wordId: string) {
+  const raw = JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!)
+  return raw.cards[`word:${wordId}`]
+}
+
+// Exercise the real useHeritage fetch
 registerEndpoint('/api/heritage/words', async () => {
   await pending
   if (unavailable) throw new Error('Word service unavailable')
@@ -86,7 +90,7 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, pr
     const correctId = seeds.find(word => word.headword === headword)!.id
     await page.get(`[data-option-id="${correctId}"]`).trigger('click')
     expect(page.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('1')
-    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[correctId].known).toBe(1)
+    expect(storedWord(correctId).known).toBe(1)
     expect(page.text()).toContain('Odgovoreno ukupno: 1')
     expect(page.text()).toContain(lang === 'hr' ? 'Bodovi: 1 / 4' : 'Score: 1 / 4')
     expect(page.get('[aria-live="polite"]').text()).toContain(lang === 'hr' ? 'Točno značenje:' : 'Correct meaning:')
@@ -135,16 +139,16 @@ describe.each([
     const spoken = page.findAll('[aria-live="polite"]').map(region => region.text()).find(Boolean)!
     const current = seeds.find(word => spoken.includes(`${word.headword}: ${word.meaning.hr}`))
     expect(current).toBeDefined()
-    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[current!.id].seen).toBe(1)
+    expect(storedWord(current!.id).seen).toBe(1)
 
     // Flipping back and revealing again is still the same card visit.
     await flipButton.trigger('click')
     await flipButton.trigger('click')
-    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[current!.id].seen).toBe(1)
+    expect(storedWord(current!.id).seen).toBe(1)
     const unknownButton = page.findAll('button').find(button => button.text().includes(unknown))!
     await unknownButton.trigger('click')
     expect(page.findAll('[aria-live="polite"]').some(region => region.text().includes(next))).toBe(true)
-    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[current!.id].missed).toBe(1)
+    expect(storedWord(current!.id).missed).toBe(1)
   })
 })
 
@@ -241,7 +245,7 @@ describe.each([
     await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
     const missedWord = await answerCurrent(page, false)
     const missedId = seeds.find(word => word.headword === missedWord)!.id
-    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).words[missedId].missed).toBe(1)
+    expect(storedWord(missedId).missed).toBe(1)
     for (let i = 0; i < 3; i++) await answerCurrent(page, true)
 
     await expect.poll(() => page.find('[data-testid="quiz-review"]').exists()).toBe(true)

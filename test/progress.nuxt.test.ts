@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { clearNuxtState } from '#imports'
 import { defineComponent, h } from 'vue'
-import { PROGRESS_STORAGE_KEY, useProgress } from '../app/composables/useProgress'
+import { LEGACY_PROGRESS_STORAGE_KEY, PROGRESS_STORAGE_KEY, useProgress } from '../app/composables/useProgress'
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 let progress: ReturnType<typeof useProgress>
@@ -45,7 +45,7 @@ describe('browser-local heritage progress', () => {
     expect(p.words.value['word-b']).toEqual({ seen: 0, known: 0, missed: 1, lastPlayed: '2026-10-31' })
     expect(p.totals.value).toEqual({ seen: 2, known: 1, missed: 1 })
     expect(p.lastPlayed.value).toBe('2026-10-31')
-    expect(stored().version).toBe(1)
+    expect(stored().version).toBe(2)
     wrapper?.unmount()
     clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
     const reloaded = await mountProgress()
@@ -90,23 +90,57 @@ describe('browser-local heritage progress', () => {
     expect(p.lastPlayed.value).toBeNull()
     expect(p.streak.value).toBe(0)
     p.recordSeen('a')
-    expect(stored().version).toBe(1)
+    expect(stored().version).toBe(2)
     expect(localStorage.getItem('pz-progress/v0')).toBe('{"old":true}')
   })
 
   it.each([
     '{broken', 'null', '[]',
-    JSON.stringify({ version: 2, words: {}, lastPlayed: null, streak: 0 }),
-    JSON.stringify({ version: 1, words: {}, lastPlayed: '2026-02-30', streak: 1 }),
-    JSON.stringify({ version: 1, words: { a: { seen: -1, known: 0, missed: 0, lastPlayed: '2026-10-31' } }, lastPlayed: '2026-10-31', streak: 1 }),
-    JSON.stringify({ version: 1, words: { a: null }, lastPlayed: null, streak: 0 })
+    JSON.stringify({ version: 3, cards: {}, lastPlayed: null, streak: 0 }),
+    JSON.stringify({ version: 2, cards: {}, lastPlayed: '2026-02-30', streak: 1 }),
+    JSON.stringify({ version: 2, cards: { 'word:a': { box: 1, due: '2026-10-31', seen: -1, known: 0, missed: 0, lastPlayed: '2026-10-31' } }, lastPlayed: '2026-10-31', streak: 1 }),
+    JSON.stringify({ version: 2, cards: { 'word:a': null }, lastPlayed: null, streak: 0 })
   ])('resets corrupt or unsupported data safely: %s', async (raw) => {
     localStorage.setItem(PROGRESS_STORAGE_KEY, raw)
     const p = await mountProgress()
     expect(p.lastPlayed.value).toBeNull()
     expect(p.totals.value).toEqual({ seen: 0, known: 0, missed: 0 })
     p.recordMissed('a')
-    expect(stored().words.a.missed).toBe(1)
+    expect(stored().cards['word:a'].missed).toBe(1)
+  })
+
+  it('migrates legacy v1 progress into v2 and keeps the v1 blob', async () => {
+    localStorage.setItem(LEGACY_PROGRESS_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      words: {
+        w: { seen: 2, known: 3, missed: 1, lastPlayed: '2026-10-31' }
+      },
+      lastPlayed: '2026-10-31',
+      streak: 2
+    }))
+    const p = await mountProgress()
+    expect(localStorage.getItem(LEGACY_PROGRESS_STORAGE_KEY)).toContain('"version":1')
+    expect(stored().version).toBe(2)
+    expect(stored().cards['word:w']).toMatchObject({ seen: 2, known: 3, missed: 1, box: 2 })
+    expect(p.words.value.w).toEqual({ seen: 2, known: 3, missed: 1, lastPlayed: '2026-10-31' })
+  })
+
+  it('migrates ambiguous v1 words to box 1', async () => {
+    localStorage.setItem(LEGACY_PROGRESS_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      words: { tie: { seen: 1, known: 1, missed: 1, lastPlayed: '2026-10-31' } },
+      lastPlayed: '2026-10-31',
+      streak: 1
+    }))
+    await mountProgress()
+    expect(stored().cards['word:tie'].box).toBe(1)
+  })
+
+  it('starts empty when legacy v1 data is malformed but leaves the blob', async () => {
+    localStorage.setItem(LEGACY_PROGRESS_STORAGE_KEY, '{broken')
+    const p = await mountProgress()
+    expect(p.totals.value).toEqual({ seen: 0, known: 0, missed: 0 })
+    expect(localStorage.getItem(LEGACY_PROGRESS_STORAGE_KEY)).toBe('{broken')
   })
 
   it('keeps in-memory progress when reading or writing storage throws', async () => {
