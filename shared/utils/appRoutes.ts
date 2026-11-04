@@ -7,6 +7,8 @@ export const pzRoutes = {
   learn: `${PZ_ROOT}/uci`,
   quiz: `${PZ_ROOT}/igre/kviz`,
   askWord: `${PZ_ROOT}/igre/kak-se-veli`,
+  group: `${PZ_ROOT}/igre/grupiraj`,
+  bezGreske: `${PZ_ROOT}/igre/bez-greske`,
   challenge: `${PZ_ROOT}/izazov`,
   contribute: `${PZ_ROOT}/doprinesi`,
   about: `${PZ_ROOT}/o-projektu`,

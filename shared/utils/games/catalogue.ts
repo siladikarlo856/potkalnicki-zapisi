@@ -1,5 +1,6 @@
 import { pzRoutes } from '../appRoutes'
 import type { CardKind, CardPool } from '../learn/types'
+import { groupingAvailable } from './grouping'
 
 export type GameFormat = 'dnevna' | 'odabir' | 'karta' | 'upisi' | 'spoji' | 'razvrstaj' | 'grupiraj' | 'bez-greske'
 
@@ -75,6 +76,29 @@ export const GAME_CATALOGUE: GameEntry[] = [
     challengeable: false
   },
   {
+    id: 'grupiraj',
+    title: 'Grupiraj',
+    blurb: 'Pronađi četiri skupine po četiri — riječi ili naselja.',
+    topic: 'mjesovito',
+    format: 'grupiraj',
+    minutes: 8,
+    path: pzRoutes.group,
+    status: 'live',
+    challengeable: false
+  },
+  {
+    id: 'bez-greske',
+    title: 'Bez greške',
+    blurb: 'Koliko pitanja možeš pogoditi zaredom?',
+    topic: 'mjesovito',
+    format: 'bez-greske',
+    minutes: 5,
+    path: pzRoutes.bezGreske,
+    status: 'live',
+    challengeable: false,
+    needs: { kind: 'word', min: 3 }
+  },
+  {
     id: 'tko-je-to',
     title: 'Tko je to?',
     blurb: 'Poveži osobu s mjestom i ulogom.',
@@ -106,6 +130,10 @@ function poolMeetsNeeds(pool: CardPool, needs: { kind: CardKind, min: number }):
 export function gameVisibleInPool(game: GameEntry, pool: CardPool | null, topic?: string): boolean {
   if (game.status !== 'live') return false
   if (topic && topic !== 'sve' && game.topic !== topic) return false
+  if (game.id === 'grupiraj') {
+    if (!pool) return true
+    return groupingAvailable(pool)
+  }
   if (game.needs) {
     if (!pool) return true
     if (!poolMeetsNeeds(pool, game.needs)) return false

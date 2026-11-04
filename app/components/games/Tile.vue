@@ -25,7 +25,9 @@ const { scores } = useGameScores()
 // Best results are written by the game shell as `pz-games/v1` (WP7); the composable loads them on mount.
 const bestScore = computed(() => {
   const best = scores.value.best[props.game.id]
-  return best ? `${best.score}/${best.max}` : null
+  if (!best) return null
+  if (props.game.id === 'bez-greske') return String(best.score)
+  return `${best.score}/${best.max}`
 })
 
 const linkTo = computed(() => {
@@ -74,7 +76,7 @@ const linkTo = computed(() => {
             v-if="bestScore !== null"
             class="text-highlighted"
           >
-            {{ t('pz.play.best', { score: bestScore }) }}
+            {{ game.id === 'bez-greske' ? t('pz.play.bezBestStreak', { n: bestScore }) : t('pz.play.best', { score: bestScore }) }}
           </span>
         </div>
       </div>

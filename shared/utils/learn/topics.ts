@@ -11,7 +11,7 @@ export interface TopicDef {
   soonHref?: string
 }
 
-const WORD_CATEGORY_TOPICS: { id: TopicId, label: string, category: DailyCategory }[] = [
+export const WORD_CATEGORY_TOPICS: { id: TopicId, label: string, category: DailyCategory }[] = [
   { id: 'rijeci-ljudi', label: 'Ljudi', category: 'people' },
   { id: 'rijeci-hrana', label: 'Hrana', category: 'food' },
   { id: 'rijeci-dvoriste', label: 'Dvorište', category: 'yard' },

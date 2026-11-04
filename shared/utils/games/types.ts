@@ -1,7 +1,7 @@
 import type { CardKey, TopicId } from '../learn/types'
 
 export type Difficulty = 'lako' | 'srednje' | 'tesko'
-export type GameId = 'znacenje' | 'rijec' | 'opcina' | 'crkva' | 'karta-koje' | 'osoba' | 'klub-mjesto' | 'klub-liga' | 'klub-odakle'
+export type GameId = 'znacenje' | 'rijec' | 'opcina' | 'crkva' | 'karta-koje' | 'osoba' | 'klub-mjesto' | 'klub-liga' | 'klub-odakle' | 'grupiraj' | 'bez-greske'
 
 export type QuestionDisplay
   = | { type: 'map-target', point: { lat: number, lng: number } }

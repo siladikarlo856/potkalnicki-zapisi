@@ -53,6 +53,8 @@ export default defineNuxtConfig({
     '/potkalnicko-prigorje/igre/kartice': { prerender: true },
     '/potkalnicko-prigorje/igre/kviz': { prerender: true },
     '/potkalnicko-prigorje/igre/kak-se-veli': { prerender: true },
+    '/potkalnicko-prigorje/igre/grupiraj': { prerender: true },
+    '/potkalnicko-prigorje/igre/bez-greske': { prerender: true },
     '/potkalnicko-prigorje/igre/rijeci': { redirect: { to: '/potkalnicko-prigorje/igre?tema=rijeci', statusCode: 301 } },
     '/potkalnicko-prigorje/igre/crkve': { redirect: { to: '/potkalnicko-prigorje/igre?tema=bastina', statusCode: 301 } },
     '/potkalnicko-prigorje/igre/zemljopis': { redirect: { to: '/potkalnicko-prigorje/igre?tema=mjesta', statusCode: 301 } },
