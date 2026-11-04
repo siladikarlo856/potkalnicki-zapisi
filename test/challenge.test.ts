@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { WordEntry } from '../app/types/heritage'
 import { challengeNickname } from '../shared/utils/challenge'
-import { challengeOverview, quizChallengeContent } from '../server/utils/challengeContent'
+import { challengeOverview, generatedChallengeContent, parseGenerateInput, quizChallengeContent } from '../server/utils/challengeContent'
 import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
+import { mulberry32 } from '../shared/utils/games/rng'
+import { fixtureCardPool } from './fixtures/gamePool'
 import sample from './fixtures/heritage/challenge.json'
 
 // The seeded current template, as a fixed challenge snapshots it (version from the template revision).
@@ -61,11 +63,36 @@ describe('challenge editorial contract and nickname validation', () => {
       en: 'What does “hiža” mean?'
     })
     expect(() => validateChallengeContent(content)).not.toThrow()
+    expect(content.meta).toEqual({ source: 'quiz', topics: ['rijeci'], game: 'znacenje' })
+    expect(content.rounds[0]!.questions[0]!.card).toBe('word:hiza')
   })
 
   it('rejects quiz rounds with missing words, repeated choices, or mismatched results', () => {
     expect(() => quizChallengeContent({ questions: [{ id: 'missing', optionIds: ['hiza', 'vura'] }], results: [true] }, words)).toThrow('Invalid quiz challenge')
     expect(() => quizChallengeContent({ questions: [{ id: 'hiza', optionIds: ['hiza', 'hiza'] }], results: [true] }, words)).toThrow('Invalid quiz challenge')
     expect(() => quizChallengeContent({ questions: [{ id: 'hiza', optionIds: ['hiza', 'vura'] }], results: [] }, words)).toThrow('Invalid quiz challenge')
+  })
+
+  it('validates generate input and builds random challenges with meta and card fields', () => {
+    const pool = fixtureCardPool()
+    expect(() => parseGenerateInput({ topics: ['osobe'], game: 'mjesovito', difficulty: 'srednje', length: 10 }, pool)).toThrow()
+    expect(() => parseGenerateInput({ topics: ['rijeci'], game: 'karta-koje', difficulty: 'srednje', length: 10 }, pool)).toThrow()
+    const input = parseGenerateInput({ topics: ['rijeci', 'mjesta', 'bastina'], game: 'mjesovito', difficulty: 'srednje', length: 10 }, pool)
+    const content = generatedChallengeContent(input, pool, mulberry32(1))
+    expect(content.sample).toBe(false)
+    expect(content.meta).toMatchObject({ source: 'random', game: 'mjesovito', difficulty: 'srednje' })
+    expect(content.rounds.flatMap(r => r.questions).every(q => q.card)).toBe(true)
+    expect(() => validateChallengeContent(content)).not.toThrow()
+    const validated = validateChallengeContent(content)
+    expect(validated.meta).toEqual(content.meta)
+    expect(validated.rounds[0]!.questions[0]!.card).toBe(content.rounds[0]!.questions[0]!.card)
+  })
+
+  it('keeps legacy snapshots without meta or card unchanged', () => {
+    const before = validateChallengeContent(sample)
+    const after = validateChallengeContent(structuredClone(sample))
+    expect(after).toEqual(before)
+    expect(after.rounds[0]!.questions[0]!.card).toBeUndefined()
+    expect(after.meta).toBeUndefined()
   })
 })

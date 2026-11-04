@@ -124,6 +124,22 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     })
   })
 
+  it('creates a random challenge from the card pool and plays through to the leaderboard', async () => {
+    const player = client()
+    const response = await player.request('/api/challenges', {
+      nickname: 'Marko',
+      generate: { topics: ['rijeci', 'mjesta', 'bastina'], game: 'mjesovito', difficulty: 'srednje', length: 10 }
+    })
+    const game = await state(response, 201)
+    expect(game.sample).toBe(false)
+    expect(game.questionCount).toBe(10)
+    expect(game.maxScore).toBe(1000)
+    const finished = await complete(player, game)
+    expect(finished.participant?.phase).toBe('finished')
+    const board = await (await client().request(path(game, 'leaderboard'))).json() as ChallengeLeaderboard
+    expect(board.count).toBeGreaterThanOrEqual(1)
+  })
+
   it('lets any browser start separate challenges and share their independent links before play', async () => {
     const player = client()
     const first = (await create(player)).game

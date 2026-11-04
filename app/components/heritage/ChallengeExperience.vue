@@ -1,11 +1,27 @@
 <script setup lang="ts">
 import type { ChallengeState, ChallengeText } from '../../../shared/utils/challenge'
+import { DEFAULT_GENERATE } from '../../../shared/utils/challenge'
+
+const DEFAULT_OVERVIEW = {
+  title: { hr: 'Brzi izazov', en: 'Quick challenge' } satisfies ChallengeText,
+  sample: false,
+  rounds: [
+    { topic: { hr: 'Riječi', en: 'Words' }, count: 4 },
+    { topic: { hr: 'Mjesta', en: 'Places' }, count: 3 },
+    { topic: { hr: 'Baština', en: 'Heritage' }, count: 3 }
+  ],
+  maxScore: 1000,
+  summary: {
+    hr: '10 pitanja · Riječi + Mjesta + Baština · Srednje · do 1000 bodova',
+    en: '10 questions · Words + Places + Heritage · Medium · up to 1000 points'
+  }
+} as const
 
 const props = defineProps<{ code?: string }>()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const state = ref<ChallengeState | null>(null)
-const overview = ref<{ title: ChallengeText, sample: boolean, rounds: { topic: ChallengeText, count: number }[], maxScore: number } | null>(null)
+const overview = ref<typeof DEFAULT_OVERVIEW | null>(null)
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
@@ -40,7 +56,7 @@ async function load() {
   error.value = ''
   try {
     if (props.code) state.value = await $fetch<ChallengeState>(`/api/challenges/${props.code}`)
-    else overview.value = await $fetch('/api/challenges/template')
+    else overview.value = { ...DEFAULT_OVERVIEW }
   } catch {
     error.value = t('challenge.unavailable')
   } finally {
@@ -76,7 +92,7 @@ async function enter() {
     error.value = t('challenge.invalidNickname')
     return
   }
-  await act(props.code ? 'join' : 'create', { nickname: name })
+  await act(props.code ? 'join' : 'create', props.code ? { nickname: name } : { nickname: name, generate: DEFAULT_GENERATE })
 }
 
 async function advance() {
@@ -121,10 +137,16 @@ onMounted(() => {
           {{ t('challenge.sample') }}
         </UBadge>
         <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
-          {{ props.code && details ? text(details.title) : t('challenge.newTitle') }}
+          {{ props.code && details ? text(details.title) : overview ? text(overview.title) : t('challenge.newTitle') }}
         </h1>
         <p
-          v-if="!participant"
+          v-if="!participant && !props.code && overview?.summary"
+          class="text-lg text-muted"
+        >
+          {{ text(overview.summary) }}
+        </p>
+        <p
+          v-else-if="!participant"
           class="text-lg text-muted"
         >
           {{ t(props.code ? 'challenge.intro' : 'challenge.newIntro') }}

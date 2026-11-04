@@ -1,4 +1,13 @@
+import type { CardKey, TopicId } from './learn/types'
+import type { Difficulty, GenerateGameId } from './games/types'
+
 export type ChallengeText = { hr: string, en: string }
+export interface ChallengeMeta {
+  source: 'random' | 'set' | 'quiz'
+  topics?: TopicId[]
+  game?: GenerateGameId
+  difficulty?: Difficulty
+}
 export interface ChallengeQuestion {
   id: string
   mechanic: 'multiple-choice'
@@ -6,6 +15,7 @@ export interface ChallengeQuestion {
   options: ChallengeText[]
   correct: number
   explanation: ChallengeText
+  card?: CardKey
 }
 /** A challenge set; `heritage_challenges.content` stores one as an immutable snapshot. */
 export interface ChallengeContent {
@@ -15,7 +25,21 @@ export interface ChallengeContent {
   templateId?: string
   sample: boolean
   title: ChallengeText
+  meta?: ChallengeMeta
   rounds: { id: string, topic: ChallengeText, questions: ChallengeQuestion[] }[]
+}
+export interface GenerateChallengeInput {
+  topics: TopicId[]
+  game: GenerateGameId
+  difficulty: Difficulty
+  length: 5 | 10 | 15
+}
+
+export const DEFAULT_GENERATE: GenerateChallengeInput = {
+  topics: ['rijeci', 'mjesta', 'bastina'],
+  game: 'mjesovito',
+  difficulty: 'srednje',
+  length: 10
 }
 export interface QuizChallengeInput {
   questions: { id: string, optionIds: string[] }[]

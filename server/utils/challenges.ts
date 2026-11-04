@@ -2,8 +2,10 @@ import { createHash, randomBytes } from 'node:crypto'
 import type { H3Event } from 'h3'
 import type { ChallengeContent, ChallengeState, QuizChallengeInput } from '../../shared/utils/challenge'
 import { challengeNickname } from '../../shared/utils/challenge'
-import { quizChallengeContent } from './challengeContent'
+import { quizChallengeContent, generatedChallengeContent, parseGenerateInput } from './challengeContent'
 import { currentChallengeContent } from './challengeTemplates'
+import { getCardPool } from './cardPool'
+import { mulberry32 } from '../../shared/utils/games/rng'
 
 const BODY_LIMIT = 8192
 
@@ -54,7 +56,14 @@ export async function enterChallenge(event: H3Event, create: boolean) {
   // Only creation needs content: a join plays the snapshot stored with the challenge.
   let content: ChallengeContent | null = null
   let quiz: QuizChallengeInput | null = null
-  if (create && body.quiz !== undefined) {
+  if (create && body.generate !== undefined) {
+    try {
+      const pool = await getCardPool()
+      content = generatedChallengeContent(parseGenerateInput(body.generate, pool), pool, mulberry32(randomBytes(4).readUInt32LE(0)))
+    } catch {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid challenge settings' })
+    }
+  } else if (create && body.quiz !== undefined) {
     quiz = body.quiz as QuizChallengeInput
     try {
       content = quizChallengeContent(quiz, (await publicWords(100)).words)

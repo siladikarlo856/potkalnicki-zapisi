@@ -1,6 +1,8 @@
-import type { ChallengeContent, ChallengeQuestion, ChallengeText } from '../challenge'
+import type { ChallengeContent, ChallengeMeta, ChallengeQuestion, ChallengeText } from '../challenge'
 import type { ContentEntity, ContentIssue, ContentStatus, ContentValidation } from './common'
 import { contentStatus, isRecord, isUuid, issueCollector } from './common'
+import { CARD_KEY, type CardKey, type TopicId } from '../learn/types'
+import { CHALLENGEABLE_GAMES, type Difficulty } from '../games/types'
 
 // Challenge templates (Izazovi): the fixed challenge sets an admin edits. The current template is
 // copied into every new fixed challenge as an immutable snapshot (`heritage_challenges.content`).
@@ -28,6 +30,8 @@ export const CHALLENGE_LIMITS = {
 
 export const CHALLENGE_MECHANIC = 'multiple-choice'
 const CHALLENGE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
+const TOPIC_ID = /^[a-z0-9-]{1,40}$/
+const DIFFICULTIES = new Set<Difficulty>(['lako', 'srednje', 'tesko'])
 const LANGUAGES = [['hr', 'hrvatski'], ['en', 'engleski']] as const
 
 /**
@@ -122,7 +126,15 @@ export function validateChallengeTemplateContent(input: unknown, prefix = ''): C
     if (typeof correct !== 'number' || !Number.isInteger(correct) || correct < 0 || correct >= Math.max(options.length, 1)) {
       check.add(`${prefix}${path}.correct`, 'Označi točan odgovor.')
     }
-    return {
+    let card: CardKey | undefined
+    if (item.card !== undefined) {
+      if (typeof item.card !== 'string' || !CARD_KEY.test(item.card)) {
+        check.add(`${prefix}${path}.card`, 'Kartica pitanja nije ispravna.')
+      } else {
+        card = item.card as CardKey
+      }
+    }
+    const base: ChallengeQuestion = {
       id: questionId,
       mechanic: CHALLENGE_MECHANIC,
       prompt,
@@ -130,11 +142,60 @@ export function validateChallengeTemplateContent(input: unknown, prefix = ''): C
       correct: typeof correct === 'number' && Number.isInteger(correct) ? correct : 0,
       explanation: text(`${path}.explanation`, item.explanation, 'Objašnjenje')
     }
+    return card === undefined ? base : { ...base, card }
+  }
+
+  const meta = (value: unknown): ChallengeMeta | undefined => {
+    if (value === undefined) return undefined
+    if (!isRecord(value)) {
+      check.add(`${prefix}meta`, 'Meta podaci nisu ispravni.')
+      return undefined
+    }
+    const source = value.source
+    if (source !== 'random' && source !== 'set' && source !== 'quiz') {
+      check.add(`${prefix}meta.source`, 'Izvor izazova nije ispravan.')
+    }
+    let topics: TopicId[] | undefined
+    if (value.topics !== undefined) {
+      if (!Array.isArray(value.topics) || value.topics.length > 8) {
+        check.add(`${prefix}meta.topics`, 'Teme meta podataka nisu ispravne.')
+      } else {
+        topics = value.topics.map((topic, index) => {
+          if (typeof topic !== 'string' || !TOPIC_ID.test(topic)) check.add(`${prefix}meta.topics.${index}`, 'Tema nije ispravna.')
+          return topic as TopicId
+        })
+      }
+    }
+    let game: ChallengeMeta['game']
+    if (value.game !== undefined) {
+      const allowed = new Set<string>([...CHALLENGEABLE_GAMES, 'mjesovito'])
+      if (typeof value.game !== 'string' || !allowed.has(value.game)) {
+        check.add(`${prefix}meta.game`, 'Igra meta podataka nije ispravna.')
+      } else {
+        game = value.game as ChallengeMeta['game']
+      }
+    }
+    let difficulty: Difficulty | undefined
+    if (value.difficulty !== undefined) {
+      if (typeof value.difficulty !== 'string' || !DIFFICULTIES.has(value.difficulty as Difficulty)) {
+        check.add(`${prefix}meta.difficulty`, 'Težina meta podataka nije ispravna.')
+      } else {
+        difficulty = value.difficulty as Difficulty
+      }
+    }
+    if (check.issues.some(i => i.path.startsWith(`${prefix}meta`))) return undefined
+    return {
+      source: source as ChallengeMeta['source'],
+      ...(topics ? { topics } : {}),
+      ...(game ? { game } : {}),
+      ...(difficulty ? { difficulty } : {})
+    }
   }
 
   const sample = body.sample
   if (typeof sample !== 'boolean') check.add(`${prefix}sample`, 'Odaberi je li izazov uzorak.')
   const title = text('title', body.title, 'Naslov')
+  const validatedMeta = meta(body.meta)
   const rounds = list('rounds', body.rounds, CHALLENGE_LIMITS.rounds,
     'Dodaj barem jedan krug.', `Izazov može imati najviše ${CHALLENGE_LIMITS.rounds} krugova.`).map((value, r) => {
     const round = isRecord(value) ? value : {}
@@ -147,7 +208,12 @@ export function validateChallengeTemplateContent(input: unknown, prefix = ''): C
         .map((item, q) => question(item, `${path}.questions.${q}`, `Krug ${r + 1}, pitanje ${q + 1}`))
     }
   })
-  const value: ChallengeTemplateContent = { sample: sample === true, title, rounds }
+  const value: ChallengeTemplateContent = {
+    sample: sample === true,
+    title,
+    rounds,
+    ...(validatedMeta ? { meta: validatedMeta } : {})
+  }
   if (!check.issues.length && byteLength(value) > CHALLENGE_LIMITS.contentBytes) {
     check.add('', `Izazov je prevelik (najviše ${Math.floor(CHALLENGE_LIMITS.contentBytes / 1024)} KiB). Skrati tekstove ili ga podijeli na dva.`)
   }
