@@ -112,6 +112,42 @@ export const GAME_CATALOGUE: GameEntry[] = [
     challengeable: false
   },
   {
+    id: 'opcina',
+    title: 'Kojoj općini pripada?',
+    blurb: 'Deset pitanja: pogodi općinu ili grad kojem selo pripada.',
+    topic: 'mjesta',
+    format: 'odabir',
+    minutes: 5,
+    path: pzRoutes.opcine,
+    status: 'live',
+    challengeable: true,
+    needs: { kind: 'place', min: 10 }
+  },
+  {
+    id: 'sela-i-opcine',
+    title: 'Sela i općine',
+    blurb: 'Razvrstaj sela po općinama — dodirni selo, zatim kutiju.',
+    topic: 'mjesta',
+    format: 'razvrstaj',
+    minutes: 5,
+    path: pzRoutes.selaOpcine,
+    status: 'live',
+    challengeable: false,
+    needs: { kind: 'place', min: 8 }
+  },
+  {
+    id: 'nabroji',
+    title: 'Nabroji naselja',
+    blurb: 'Upiši sva naselja odabrane općine prije nego istekne vrijeme.',
+    topic: 'mjesta',
+    format: 'upisi',
+    minutes: 8,
+    path: pzRoutes.nabroji,
+    status: 'live',
+    challengeable: false,
+    needs: { kind: 'place', min: 1 }
+  },
+  {
     id: 'grupiraj',
     title: 'Grupiraj',
     blurb: 'Pronađi četiri skupine po četiri — riječi ili naselja.',
