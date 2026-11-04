@@ -13,15 +13,3 @@ export const pzRoutes = {
   explore: `${PZ_ROOT}/istrazi`,
   heritage: `${PZ_ROOT}/bastina`
 } as const
-
-export const pzTopicSlugs = {
-  'words': 'rijeci',
-  'churches': 'crkve',
-  'history': 'povijest',
-  'legends': 'legende',
-  'geography': 'zemljopis',
-  'famous-people': 'poznati-ljudi',
-  'sport': 'sport'
-} as const
-
-export type PzTopic = keyof typeof pzTopicSlugs

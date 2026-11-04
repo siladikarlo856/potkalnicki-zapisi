@@ -122,28 +122,18 @@ async function readPublic(limit?: number) {
 }
 
 describe('Potkalnički zapisi learning and challenge choice', () => {
-  it('serves the separate learning and challenge destinations on the games hub', async () => {
+  it('serves the play catalogue and friend challenge on the games hub', async () => {
     const response = await request('/potkalnicko-prigorje/igre')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
     const window = new Window()
     window.document.body.innerHTML = html
-    const catalog = window.document.querySelector('[data-testid="quiz-catalog"]')!
+    const catalog = window.document.querySelector('[data-testid="play-catalog"]')!
     expect(catalog).not.toBeNull()
-    expect(catalog.querySelector('[data-testid="friend-challenge-hero"]')?.textContent).toContain('Izazovi prijatelja')
-    const choice = window.document.querySelector('[data-testid="heritage-mode-choice"]')!
-    expect(choice).not.toBeNull()
-    expect([...choice.querySelectorAll('h2')].map(h => h.textContent)).toEqual(['Uči', 'Izazov'])
-    expect([...choice.querySelectorAll('a')].map(a => a.getAttribute('href'))).toEqual([
-      '/potkalnicko-prigorje/igre/kartice', '/potkalnicko-prigorje/igre/kviz'
-    ])
-    expect(choice.textContent).toContain('Počni učiti')
-    const challengeChoice = choice.querySelector('[data-testid="challenge-mode-choice"]')!
-    expect(challengeChoice).not.toBeNull()
-    expect(challengeChoice.querySelector('a[href="/potkalnicko-prigorje/igre/kviz"]')?.textContent).toContain('Brzi izazov')
-    expect(challengeChoice.textContent).toContain('Prilagođeni izazov')
-    expect(challengeChoice.querySelector('button[disabled]')?.textContent).toContain('Uskoro')
+    expect(window.document.querySelector('[data-testid="friend-challenge-card"]')?.textContent).toContain('Izazovi prijatelja')
+    expect(window.document.querySelector('[data-testid="game-tile-znacenje"]')).not.toBeNull()
+    expect(window.document.querySelector('[data-testid="game-tile-kartice"]')).not.toBeNull()
     expect(window.document.querySelector('header')?.textContent).toContain('Igre')
     expect(window.document.querySelector('header')?.textContent).toContain('Doprinesi')
     expect(window.document.querySelector('header')?.textContent).toContain('O projektu')
@@ -216,40 +206,22 @@ describe('Potkalnički zapisi contribute and about pages', () => {
 })
 
 describe('Potkalnički zapisi quiz catalog', () => {
-  it('renders the Croatian catalog with Croatian topic slugs', async () => {
+  it('renders the play catalogue with the daily word first', async () => {
     const response = await request('/potkalnicko-prigorje/igre')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
     const window = new Window()
     window.document.body.innerHTML = html
-    const catalog = window.document.querySelector('[data-testid="quiz-catalog"]')!
+    const catalog = window.document.querySelector('[data-testid="play-catalog"]')!
     expect(catalog).not.toBeNull()
-    // The daily word section and its skeleton are prerendered first, so #rijec-dana links work.
     const daily = window.document.querySelector('#rijec-dana')!
     expect(daily).not.toBeNull()
     expect(daily.compareDocumentPosition(catalog) & 4).toBeTruthy()
     expect(window.document.querySelector('#rijec-dana [data-testid="daily-skeleton"]')).not.toBeNull()
-    expect(catalog.querySelector('[data-testid="quiz-hero"] h2')?.textContent).toBe('Riječi')
-    expect(catalog.querySelector('[data-testid="quiz-hero"] a')?.getAttribute('href')).toBe('/potkalnicko-prigorje/igre/kviz')
-    expect(catalog.querySelector('[data-testid="quiz-hero"]')?.textContent).toContain('Igraj s riječima')
-    const churchCard = catalog.querySelector('[data-testid="topic-card-crkve"]')!
-    expect(churchCard).not.toBeNull()
-    const churchLink = churchCard.matches('a') ? churchCard : churchCard.querySelector('a')
-    expect(churchLink?.getAttribute('href')).toBe('/potkalnicko-prigorje/igre/crkve')
-    expect(catalog.textContent).toContain('Crkve')
-
-    const topicResponse = await request('/potkalnicko-prigorje/igre/crkve')
-    expect(topicResponse.status).toBe(200)
-    const topicHtml = await topicResponse.text()
-    const topicWindow = new Window()
-    topicWindow.document.body.innerHTML = topicHtml
-    const quizList = topicWindow.document.querySelector('[data-testid="topic-quiz-list"]')!
-    expect(quizList).not.toBeNull()
-    expect(quizList.textContent).toContain('Spajanje')
-    expect(quizList.querySelector('button[disabled]')).not.toBeNull()
+    expect(catalog.querySelector('[data-testid="game-tile-znacenje"]')).not.toBeNull()
+    expect(catalog.querySelector('[data-testid="game-tile-znacenje"]')?.textContent).toContain('Kaj to znači?')
     await window.happyDOM.close()
-    await topicWindow.happyDOM.close()
   })
 })
 
@@ -1029,7 +1001,7 @@ describe('public discovery, sharing metadata and error pages', () => {
     { path: '/', title: 'Karlo Siladi', description: 'Karlo Siladi izrađuje stvari', image: 'share-hr.jpg' },
     { path: '/en', title: 'Karlo Siladi', description: 'Karlo Siladi builds things', image: 'share-en.jpg' },
     { path: '/potkalnicko-prigorje', title: 'Potkalnički zapisi', description: 'Istraži mjesta', image: 'og.svg' },
-    { path: '/potkalnicko-prigorje/igre', title: 'Igre i kvizovi · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje/igre', title: 'Igraj · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/doprinesi', title: 'Doprinesi · Potkalnički zapisi', description: 'Sve što pošalješ', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/o-projektu', title: 'O projektu · Potkalnički zapisi', description: 'digitalni zavičajni atlas', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/igre/kartice', title: 'Kaj to znači? · Potkalnički zapisi', description: 'Kartice s riječima', image: 'og.svg' },

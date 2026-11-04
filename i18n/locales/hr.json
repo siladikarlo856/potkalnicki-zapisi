@@ -782,6 +782,20 @@
       "friendHeroDescription": "Ista pitanja za sve · poveznica za WhatsApp ili Viber · ljestvica 7 dana",
       "friendHeroCta": "Napravi izazov →"
     },
+    "play": {
+      "title": "Igraj",
+      "filterAll": "Sve",
+      "soon": "Uskoro",
+      "tellUs": "Ispričaj nam",
+      "best": "Najbolje: {score}",
+      "minutes": "~{n} min",
+      "emptyMjesta": "Igre o mjestima stižu uskoro.",
+      "emptyMjestaLink": "Do tada istraži ostale igre",
+      "emptyBastina": "Igre o baštini stižu uskoro.",
+      "emptyBastinaLink": "Do tada istraži ostale igre",
+      "emptyGeneric": "Još nema igara za ovu temu.",
+      "emptyGenericLink": "Pogledaj sve igre"
+    },
     "contribute": {
       "title": "Doprinesi",
       "intro": "Sve što pošalješ prvo pregledamo. Ime je neobavezno, prijava nije potrebna.",

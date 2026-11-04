@@ -5,7 +5,6 @@ import { clearNuxtData, clearNuxtState, useNuxtApp } from '#imports'
 import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
 import DailyWord from '../app/components/heritage/DailyWord.vue'
 import Hub from '../app/pages/potkalnicko-prigorje/igre/index.vue'
-import Topic from '../app/pages/potkalnicko-prigorje/igre/[tema].vue'
 import type { DailyWordPayload } from '../shared/utils/dailyWord'
 
 const areas = [
@@ -240,22 +239,21 @@ describe('daily word device storage', () => {
 })
 
 describe('daily word placement', () => {
-  it('is the first section of the games hub, ahead of the Words flagship card', async () => {
+  it('is the first section of the games hub, ahead of the play catalogue', async () => {
     const page = await mountSuspended(Hub, { route: '/potkalnicko-prigorje/igre' })
     const daily = page.element.querySelector('#rijec-dana')!
-    const hero = page.element.querySelector('[data-testid="quiz-hero"]')!
+    const catalog = page.element.querySelector('[data-testid="play-catalog"]')!
     expect(daily).not.toBeNull()
-    expect(hero).not.toBeNull()
-    expect(daily.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(catalog).not.toBeNull()
+    expect(daily.compareDocumentPosition(catalog) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     page.unmount()
   })
 
-  it('lists the daily word as a playable Words game that links to the section', async () => {
-    const page = await mountSuspended(Topic, { route: '/potkalnicko-prigorje/igre/rijeci' })
-    const row = page.get('[data-testid="quiz-row-words-daily"]')
-    const link = row.find('a')
-    expect(link.exists()).toBe(true)
-    expect(link.attributes('href')).toBe('/potkalnicko-prigorje/igre#rijec-dana')
+  it('lists the daily word in the catalogue with a link to the section', async () => {
+    const page = await mountSuspended(Hub, { route: '/potkalnicko-prigorje/igre' })
+    const tile = page.get('[data-testid="game-tile-rijec-dana"]')
+    expect(tile.exists()).toBe(true)
+    expect(tile.attributes('href')).toContain('#rijec-dana')
     page.unmount()
   })
 })

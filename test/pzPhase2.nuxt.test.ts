@@ -5,10 +5,10 @@ import Igre from '../app/pages/potkalnicko-prigorje/igre/index.vue'
 import About from '../app/pages/potkalnicko-prigorje/o-projektu/index.vue'
 
 describe('Potkalnički zapisi phase 2 routes', () => {
-  it('renders the games hub with the friend-challenge hero', async () => {
+  it('renders the games hub with the play catalogue and friend challenge', async () => {
     const page = await mountSuspended(Igre, { route: '/potkalnicko-prigorje/igre' })
-    expect(page.find('[data-testid="friend-challenge-hero"]').exists()).toBe(true)
-    expect(page.find('[data-testid="quiz-catalog"]').exists()).toBe(true)
+    expect(page.find('[data-testid="friend-challenge-card"]').exists()).toBe(true)
+    expect(page.find('[data-testid="play-catalog"]').exists()).toBe(true)
   })
 
   it('shows the contribution form when a type is selected', async () => {

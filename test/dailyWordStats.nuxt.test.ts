@@ -155,16 +155,15 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
 })
 
 describe('daily status in the Words flagship card', () => {
-  it('sits inside the card and updates when today is played', async () => {
+  it('updates inside the daily word section when today is played on the games hub', async () => {
     await useNuxtApp().$i18n.setLocale('hr')
     wrapper = await mountSuspended(Hub, { route: '/potkalnicko-prigorje/igre' })
-    const hero = () => wrapper!.get('[data-testid="quiz-hero"]')
-    await expect.poll(() => hero().find('[data-testid="daily-status-play"]').exists(), { timeout: 5000 }).toBe(true)
-    await expect.poll(() => wrapper!.findAll('[data-option-id]').length, { timeout: 5000 }).toBe(4)
+    const dailySection = () => wrapper!.get('#rijec-dana')
+    await expect.poll(() => dailySection().find('[data-option-id]').exists(), { timeout: 5000 }).toBe(true)
     await wrapper.get('[data-option-id="a"]').trigger('click')
     await wrapper.get('[data-option-id="c"]').trigger('click')
-    await expect.poll(() => hero().find('[data-testid="daily-status-result"]').exists()).toBe(true)
-    expect(hero().get('[data-testid="daily-status"]').text()).toContain('Riječ dana ✓ 2/3')
+    await expect.poll(() => dailySection().find('[data-testid="daily-reveal"]').exists()).toBe(true)
+    expect(dailySection().text()).toContain('hiža')
   })
 })
 
