@@ -15,6 +15,19 @@ const quickOpen = ref(false)
 const nickname = ref('')
 const busy = ref(false)
 const error = ref('')
+const { remember, items, forget, refreshItem, resetRefreshBudget, newPlayersFor } = useChallengeList()
+const refreshed = ref(new Set<string>())
+
+async function onRowVisible(code: string) {
+  if (refreshed.value.has(code)) return
+  refreshed.value.add(code)
+  const item = items.value.find(entry => entry.code === code)
+  await refreshItem(code, { fetchLeaderboard: item?.role === 'creator' })
+}
+
+onMounted(() => {
+  resetRefreshBudget()
+})
 
 async function quickChallenge() {
   const name = challengeNickname(nickname.value)
@@ -30,6 +43,7 @@ async function quickChallenge() {
       method: 'POST',
       body: { nickname: name, generate: DEFAULT_GENERATE }
     })
+    remember(state, 'creator')
     await navigateTo(localePath(`/potkalnicko-prigorje/izazov/${state.code}`))
   } catch (cause) {
     const failure = cause as { status?: number, statusCode?: number }
@@ -41,91 +55,102 @@ async function quickChallenge() {
 </script>
 
 <template>
-  <UContainer class="max-w-3xl space-y-8 py-10 sm:py-16">
-    <UButton
-      :to="localePath(pzRoutes.home)"
-      color="neutral"
-      variant="link"
-      icon="i-lucide-arrow-left"
-    >
-      {{ t('challenge.heritage') }}
-    </UButton>
-
-    <header class="space-y-3">
-      <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
-        {{ t('challenge.hubTitle') }}
-      </h1>
-      <p class="text-lg text-muted">
-        {{ t('challenge.hubIntro') }}
-      </p>
-    </header>
-
-    <ol class="list-decimal space-y-2 pl-5 text-muted">
-      <li>{{ t('challenge.hubStep1') }}</li>
-      <li>{{ t('challenge.hubStep2') }}</li>
-      <li>{{ t('challenge.hubStep3') }}</li>
-    </ol>
-
-    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+  <div>
+    <UContainer class="max-w-3xl space-y-8 py-10 sm:py-16">
       <UButton
-        :to="localePath(`${pzRoutes.challenge}/novi`)"
-        size="lg"
-        icon="i-lucide-wand-sparkles"
-        data-testid="challenge-hub-custom"
-      >
-        {{ t('challenge.createPageTitle') }}
-      </UButton>
-      <UButton
-        v-if="!quickOpen"
-        size="lg"
+        :to="localePath(pzRoutes.home)"
         color="neutral"
-        variant="outline"
-        icon="i-lucide-zap"
-        data-testid="challenge-hub-quick"
-        @click="quickOpen = true"
+        variant="link"
+        icon="i-lucide-arrow-left"
       >
-        {{ t('challenge.quickCreate') }}
+        {{ t('challenge.heritage') }}
       </UButton>
-    </div>
 
-    <UCard
-      v-if="quickOpen"
-      data-testid="challenge-quick-form"
-    >
-      <form
-        class="space-y-4"
-        @submit.prevent="quickChallenge"
-      >
-        <p class="text-sm text-muted">
-          {{ t('challenge.quickCreateHelp') }}
+      <header class="space-y-3">
+        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
+          {{ t('challenge.hubTitle') }}
+        </h1>
+        <p class="text-lg text-muted">
+          {{ t('challenge.hubIntro') }}
         </p>
-        <UFormField
-          :label="t('challenge.nickname')"
-          :help="t('challenge.nicknameHelp')"
-          required
-        >
-          <UInput
-            v-model="nickname"
-            name="nickname"
-            autocomplete="nickname"
-            :maxlength="24"
-            class="w-full"
-          />
-        </UFormField>
+      </header>
+
+      <ol class="list-decimal space-y-2 pl-5 text-muted">
+        <li>{{ t('challenge.hubStep1') }}</li>
+        <li>{{ t('challenge.hubStep2') }}</li>
+        <li>{{ t('challenge.hubStep3') }}</li>
+      </ol>
+
+      <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <UButton
-          type="submit"
-          :loading="busy"
+          :to="localePath(`${pzRoutes.challenge}/novi`)"
+          size="lg"
+          icon="i-lucide-wand-sparkles"
+          data-testid="challenge-hub-custom"
         >
-          {{ t('challenge.quickCreateSubmit') }}
+          {{ t('challenge.createPageTitle') }}
         </UButton>
-        <p
-          v-if="error"
-          role="alert"
-          class="text-sm text-error"
+        <UButton
+          v-if="!quickOpen"
+          size="lg"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-zap"
+          data-testid="challenge-hub-quick"
+          @click="quickOpen = true"
         >
-          {{ error }}
-        </p>
-      </form>
-    </UCard>
-  </UContainer>
+          {{ t('challenge.quickCreate') }}
+        </UButton>
+      </div>
+
+      <UCard
+        v-if="quickOpen"
+        data-testid="challenge-quick-form"
+      >
+        <form
+          class="space-y-4"
+          @submit.prevent="quickChallenge"
+        >
+          <p class="text-sm text-muted">
+            {{ t('challenge.quickCreateHelp') }}
+          </p>
+          <UFormField
+            :label="t('challenge.nickname')"
+            :help="t('challenge.nicknameHelp')"
+            required
+          >
+            <UInput
+              v-model="nickname"
+              name="nickname"
+              autocomplete="nickname"
+              :maxlength="24"
+              class="w-full"
+            />
+          </UFormField>
+          <UButton
+            type="submit"
+            :loading="busy"
+          >
+            {{ t('challenge.quickCreateSubmit') }}
+          </UButton>
+          <p
+            v-if="error"
+            role="alert"
+            class="text-sm text-error"
+          >
+            {{ error }}
+          </p>
+        </form>
+      </UCard>
+    </UContainer>
+
+    <UContainer class="max-w-3xl pb-16">
+      <HeritageChallengeHubList
+        :items="items"
+        :new-players-for="newPlayersFor"
+        @remove="forget"
+        @visible="onRowVisible"
+      />
+    </UContainer>
+  </div>
 </template>

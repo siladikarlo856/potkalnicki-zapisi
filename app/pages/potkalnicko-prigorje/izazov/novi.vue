@@ -36,6 +36,7 @@ const length = computed({
 const nickname = ref('')
 const busy = ref(false)
 const error = ref('')
+const { remember } = useChallengeList()
 
 const liveTopics = computed(() => pool.value.topics.filter(topic => topic.status === 'live' && topic.count > 0))
 
@@ -99,6 +100,7 @@ async function submit() {
       method: 'POST',
       body: { nickname: name, generate: generateBody.value }
     })
+    remember(state, 'creator')
     await navigateTo(localePath(`/potkalnicko-prigorje/izazov/${state.code}`))
   } catch (cause) {
     const failure = cause as { status?: number, statusCode?: number }

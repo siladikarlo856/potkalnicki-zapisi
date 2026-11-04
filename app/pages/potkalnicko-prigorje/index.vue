@@ -52,26 +52,7 @@ const regions = computed(() => (overview.value?.municipalities ?? []).map(m => (
 
     <PzLearnPlaySwitch />
 
-    <div class="mx-auto w-full max-w-2xl px-4 pb-6">
-      <UCard
-        variant="outline"
-        data-testid="friend-challenge"
-      >
-        <div class="space-y-3">
-          <h2 class="text-lg font-semibold text-highlighted">
-            {{ t('challenge.friendTitle') }}
-          </h2>
-          <p class="text-sm text-muted">
-            {{ t('pz.home.friendChallengeBlurb') }}
-          </p>
-          <UButton
-            :to="localePath(pzRoutes.challenge)"
-            :label="t('pz.home.friendChallengeCta')"
-            trailing-icon="i-lucide-arrow-right"
-          />
-        </div>
-      </UCard>
-    </div>
+    <HeritageChallengeHomeSection />
 
     <UPageSection
       :title="t('pz.home.regionsTitle')"

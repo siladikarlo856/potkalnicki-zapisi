@@ -4,6 +4,7 @@ import {
   soonGames,
   visibleGames
 } from '~~/shared/utils/games/catalogue'
+import { challengeListGroup } from '~~/shared/utils/challengeList'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
@@ -15,6 +16,18 @@ const route = useRoute()
 const router = useRouter()
 
 const { pool } = useCardPool()
+const { items, refreshItem, resetRefreshBudget, newPlayersFor } = useChallengeList()
+
+const stripItems = computed(() =>
+  items.value.filter(item => challengeListGroup(item) !== 'finished').slice(0, 3)
+)
+
+onMounted(() => {
+  resetRefreshBudget()
+  for (const item of stripItems.value) {
+    void refreshItem(item.code, { fetchLeaderboard: item.role === 'creator' })
+  }
+})
 
 const filterApplied = ref(false)
 const selectedTopic = ref<string | undefined>(undefined)
@@ -108,6 +121,12 @@ useSeoMeta({
       </header>
 
       <HeritageDailyWord />
+
+      <HeritageChallengeActiveStrip
+        v-if="stripItems.length"
+        :items="stripItems"
+        :new-players-for="newPlayersFor"
+      />
 
       <section
         data-testid="play-catalog"

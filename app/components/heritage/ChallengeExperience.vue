@@ -24,6 +24,7 @@ const props = defineProps<{ code?: string }>()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const { pool } = useCardPool()
+const { remember, update, find } = useChallengeList()
 const state = ref<ChallengeState | null>(null)
 const overview = ref<typeof DEFAULT_OVERVIEW | null>(null)
 const loading = ref(true)
@@ -103,8 +104,14 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    if (props.code) state.value = await $fetch<ChallengeState>(`/api/challenges/${props.code}`)
-    else overview.value = { ...DEFAULT_OVERVIEW }
+    if (props.code) {
+      state.value = await $fetch<ChallengeState>(`/api/challenges/${props.code}`)
+      const existing = state.value ? find(state.value.code) : undefined
+      if (state.value) {
+        if (!existing) remember(state.value, state.value.participant ? 'player' : 'visitor')
+        else update(state.value)
+      }
+    } else overview.value = { ...DEFAULT_OVERVIEW }
   } catch {
     error.value = t('challenge.unavailable')
   } finally {
@@ -119,6 +126,11 @@ async function act(action: 'create' | 'join' | 'reveal' | 'answer' | 'continue',
   try {
     const path = action === 'create' ? '/api/challenges' : `/api/challenges/${props.code}/${action}`
     state.value = await $fetch<ChallengeState>(path, { method: 'POST', body })
+    if (state.value) {
+      if (action === 'create') remember(state.value, 'creator')
+      else if (action === 'join') remember(state.value, 'player')
+      else update(state.value)
+    }
     if (action === 'create') await navigateTo(localePath(`/potkalnicko-prigorje/izazov/${state.value.code}`))
     entering.value = false
   } catch (cause) {

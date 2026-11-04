@@ -12,6 +12,7 @@ const state = ref<ChallengeState | null>(null)
 const board = ref<ChallengeLeaderboard>({ rows: [], count: 0 })
 const loading = ref(true)
 const error = ref(false)
+const { markSeen } = useChallengeList()
 const text = (value: ChallengeText) => value[locale.value === 'en' ? 'en' : 'hr']
 const date = computed(() => state.value ? new Intl.DateTimeFormat(locale.value === 'en' ? 'en-GB' : 'hr-HR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(state.value.closesAt)) : '')
 useSeoMeta({ title: () => t('challenge.leaderboard'), robots: 'noindex, nofollow' })
@@ -26,6 +27,7 @@ async function load(more = false) {
     ])
     board.value = { count: next.count, rows: more ? [...board.value.rows, ...next.rows] : next.rows }
     state.value = challenge
+    markSeen(code, next.count)
   } catch {
     error.value = true
   } finally {

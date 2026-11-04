@@ -4,9 +4,11 @@ import { createError } from 'h3'
 import { clearNuxtData, clearNuxtState } from '#imports'
 import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
 import { PZ_HOME_STORAGE_KEY } from '../app/composables/usePzHome'
+import { CHALLENGE_LIST_STORAGE_KEY } from '../shared/utils/challengeList'
 import Home from '../app/pages/potkalnicko-prigorje/index.vue'
 import DailyWord from '../app/components/heritage/DailyWord.vue'
 import type { DailyWordPayload } from '../shared/utils/dailyWord'
+import type { ChallengeState } from '../shared/utils/challenge'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
 
 registerAtlasApiEndpoints()
@@ -47,7 +49,7 @@ registerEndpoint('/api/heritage/daily', () => {
 registerEndpoint('/api/heritage/words', () => ({ words: [], areas }))
 
 const dailyStateKeys = ['heritage-daily-progress', 'heritage-daily-progress-loaded', 'heritage-daily-progress-unavailable']
-const homeStateKeys = ['pz-home-loaded', 'pz-home-tab']
+const homeStateKeys = ['pz-home-loaded', 'pz-home-tab', 'pz-challenge-list', 'pz-challenge-list-loaded', 'pz-challenge-leaderboard-counts']
 
 function sectionOrder(page: Awaited<ReturnType<typeof mountSuspended>>) {
   return page.findAll('[data-testid]').map(node => node.attributes('data-testid'))
@@ -109,6 +111,40 @@ describe('Potkalnički zapisi home (WP1)', () => {
     const page = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
     await vi.waitFor(() => expect(page.find('[data-testid="learn-play-panel-uci"]').isVisible()).toBe(true))
     expect(page.find('[data-testid="learn-play-panel-igraj"]').isVisible()).toBe(false)
+  })
+
+  it('shows a challenge resume card for a stored in-progress item', async () => {
+    localStorage.setItem(CHALLENGE_LIST_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      items: [{
+        code: 'play1',
+        title: 'Ana te izaziva',
+        role: 'player',
+        addedAt: '2026-11-01T10:00:00.000Z',
+        closesAt: '2026-11-08T10:00:00.000Z',
+        last: { phase: 'question', index: 3, total: 10, questionCount: 10, completedAt: null, closed: false }
+      }]
+    }))
+    registerEndpoint('/api/challenges/play1', () => ({
+      code: 'play1',
+      title: { hr: 'Ana te izaziva', en: 'Ana' },
+      sample: false,
+      createdAt: '2026-11-01T10:00:00.000Z',
+      closesAt: '2026-11-08T10:00:00.000Z',
+      closed: false,
+      questionCount: 10,
+      maxScore: 1000,
+      targetScore: null,
+      rounds: [{ topic: { hr: 'Riječi', en: 'Words' }, count: 10 }],
+      participant: { nickname: 'Ti', phase: 'question', index: 3, total: 10, completedAt: null, rounds: [] },
+      question: null,
+      feedback: null
+    } satisfies ChallengeState))
+    const page = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
+    await vi.waitFor(() => expect(page.find('[data-testid="challenge-resume-card"]').exists()).toBe(true))
+    expect(page.text()).toContain('pitanje 4 od 10')
+    expect(page.text()).toContain('Nastavi izazov')
+    page.unmount()
   })
 
   it('shows the compact daily row only with a finished result on the home page', async () => {

@@ -410,6 +410,7 @@
         "text": [
           "Rezultat i statistika igre Riječ dana (pokušaji, niz uzastopnih dana i broj odigranih dana) spremaju se samo u tvom pregledniku, ne šalju se nikamo i brišu se s podacima stranice u pregledniku.",
           "Kad se pridružiš izazovu s prijateljima, preglednik sprema kolačić s nasumičnim kodom sudjelovanja (godinu dana), kako bi te server prepoznao u tom izazovu. Kolačić nije povezan ni s kakvom osobnom oznakom.",
+          "Popis izazova koje si otvorio sprema se samo na ovom uređaju; možeš ga obrisati na stranici Izazovi.",
           "Prilog poslan iz Riječi dana može biti povezan s riječju na koju se odnosi, kako bi ga urednici lakše pregledali. Takav prilog vrijedi kao i svaki drugi: najprije ga pregledamo, a objavljujemo ga samo uz tvoj pristanak."
         ]
       },
@@ -717,7 +718,24 @@
     "playFirst": "Igraj prvi",
     "shareLaterHint": "Podijeli pa igraj kasnije — pozivnica je dolje na stranici.",
     "shareHostFallback": "Netko",
-    "learnQuestions": "Uči ova pitanja"
+    "learnQuestions": "Uči ova pitanja",
+    "activeTitle": "Aktivni izazovi",
+    "resumeTitle": "Nastavi izazov",
+    "resumeContinue": "Nastavi izazov",
+    "resumeQuestionLine": "{title} · pitanje {current} od {total}",
+    "resumeClosesIn": "zatvara se za {n} dana",
+    "resumeClosesToday": "zatvara se danas",
+    "resumeClosed": "zatvoreno",
+    "allChallenges": "Svi izazovi ({k})",
+    "makeChallenge": "Napravi izazov",
+    "groupInProgress": "U tijeku",
+    "groupWaiting": "Čekaju te",
+    "groupYours": "Tvoji izazovi",
+    "groupFinished": "Završeni",
+    "leaderboardLink": "Ljestvica",
+    "playChallenge": "Igraj",
+    "removeFromList": "Ukloni s popisa",
+    "newPlayers": "{n} nova igrača | {n} novi igrač | {n} nova igrača | {n} nova igrača"
   },
   "pz": {
     "footer": {

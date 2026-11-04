@@ -23,6 +23,7 @@ const createdCode = ref(props.code ?? '')
 const error = ref('')
 const nickname = ref('')
 const creating = ref(false)
+const { remember } = useChallengeList()
 const link = computed(() => createdCode.value ? origin.value + localePath(`/potkalnicko-prigorje/izazov/${createdCode.value}`) : '')
 const shareText = computed(() => {
   if (props.invite && link.value) {
@@ -63,6 +64,7 @@ async function create() {
       method: 'POST',
       body: { nickname: name, quiz: props.quiz }
     })
+    remember(state, 'creator')
     createdCode.value = state.code
   } catch (cause) {
     const failure = cause as { status?: number, statusCode?: number }
