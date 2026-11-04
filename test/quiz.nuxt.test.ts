@@ -6,7 +6,6 @@ import type { CardPool } from '../shared/utils/learn/types'
 import { GAME_SCORES_KEY } from '../shared/utils/games/scores'
 import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
 import Quiz from '../app/pages/potkalnicko-prigorje/igre/kviz.vue'
-import Cards from '../app/pages/potkalnicko-prigorje/igre/kartice.vue'
 import sampleWords from './fixtures/heritage/words.json'
 import sampleAreas from './fixtures/heritage/areas.json'
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
@@ -86,12 +85,6 @@ afterAll(() => fake.stop())
 async function mountQuiz(lang: 'hr' = 'hr') {
   await useNuxtApp().$i18n.setLocale(lang)
   wrapper = await mountSuspended(Quiz, { route: '/potkalnicko-prigorje/igre/kviz' })
-  return wrapper
-}
-
-async function mountCards(lang: 'hr' = 'hr') {
-  await useNuxtApp().$i18n.setLocale(lang)
-  wrapper = await mountSuspended(Cards, { route: '/potkalnicko-prigorje/igre/kartice' })
   return wrapper
 }
 
@@ -180,59 +173,7 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, pr
   })
 })
 
-describe.each([
-  { lang: 'hr' as const, counter: 'Kartica 1 od 4', flip: 'Okreni karticu', unknown: 'Ne znam', next: 'Kartica 2 od 4' }
-])('$lang flip-card page', ({ lang, counter, flip, unknown, next }) => {
-  it('localizes controls and announces flips and the next card', async () => {
-    const page = await mountCards(lang)
-    await expect.poll(() => page.text()).toContain(counter)
-    const flipButton = page.findAll('button').find(button => button.text() === flip)!
-    await flipButton.trigger('click')
-    const spoken = page.findAll('[aria-live="polite"]').map(region => region.text()).find(Boolean)!
-    const current = seeds.find(word => spoken.includes(`${word.headword}: ${word.meaning.hr}`))
-    expect(current).toBeDefined()
-    expect(storedWord(current!.id).seen).toBe(1)
-
-    // Flipping back and revealing again is still the same card visit.
-    await flipButton.trigger('click')
-    await flipButton.trigger('click')
-    expect(storedWord(current!.id).seen).toBe(1)
-    const unknownButton = page.findAll('button').find(button => button.text().includes(unknown))!
-    await unknownButton.trigger('click')
-    expect(page.findAll('[aria-live="polite"]').some(region => region.text().includes(next))).toBe(true)
-    expect(storedWord(current!.id).missed).toBe(1)
-  })
-})
-
 const dialog = () => document.body.querySelector<HTMLElement>('[role="dialog"]')
-
-describe('card variant dialog', () => {
-  it('opens the report dialog for the current card from both triggers without leaving the cards', async () => {
-    const page = await mountCards()
-    await expect.poll(() => page.text()).toContain('Kartica 1 od 4')
-    const headword = page.findAll('p').find(paragraph => paragraph.classes().includes('text-4xl'))!.text()
-    const word = seeds.find(entry => entry.headword === headword)!
-    expect(dialog()).toBeNull()
-    // The page-level trigger works before the card is flipped.
-    const pageTrigger = page.findAll('button').find(button => button.text() === 'Kod nas se kaže drugačije')!
-    await pageTrigger.trigger('click')
-    await vi.waitFor(() => expect(dialog()).not.toBeNull())
-    // The inline contribution form is gone: this is a dialog about this card's word.
-    expect(page.find('textarea').exists()).toBe(false)
-    expect(dialog()!.querySelector('[data-testid="variant-dialog-word"]')!.textContent).toContain(word.headword)
-    expect(dialog()!.querySelector('[data-testid="variant-dialog-word"]')!.textContent).toContain(word.meaning.hr)
-    expect(page.text()).toContain('Kartica 1 od 4')
-    dialog()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-    await vi.waitFor(() => expect(dialog()).toBeNull())
-
-    // The control on the card back opens the same dialog without flipping the card again.
-    await page.findAll('button').find(button => button.text() === 'Okreni karticu')!.trigger('click')
-    const backTrigger = page.findAll('button').filter(button => button.text() === 'Kod nas se kaže drugačije')[0]!
-    await backTrigger.trigger('click')
-    await vi.waitFor(() => expect(dialog()).not.toBeNull())
-    expect(dialog()!.querySelector('[data-testid="variant-dialog-word"]')!.textContent).toContain(word.headword)
-  })
-})
 
 describe('quiz variant dialog', () => {
   it('shows the report button only after an answer and reports that question\'s word', async () => {

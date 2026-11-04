@@ -1,11 +1,30 @@
 <script setup lang="ts">
+import type { DailyCategory } from '~~/shared/utils/dailyWord'
+import { wordSubtopicForCategory } from '~~/shared/utils/learn/topics'
+
+const props = defineProps<{ category?: DailyCategory | null }>()
+
 const { t } = useI18n()
-// The games pages are Croatian-only, so these are plain paths. Challenge a friend opens the quick quiz: its result screen creates the 7-day friend challenge.
-const steps = [
-  { id: 'learn', icon: 'i-lucide-book-open', path: '/potkalnicko-prigorje/igre/kartice' },
-  { id: 'quiz', icon: 'i-lucide-zap', path: '/potkalnicko-prigorje/igre/kviz' },
-  { id: 'challenge', icon: 'i-lucide-swords', path: '/potkalnicko-prigorje/igre/kviz' }
-] as const
+
+const subtopic = computed(() => (props.category ? wordSubtopicForCategory(props.category) : undefined))
+
+const learnPath = computed(() => {
+  const topic = subtopic.value?.id ?? 'rijeci'
+  return `/potkalnicko-prigorje/uci/sesija?teme=${topic}`
+})
+
+const learnLabel = computed(() => {
+  if (subtopic.value) {
+    return t('daily.nextSteps.learnCategory', { label: subtopic.value.label })
+  }
+  return t('daily.nextSteps.learnWords')
+})
+
+const steps = computed(() => [
+  { id: 'learn' as const, icon: 'i-lucide-book-open', path: learnPath.value, label: learnLabel.value },
+  { id: 'quiz' as const, icon: 'i-lucide-zap', path: '/potkalnicko-prigorje/igre/kviz', label: t('daily.nextSteps.quiz') },
+  { id: 'challenge' as const, icon: 'i-lucide-swords', path: '/potkalnicko-prigorje/igre/kviz', label: t('daily.nextSteps.challenge') }
+])
 </script>
 
 <template>
@@ -25,7 +44,7 @@ const steps = [
         <UButton
           :to="step.path"
           :icon="step.icon"
-          :label="t(`daily.nextSteps.${step.id}`)"
+          :label="step.label"
           :data-testid="`daily-next-${step.id}`"
           color="neutral"
           variant="outline"

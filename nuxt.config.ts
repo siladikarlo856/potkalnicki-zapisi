@@ -50,7 +50,9 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { prerender: true },
     '/en': { prerender: true },
-    '/potkalnicko-prigorje/igre/kartice': { prerender: true },
+    '/potkalnicko-prigorje/igre/kartice': { redirect: { to: '/potkalnicko-prigorje/uci?teme=rijeci', statusCode: 301 }, prerender: false },
+    '/potkalnicko-prigorje/uci': { prerender: true },
+    '/potkalnicko-prigorje/uci/sesija': { prerender: true },
     '/potkalnicko-prigorje/igre/kviz': { prerender: true },
     '/potkalnicko-prigorje/igre/kak-se-veli': { prerender: true },
     '/potkalnicko-prigorje/igre/grupiraj': { prerender: true },

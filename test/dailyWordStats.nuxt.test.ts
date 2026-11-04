@@ -51,8 +51,8 @@ async function mountDaily(lang: 'hr' | 'en') {
 }
 
 const copy = {
-  hr: { stats: 'Tvoja statistika', streak: 'Niz', played: 'Odigrano dana', correct: 'Točno', next: ['Saznaj više', 'Igraj kviz', 'Izazovi prijatelja'], status: 'Riječ dana ✓ 2/3', waiting: 'Riječ dana čeka', play: 'Igraj', streakWord: 'niz 3 dana', today: 'danas' },
-  en: { stats: 'Your stats', streak: 'Streak', played: 'Days played', correct: 'Correct', next: ['Learn more', 'Play a quiz', 'Challenge a friend'], status: 'Word of the day ✓ 2/3', waiting: 'Today\'s word is waiting', play: 'Play', streakWord: 'streak 3 days', today: 'today' }
+  hr: { stats: 'Tvoja statistika', streak: 'Niz', played: 'Odigrano dana', correct: 'Točno', next: ['Uči riječi: Kuća', 'Igraj kviz', 'Izazovi prijatelja'], status: 'Riječ dana ✓ 2/3', waiting: 'Riječ dana čeka', play: 'Igraj', streakWord: 'niz 3 dana', today: 'danas' },
+  en: { stats: 'Your stats', streak: 'Streak', played: 'Days played', correct: 'Correct', next: ['Learn words: Kuća', 'Play a quiz', 'Challenge a friend'], status: 'Word of the day ✓ 2/3', waiting: 'Today\'s word is waiting', play: 'Play', streakWord: 'streak 3 days', today: 'today' }
 }
 
 describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
@@ -83,7 +83,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
     await page.get('[data-option-id="c"]').trigger('click')
     const steps = page.get('[data-testid="daily-next-steps"]')
     expect(steps.findAll('a').map(link => link.text())).toEqual(c.next)
-    expect(steps.get('[data-testid="daily-next-learn"]').attributes('href')).toContain('/potkalnicko-prigorje/igre/kartice')
+    expect(steps.get('[data-testid="daily-next-learn"]').attributes('href')).toContain('/potkalnicko-prigorje/uci/sesija?teme=rijeci-kuca')
     expect(steps.get('[data-testid="daily-next-quiz"]').attributes('href')).toContain('/potkalnicko-prigorje/igre/kviz')
     expect(steps.get('[data-testid="daily-next-challenge"]').attributes('href')).toContain('/potkalnicko-prigorje/igre/kviz')
   })

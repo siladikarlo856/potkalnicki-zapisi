@@ -794,6 +794,65 @@
       "contributeDescription": "Pošalji je — prije objave sve pregledamo.",
       "contributeCta": "Doprinesi"
     },
+    "learn": {
+      "title": "Uči",
+      "seoTitle": "Uči · Potkalnički zapisi",
+      "sessionSeoTitle": "Lekcija · Potkalnički zapisi",
+      "pickTopics": "Odaberi teme",
+      "pickLength": "Koliko kartica?",
+      "deviceNote": "Napredak se sprema samo na ovom uređaju.",
+      "startCards": {
+        "one": "Započni {n} karticu",
+        "few": "Započni {n} kartice",
+        "other": "Započni {n} kartica"
+      },
+      "counter": "Kartica {i} od {n}",
+      "flip": "Okreni",
+      "known": "Znam",
+      "unknown": "Ne znam",
+      "openRecord": "Otvori zapis",
+      "openSettlement": "Otvori stranicu naselja",
+      "suggestCorrection": "✎ Predloži ispravak",
+      "placePrompt": "Kojoj općini ili gradu pripada?",
+      "itemPrompt": "Gdje se nalazi?",
+      "placeItemCount": "{count} zapisa baštine",
+      "summaryTitle": "Gotovo! Znaš {known} od {n}.",
+      "learnedLabel": "naučeno",
+      "reviewHeading": "Za ponavljanje ({k})",
+      "more": {
+        "one": "Još {n}",
+        "few": "Još {n}",
+        "other": "Još {n}"
+      },
+      "repeatMissed": {
+        "one": "Ponovi {k} koje ne znaš",
+        "few": "Ponovi {k} koje ne znaš",
+        "other": "Ponovi {k} koje ne znaš"
+      },
+      "playWithTopics": "Igraj s ovim temama",
+      "continueEyebrow": "Nastavi gdje si stao",
+      "continueLine": "{topics} · kartica {i} od {n}",
+      "startedAt": "započeto {when}",
+      "continueButton": "Nastavi lekciju",
+      "reviewEyebrow": "Danas za ponavljanje",
+      "reviewWaiting": "{due} kartica čeka",
+      "reviewButton": {
+        "one": "Ponovi {n} karticu",
+        "few": "Ponovi {n} kartice",
+        "other": "Ponovi {n} kartica"
+      },
+      "firstEyebrow": "Prva lekcija",
+      "firstBlurb": "10 riječi iz našeg kraja",
+      "firstButton": "Započni prvu lekciju",
+      "orDivider": "ili",
+      "newLessonEyebrow": "Nova lekcija",
+      "newLessonMeta": "10 kartica · ",
+      "moreSettings": "Više postavki →",
+      "newLessonButton": "Započni novu lekciju",
+      "replaceWarning": "Započeta lekcija bit će zamijenjena.",
+      "loadError": "Lekcija trenutačno nije dostupna.",
+      "sessionUnavailable": "Ova lekcija više nije dostupna"
+    },
     "explore": {
       "seoTitle": "Istraži kraj",
       "title": "Pet općina Potkalničkoga prigorja",
@@ -1108,6 +1167,8 @@
     },
     "nextSteps": {
       "title": "Što dalje?",
+      "learnWords": "Uči riječi",
+      "learnCategory": "Uči riječi: {label}",
       "learn": "Saznaj više",
       "quiz": "Igraj kviz",
       "challenge": "Izazovi prijatelja"

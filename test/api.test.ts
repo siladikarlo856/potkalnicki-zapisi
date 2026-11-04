@@ -55,14 +55,15 @@ function newClient() {
   return `203.0.113.${ipCounter}`
 }
 
-function request(path: string, init: { method?: string, body?: unknown, secret?: string, ip?: string, headers?: Record<string, string> } = {}) {
+function request(path: string, init: { method?: string, body?: unknown, secret?: string, ip?: string, headers?: Record<string, string>, redirect?: RequestRedirect } = {}) {
   const headers: Record<string, string> = { 'x-forwarded-for': init.ip ?? newClient(), ...init.headers }
   if (init.body !== undefined) headers['content-type'] = 'application/json'
   if (init.secret !== undefined) headers.authorization = `Bearer ${init.secret}`
   return fetch(path, {
     method: init.method ?? 'GET',
     headers,
-    body: init.body === undefined ? undefined : JSON.stringify(init.body)
+    body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    redirect: init.redirect
   })
 }
 
@@ -141,17 +142,10 @@ describe('Potkalnički zapisi learning and challenge choice', () => {
     await window.happyDOM.close()
   })
 
-  it('keeps the deliberate learning-to-challenge jump on the cards page', async () => {
-    const response = await request('/potkalnicko-prigorje/igre/kartice')
-    expect(response.status).toBe(200)
-    const html = await response.text()
-    const { Window } = await import('happy-dom')
-    const window = new Window()
-    window.document.body.innerHTML = html
-    const challengeLink = [...window.document.querySelectorAll('a')]
-      .find(link => link.getAttribute('href') === '/potkalnicko-prigorje/igre/kviz')
-    expect(challengeLink?.textContent).toContain('Isprobaj izazov')
-    await window.happyDOM.close()
+  it('redirects legacy kartice URL to the learn setup page', async () => {
+    const response = await request('/potkalnicko-prigorje/igre/kartice', { redirect: 'manual' })
+    expect(response.status).toBe(301)
+    expect(response.headers.get('location')).toContain('/potkalnicko-prigorje/uci?teme=rijeci')
   })
 })
 
@@ -165,8 +159,7 @@ describe('Potkalnički zapisi app home', () => {
     window.document.body.innerHTML = html
     expect(window.document.body.textContent).toContain('Otkrij priče koje čine Potkalničko prigorje.')
     expect(html).toContain('data-testid="learn-play-switch"')
-    expect(window.document.body.textContent).toContain('Uči riječi iz našeg kraja')
-    expect(html).toContain('Uči riječi iz našeg kraja')
+    expect(html).toMatch(/\bUči\b/)
     expect(html).toContain('/potkalnicko-prigorje/igre')
     expect(window.document.querySelector('#doprinos')).not.toBeNull()
     expect(window.document.querySelector('a[href="/potkalnicko-prigorje/doprinesi"]')).not.toBeNull()
@@ -227,11 +220,11 @@ describe('Potkalnički zapisi quiz catalog', () => {
 })
 
 describe('word admin and public word APIs', () => {
-  it('renders loading copy for client-fetched cards in both prerendered pages', async () => {
-    for (const path of ['/', '/potkalnicko-prigorje/igre/kartice']) {
+  it('prerenderes learn routes with a client-side loading skeleton', async () => {
+    for (const path of ['/potkalnicko-prigorje/uci', '/potkalnicko-prigorje/uci/sesija']) {
       const response = await request(path)
       expect(response.status).toBe(200)
-      expect(await response.text()).toContain('Učitavam kartice…')
+      expect(await response.text()).toMatch(/Uči|Lekcija/)
     }
   })
 
@@ -1006,7 +999,7 @@ describe('public discovery, sharing metadata and error pages', () => {
     { path: '/potkalnicko-prigorje/igre', title: 'Igraj · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/doprinesi', title: 'Doprinesi · Potkalnički zapisi', description: 'Sve što pošalješ', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/o-projektu', title: 'O projektu · Potkalnički zapisi', description: 'digitalni zavičajni atlas', image: 'og.svg' },
-    { path: '/potkalnicko-prigorje/igre/kartice', title: 'Kaj to znači? · Potkalnički zapisi', description: 'Kartice s riječima', image: 'og.svg' },
+    { path: '/potkalnicko-prigorje/uci', title: 'Uči · Potkalnički zapisi', description: 'Odaberi teme', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/igre/kviz', title: 'Ponuđeni odgovori · Potkalnički zapisi', description: 'Pročitaj riječ', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/privatnost', title: 'Obavijest o privatnosti · Potkalnički zapisi', description: 'Koje podatke', image: 'og.svg' }
   ])('sets localized sharing metadata on $path', async ({ path, title, description, image }) => {

@@ -46,6 +46,11 @@ export function unitDative(slug: string, label: string): string {
   return UNIT_DATIVE_BY_SLUG[slug] ?? `jedinici „${label}”`
 }
 
+export function wordSubtopicForCategory(category: DailyCategory): { id: TopicId, label: string } | undefined {
+  const row = WORD_CATEGORY_TOPICS.find(t => t.category === category)
+  return row ? { id: row.id, label: row.label } : undefined
+}
+
 export function municipalityTopicId(municipalitySlug: string): TopicId {
   const base = municipalitySlug.replace(/^grad-/, '').replace(/^opcina-/, '')
   return `mjesta-${base}`

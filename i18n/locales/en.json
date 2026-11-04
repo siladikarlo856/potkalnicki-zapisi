@@ -193,6 +193,8 @@
     },
     "nextSteps": {
       "title": "What next?",
+      "learnWords": "Learn words",
+      "learnCategory": "Learn words: {label}",
       "learn": "Learn more",
       "quiz": "Play a quiz",
       "challenge": "Challenge a friend"

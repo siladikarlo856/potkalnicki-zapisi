@@ -102,12 +102,12 @@ export const GAME_CATALOGUE: GameEntry[] = [
   },
   {
     id: 'kartice',
-    title: 'Kartice',
+    title: 'Uči riječi',
     blurb: 'Okreni karticu i provjeri znaš li riječ.',
     topic: 'rijeci',
     format: 'odabir',
     minutes: 10,
-    path: pzRoutes.cards,
+    path: pzRoutes.learn,
     status: 'live',
     challengeable: false
   },

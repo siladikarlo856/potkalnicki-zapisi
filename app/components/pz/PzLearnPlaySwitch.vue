@@ -6,6 +6,7 @@ import { pzRoutes } from '~~/shared/utils/appRoutes'
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { tab } = usePzHome()
+const { pool } = useCardPool()
 
 const items: TabsItem[] = [
   { label: t('pz.home.switch.learnTab'), value: 'uci', slot: 'uci' as const },
@@ -16,7 +17,7 @@ const playTiles = computed(() => [
   { title: t('pz.home.switch.tileDaily'), icon: 'i-lucide-sparkles', to: '#rijec-dana', minutes: 2 },
   { title: t('pz.home.switch.tileQuiz'), icon: 'i-lucide-help-circle', to: localePath(pzRoutes.quiz), minutes: 2 },
   { title: t('pz.home.switch.tileChallenge'), icon: 'i-lucide-swords', to: localePath(pzRoutes.challenge), minutes: 2 },
-  { title: t('pz.home.switch.tileCards'), icon: 'i-lucide-layers', to: localePath(pzRoutes.cards), minutes: 2 }
+  { title: t('pz.home.switch.tileCards'), icon: 'i-lucide-layers', to: localePath(pzRoutes.learn), minutes: 10 }
 ])
 </script>
 
@@ -34,21 +35,10 @@ const playTiles = computed(() => [
     >
       <template #uci>
         <div
-          class="space-y-3 pt-4"
+          class="pt-4"
           data-testid="learn-play-panel-uci"
         >
-          <h2 class="text-lg font-semibold text-highlighted">
-            {{ t('pz.home.switch.learnTitle') }}
-          </h2>
-          <p class="text-sm text-muted">
-            {{ t('pz.home.switch.learnBlurb') }}
-          </p>
-          <UButton
-            :to="localePath(pzRoutes.cards)"
-            :label="t('pz.home.switch.learnStart')"
-            trailing-icon="i-lucide-arrow-right"
-            size="lg"
-          />
+          <LearnHomePanel :pool="pool" />
         </div>
       </template>
 

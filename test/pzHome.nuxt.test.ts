@@ -12,6 +12,14 @@ import type { ChallengeState } from '../shared/utils/challenge'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
 
 registerAtlasApiEndpoints()
+registerEndpoint('/api/learn/pool', () => ({
+  version: 1,
+  generatedAt: '',
+  cards: [],
+  municipalities: [],
+  settlements: [],
+  topics: [{ id: 'rijeci', label: 'Riječi', status: 'live', count: 0 }]
+}))
 
 const areas = [
   { id: 'county', name: 'Županija', kind: 'county' as const, parentId: null },
@@ -49,7 +57,16 @@ registerEndpoint('/api/heritage/daily', () => {
 registerEndpoint('/api/heritage/words', () => ({ words: [], areas }))
 
 const dailyStateKeys = ['heritage-daily-progress', 'heritage-daily-progress-loaded', 'heritage-daily-progress-unavailable']
-const homeStateKeys = ['pz-home-loaded', 'pz-home-tab', 'pz-challenge-list', 'pz-challenge-list-loaded', 'pz-challenge-leaderboard-counts']
+const homeStateKeys = [
+  'pz-home-loaded',
+  'pz-home-tab',
+  'pz-challenge-list',
+  'pz-challenge-list-loaded',
+  'pz-challenge-leaderboard-counts',
+  'pz-learn-state',
+  'pz-learn-loaded',
+  'card-pool'
+]
 
 function sectionOrder(page: Awaited<ReturnType<typeof mountSuspended>>) {
   return page.findAll('[data-testid]').map(node => node.attributes('data-testid'))
@@ -81,7 +98,7 @@ describe('Potkalnički zapisi home (WP1)', () => {
     expect(friend).toBeGreaterThan(learnPlay)
     expect(regions).toBeGreaterThan(friend)
     expect(doprinos).toBeGreaterThan(regions)
-    expect(page.text()).toContain('Uči riječi iz našeg kraja')
+    await vi.waitFor(() => expect(page.text()).toContain('Nova lekcija'))
     expect(page.text()).not.toContain('Igraj s riječima')
     expect(page.findComponent({ name: 'UPageHero' }).exists()).toBe(false)
     page.unmount()

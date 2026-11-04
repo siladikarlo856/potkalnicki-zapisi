@@ -42,7 +42,7 @@ const flipped = ref(false)
         @click="flipped = !flipped"
       />
       <UButton
-        :to="localePath('/potkalnicko-prigorje/igre/kartice')"
+        :to="localePath('/potkalnicko-prigorje/uci')"
         :label="t('home.teaser.play')"
         trailing-icon="i-lucide-arrow-right"
         variant="link"

@@ -328,6 +328,7 @@ watch(finished, () => {
       <HeritageDailyNextSteps
         v-if="game.done || replaced"
         class="mt-4 border-t border-default pt-3"
+        :category="payload.entry.category"
       />
     </div>
   </section>
