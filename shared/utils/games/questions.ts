@@ -1,6 +1,6 @@
 import { pzRoutes } from '../appRoutes'
 import { cardMatchesTopicSelection, unitDative } from '../learn/topics'
-import type { CardKey, CardPool, PoolClub, PoolItem, PoolPlace, PoolWord } from '../learn/types'
+import type { CardKey, CardPool, PoolClub, PoolItem, PoolPlace, PoolWord, TopicId } from '../learn/types'
 import {
   buildWordHeadwordOptions,
   buildWordMeaningOptions,
@@ -379,6 +379,18 @@ function generateOne(
     return klubOdakleQuestion(pool, target, difficulty, rng)
   }
 
+  return null
+}
+
+/** One multiple-choice question for a learn review card (meanings, units or settlements). */
+export function questionForLearnReview(pool: CardPool, cardKey: CardKey, rng: Rng): GameQuestion | null {
+  const card = pool.cards.find(c => c.key === cardKey)
+  if (!card) return null
+  const topics = card.topics.length ? [...card.topics] : (['rijeci', 'mjesta', 'bastina'] as TopicId[])
+  const base: GenerateQuestionsOptions = { topics, difficulty: 'srednje', rng, count: 1 }
+  if (card.kind === 'word') return generateOne('znacenje', pool, base, cardKey)
+  if (card.kind === 'place') return generateOne('opcina', pool, base, cardKey)
+  if (card.kind === 'item') return generateOne('crkva', pool, base, cardKey)
   return null
 }
 

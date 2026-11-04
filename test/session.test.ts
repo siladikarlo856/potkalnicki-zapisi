@@ -154,13 +154,17 @@ describe('buildSession', () => {
   it('filters places by municipality when a settlement slug is chosen', () => {
     const cards = [
       place('p-kalnik', 'Kalnik', 'mun-1', 'mjesta-kalnik'),
-      place('p-other', 'Apatovec', 'mun-2', 'mjesta-krizevci')
+      place('p-other', 'Apatovec', 'mun-2', 'mjesta-krizevci'),
+      word('w1', 'riječ', ['rijeci'])
     ]
-    const p = pool(cards, ['mjesta'])
+    const p = pool(cards, ['mjesta', 'rijeci'])
     p.municipalities.push({ id: 'mun-2', slug: 'grad-krizevci', name: 'Križevci', label: 'Grad Križevci', dative: 'Gradu Križevcima', lat: 46, lng: 16 })
     p.settlements.push({ id: 'set-2', name: 'Apatovec', slug: 'apatovec', municipalityId: 'mun-2' })
     const session = buildSession(p, {}, { n: 10, topics: ['mjesta'], place: 'kalnik', today: '2026-11-04' })
     expect(session).toEqual(['place:p-kalnik'])
+    const mixed = buildSession(p, {}, { n: 10, topics: ['mjesta', 'rijeci'], place: 'kalnik', today: '2026-11-04' })
+    expect(mixed.some(k => k.startsWith('word:'))).toBe(true)
+    expect(mixed.filter(k => k.startsWith('place:')).every(k => k === 'place:p-kalnik')).toBe(true)
   })
 
   it('is deterministic for the same inputs', () => {

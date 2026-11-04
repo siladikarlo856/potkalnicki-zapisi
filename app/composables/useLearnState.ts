@@ -51,15 +51,22 @@ export function useLearnState() {
     persist({ ...snapshot(), lastTopics: topics.length ? topics : ['rijeci'], lastN: n })
   }
 
+  function rememberPlace(place: string | undefined) {
+    load()
+    persist({ ...snapshot(), place: place || undefined })
+  }
+
   return {
     state: readonly(state),
     current: computed(() => snapshot().current),
     lastTopics: computed(() => snapshot().lastTopics),
     lastN: computed(() => snapshot().lastN),
+    place: computed(() => snapshot().place),
     loaded: readonly(loaded),
     load,
     setCurrent,
     rememberSetup,
+    rememberPlace,
     patch: (patch: Partial<LearnStateV1>) => {
       load()
       persist({ ...snapshot(), ...patch })

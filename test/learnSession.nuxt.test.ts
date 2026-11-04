@@ -3,6 +3,7 @@ import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtState } from '#imports'
 import type { CardPool, PoolCard } from '../shared/utils/learn/types'
 import { LEARN_STORAGE_KEY } from '../app/composables/useLearnState'
+import { buildLearnReviewQuestion } from '../shared/utils/learn/reviewQuestion'
 import LearnSession from '../app/pages/potkalnicko-prigorje/uci/sesija.vue'
 
 const T = '2026-11-04T12:00:00.000Z'
@@ -46,6 +47,8 @@ beforeEach(() => {
   clearNuxtState([
     'heritage-progress',
     'heritage-progress-loaded',
+    'pz-progress',
+    'pz-progress-loaded',
     'pz-learn-state',
     'pz-learn-loaded',
     'card-pool'
@@ -115,5 +118,60 @@ describe('learn session page', () => {
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     expect(wrapper!.text()).toContain('riječ2')
+  })
+
+  it('shows multiple-choice options in review mode', async () => {
+    localStorage.setItem(LEARN_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      current: {
+        topics: ['rijeci'],
+        n: 5,
+        queue: ['word:w0'],
+        index: 0,
+        requeued: [],
+        results: {},
+        startedAt: T,
+        mode: 'review'
+      },
+      lastTopics: ['rijeci'],
+      lastN: 5
+    }))
+    wrapper = await mountSuspended(LearnSession, {
+      route: '/potkalnicko-prigorje/uci/sesija?nastavi=1'
+    })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-review-card"]').exists()).toBe(true)
+    expect(wrapper!.text()).toContain('Odaberi točan odgovor')
+    const question = buildLearnReviewQuestion(pool, 'word:w0')!
+    await wrapper!.get(`[data-testid="game-option-${question.correct}"]`).trigger('click')
+    await expect.poll(() => wrapper!.find('[data-testid="learn-summary"]').exists()).toBe(true)
+  })
+
+  it('records a wrong review option as missed', async () => {
+    localStorage.setItem(LEARN_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      current: {
+        topics: ['rijeci'],
+        n: 5,
+        queue: ['word:w0'],
+        index: 0,
+        requeued: [],
+        results: {},
+        startedAt: T,
+        mode: 'review'
+      },
+      lastTopics: ['rijeci'],
+      lastN: 5
+    }))
+    wrapper = await mountSuspended(LearnSession, {
+      route: '/potkalnicko-prigorje/uci/sesija?nastavi=1'
+    })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-review-card"]').exists()).toBe(true)
+    const question = buildLearnReviewQuestion(pool, 'word:w0')!
+    const wrongIndex = question.options.findIndex((_, index) => index !== question.correct)
+    await wrapper!.get(`[data-testid="game-option-${wrongIndex}"]`).trigger('click')
+    await expect.poll(() => {
+      const stored = JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!)
+      return stored.current?.results?.['word:w0']
+    }).toBe('missed')
   })
 })

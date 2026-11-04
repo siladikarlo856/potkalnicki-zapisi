@@ -12,6 +12,8 @@ const props = defineProps<{
   wordId?: string
   /** `usage` = "this word is said in my place too": the place becomes required. `variant` = a local form. */
   intent?: SubmissionIntent
+  /** Prefill the place field (learn “Moje mjesto”). Resolved through `/api/places` on the client. */
+  presetPlace?: { name: string, query?: string }
 }>()
 
 const { t } = useI18n()
@@ -57,6 +59,26 @@ watch(() => props.word, (word) => {
     const element = textarea.value?.textareaRef
     element?.setSelectionRange(state.text.length, state.text.length)
   })
+}, { immediate: true })
+
+async function applyPresetPlace() {
+  const preset = props.presetPlace
+  if (!preset || !usage.value) return
+  placeQuery.value = preset.query ?? preset.name
+  try {
+    const response = await $fetch<{ places: { id: string, name: string }[] }>('/api/places', {
+      query: { q: preset.name },
+      retry: 0
+    })
+    const match = response.places.find(p => p.name === preset.name)
+    if (match) state.placeId = match.id
+  } catch {
+    // visitor can still pick the place manually
+  }
+}
+
+watch(() => props.presetPlace, () => {
+  void applyPresetPlace()
 }, { immediate: true })
 
 function validate(): FormError[] {

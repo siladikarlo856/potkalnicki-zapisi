@@ -2,10 +2,13 @@
 import type { CardPool, PoolItem, PoolPlace, PoolWord } from '~~/shared/utils/learn/types'
 import { poolWordToEntry, settlementArchivePath, wordArchivePath } from '~/utils/learnCard'
 import { municipalityLabel } from '~/utils/learnUi'
+import { settlementForSlug } from '~/utils/learnPlace'
 
 const props = defineProps<{
   card: PoolWord | PoolPlace | PoolItem
   pool: CardPool
+  /** When set, word cards can offer a local usage confirmation for this settlement slug. */
+  placeSlug?: string
 }>()
 
 const flipped = defineModel<boolean>('flipped', { default: false })
@@ -13,7 +16,15 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 
 const correctionOpen = ref(false)
+const usageOpen = ref(false)
 const wordEntry = computed(() => props.card.kind === 'word' ? poolWordToEntry(props.card) : null)
+
+const chosenSettlement = computed(() => settlementForSlug(props.pool, props.placeSlug))
+const usagePlacePreset = computed(() => {
+  const settlement = chosenSettlement.value
+  if (!settlement) return undefined
+  return { name: settlement.name, query: settlement.name }
+})
 
 const placeUnit = computed(() =>
   props.card.kind === 'place' ? municipalityLabel(props.pool, props.card.municipalityId) : '')
@@ -149,6 +160,35 @@ defineShortcuts({
               v-model:open="correctionOpen"
               :entry="wordEntry"
             />
+            <UButton
+              v-if="placeSlug && wordEntry"
+              :label="t('pz.learn.localUsage')"
+              icon="i-lucide-map-pin-check"
+              color="neutral"
+              variant="link"
+              size="sm"
+              class="self-start px-0"
+              aria-haspopup="dialog"
+              @click.stop="usageOpen = true"
+            />
+            <UModal
+              v-if="wordEntry"
+              v-model:open="usageOpen"
+              :title="t('pz.learn.localUsage')"
+              :ui="{ content: 'max-w-lg' }"
+            >
+              <template #body>
+                <HeritageSubmissionForm
+                  :key="`${wordEntry.id}-${placeSlug}`"
+                  :word="wordEntry.headword"
+                  :word-id="wordEntry.id"
+                  intent="usage"
+                  fixed-type="word"
+                  hide-type-picker
+                  :preset-place="usagePlacePreset"
+                />
+              </template>
+            </UModal>
           </div>
         </template>
 

@@ -8,6 +8,7 @@ import {
   sessionComplete
 } from '~~/shared/utils/learn/learnState'
 import { buildSession } from '~~/shared/utils/learn/session'
+import { buildLearnReviewQuestion, shouldAskReviewQuestion } from '~~/shared/utils/learn/reviewQuestion'
 import type { TopicId } from '~~/shared/utils/learn/types'
 import { cardByKey, isDisplayCard } from '~/utils/learnUi'
 
@@ -33,6 +34,8 @@ const finished = ref<LearnCurrent | null>(null)
 const unavailable = ref(false)
 const session = ref<LearnCurrent | null>(null)
 const targetN = ref(10)
+const placeSlug = ref<string | undefined>()
+const sessionDay = ref('')
 
 const poolKeySet = computed(() => new Set(pool.value.cards.map(c => c.key)))
 
@@ -46,6 +49,12 @@ function parseTopics(raw: string | undefined): TopicId[] {
   return raw.split(',').filter(Boolean) as TopicId[]
 }
 
+function parsePlace(): string | undefined {
+  const q = route.query.mjesto
+  if (typeof q === 'string' && q.trim()) return q.trim()
+  return learn.place.value
+}
+
 function initSession() {
   unavailable.value = false
   finished.value = null
@@ -55,6 +64,9 @@ function initSession() {
 
   const valid = poolKeySet.value
   const today = localDay()
+  sessionDay.value = today
+  const place = parsePlace()
+  placeSlug.value = place
   const progress = { ...cards.value } as Record<string, import('~~/shared/utils/learn/leitner').CardProgress>
 
   if (route.query.nastavi === '1' && learn.current.value) {
@@ -75,7 +87,8 @@ function initSession() {
       n: 20,
       topics: pool.value.topics.filter(t => t.status === 'live' && !t.parent).map(t => t.id),
       today,
-      mode: 'review'
+      mode: 'review',
+      place
     })
     const queue = due.slice(0, Math.min(due.length, 20))
     if (!queue.length) {
@@ -84,7 +97,7 @@ function initSession() {
     }
     const topics = parseTopics(typeof route.query.teme === 'string' ? route.query.teme : undefined)
     const reviewN = (Math.min(queue.length, 20) <= 5 ? 5 : Math.min(queue.length, 20) <= 10 ? 10 : 20) as LearnN
-    const next = createSession(topics, reviewN, queue, 'review')
+    const next = createSession(topics, reviewN, queue, 'review', place)
     session.value = next
     targetN.value = queue.length
     learn.setCurrent(next)
@@ -108,13 +121,13 @@ function initSession() {
   const topics = parseTopics(typeof route.query.teme === 'string' ? route.query.teme : undefined)
   const qn = Number(route.query.n)
   const n: LearnN = qn === 5 || qn === 10 || qn === 20 ? qn : 10
-  const queue = buildSession(pool.value, progress, { n, topics, today, mode: 'new' })
+  const queue = buildSession(pool.value, progress, { n, topics, today, mode: 'new', place })
   if (!queue.length) {
     unavailable.value = true
     return
   }
   learn.rememberSetup(topics, n)
-  const next = createSession(topics, n, queue, 'new')
+  const next = createSession(topics, n, queue, 'new', place)
   session.value = next
   targetN.value = queue.length
   learn.setCurrent(next)
@@ -162,8 +175,26 @@ async function score(knew: boolean) {
   await nextTick()
 }
 
+const reviewQuestion = computed(() => {
+  const key = currentKey.value
+  if (!key || !active.value) return null
+  if (!shouldAskReviewQuestion(active.value.mode, key, cards.value, sessionDay.value, active.value.results)) {
+    return null
+  }
+  return buildLearnReviewQuestion(pool.value, key)
+})
+
+const useReviewCard = computed(() => !!reviewQuestion.value)
+
+async function scoreReview(correct: boolean) {
+  if (!active.value || !currentKey.value) return
+  seen.value = true
+  recordSeenCard(currentKey.value)
+  await score(correct)
+}
+
 defineShortcuts(computed(() => ({
-  space: currentCard.value && !finished.value ? () => { flipped.value = !flipped.value } : false
+  space: currentCard.value && !finished.value && !useReviewCard.value ? () => { flipped.value = !flipped.value } : false
 })))
 
 onMounted(() => {
@@ -237,6 +268,29 @@ watch(() => status.value, (s) => {
     />
 
     <div
+      v-else-if="currentCard && active && useReviewCard && reviewQuestion"
+      class="mx-auto flex max-w-md flex-col gap-3"
+      data-testid="learn-runner"
+    >
+      <div class="flex items-center justify-between text-sm text-muted">
+        <span>{{ t('pz.learn.counter', counter) }}</span>
+      </div>
+      <UProgress
+        :model-value="counter.i - 1"
+        :max="counter.n"
+        size="sm"
+        aria-hidden="true"
+      />
+      <LearnReviewCard
+        :key="currentKey"
+        :card="currentCard"
+        :pool="pool"
+        :question="reviewQuestion"
+        @answer="scoreReview"
+      />
+    </div>
+
+    <div
       v-else-if="currentCard && active"
       class="mx-auto flex max-w-md flex-col gap-3"
       data-testid="learn-runner"
@@ -256,6 +310,7 @@ watch(() => status.value, (s) => {
         v-model:flipped="flipped"
         :card="currentCard"
         :pool="pool"
+        :place-slug="placeSlug"
       />
 
       <UButton

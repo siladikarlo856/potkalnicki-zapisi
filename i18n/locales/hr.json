@@ -851,7 +851,12 @@
       "newLessonButton": "Započni novu lekciju",
       "replaceWarning": "Započeta lekcija bit će zamijenjena.",
       "loadError": "Lekcija trenutačno nije dostupna.",
-      "sessionUnavailable": "Ova lekcija više nije dostupna"
+      "sessionUnavailable": "Ova lekcija više nije dostupna",
+      "myPlace": "Moje mjesto (neobavezno)",
+      "changePlace": "Promijeni",
+      "wordsNoPlaceData": "Riječi još nemaju podatke po selima",
+      "localUsage": "I kod nas se tako kaže",
+      "reviewPrompt": "Odaberi točan odgovor"
     },
     "explore": {
       "seoTitle": "Istraži kraj",

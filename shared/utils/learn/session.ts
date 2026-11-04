@@ -21,7 +21,7 @@ function matchesPlaceFilter(card: PoolCard, pool: CardPool, placeSlug: string | 
   if (!settlement) return false
   switch (card.kind) {
     case 'word':
-      return false
+      return true
     case 'place':
       return card.municipalityId === settlement.municipalityId
     case 'item':
@@ -56,8 +56,21 @@ function compareDue(a: CardKey, b: CardKey, progress: Record<string, CardProgres
   return a < b ? -1 : a > b ? 1 : 0
 }
 
-function sortNewCards(cards: PoolCard[]): PoolCard[] {
+function itemPlaceRank(card: PoolCard, settlementId: string | undefined, municipalityId: string | undefined): number {
+  if (card.kind !== 'item' || !settlementId) return 0
+  if (card.settlementId === settlementId) return 0
+  if (municipalityId && card.municipalityId === municipalityId) return 1
+  return 2
+}
+
+function sortNewCards(cards: PoolCard[], pool: CardPool, placeSlug?: string): PoolCard[] {
+  const settlement = placeSlug ? pool.settlements.find(s => s.slug === placeSlug) : undefined
   return [...cards].sort((a, b) => {
+    if (settlement && a.kind === 'item' && b.kind === 'item') {
+      const ra = itemPlaceRank(a, settlement.id, settlement.municipalityId)
+      const rb = itemPlaceRank(b, settlement.id, settlement.municipalityId)
+      if (ra !== rb) return ra - rb
+    }
     if (a.kind === 'word' && b.kind === 'word') {
       if (a.difficulty !== b.difficulty) return a.difficulty - b.difficulty
       if (a.transparency !== b.transparency) return b.transparency - a.transparency
@@ -165,7 +178,7 @@ export function buildSession(
 
   for (const [, buckets] of grouped) {
     buckets.due.sort((a, b) => compareDue(a, b, progress))
-    const neuCards = sortNewCards(buckets.neu.map(k => byKey.get(k)!).filter(Boolean))
+    const neuCards = sortNewCards(buckets.neu.map(k => byKey.get(k)!).filter(Boolean), pool, o.place)
     buckets.neu = neuCards.map(c => c.key)
     buckets.known = sortKnown(buckets.known, progress)
   }
