@@ -48,7 +48,9 @@ watch(() => props.layerLocked, (locked) => {
 }, { immediate: true })
 
 const viewport = useTemplateRef<HTMLElement>('viewport')
-const scale = ref(1)
+/** Default and minimum zoom: opens a little zoomed out so more of the surroundings show. */
+const MIN_SCALE = 0.75
+const scale = ref(MIN_SCALE)
 const translate = ref({ x: 0, y: 0 })
 
 const dark = computed(() => colorMode.value === 'dark')
@@ -124,7 +126,7 @@ function clampTransform() {
 function setScale(next: number, anchor?: { x: number, y: number }) {
   const el = viewport.value
   if (!el) return
-  const clamped = Math.min(4, Math.max(1, next))
+  const clamped = Math.min(4, Math.max(MIN_SCALE, next))
   if (anchor) {
     const ratio = clamped / scale.value
     translate.value = {
@@ -141,6 +143,37 @@ function zoomBy(delta: number) {
   if (!el) return
   setScale(scale.value + delta, { x: el.clientWidth / 2, y: el.clientHeight / 2 })
 }
+
+/** Centre a frame-space point in the viewport at the current zoom (clamped to the map bounds). */
+function centreOn(point: { x: number, y: number }) {
+  const el = viewport.value
+  if (!el) return
+  translate.value = {
+    x: el.clientWidth / 2 - point.x * scale.value,
+    y: el.clientHeight / 2 - point.y * scale.value
+  }
+  clampTransform()
+}
+
+/** The one dot a question marks (null when it marks none, e.g. tap-anywhere or learn mode). */
+const focusPoint = computed(() => {
+  if (props.numberedPoints?.length) return null
+  if (props.targetPoint) return project(props.targetPoint.lat, props.targetPoint.lng)
+  if (props.mode === 'learn') return null
+  if (props.singleTarget || props.mode === 'target') {
+    const place = props.highlightId ? props.places.find(p => p.id === props.highlightId) : undefined
+    return place ? project(place.lat, place.lng) : null
+  }
+  return null
+})
+
+watch(focusPoint, (point) => {
+  if (point) centreOn(point)
+  else {
+    translate.value = { x: 0, y: 0 }
+    clampTransform()
+  }
+}, { flush: 'post' })
 
 function screenToImage(clientX: number, clientY: number) {
   const el = viewport.value
@@ -243,6 +276,7 @@ function pickFromList(placeId: string) {
 
 onMounted(() => {
   clampTransform()
+  if (focusPoint.value) centreOn(focusPoint.value)
   const el = viewport.value
   if (!el) return
   const observer = new ResizeObserver(() => clampTransform())
