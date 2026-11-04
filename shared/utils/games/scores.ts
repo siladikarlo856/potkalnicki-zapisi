@@ -1,9 +1,10 @@
 import type { GameId } from './types'
+import type { MapLayerId } from './mapFrame'
 
 export const GAME_SCORES_KEY = 'pz-games/v1'
 
 export interface BestScore { score: number, max: number, at: string }
-export interface GameScoresV1 { version: 1, best: Record<string, BestScore> }
+export interface GameScoresV1 { version: 1, best: Record<string, BestScore>, mapLayer?: MapLayerId }
 
 export const emptyGameScores = (): GameScoresV1 => ({ version: 1, best: {} })
 
@@ -20,7 +21,8 @@ export function decodeGameScores(raw: string | null): GameScoresV1 {
       if (!value || !count(value.score) || !count(value.max) || value.max < 1 || value.score > value.max || typeof value.at !== 'string') return emptyGameScores()
       best[id] = { score: value.score, max: value.max, at: value.at }
     }
-    return { version: 1, best }
+    const mapLayer = data.mapLayer === 'karta' || data.mapLayer === 'reljef' || data.mapLayer === 'satelit' ? data.mapLayer : undefined
+    return { version: 1, best, ...(mapLayer ? { mapLayer } : {}) }
   } catch {
     return emptyGameScores()
   }

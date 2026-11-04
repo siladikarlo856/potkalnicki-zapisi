@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Potkalničko prigorje map export</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1rem; }
+    #map { width: 1600px; height: 1373px; }
+    button { margin: 0.5rem 0.5rem 0.5rem 0; }
+  </style>
+</head>
+<body>
+  <p>Export 1600×1373 px images for <code>MAP_FRAME</code>. Remove symbol layers on Positron before capture.</p>
+  <div id="map"></div>
+  <button type="button" id="dl-karta">Download Karta PNG</button>
+  <button type="button" id="dl-reljef">Download Reljef PNG</button>
+  <script>
+    const frame = { west: 16.3298, east: 16.7322, south: 45.9187, north: 46.1584 }
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/positron',
+      bounds: [[frame.west, frame.south], [frame.east, frame.north]],
+      fitBoundsOptions: { padding: 0, animate: false },
+      preserveDrawingBuffer: true,
+      pixelRatio: 1
+    })
+    function stripLabels() {
+      const style = map.getStyle()
+      style.layers = style.layers.filter(l => l.type !== 'symbol')
+      map.setStyle(style)
+    }
+    function download(name) {
+      const canvas = map.getCanvas()
+      const a = document.createElement('a')
+      a.download = name
+      a.href = canvas.toDataURL('image/png')
+      a.click()
+    }
+    map.on('load', () => {
+      stripLabels()
+      map.once('idle', () => {
+        document.getElementById('dl-karta').onclick = () => download('karta.png')
+        document.getElementById('dl-reljef').onclick = () => {
+          map.setPaintProperty('background', 'background-color', '#e8e4d9')
+          map.once('idle', () => download('reljef.png'))
+        }
+      })
+    })
+  </script>
+</body>
+</html>

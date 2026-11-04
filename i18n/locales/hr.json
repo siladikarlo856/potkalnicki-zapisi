@@ -931,6 +931,27 @@
       "bezBestStreak": "Najbolji niz: {n}",
       "bezAgain": "Igraj opet"
     },
+    "map": {
+      "layers": "Sloj karte",
+      "karta": "Karta",
+      "reljef": "Reljef",
+      "satelit": "Satelit",
+      "findTitle": "Pronađi selo",
+      "findBlurb": "Deset rundi — pronađi naselje na karti.",
+      "whichTitle": "Koje je ovo selo?",
+      "whichBlurb": "Pogledaj označeno naselje i odaberi ime.",
+      "learnTitle": "Uči kartu",
+      "learnBlurb": "Dotakni naselje na karti i otvori zapis ili kratku lekciju.",
+      "whereIs": "Gdje je {name}?",
+      "kmFromTarget": "{km} km od cilja",
+      "hit": "Pogodak!",
+      "settlementList": "Popis naselja",
+      "openSettlement": "Otvori stranicu naselja",
+      "learnUnitSettlements": "Uči sela ove jedinice",
+      "zoomIn": "Približi",
+      "zoomOut": "Udalji",
+      "hardNeedsMap": "Za ovu razinu potrebna je karta"
+    },
     "contribute": {
       "title": "Doprinesi",
       "intro": "Sve što pošalješ prvo pregledamo. Ime je neobavezno, prijava nije potrebna.",

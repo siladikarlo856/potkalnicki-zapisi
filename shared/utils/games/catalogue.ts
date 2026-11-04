@@ -65,6 +65,42 @@ export const GAME_CATALOGUE: GameEntry[] = [
     challengeable: true
   },
   {
+    id: 'karta',
+    title: 'Pronađi selo',
+    blurb: 'Na karti pronađi naselje — točnost ovisi o težini.',
+    topic: 'mjesta',
+    format: 'karta',
+    minutes: 8,
+    path: pzRoutes.mapFind,
+    status: 'live',
+    challengeable: false,
+    needs: { kind: 'place', min: 10 }
+  },
+  {
+    id: 'karta-koje',
+    title: 'Koje je ovo selo?',
+    blurb: 'Pogledaj točku na karti i odaberi pravo ime.',
+    topic: 'mjesta',
+    format: 'karta',
+    minutes: 8,
+    path: pzRoutes.mapWhich,
+    status: 'live',
+    challengeable: true,
+    needs: { kind: 'place', min: 4 }
+  },
+  {
+    id: 'uci-kartu',
+    title: 'Uči kartu',
+    blurb: 'Istraži naselja na karti i otvori njihove stranice.',
+    topic: 'mjesta',
+    format: 'karta',
+    minutes: 10,
+    path: pzRoutes.mapLearn,
+    status: 'live',
+    challengeable: false,
+    needs: { kind: 'place', min: 5 }
+  },
+  {
     id: 'kartice',
     title: 'Kartice',
     blurb: 'Okreni karticu i provjeri znaš li riječ.',

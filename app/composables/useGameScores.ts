@@ -1,5 +1,6 @@
 import { GAME_SCORES_KEY, decodeGameScores, emptyGameScores, withBestScore } from '~~/shared/utils/games/scores'
 import type { GameScoresV1 } from '~~/shared/utils/games/scores'
+import type { MapLayerId } from '~~/shared/utils/games/mapFrame'
 import type { GameId } from '~~/shared/utils/games/types'
 
 /** Best score per game, kept on the device in `pz-games/v1`. Storage failures never reach the UI. */
@@ -32,5 +33,17 @@ export function useGameScores() {
     }
   }
 
-  return { scores, best: (game: GameId) => scores.value.best[game], recordBest }
+  function setMapLayer(layer: MapLayerId) {
+    if (!import.meta.client) return
+    load()
+    if (scores.value.mapLayer === layer) return
+    scores.value = { ...scores.value, mapLayer: layer }
+    try {
+      window.localStorage.setItem(GAME_SCORES_KEY, JSON.stringify(scores.value))
+    } catch {
+      // Ignore storage failures.
+    }
+  }
+
+  return { scores, best: (game: GameId) => scores.value.best[game], recordBest, setMapLayer }
 }
