@@ -2,6 +2,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createClient } from '@supabase/supabase-js'
 import { clearNuxtData, clearNuxtState, useNuxtApp } from '#imports'
+import type { CardPool } from '../shared/utils/learn/types'
+import { GAME_SCORES_KEY } from '../shared/utils/games/scores'
 import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
 import Quiz from '../app/pages/potkalnicko-prigorje/igre/kviz.vue'
 import Cards from '../app/pages/potkalnicko-prigorje/igre/kartice.vue'
@@ -16,6 +18,7 @@ let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 let pending: Promise<void> | undefined
 let release: (() => void) | undefined
 let unavailable = false
+let challengeBody: unknown
 
 function storedWord(wordId: string) {
   const raw = JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!)
@@ -31,6 +34,33 @@ registerEndpoint('/api/heritage/words', async () => {
   return { words: data!.map(row => row.entry), areas: sampleAreas }
 })
 
+// The quiz draws its questions from the card pool: build one from the same active words, as the pool API does.
+registerEndpoint('/api/learn/pool', async () => {
+  await pending
+  if (unavailable) throw new Error('Pool unavailable')
+  const { data, error } = await db.from('heritage_words').select('entry').eq('active', true)
+  if (error) throw error
+  const cards = data!.map(row => row.entry as typeof sampleWords[number]).map(entry => ({
+    kind: 'word' as const,
+    key: `word:${entry.id}` as const,
+    id: entry.id,
+    topics: ['rijeci'],
+    headword: entry.headword,
+    meaning: entry.meaning.hr,
+    meaningEn: entry.meaning.en,
+    partOfSpeech: entry.partOfSpeech,
+    variants: [entry.headword],
+    status: 'community' as const,
+    transparency: 0,
+    difficulty: 2 as const
+  }))
+  return { version: 1, generatedAt: '2026-11-04T00:00:00.000Z', cards, municipalities: [], settlements: [], topics: [] } satisfies CardPool
+})
+registerEndpoint('/api/challenges', { method: 'POST', handler: async (event) => {
+  challengeBody = await (event as unknown as { web: { request: Request } }).web.request.json()
+  return { code: 'quizproof1234567890' }
+} })
+
 beforeAll(async () => {
   for (const entry of sampleWords.slice(0, 5)) {
     const { error } = await db.from('heritage_words').insert({ id: entry.id, entry, areas: sampleAreas, active: false })
@@ -39,7 +69,7 @@ beforeAll(async () => {
 })
 beforeEach(async () => {
   localStorage.clear()
-  clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
+  clearNuxtState(['heritage-progress', 'heritage-progress-loaded', 'pz-game-scores', 'pz-game-scores-loaded'])
   for (const entry of seeds) await db.from('heritage_words').update({ active: true }).eq('id', entry.id)
 })
 afterEach(() => {
@@ -49,7 +79,7 @@ afterEach(() => {
   unavailable = false
   wrapper?.unmount()
   wrapper = undefined
-  clearNuxtData('active-heritage-words')
+  clearNuxtData(['active-heritage-words', 'card-pool'])
 })
 afterAll(() => fake.stop())
 
@@ -65,65 +95,87 @@ async function mountCards(lang: 'hr' = 'hr') {
   return wrapper
 }
 
+const OPTION = '[data-testid^="game-option-"]'
+type Page = Awaited<ReturnType<typeof mountQuiz>>
+const optionText = (option: { text: () => string }) => option.text().replace(/^\d+\.\s*/, '').replace(/(Točan odgovor\.|Tvoj odgovor\.)/g, '').trim()
+const askedWord = (page: Page) => {
+  const headword = page.get('[data-testid="game-prompt"]').text().match(/„(.*)”/)![1]!
+  return seeds.find(word => word.headword === headword)!
+}
+/** Index of the option showing this word's meaning, or of any other option when `correct` is false. */
+const pickIndex = (page: Page, correct: boolean) => {
+  const entry = askedWord(page)
+  const texts = page.findAll(OPTION).map(optionText)
+  const right = texts.indexOf(entry.meaning.hr)
+  return correct ? right : texts.findIndex((_, i) => i !== right)
+}
+
 const locales = [
-  { lang: 'hr' as const, loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi', prompt: 'Što znači ova riječ?', progress: 'Odgovorena pitanja', error: 'Pitanja trenutačno nisu dostupna.', retry: 'Pokušaj opet' }
+  { lang: 'hr' as const, loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi', progress: 'Odgovorena pitanja', error: 'Pitanja trenutačno nisu dostupna.', retry: 'Pokušaj opet' }
 ]
 
-describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, prompt, progress, error, retry }) => {
-  it('loads active words into a playable question with four localized options and progress', async () => {
+describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, progress, error, retry }) => {
+  it('loads active words into a playable question with four options and progress', async () => {
     const page = await mountQuiz(lang)
-    await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
-    const headword = page.get('#question-word').text()
-    expect(seeds.map(word => word.headword)).toContain(headword)
-    expect(page.get('legend').text()).toBe(prompt)
-    expect(page.text()).toContain(lang === 'hr' ? 'Uzorak — riječi još nisu provjerene' : 'Sample — these words are not yet verified')
+    await expect.poll(() => page.findAll(OPTION).length).toBe(4)
+    const entry = askedWord(page)
+    expect(page.get('[data-testid="game-prompt"]').text()).toBe(`Što znači riječ „${entry.headword}”?`)
     expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe(progress)
     expect(page.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('0')
-    expect(page.findAll('[data-option-id]').map(option => option.attributes('data-option-id')).sort()).toEqual(seeds.map(word => word.id).sort())
-    for (const option of page.findAll('[data-option-id]')) {
-      const entry = seeds.find(word => word.id === option.attributes('data-option-id'))!
-      expect(option.text()).toContain(entry.meaning[lang])
-    }
+    expect(page.findAll(OPTION).map(optionText).sort()).toEqual(seeds.map(word => word.meaning[lang]).sort())
     expect(page.text()).not.toContain(loading)
     expect(page.text()).not.toContain(empty)
-    // The fetched list also drives answer handling and moving to the next question.
-    const correctId = seeds.find(word => word.headword === headword)!.id
-    await page.get(`[data-option-id="${correctId}"]`).trigger('click')
+    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 4')
+    // The pool also drives answer handling, feedback and moving to the next question.
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    await page.get(`[data-testid="game-option-${pickIndex(page, true)}"]`).trigger('click')
     expect(page.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('1')
-    expect(storedWord(correctId).known).toBe(1)
+    expect(storedWord(entry.id).known).toBe(1)
     expect(page.text()).toContain('Odgovoreno ukupno: 1')
-    expect(page.text()).toContain(lang === 'hr' ? 'Bodovi: 1 / 4' : 'Score: 1 / 4')
-    expect(page.get('[aria-live="polite"]').text()).toContain(lang === 'hr' ? 'Točno značenje:' : 'Correct meaning:')
-    const next = page.findAll('button').find(button => button.text() === (lang === 'hr' ? 'Sljedeća riječ' : 'Next word'))!
-    await next.trigger('click')
-    expect(page.get('#question-word').text()).not.toBe(headword)
-    expect(page.text()).toContain(lang === 'hr' ? 'Pitanje 2 / 4' : 'Question 2 / 4')
+    expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 1')
+    expect(page.get('[data-testid="game-feedback"]').text()).toContain(`Točan odgovor: ${entry.meaning.hr}`)
+    // Focus moves to the feedback after an answer, and the options are locked.
+    expect(focus.mock.contexts.some(element => (element as HTMLElement).dataset.testid === 'game-feedback')).toBe(true)
+    expect(page.findAll(OPTION).every(option => option.attributes('disabled') !== undefined)).toBe(true)
+    await page.get('[data-testid="game-next"]').trigger('click')
+    expect(askedWord(page).id).not.toBe(entry.id)
+    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 2 od 4')
+    focus.mockRestore()
   })
 
-  it('shows loading rather than too few words until the active-word request finishes', async () => {
+  it('answers with the keys 1 to 4', async () => {
+    const page = await mountQuiz(lang)
+    await expect.poll(() => page.findAll(OPTION).length).toBe(4)
+    const entry = askedWord(page)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: String(pickIndex(page, true) + 1) }))
+    await expect.poll(() => page.find('[data-testid="game-feedback"]').exists()).toBe(true)
+    expect(storedWord(entry.id).known).toBe(1)
+  })
+
+  it('shows loading rather than too few words until the pool request finishes', async () => {
     pending = new Promise((resolve) => {
       release = resolve
     })
     const page = await mountQuiz(lang)
     expect(page.text()).toContain(loading)
     expect(page.text()).not.toContain(empty)
-    expect(page.find('[data-option-id]').exists()).toBe(false)
+    expect(page.find(OPTION).exists()).toBe(false)
     release!()
-    await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
+    await expect.poll(() => page.findAll(OPTION).length).toBe(4)
     expect(page.text()).not.toContain(loading)
   })
 
-  it('shows a localized error and retries the active-word request', async () => {
+  it('shows a localized error and retries the pool request', async () => {
     unavailable = true
     const page = await mountQuiz(lang)
     await expect.poll(() => page.text()).toContain(error)
     expect(page.text()).not.toContain(empty)
-    expect(page.find('[data-option-id]').exists()).toBe(false)
+    expect(page.find(OPTION).exists()).toBe(false)
     const button = page.findAll('button').find(button => button.text() === retry)!
     expect(button).toBeDefined()
     unavailable = false
     await button.trigger('click')
-    await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
+    await expect.poll(() => page.findAll(OPTION).length).toBe(4)
     expect(page.text()).not.toContain(error)
   })
 })
@@ -185,15 +237,14 @@ describe('card variant dialog', () => {
 describe('quiz variant dialog', () => {
   it('shows the report button only after an answer and reports that question\'s word', async () => {
     const page = await mountQuiz()
-    await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
-    const headword = page.get('#question-word').text()
-    const entry = seeds.find(word => word.headword === headword)!
+    await expect.poll(() => page.findAll(OPTION).length).toBe(4)
+    const entry = askedWord(page)
     // Not before answering, and no generic link to the home page's contribution form either.
     expect(page.find('[data-testid="quiz-differently"]').exists()).toBe(false)
     expect(page.findAll('button, a').some(item => item.text() === 'Kod nas se kaže drugačije')).toBe(false)
     expect(page.find('a[href*="doprinos"]').exists()).toBe(false)
 
-    await page.get(`[data-option-id="${entry.id}"]`).trigger('click')
+    await page.get(`[data-testid="game-option-${pickIndex(page, true)}"]`).trigger('click')
     const trigger = page.get('[data-testid="quiz-differently"]')
     expect(trigger.text()).toBe('Kod nas se kaže drugačije')
     expect(dialog()).toBeNull()
@@ -204,58 +255,67 @@ describe('quiz variant dialog', () => {
     // Closing it keeps the answered question; the next question hides the button again.
     dialog()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await vi.waitFor(() => expect(dialog()).toBeNull())
-    expect(page.get('#question-word').text()).toBe(headword)
-    await page.findAll('button').find(button => button.text() === 'Sljedeća riječ')!.trigger('click')
+    expect(askedWord(page).id).toBe(entry.id)
+    await page.get('[data-testid="game-next"]').trigger('click')
     expect(page.find('[data-testid="quiz-differently"]').exists()).toBe(false)
+  })
+
+  it('offers "Predloži ispravak" for the word in the feedback', async () => {
+    const page = await mountQuiz()
+    await expect.poll(() => page.findAll(OPTION).length).toBe(4)
+    expect(page.find('[data-testid="game-suggest"]').exists()).toBe(false)
+    await page.get(`[data-testid="game-option-${pickIndex(page, false)}"]`).trigger('click')
+    const entry = askedWord(page)
+    await page.get('[data-testid="game-suggest"]').trigger('click')
+    await vi.waitFor(() => expect(dialog()).not.toBeNull())
+    expect(dialog()!.textContent).toContain(entry.headword)
   })
 })
 
 describe('limited active words', () => {
-  it.each([0, 1, 2, 3])('handles %i active words after loading completes', async (count) => {
+  it.each([0, 1, 2])('shows the empty state with %i active words', async (count) => {
     for (const entry of seeds.slice(count)) await db.from('heritage_words').update({ active: false }).eq('id', entry.id)
     const page = await mountQuiz()
-    if (count < 2) {
-      await expect.poll(() => page.text()).toContain('Trebamo još riječi')
-      expect(page.text()).toContain('barem dva različita značenja')
-      expect(page.find('[data-option-id]').exists()).toBe(false)
-    } else {
-      await expect.poll(() => page.findAll('[data-option-id]').length).toBe(count)
-      expect(page.text()).toContain(`Za ovu riječ imamo ${count} različita ponuđena značenja.`)
-      expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe('Odgovorena pitanja')
-    }
+    await expect.poll(() => page.text()).toContain('Trebamo još riječi')
+    expect(page.text()).toContain('barem dva različita značenja')
+    expect(page.find(OPTION).exists()).toBe(false)
+  })
+
+  it('asks with three options when only three words are active', async () => {
+    await db.from('heritage_words').update({ active: false }).eq('id', seeds[3]!.id)
+    const page = await mountQuiz()
+    await expect.poll(() => page.findAll(OPTION).length).toBe(3)
+    expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe('Odgovorena pitanja')
   })
 })
 
 describe.each([
-  { lang: 'hr' as const, next: 'Sljedeća riječ', results: 'Pogledaj rezultat', review: 'Riječi za ponavljanje', summary: 'Kaj to znači? 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 / 1', copy: 'Kopiraj rezultat', copied: 'Kopirano!', path: '/potkalnicko-prigorje/igre/kviz' }
-])('$lang quiz result', ({ lang, next, results, review, summary, replay, noMisses, counter, copy, copied, path }) => {
-  async function answerCurrent(page: Awaited<ReturnType<typeof mountQuiz>>, correct: boolean) {
-    const headword = page.get('#question-word').text()
-    const entry = seeds.find(word => word.headword === headword)!
-    const pick = correct ? entry.id : seeds.find(word => word.id !== entry.id)!.id
-    await page.get(`[data-option-id="${pick}"]`).trigger('click')
-    await page.findAll('button').find(button => [next, results].includes(button.text()))!.trigger('click')
-    return headword
+  { lang: 'hr' as const, summary: 'Kaj to znači? 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 od 1', copied: 'Kopirano!', path: '/potkalnicko-prigorje/igre/kviz' }
+])('$lang quiz result', ({ summary, replay, noMisses, counter, copied, path }) => {
+  async function answerCurrent(page: Page, correct: boolean) {
+    const entry = askedWord(page)
+    await page.get(`[data-testid="game-option-${pickIndex(page, correct)}"]`).trigger('click')
+    await page.get('[data-testid="game-next"]').trigger('click')
+    return entry
   }
 
-  it('reviews the missed word, replays only it, and shares a spoiler-free result', async () => {
+  it('reviews the missed word, replays only it, saves the best score and shares a spoiler-free result', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
-    const page = await mountQuiz(lang)
-    await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
-    const missedWord = await answerCurrent(page, false)
-    const missedId = seeds.find(word => word.headword === missedWord)!.id
-    expect(storedWord(missedId).missed).toBe(1)
+    const page = await mountQuiz()
+    await expect.poll(() => page.findAll(OPTION).length).toBe(4)
+    const missedEntry = await answerCurrent(page, false)
+    expect(storedWord(missedEntry.id).missed).toBe(1)
     for (let i = 0; i < 3; i++) await answerCurrent(page, true)
 
-    await expect.poll(() => page.find('[data-testid="quiz-review"]').exists()).toBe(true)
-    const reviewBox = page.get('[data-testid="quiz-review"]')
-    expect(reviewBox.text()).toContain(review)
-    const rows = reviewBox.findAll('li')
+    await expect.poll(() => page.find('[data-testid="game-misses"]').exists()).toBe(true)
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('3 od 4')
+    expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!)).toMatchObject({ version: 1, best: { znacenje: { score: 3, max: 4 } } })
+    const rows = page.findAll('[data-testid="game-miss"]')
     expect(rows).toHaveLength(1)
-    const entry = seeds.find(word => word.headword === missedWord)!
-    expect(rows[0]!.text()).toContain(missedWord)
-    expect(rows[0]!.text()).toContain(entry.meaning[lang])
+    expect(rows[0]!.text()).toContain(missedEntry.headword)
+    expect(rows[0]!.text()).toContain(`Točan odgovor: ${missedEntry.meaning.hr}`)
+    expect(rows[0]!.find('[data-testid="game-suggest"]').exists()).toBe(true)
 
     // The shared text shows the score and one square per question, never a word.
     await page.get('[data-testid="quiz-share-toggle"]').trigger('click')
@@ -269,23 +329,43 @@ describe.each([
     expect(copiedText).toContain(`${summary}\n🟥🟩🟩🟩\n`)
     expect(copiedText.endsWith(path)).toBe(true)
     await expect.poll(() => page.get('[data-testid="quiz-copy"]').text()).toBe(copied)
-    expect(copy).not.toBe(copied)
     expect(page.find('[data-testid="challenge-create"]').exists()).toBe(true)
     const resultHtml = page.html()
     expect(resultHtml.indexOf('data-testid="challenge-create"')).toBeLessThan(resultHtml.indexOf('data-testid="quiz-share"'))
 
     // Replaying the misses asks only that word, and a practice round is not shared.
-    const replayButton = page.get('[data-testid="quiz-replay-missed"]')
+    const replayButton = page.get('[data-testid="game-replay-missed"]')
     expect(replayButton.text()).toBe(replay)
     await replayButton.trigger('click')
-    expect(page.text()).toContain(counter)
-    expect(page.get('#question-word').text()).toBe(missedWord)
+    expect(page.get('[data-testid="game-progress"]').text()).toBe(counter)
+    expect(askedWord(page).id).toBe(missedEntry.id)
     await answerCurrent(page, true)
-    await expect.poll(() => page.find('[data-testid="quiz-review"]').exists()).toBe(true)
-    expect(page.get('[data-testid="quiz-review"]').text()).toContain(noMisses)
-    expect(page.find('[data-testid="quiz-replay-missed"]').exists()).toBe(false)
+    await expect.poll(() => page.find('[data-testid="game-misses"]').exists()).toBe(true)
+    expect(page.get('[data-testid="game-misses"]').text()).toContain(noMisses)
+    expect(page.find('[data-testid="game-replay-missed"]').exists()).toBe(false)
     expect(page.find('[data-testid="quiz-share"]').exists()).toBe(false)
     expect(page.find('[data-testid="challenge-create"]').exists()).toBe(false)
+    // A practice round never touches the best score.
+    expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!).best.znacenje).toMatchObject({ score: 3, max: 4 })
+  })
+
+  it('creates a challenge that keeps the creator\'s own round as word ids', async () => {
+    challengeBody = undefined
+    const page = await mountQuiz()
+    await expect.poll(() => page.findAll(OPTION).length).toBe(4)
+    const asked: { id: string, optionIds: string[] }[] = []
+    for (let i = 0; i < 4; i++) {
+      const entry = askedWord(page)
+      const ids = page.findAll(OPTION).map(optionText).map(text => seeds.find(word => word.meaning.hr === text)!.id)
+      asked.push({ id: entry.id, optionIds: ids })
+      await page.get(`[data-testid="game-option-${pickIndex(page, i !== 0)}"]`).trigger('click')
+      await page.get('[data-testid="game-next"]').trigger('click')
+    }
+    await expect.poll(() => page.find('[data-testid="challenge-create"]').exists()).toBe(true)
+    await page.get('[data-testid="challenge-create"] input[name="nickname"]').setValue('Ana')
+    await page.get('[data-testid="challenge-create"] form').trigger('submit')
+    await expect.poll(() => challengeBody).toBeDefined()
+    expect(challengeBody).toEqual({ nickname: 'Ana', quiz: { questions: asked, results: [false, true, true, true] } })
   })
 
   it('caps a round at ten questions however many words are active', async () => {
@@ -297,11 +377,10 @@ describe.each([
       expect(error).toBeNull()
     }
     try {
-      const page = await mountQuiz(lang)
-      await expect.poll(() => page.findAll('[data-option-id]').length).toBe(4)
+      const page = await mountQuiz()
+      await expect.poll(() => page.findAll(OPTION).length).toBe(4)
       // 13 active words, one round of ten.
-      expect(page.text()).toContain(lang === 'hr' ? 'Pitanje 1 / 10' : 'Question 1 / 10')
-      expect(page.text()).toContain(lang === 'hr' ? 'Bodovi: 0 / 10' : 'Score: 0 / 10')
+      expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 10')
     } finally {
       for (const entry of extras) await db.from('heritage_words').delete().eq('id', entry.id)
     }

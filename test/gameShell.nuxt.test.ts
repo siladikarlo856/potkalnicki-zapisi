@@ -1,0 +1,195 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { clearNuxtData, clearNuxtState } from '#imports'
+import Shell from '../app/components/games/Shell.vue'
+import KakSeVeli from '../app/pages/potkalnicko-prigorje/igre/kak-se-veli.vue'
+import { GAME_SCORES_KEY } from '../shared/utils/games/scores'
+import type { GameQuestion } from '../shared/utils/games/types'
+import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
+
+const words = ['krumper', 'avijon', 'afinger', 'srednja', 'zdenec'].map((headword, i) => ({
+  kind: 'word' as const,
+  key: `word:w${i}` as const,
+  id: `w${i}`,
+  topics: ['rijeci'],
+  headword,
+  meaning: `značenje ${i}`,
+  variants: [headword],
+  status: 'community' as const,
+  transparency: 0,
+  difficulty: 2 as const,
+  partOfSpeech: 'imenica'
+}))
+registerEndpoint('/api/learn/pool', () => ({
+  version: 1, generatedAt: '2026-11-04T00:00:00.000Z', cards: words, municipalities: [], settlements: [], topics: []
+}))
+
+const question = (n: number, withPath = false): GameQuestion => ({
+  id: `rijec_word_w${n}`,
+  gameId: 'rijec',
+  card: `word:w${n}`,
+  prompt: { hr: `Pitanje ${n}?`, en: `Question ${n}?` },
+  options: [{ hr: 'A', en: 'A' }, { hr: 'B', en: 'B' }, { hr: 'C', en: 'C' }],
+  correct: n % 3,
+  explanation: { hr: `Objašnjenje ${n}.`, en: `Explanation ${n}.` },
+  ...(withPath ? { archivePath: '/potkalnicko-prigorje/naselja/apatovec' } : {})
+})
+const questions = [question(0, true), question(1), question(2)]
+const OPTION = '[data-testid^="game-option-"]'
+let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
+
+beforeEach(() => {
+  localStorage.clear()
+  clearNuxtState(['heritage-progress', 'heritage-progress-loaded', 'pz-game-scores', 'pz-game-scores-loaded'])
+})
+afterEach(() => {
+  wrapper?.unmount()
+  wrapper = undefined
+  clearNuxtData('card-pool')
+  vi.restoreAllMocks()
+})
+
+async function mountShell() {
+  wrapper = await mountSuspended(Shell, { props: { gameId: 'rijec', title: 'Kak se to veli?', questions } })
+  return wrapper
+}
+
+const wrongIndex = (q: GameQuestion) => (q.correct + 1) % q.options.length
+
+describe('GameShell', () => {
+  it('shows the header, the options and the score', async () => {
+    const page = await mountShell()
+    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')
+    expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 0')
+    expect(page.get('[data-testid="game-prompt"]').text()).toBe('Pitanje 0?')
+    expect(page.findAll(OPTION)).toHaveLength(3)
+    expect(page.find('[data-testid="game-feedback"]').exists()).toBe(false)
+    expect(page.find('[data-testid="game-next"]').exists()).toBe(false)
+  })
+
+  it('answers, moves focus to the feedback, marks options with text and records word progress', async () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    const page = await mountShell()
+    await page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).trigger('click')
+    const feedback = page.get('[data-testid="game-feedback"]')
+    expect(feedback.attributes('aria-live')).toBe('polite')
+    expect(feedback.text()).toContain('Nije točno.')
+    expect(feedback.text()).toContain('Točan odgovor: A')
+    expect(feedback.text()).toContain('Objašnjenje 0.')
+    expect(focus.mock.contexts.some(element => (element as HTMLElement).dataset.testid === 'game-feedback')).toBe(true)
+    // ✓ and ✗ are text for assistive tech as well as icons.
+    expect(page.get('[data-testid="game-option-0"]').text()).toContain('Točan odgovor.')
+    expect(page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).text()).toContain('Tvoj odgovor.')
+    expect(page.findAll(OPTION).every(option => option.attributes('disabled') !== undefined)).toBe(true)
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).cards['word:w0'].missed).toBe(1)
+    // A second click on a locked option changes nothing.
+    await page.get('[data-testid="game-option-0"]').trigger('click')
+    expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 0')
+    // The record link and the correction dialog belong to the question's card.
+    expect(page.get('[data-testid="game-open-record"]').attributes('href')).toContain('/naselja/apatovec')
+    expect(page.find('[data-testid="game-suggest"]').exists()).toBe(true)
+  })
+
+  it('moves to the next question with Dalje and focuses its prompt', async () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    const page = await mountShell()
+    await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+    expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 1')
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).cards['word:w0'].known).toBe(1)
+    focus.mockClear()
+    await page.get('[data-testid="game-next"]').trigger('click')
+    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 2 od 3')
+    expect(page.get('[data-testid="game-prompt"]').text()).toBe('Pitanje 1?')
+    expect(page.find('[data-testid="game-feedback"]').exists()).toBe(false)
+    expect(focus.mock.contexts.some(element => (element as HTMLElement).id === 'game-question')).toBe(true)
+  })
+
+  it('selects with the keys 1 to 3 and ignores 4 when there are only three options', async () => {
+    const page = await mountShell()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '4' }))
+    expect(page.find('[data-testid="game-feedback"]').exists()).toBe(false)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: String(questions[0]!.correct + 1) }))
+    await vi.waitFor(() => expect(page.find('[data-testid="game-feedback"]').exists()).toBe(true))
+    expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 1')
+  })
+
+  it('ends with the score, the misses and the best score saved on the device', async () => {
+    const page = await mountShell()
+    for (const [i, q] of questions.entries()) {
+      await page.get(`[data-testid="game-option-${i === 1 ? wrongIndex(q) : q.correct}"]`).trigger('click')
+      await page.get('[data-testid="game-next"]').trigger('click')
+    }
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('2 od 3')
+    expect(page.findAll('[data-testid="game-miss"]')).toHaveLength(1)
+    expect(page.get('[data-testid="game-miss"]').text()).toContain('Pitanje 1?')
+    expect(page.get('[data-testid="game-miss"]').text()).toContain('Točan odgovor: B')
+    expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!)).toMatchObject({ version: 1, best: { rijec: { score: 2, max: 3 } } })
+    // Rijec has no creator round: it links to the challenge page instead of making one in place.
+    expect(page.get('[data-testid="game-make-challenge"]').text()).toBe('Napravi izazov s ovim')
+    expect(page.get('[data-testid="game-make-challenge"]').attributes('href')).toContain('/izazov')
+    expect(page.find('[data-testid="challenge-create"]').exists()).toBe(false)
+    expect(page.get('[data-testid="quiz-share-toggle"]').text()).toBe('Podijeli rezultat')
+    await page.get('[data-testid="quiz-share-toggle"]').trigger('click')
+    expect(page.get('[data-testid="quiz-share-text"]').text()).toContain('Kak se to veli? 2/3\n🟩🟥🟩')
+  })
+
+  it('keeps a better stored score and emits restart from "Igraj opet"', async () => {
+    localStorage.setItem(GAME_SCORES_KEY, JSON.stringify({ version: 1, best: { rijec: { score: 3, max: 3, at: '2026-11-01T00:00:00.000Z' } } }))
+    const page = await mountShell()
+    for (const q of questions) {
+      await page.get(`[data-testid="game-option-${wrongIndex(q)}"]`).trigger('click')
+      await page.get('[data-testid="game-next"]').trigger('click')
+    }
+    expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!).best.rijec).toMatchObject({ score: 3, max: 3 })
+    await page.get('[data-testid="game-replay"]').trigger('click')
+    expect(page.emitted('restart')).toHaveLength(1)
+  })
+
+  it('shows the question again as practice that is not shared or saved', async () => {
+    const page = await mountShell()
+    for (const q of questions) {
+      await page.get(`[data-testid="game-option-${wrongIndex(q)}"]`).trigger('click')
+      await page.get('[data-testid="game-next"]').trigger('click')
+    }
+    await page.get('[data-testid="game-replay-missed"]').trigger('click')
+    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')
+    for (let i = 0; i < 3; i++) {
+      // Options are reshuffled, so find the correct one from the prompt's question.
+      const n = Number(page.get('[data-testid="game-prompt"]').text().match(/\d/)![0])
+      const texts = page.findAll(OPTION).map(option => option.text().replace(/^\d+\.\s*/, ''))
+      await page.get(`[data-testid="game-option-${texts.indexOf(['A', 'B', 'C'][questions[n]!.correct]!)}"]`).trigger('click')
+      await page.get('[data-testid="game-next"]').trigger('click')
+    }
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('3 od 3')
+    expect(page.find('[data-testid="quiz-share"]').exists()).toBe(false)
+    expect(page.find('[data-testid="game-make-challenge"]').exists()).toBe(false)
+    // The 0/3 first round saved nothing, and the 3/3 practice round saves nothing either.
+    expect(localStorage.getItem(GAME_SCORES_KEY)).toBeNull()
+  })
+
+  it('resets to the first question when new questions arrive', async () => {
+    const page = await mountShell()
+    await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+    await page.setProps({ questions: [question(2), question(1)] })
+    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 2')
+    expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 0')
+  })
+})
+
+describe('Kak se to veli?', () => {
+  it('opens on a start screen with Srednje selected and starts a ten-question round', async () => {
+    wrapper = await mountSuspended(KakSeVeli, { route: '/potkalnicko-prigorje/igre/kak-se-veli' })
+    await vi.waitFor(() => expect(wrapper!.find('[data-testid="game-start"]').exists()).toBe(true))
+    const levels = ['lako', 'srednje', 'tesko'].map(id => wrapper!.get(`[data-testid="game-level-${id}"]`))
+    expect(levels.map(level => level.text())).toEqual(['Lako', 'Srednje', 'Teško'])
+    expect(levels.map(level => level.attributes('aria-checked'))).toEqual(['false', 'true', 'false'])
+    await levels[2]!.trigger('click')
+    expect(wrapper.get('[data-testid="game-level-tesko"]').attributes('aria-checked')).toBe('true')
+    expect(wrapper.get('[data-testid="game-start-button"]').text()).toBe('Kreni')
+    await wrapper.get('[data-testid="game-start-button"]').trigger('click')
+    expect(wrapper.find('[data-testid="game-start"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="game-prompt"]').text()).toMatch(/^Kak se kod nas veli „značenje \d”\?$/)
+    expect(wrapper.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 5')
+    expect(wrapper.findAll(OPTION).length).toBeGreaterThanOrEqual(2)
+  })
+})

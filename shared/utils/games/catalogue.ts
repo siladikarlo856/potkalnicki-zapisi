@@ -53,6 +53,17 @@ export const GAME_CATALOGUE: GameEntry[] = [
     challengeable: true
   },
   {
+    id: 'rijec',
+    title: 'Kak se to veli?',
+    blurb: 'Pročitaj značenje i pogodi kak se to kod nas veli.',
+    topic: 'rijeci',
+    format: 'odabir',
+    minutes: 5,
+    path: pzRoutes.askWord,
+    status: 'live',
+    challengeable: true
+  },
+  {
     id: 'kartice',
     title: 'Kartice',
     blurb: 'Okreni karticu i provjeri znaš li riječ.',

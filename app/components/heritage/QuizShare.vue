@@ -1,13 +1,14 @@
 <script setup lang="ts">
 // Shares how the round went (score and a square per question), never the words or answers.
-const props = defineProps<{ results: boolean[] }>()
+// A game shell passes its own headline and path; the quiz page keeps the default "Kaj to znači?" text.
+const props = defineProps<{ results: boolean[], headline?: string, path?: string }>()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const origin = ref('')
 const expanded = ref(false)
 const score = computed(() => props.results.filter(Boolean).length)
-const summary = computed(() => resultShareText(t('quiz.shareText', { score: score.value, total: props.results.length }), props.results))
-const link = computed(() => origin.value + localePath('/potkalnicko-prigorje/igre/kviz'))
+const summary = computed(() => resultShareText(props.headline ?? t('quiz.shareText', { score: score.value, total: props.results.length }), props.results))
+const link = computed(() => origin.value + localePath(props.path ?? '/potkalnicko-prigorje/igre/kviz'))
 
 const labels = computed(() => ({
   copy: t('quiz.copyResult'),

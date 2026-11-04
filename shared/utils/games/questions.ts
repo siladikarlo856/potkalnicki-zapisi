@@ -29,10 +29,10 @@ function questionId(game: GameId, kind: string, entityId: string): string {
   return id
 }
 
-function verifiedWords(pool: CardPool, topics: GenerateQuestionsOptions['topics']): PoolWord[] {
+function verifiedWords(pool: CardPool, topics: GenerateQuestionsOptions['topics'], wordStatus: GenerateQuestionsOptions['wordStatus'] = 'verified'): PoolWord[] {
   const slugs = slugMap(pool)
   return pool.cards.filter((c): c is PoolWord =>
-    c.kind === 'word' && c.status === 'verified' && cardMatchesTopicSelection(c, topics, slugs))
+    c.kind === 'word' && (wordStatus === 'any' || c.status === 'verified') && cardMatchesTopicSelection(c, topics, slugs))
 }
 
 function places(pool: CardPool, topics: GenerateQuestionsOptions['topics']): PoolPlace[] {
@@ -51,11 +51,11 @@ function settlementName(pool: CardPool, settlementId: string): string {
   return pool.settlements.find(s => s.id === settlementId)?.name ?? settlementId
 }
 
-function znacenjeQuestion(pool: CardPool, target: PoolWord, difficulty: Difficulty, rng: Rng): GameQuestion | null {
-  const words = verifiedWords(pool, target.topics.length ? target.topics : ['rijeci'])
+function znacenjeQuestion(pool: CardPool, target: PoolWord, difficulty: Difficulty, rng: Rng, wordStatus?: GenerateQuestionsOptions['wordStatus']): GameQuestion | null {
+  const words = verifiedWords(pool, target.topics.length ? target.topics : ['rijeci'], wordStatus)
   const distractors = pickWordDistractors('znacenje', target, words, difficulty, rng)
   if (distractors.length < 2) return null
-  const { options, correct } = buildWordMeaningOptions(target, distractors, rng)
+  const { options, correct, cards } = buildWordMeaningOptions(target, distractors, rng)
   if (!optionsValid(options)) return null
   const meaningEn = target.meaningEn?.trim() || target.meaning
   return {
@@ -71,15 +71,16 @@ function znacenjeQuestion(pool: CardPool, target: PoolWord, difficulty: Difficul
     explanation: {
       hr: `„${target.headword}” znači „${target.meaning.trim()}”.`,
       en: `“${target.headword}” means “${meaningEn}”.`
-    }
+    },
+    optionCards: cards
   }
 }
 
-function rijecQuestion(pool: CardPool, target: PoolWord, difficulty: Difficulty, rng: Rng): GameQuestion | null {
-  const words = verifiedWords(pool, target.topics.length ? target.topics : ['rijeci'])
+function rijecQuestion(pool: CardPool, target: PoolWord, difficulty: Difficulty, rng: Rng, wordStatus?: GenerateQuestionsOptions['wordStatus']): GameQuestion | null {
+  const words = verifiedWords(pool, target.topics.length ? target.topics : ['rijeci'], wordStatus)
   const distractors = pickWordDistractors('rijec', target, words, difficulty, rng)
   if (distractors.length < 2) return null
-  const { options, correct } = buildWordHeadwordOptions(target, distractors, rng)
+  const { options, correct, cards } = buildWordHeadwordOptions(target, distractors, rng)
   if (!optionsValid(options)) return null
   const meaningEn = target.meaningEn?.trim() || target.meaning
   return {
@@ -95,7 +96,8 @@ function rijecQuestion(pool: CardPool, target: PoolWord, difficulty: Difficulty,
     explanation: {
       hr: `„${target.meaning.trim()}” se kod nas veli „${target.headword}”.`,
       en: `The local word is “${target.headword}”.`
-    }
+    },
+    optionCards: cards
   }
 }
 
@@ -303,10 +305,10 @@ function generateOne(
   options: GenerateQuestionsOptions,
   targetKey?: CardKey
 ): GameQuestion | null {
-  const { topics, difficulty, rng, exclude = new Set<CardKey>() } = options
+  const { topics, difficulty, rng, exclude = new Set<CardKey>(), wordStatus } = options
 
   if (game === 'znacenje' || game === 'rijec') {
-    let words = verifiedWords(pool, topics).filter(w => !exclude.has(w.key))
+    let words = verifiedWords(pool, topics, wordStatus).filter(w => !exclude.has(w.key))
     if (targetKey) {
       const fixed = words.find(w => w.key === targetKey)
       if (!fixed) return null
@@ -315,8 +317,8 @@ function generateOne(
     const target = targetKey ? words[0]! : pickWordTarget(words, difficulty, rng)
     if (!target || exclude.has(target.key)) return null
     return game === 'znacenje'
-      ? znacenjeQuestion(pool, target, difficulty, rng)
-      : rijecQuestion(pool, target, difficulty, rng)
+      ? znacenjeQuestion(pool, target, difficulty, rng, wordStatus)
+      : rijecQuestion(pool, target, difficulty, rng, wordStatus)
   }
 
   if (game === 'opcina') {
@@ -381,12 +383,12 @@ function generateOne(
 }
 
 export function generateQuestions(game: GameId, pool: CardPool, options: GenerateQuestionsOptions): GameQuestion[] {
-  const { count, rng, exclude = new Set<CardKey>(), topics } = options
+  const { count, rng, exclude = new Set<CardKey>(), topics, wordStatus } = options
   if (count <= 0) return []
 
   let candidates: CardKey[] = []
   if (game === 'znacenje' || game === 'rijec') {
-    candidates = verifiedWords(pool, topics).map(w => w.key)
+    candidates = verifiedWords(pool, topics, wordStatus).map(w => w.key)
   } else if (game === 'opcina') {
     candidates = places(pool, topics).map(p => p.key)
   } else if (game === 'crkva') {

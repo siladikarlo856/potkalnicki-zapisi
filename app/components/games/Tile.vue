@@ -21,18 +21,11 @@ const formatIcon: Record<GameEntry['format'], string> = {
   'bez-greske': 'i-lucide-heart'
 }
 
-const bestScore = ref<number | null>(null)
-
-onMounted(() => {
-  try {
-    const raw = localStorage.getItem('pz-games/v1')
-    if (!raw) return
-    const data = JSON.parse(raw) as Record<string, { best?: number }>
-    const value = data[props.game.id]?.best
-    if (typeof value === 'number') bestScore.value = value
-  } catch {
-    // ignore malformed storage
-  }
+const { scores } = useGameScores()
+// Best results are written by the game shell as `pz-games/v1` (WP7); the composable loads them on mount.
+const bestScore = computed(() => {
+  const best = scores.value.best[props.game.id]
+  return best ? `${best.score}/${best.max}` : null
 })
 
 const linkTo = computed(() => {

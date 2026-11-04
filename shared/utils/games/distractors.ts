@@ -191,13 +191,15 @@ export function buildWordMeaningOptions(target: PoolWord, distractors: PoolWord[
     return { hr, en }
   })
   const order = shuffled(texts.map((_, i) => i), rng)
+  const words = [target, ...distractors]
   const options = order.map(i => texts[i]!)
-  return { options, correct: order.indexOf(0) }
+  return { options, correct: order.indexOf(0), cards: order.map(i => words[i]!.key) }
 }
 
 export function buildWordHeadwordOptions(target: PoolWord, distractors: PoolWord[], rng: Rng) {
-  const options = shuffled([target.headword, ...distractors.map(w => w.headword)], rng)
-  return { options: options.map(hr => ({ hr, en: hr })), correct: options.indexOf(target.headword) }
+  const words = shuffled([target, ...distractors], rng)
+  const options = words.map(w => w.headword)
+  return { options: options.map(hr => ({ hr, en: hr })), correct: options.indexOf(target.headword), cards: words.map(w => w.key) }
 }
 
 export function pickWordDistractors(

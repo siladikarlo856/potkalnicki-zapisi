@@ -38,4 +38,43 @@ describe('game question generators', () => {
     const questions = generateQuestions('znacenje', pool, { topics: ['rijeci'], difficulty: 'tesko', count: 5, rng: mulberry32(8) })
     expect(questions.some(q => q.prompt.hr.includes('afinger'))).toBe(true)
   })
+  it('rijec asks for the local word and records the card behind each option', () => {
+    const questions = generateQuestions('rijec', pool, { topics: ['rijeci'], difficulty: 'srednje', count: 4, rng: mulberry32(5) })
+    expect(questions.length).toBeGreaterThan(0)
+    for (const question of questions) {
+      expect(question.gameId).toBe('rijec')
+      expect(question.prompt.hr).toMatch(/^Kak se kod nas veli „.+”\?$/)
+      expect(question.prompt.en).toMatch(/^Which local word means “.+”\?$/)
+      expect(question.options[question.correct]!.hr).toBe(question.explanation.hr.match(/se kod nas veli „(.+)”\.$/)![1])
+      expect(question.optionCards).toHaveLength(question.options.length)
+      expect(question.optionCards![question.correct]).toBe(question.card)
+    }
+  })
+
+  it('znacenje records optionCards in option order', () => {
+    const questions = generateQuestions('znacenje', pool, { topics: ['rijeci'], difficulty: 'srednje', count: 4, rng: mulberry32(11) })
+    for (const question of questions) {
+      expect(question.optionCards).toHaveLength(question.options.length)
+      expect(question.optionCards![question.correct]).toBe(question.card)
+      const words = pool.cards.filter(card => card.kind === 'word')
+      question.optionCards!.forEach((key, i) => {
+        const word = words.find(card => card.key === key)!
+        expect('meaning' in word && word.meaning).toBe(question.options[i]!.hr)
+      })
+    }
+  })
+
+  it('place and item games do not set optionCards', () => {
+    for (const game of ['opcina', 'crkva'] as const) {
+      const questions = generateQuestions(game, pool, { topics: ['mjesta', 'bastina'], difficulty: 'srednje', count: 2, rng: mulberry32(3) })
+      for (const question of questions) expect(question.optionCards).toBeUndefined()
+    }
+  })
+
+  it('asks community words only in solo play (wordStatus any)', () => {
+    const community = { ...pool, cards: pool.cards.map(card => card.kind === 'word' ? { ...card, status: 'community' as const } : card) }
+    const base = { topics: ['rijeci'], difficulty: 'srednje' as const, count: 4 }
+    expect(generateQuestions('rijec', community, { ...base, rng: mulberry32(2) })).toEqual([])
+    expect(generateQuestions('rijec', community, { ...base, rng: mulberry32(2), wordStatus: 'any' }).length).toBeGreaterThan(0)
+  })
 })

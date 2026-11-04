@@ -6,6 +6,7 @@ export const pzRoutes = {
   cards: `${PZ_ROOT}/igre/kartice`,
   learn: `${PZ_ROOT}/uci`,
   quiz: `${PZ_ROOT}/igre/kviz`,
+  askWord: `${PZ_ROOT}/igre/kak-se-veli`,
   challenge: `${PZ_ROOT}/izazov`,
   contribute: `${PZ_ROOT}/doprinesi`,
   about: `${PZ_ROOT}/o-projektu`,

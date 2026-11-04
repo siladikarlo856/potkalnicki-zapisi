@@ -17,6 +17,8 @@ export interface GameQuestion {
   explanation: { hr: string, en: string }
   archivePath?: string
   display?: QuestionDisplay
+  /** Solo play only (WP7): the card behind each option, in option order. Word games set it; it is never stored in challenges. */
+  optionCards?: CardKey[]
 }
 
 export const CHALLENGEABLE_GAMES = ['znacenje', 'rijec', 'opcina', 'crkva', 'klub-mjesto', 'klub-liga', 'klub-odakle'] as const satisfies readonly GameId[]
@@ -30,4 +32,6 @@ export interface GenerateQuestionsOptions {
   count: number
   rng: import('./rng').Rng
   exclude?: Set<CardKey>
+  /** Which words may be asked. Challenges use 'verified' (the default); solo play may use 'any' (community and verified). */
+  wordStatus?: 'verified' | 'any'
 }
