@@ -15,6 +15,8 @@ export const pzRoutes = {
   mapFind: `${PZ_ROOT}/igre/karta`,
   mapWhich: `${PZ_ROOT}/igre/koje-je-selo`,
   mapLearn: `${PZ_ROOT}/igre/uci-kartu`,
+  churchWhere: `${PZ_ROOT}/igre/gdje-je-crkva`,
+  heritageMatch: `${PZ_ROOT}/igre/spoji`,
   challenge: `${PZ_ROOT}/izazov`,
   contribute: `${PZ_ROOT}/doprinesi`,
   about: `${PZ_ROOT}/o-projektu`,

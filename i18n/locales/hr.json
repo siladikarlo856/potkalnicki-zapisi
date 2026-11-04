@@ -1030,7 +1030,17 @@
       "bezDescription": "Mješovita pitanja — prva pogreška završava rundu.",
       "bezStreak": "Niz: {n}",
       "bezBestStreak": "Najbolji niz: {n}",
-      "bezAgain": "Igraj opet"
+      "bezAgain": "Igraj opet",
+      "churchEyebrow": "Baština",
+      "churchTitle": "Gdje je ta crkva?",
+      "churchDescription": "Odaberi naselje u kojem se nalazi sakralni zapis.",
+      "churchTopicLabel": "Koji zapisi ulaze u igru?",
+      "churchTopicCount": "{count} zapisa u ovom odabiru",
+      "matchEyebrow": "Baština",
+      "matchTitle": "Spoji crkvu i selo",
+      "matchDescription": "Spoji svaki zapis s naseljem.",
+      "matchHint": "Spoji svaki zapis s naseljem — tri runde po četiri para. Bodovi se broje samo za parove pogodene iz prvog pokušaja.",
+      "matchBoardOf": "Runda {i} od {n}"
     },
     "map": {
       "layers": "Sloj karte",

@@ -171,6 +171,30 @@ export const GAME_CATALOGUE: GameEntry[] = [
     needs: { kind: 'word', min: 3 }
   },
   {
+    id: 'crkva',
+    title: 'Gdje je ta crkva?',
+    blurb: 'Poveži sakralni zapis s naseljem u kojem se nalazi.',
+    topic: 'bastina',
+    format: 'odabir',
+    minutes: 5,
+    path: pzRoutes.churchWhere,
+    status: 'live',
+    challengeable: true,
+    needs: { kind: 'item', min: 10 }
+  },
+  {
+    id: 'spoji',
+    title: 'Spoji crkvu i selo',
+    blurb: 'Spoji svaki zapis s naseljem — tri runde po četiri para.',
+    topic: 'bastina',
+    format: 'spoji',
+    minutes: 5,
+    path: pzRoutes.heritageMatch,
+    status: 'live',
+    challengeable: false,
+    needs: { kind: 'item', min: 4 }
+  },
+  {
     id: 'tko-je-to',
     title: 'Tko je to?',
     blurb: 'Poveži osobu s mjestom i ulogom.',
