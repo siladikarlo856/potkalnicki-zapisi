@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import type { ChallengeMeta } from '~~/shared/utils/challenge'
 import type { ChallengeTemplateContent } from '~~/shared/utils/content/challengeTemplate'
+import type { Difficulty } from '~~/shared/utils/games/types'
+import type { TopicId } from '~~/shared/utils/learn/types'
+import { TOPICS } from '~~/shared/utils/learn/topics'
 import { CHALLENGE_LIMITS, challengeSummary } from '~~/shared/utils/content/challengeTemplate'
 
 // The nested editor of a challenge set: sample flag, title, then rounds of multiple-choice
@@ -14,6 +18,24 @@ const confirm = useAdminConfirm()
 
 const summary = computed(() => challengeSummary(content.value))
 const full = computed(() => content.value.rounds.length >= CHALLENGE_LIMITS.rounds)
+const tagTopics = TOPICS.filter(topic => topic.status === 'live')
+
+function metaBlock(): ChallengeMeta {
+  if (!content.value.meta) content.value.meta = { source: 'set' }
+  return content.value.meta
+}
+
+function toggleMetaTopic(id: TopicId) {
+  const meta = metaBlock()
+  const selected = meta.topics ?? []
+  meta.topics = selected.includes(id) ? selected.filter(topic => topic !== id) : [...selected, id]
+}
+
+function setMetaDifficulty(level: Difficulty | undefined) {
+  const meta = metaBlock()
+  if (level === undefined) delete meta.difficulty
+  else meta.difficulty = level
+}
 
 function moveRound(index: number, delta: -1 | 1) {
   moveItem(content.value.rounds, index, index + delta)
@@ -49,6 +71,54 @@ async function removeRound(index: number) {
         v-model="content.sample"
         label="Uzorak"
       />
+    </UFormField>
+
+    <USeparator label="Oznake za igrače" />
+
+    <UFormField
+      :name="`${props.name}.meta.topics`"
+      label="Teme"
+      description="Opcionalno: prikazuje se na odabiru gotovog seta."
+    >
+      <div
+        class="flex flex-wrap gap-2"
+        data-test="challenge-meta-topics"
+      >
+        <UButton
+          v-for="topic in tagTopics"
+          :key="topic.id"
+          type="button"
+          size="sm"
+          :color="content.meta?.topics?.includes(topic.id) ? 'primary' : 'neutral'"
+          :variant="content.meta?.topics?.includes(topic.id) ? 'solid' : 'outline'"
+          @click="toggleMetaTopic(topic.id)"
+        >
+          {{ topic.label }}
+        </UButton>
+      </div>
+    </UFormField>
+
+    <UFormField
+      :name="`${props.name}.meta.difficulty`"
+      label="Težina"
+      description="Opcionalno: Lako, Srednje ili Teško."
+    >
+      <div
+        class="flex flex-wrap gap-2"
+        data-test="challenge-meta-difficulty"
+      >
+        <UButton
+          v-for="level in (['lako', 'srednje', 'tesko'] as const)"
+          :key="level"
+          type="button"
+          size="sm"
+          :color="content.meta?.difficulty === level ? 'primary' : 'neutral'"
+          :variant="content.meta?.difficulty === level ? 'solid' : 'outline'"
+          @click="setMetaDifficulty(content.meta?.difficulty === level ? undefined : level)"
+        >
+          {{ level === 'lako' ? 'Lako' : level === 'srednje' ? 'Srednje' : 'Teško' }}
+        </UButton>
+      </div>
     </UFormField>
 
     <UFormField

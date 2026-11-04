@@ -1,6 +1,7 @@
 import type { WordEntry } from '../../app/types/heritage'
 import type { CardPool, TopicId } from '../../shared/utils/learn/types'
-import type { ChallengeContent, ChallengeQuestion, GenerateChallengeInput, QuizChallengeInput } from '../../shared/utils/challenge'
+import type { ChallengeContent, ChallengeQuestion, ChallengeSetPublic, GenerateChallengeInput, QuizChallengeInput } from '../../shared/utils/challenge'
+import type { ChallengeTemplateContent } from '../../shared/utils/content/challengeTemplate'
 import { challengeSummary, validateChallengeContent } from '../../shared/utils/content/challengeTemplate'
 import type { Rng } from '../../shared/utils/games/rng'
 import {
@@ -193,5 +194,16 @@ export function challengeOverview(content: ChallengeContent) {
     sample: content.sample,
     rounds: content.rounds.map(r => ({ topic: r.topic, count: r.questions.length })),
     maxScore: challengeSummary(content).maxScore
+  }
+}
+
+/** One published template for the set picker; never includes question bodies or answers. */
+export function challengeSetPublic(id: string, content: ChallengeTemplateContent): ChallengeSetPublic {
+  return {
+    id,
+    title: content.title,
+    sample: content.sample,
+    rounds: content.rounds.map(r => ({ topic: r.topic, count: r.questions.length })),
+    ...(content.meta ? { meta: content.meta } : {})
   }
 }

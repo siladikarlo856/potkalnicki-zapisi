@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChallengeState, GenerateChallengeInput } from '~~/shared/utils/challenge'
+import type { ChallengeSetPublic, ChallengeState, GenerateChallengeInput } from '~~/shared/utils/challenge'
 import type { TopicId } from '~~/shared/utils/learn/types'
 import type { Difficulty, GenerateGameId } from '~~/shared/utils/games/types'
 import { applyChallengeCreateQuery, challengeCreateGameEnabled, defaultChallengeCreateForm } from '~~/shared/utils/challengeCreateForm'
@@ -15,7 +15,11 @@ const { pool, status: poolStatus } = useCardPool()
 
 useSeoMeta({ title: () => t('challenge.createPageTitle'), description: () => t('challenge.createPageIntro') })
 
-const source = ref<'random' | 'quiz'>('random')
+const { data: publishedSets } = await useFetch<ChallengeSetPublic[]>('/api/challenges/sets', { default: () => [] })
+const showSetSource = computed(() => publishedSets.value.some(set => !set.sample))
+
+const source = ref<'random' | 'set' | 'quiz'>('random')
+const selectedSetId = ref<string | null>(null)
 const form = ref(defaultChallengeCreateForm())
 const selectedTopics = computed({
   get: () => form.value.topics,
@@ -88,7 +92,12 @@ async function submit() {
     error.value = t('challenge.invalidNickname')
     return
   }
-  if (!gameEnabled(game.value)) {
+  if (source.value === 'set') {
+    if (!selectedSetId.value) {
+      error.value = t('challenge.sourceSetEmpty')
+      return
+    }
+  } else if (!gameEnabled(game.value)) {
     error.value = t('challenge.createInvalidGame')
     return
   }
@@ -96,9 +105,12 @@ async function submit() {
   busy.value = true
   error.value = ''
   try {
+    const body = source.value === 'set'
+      ? { nickname: name, set: selectedSetId.value! }
+      : { nickname: name, generate: generateBody.value }
     const state = await $fetch<ChallengeState>('/api/challenges', {
       method: 'POST',
-      body: { nickname: name, generate: generateBody.value }
+      body
     })
     remember(state, 'creator')
     await navigateTo(localePath(`/potkalnicko-prigorje/izazov/${state.code}`))
@@ -109,6 +121,11 @@ async function submit() {
     busy.value = false
   }
 }
+
+watch(publishedSets, (sets) => {
+  if (selectedSetId.value && !sets.some(set => set.id === selectedSetId.value)) selectedSetId.value = null
+  if (source.value === 'set' && !showSetSource.value) source.value = 'random'
+}, { immediate: true })
 </script>
 
 <template>
@@ -155,9 +172,19 @@ async function submit() {
             {{ t('challenge.sourceRandom') }}
           </UButton>
           <UButton
+            v-if="showSetSource"
             type="button"
-            color="neutral"
-            variant="outline"
+            :color="source === 'set' ? 'primary' : 'neutral'"
+            :variant="source === 'set' ? 'solid' : 'outline'"
+            data-testid="challenge-source-set"
+            @click="source = 'set'"
+          >
+            {{ t('challenge.sourceSet') }}
+          </UButton>
+          <UButton
+            type="button"
+            :color="source === 'quiz' ? 'primary' : 'neutral'"
+            :variant="source === 'quiz' ? 'solid' : 'outline'"
             data-testid="challenge-source-quiz"
             @click="source = 'quiz'"
           >
@@ -182,7 +209,80 @@ async function submit() {
         </UCard>
       </section>
 
-      <template v-if="source === 'random'">
+      <template v-if="source === 'set'">
+        <section class="space-y-3">
+          <p class="text-sm text-muted">
+            {{ t('challenge.sourceSetHelp') }}
+          </p>
+          <div
+            class="grid gap-3 sm:grid-cols-2"
+            role="listbox"
+            :aria-label="t('challenge.sourceSet')"
+          >
+            <button
+              v-for="set in publishedSets"
+              :key="set.id"
+              type="button"
+              role="option"
+              :aria-selected="selectedSetId === set.id"
+              class="rounded-lg border p-4 text-left transition-colors"
+              :class="selectedSetId === set.id ? 'border-primary bg-primary/5' : 'border-default hover:border-primary/40'"
+              :data-set-id="set.id"
+              @click="selectedSetId = set.id"
+            >
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-semibold">{{ set.title.hr }}</span>
+                <UBadge
+                  v-if="set.sample"
+                  :label="t('challenge.sourceSetSampleBadge')"
+                  color="warning"
+                  variant="subtle"
+                  size="sm"
+                />
+              </div>
+              <p class="mt-1 text-sm text-muted">
+                {{ set.rounds.map(r => `${r.topic.hr} (${r.count})`).join(' · ') }}
+              </p>
+            </button>
+          </div>
+        </section>
+
+        <UFormField
+          :label="t('challenge.nickname')"
+          :help="t('challenge.nicknameHelp')"
+          required
+        >
+          <UInput
+            v-model="nickname"
+            name="nickname"
+            autocomplete="nickname"
+            :maxlength="24"
+            class="w-full"
+            data-testid="challenge-create-nickname"
+          />
+        </UFormField>
+
+        <UAlert
+          v-if="error"
+          color="error"
+          variant="subtle"
+          :description="error"
+          role="alert"
+        />
+
+        <UButton
+          type="submit"
+          size="lg"
+          icon="i-lucide-swords"
+          :loading="busy"
+          :disabled="!selectedSetId"
+          data-testid="challenge-create-submit"
+        >
+          {{ t('challenge.createPageSubmit') }}
+        </UButton>
+      </template>
+
+      <template v-else-if="source === 'random'">
         <section class="space-y-3">
           <h2 class="text-lg font-semibold">
             {{ t('challenge.topicsLabel') }}

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { h } from 'vue'
+import { h, nextTick } from 'vue'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { UApp } from '#components'
 import AdminChallenges from '../app/pages/admin/izazovi.vue'
@@ -117,6 +117,19 @@ describe('admin challenge templates (Izazovi)', () => {
     expect(dialog()!.querySelector('[data-test="challenge-round-1"]')!.textContent).toContain('Polje „Tema (engleski)“ je obavezno.')
     expect(dialog()!.querySelector('[data-test="challenge-round-1"]')!.textContent).toContain('Polje „Odgovor 4 (hrvatski)“ je obavezno.')
     expect(calls.some(call => call.method === 'POST')).toBe(false)
+  })
+
+  it('round-trips optional meta topics and difficulty on save', async () => {
+    wrapper = await mountPage(`/admin/izazovi?uredi=${OTHER}`)
+    await vi.waitFor(() => expect(dialog()?.querySelector('[data-test="challenge-meta-topics"]')).toBeTruthy())
+    buttonIn(dialog()!.querySelector('[data-test="challenge-meta-topics"]')!, 'Mjesta')!.click()
+    await nextTick()
+    buttonIn(dialog()!.querySelector('[data-test="challenge-meta-difficulty"]')!, 'Srednje')!.click()
+    await nextTick()
+    buttonIn(dialog(), 'Spremi')!.click()
+    await vi.waitFor(() => expect(patches()).toHaveLength(1))
+    const body = patches()[0]!.body as { content: typeof content }
+    expect(body.content.meta).toMatchObject({ source: 'set', topics: ['mjesta'], difficulty: 'srednje' })
   })
 
   it('edits a question in place and saves the whole set with the revision', async () => {

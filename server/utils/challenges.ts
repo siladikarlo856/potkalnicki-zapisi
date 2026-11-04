@@ -5,7 +5,7 @@ import type { CardKey } from '../../shared/utils/learn/types'
 import { validateChallengeContent } from '../../shared/utils/content/challengeTemplate'
 import { challengeNickname } from '../../shared/utils/challenge'
 import { quizChallengeContent, generatedChallengeContent, parseGenerateInput } from './challengeContent'
-import { currentChallengeContent } from './challengeTemplates'
+import { currentChallengeContent, challengeContentFromSet } from './challengeTemplates'
 import { getCardPool } from './cardPool'
 import { mulberry32 } from '../../shared/utils/games/rng'
 
@@ -62,6 +62,15 @@ export async function enterChallenge(event: H3Event, create: boolean) {
     try {
       const pool = await getCardPool()
       content = generatedChallengeContent(parseGenerateInput(body.generate, pool), pool, mulberry32(randomBytes(4).readUInt32LE(0)))
+    } catch {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid challenge settings' })
+    }
+  } else if (create && body.set !== undefined) {
+    if (body.quiz !== undefined || typeof body.set !== 'string') {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid challenge settings' })
+    }
+    try {
+      content = await challengeContentFromSet(body.set)
     } catch {
       throw createError({ statusCode: 400, statusMessage: 'Invalid challenge settings' })
     }

@@ -1,5 +1,8 @@
-import type { ChallengeContent } from '../../shared/utils/challenge'
+import type { ChallengeContent, ChallengeMeta } from '../../shared/utils/challenge'
+import type { ChallengeTemplateContent } from '../../shared/utils/content/challengeTemplate'
 import { validateChallengeContent } from '../../shared/utils/content/challengeTemplate'
+import { isUuid } from '../../shared/utils/content/common'
+import { challengeSetPublic } from './challengeContent'
 
 // The current challenge template (Izazovi in the admin), as the snapshot a new fixed challenge
 // stores: the template content plus `version` (the template revision) and `templateId`.
@@ -67,4 +70,39 @@ export function invalidateCurrentChallengeContent() {
   generation++
   pending = null
   cached = null
+}
+
+export async function publishedChallengeSets() {
+  const { data, error } = await useDatabaseClient().from('heritage_challenge_templates')
+    .select('id, content, is_current')
+    .eq('status', 'published')
+    .order('is_current', { ascending: false })
+    .order('name', { ascending: true })
+  if (error) databaseError(error)
+  return (data ?? []).map(row =>
+    challengeSetPublic(row.id, row.content as ChallengeTemplateContent))
+}
+
+export async function challengeContentFromSet(templateId: string): Promise<ChallengeContent> {
+  const id = templateId.trim().toLowerCase()
+  if (!isUuid(id)) throw new Error('Unknown set')
+  const { data, error } = await useDatabaseClient().from('heritage_challenge_templates')
+    .select('id, revision, content, status')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) databaseError(error)
+  if (!data || data.status !== 'published') throw new Error('Unknown set')
+  const templateContent = data.content as ChallengeTemplateContent
+  const meta: ChallengeMeta = { ...(templateContent.meta ?? {}), source: 'set' }
+  try {
+    return validateChallengeContent({
+      ...templateContent,
+      meta,
+      version: data.revision,
+      templateId: data.id
+    })
+  } catch (cause) {
+    console.error(`[challenge] Published template ${data.id} is invalid:`, (cause as Error).message)
+    throw new Error('Unknown set', { cause })
+  }
 }

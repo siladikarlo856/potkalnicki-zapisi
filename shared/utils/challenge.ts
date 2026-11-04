@@ -18,6 +18,15 @@ export interface ChallengeQuestion {
   card?: CardKey
 }
 /** A challenge set; `heritage_challenges.content` stores one as an immutable snapshot. */
+/** Published challenge set as shown on the create form and in GET /api/challenges/sets (no questions). */
+export interface ChallengeSetPublic {
+  id: string
+  title: ChallengeText
+  sample: boolean
+  rounds: { topic: ChallengeText, count: number }[]
+  meta?: ChallengeMeta
+}
+
 export interface ChallengeContent {
   /** For a template snapshot, the template's revision; quiz-built snapshots use 1. */
   version: number
