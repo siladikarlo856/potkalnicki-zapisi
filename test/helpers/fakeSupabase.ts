@@ -79,7 +79,10 @@ export async function startFakeSupabase() {
     '/rest/v1/persons': [],
     '/rest/v1/person_areas': [],
     '/rest/v1/person_heritage_items': [],
-    '/rest/v1/person_sources': []
+    '/rest/v1/person_sources': [],
+    '/rest/v1/clubs': (seed.clubs ?? []).map(row => ({ ...row })),
+    '/rest/v1/club_seasons': (seed.clubSeasons ?? []).map(row => ({ ...row })),
+    '/rest/v1/club_sources': (seed.clubSources ?? []).map(row => ({ ...row }))
   }
   let nextId = 1
   // One-shot hook run just before the next daily upsert, to simulate losing a race.

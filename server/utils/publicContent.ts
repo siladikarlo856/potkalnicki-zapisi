@@ -84,9 +84,25 @@ export interface PersonRow {
   status: Status
   updated_at: string
 }
+export interface ClubRow {
+  id: string
+  name: string
+  slug: string
+  full_name: string | null
+  sport: string
+  settlement_id: string
+  founded_year: number | null
+  home_ground: string | null
+  verification: AtlasItemStatus
+  noindex: boolean
+  status: Status
+  updated_at: string
+}
 export interface PersonAreaRow { person_id: string, area_id: string, role: string, position: number }
 export interface PersonItemRow { person_id: string, item_id: string, relation: string, position: number }
 export interface PersonSourceRow { person_id: string, source_id: string, position: number }
+export interface ClubSeasonRow { club_id: string, season: string, competition: string, team: string, checked_at: string }
+export interface ClubSourceRow { club_id: string, source_id: string, position: number }
 export interface LegacyIdRow { kind: string, legacy_id: string, entity_id: string }
 export interface SlugHistoryRow { kind: string, namespace: string, scope_id: string | null, slug: string, entity_id: string }
 
@@ -98,6 +114,9 @@ export interface PublicContentRows {
   sources: SourceRow[]
   items: ItemRow[]
   itemSources: ItemSourceRow[]
+  clubs: ClubRow[]
+  clubSeasons: ClubSeasonRow[]
+  clubSources: ClubSourceRow[]
   legacyIds: LegacyIdRow[]
   slugHistory: SlugHistoryRow[]
   /** Person tables; absent in rows built before persons existed (treated as none). */
@@ -187,6 +206,20 @@ export interface SnapshotPerson {
   updatedAt: string
 }
 
+export interface SnapshotClub {
+  id: string
+  slug: string
+  name: string
+  sport: string
+  settlementId: string
+  municipalityId: string
+  verification: AtlasItemStatus
+  noindex: boolean
+  seasons: { season: string, competition: string, team: string, checkedAt: string }[]
+  sourceIds: string[]
+  updatedAt: string
+}
+
 /** Where an archived (gone) row used to be reachable, so its old URL answers 410. */
 export interface GoneRoutes {
   /** `${namespace}/${slug}` of archived towns, municipalities and settlements */
@@ -207,6 +240,7 @@ export interface PublicContent {
   items: SnapshotItem[]
   /** Live persons, by name */
   persons: SnapshotPerson[]
+  clubs: SnapshotClub[]
   categories: Map<string, SnapshotCategory>
   sources: Map<string, SnapshotSource>
   municipalityById: Map<string, SnapshotMunicipality>
@@ -218,6 +252,7 @@ export interface PublicContent {
   personsByArea: Map<string, string[]>
   /** item id → ids of live persons linked to that item, in display order */
   personsByItem: Map<string, string[]>
+  clubById: Map<string, SnapshotClub>
   /** `${namespace}/${slug}` → area id, namespace 'lau' (towns and municipalities) or 'settlement' */
   areaBySlug: Map<string, string>
   /** `${settlementId}/${slug}` → item id */
@@ -419,18 +454,57 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
   items.sort(byName)
 
   const { persons, personsByArea, personsByItem } = buildPersons(rows, { areaState, itemById: new Map(items.map(i => [i.id, i])), sources, gone })
+  const clubSources = new Map<string, ClubSourceRow[]>()
+  for (const link of rows.clubSources ?? []) {
+    if (!sources.has(link.source_id)) continue
+    clubSources.set(link.club_id, [...(clubSources.get(link.club_id) ?? []), link])
+  }
+  const clubSeasons = new Map<string, ClubSeasonRow[]>()
+  for (const season of rows.clubSeasons ?? []) {
+    clubSeasons.set(season.club_id, [...(clubSeasons.get(season.club_id) ?? []), season])
+  }
+  const clubs: SnapshotClub[] = []
+  for (const c of rows.clubs ?? []) {
+    const settlementLive = areaState.get(c.settlement_id)
+    if (settlementLive === undefined || !settlementLive || c.status !== 'published' || c.noindex) {
+      if (c.status === 'archived') gone.ids.add(c.id)
+      continue
+    }
+    const settlement = settlements.find(s => s.id === c.settlement_id)
+    if (!settlement) continue
+    clubs.push({
+      id: c.id,
+      slug: c.slug,
+      name: c.name,
+      sport: c.sport,
+      settlementId: c.settlement_id,
+      municipalityId: settlement.municipalityId,
+      verification: c.verification,
+      noindex: c.noindex,
+      seasons: (clubSeasons.get(c.id) ?? []).map(s => ({
+        season: s.season,
+        competition: s.competition,
+        team: s.team,
+        checkedAt: s.checked_at
+      })),
+      sourceIds: (clubSources.get(c.id) ?? []).sort((a, b) => a.position - b.position).map(l => l.source_id),
+      updatedAt: c.updated_at
+    })
+  }
+  clubs.sort(byName)
 
   const slugHistory = new Map(rows.slugHistory.map(h => [slugHistoryKey(h.kind, h.namespace, h.scope_id, h.slug), h.entity_id]))
   const region = regionRow ? { id: regionRow.id, slug: regionSlug, name: regionRow.name } : null
 
   return {
-    region, municipalities, settlements, items, persons, categories, sources,
+    region, municipalities, settlements, items, persons, clubs, categories, sources,
     personById: new Map(persons.map(p => [p.id, p])),
     personBySlug: new Map(persons.map(p => [p.slug, p])),
     personsByArea, personsByItem,
     municipalityById: new Map(municipalities.map(m => [m.id, m])),
     settlementById: new Map(settlements.map(s => [s.id, s])),
     itemById: new Map(items.map(i => [i.id, i])),
+    clubById: new Map(clubs.map(c => [c.id, c])),
     areaBySlug, itemByRoute, gone, legacyIds, slugHistory, loadedAt
   }
 }
@@ -449,7 +523,7 @@ async function readAll<T>(read: (from: number, to: number) => Page<T>) {
 
 /** Reads every row the snapshot needs (published and archived only; drafts never leave the database). */
 export async function loadPublicContentRows(client: SupabaseClient): Promise<PublicContentRows> {
-  const [areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources] = await Promise.all([
+  const [areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources] = await Promise.all([
     readAll<AreaRow>((from, to) => client.from('areas')
       .select('id,kind,parent_id,name,slug,official_code,latitude,longitude,credits,status,updated_at')
       .in('kind', ['region', 'town', 'municipality', 'settlement']).in('status', VISIBLE).order('id').range(from, to)),
@@ -460,6 +534,11 @@ export async function loadPublicContentRows(client: SupabaseClient): Promise<Pub
       .select('id,name,slug,category_id,municipality_id,settlement_id,locality,verification,heritage_status,registry_number,period,description,research_notes,latitude,longitude,noindex,credits,status,updated_at')
       .in('status', VISIBLE).order('id').range(from, to)),
     readAll<ItemSourceRow>((from, to) => client.from('heritage_item_sources').select('item_id,source_id,position').order('item_id').order('position').range(from, to)),
+    readAll<ClubRow>((from, to) => client.from('clubs')
+      .select('id,name,slug,full_name,sport,settlement_id,founded_year,home_ground,verification,noindex,status,updated_at')
+      .in('status', VISIBLE).order('id').range(from, to)),
+    readAll<ClubSeasonRow>((from, to) => client.from('club_seasons').select('club_id,season,competition,team,checked_at').order('club_id').order('season').range(from, to)),
+    readAll<ClubSourceRow>((from, to) => client.from('club_sources').select('club_id,source_id,position').order('club_id').order('position').range(from, to)),
     readAll<LegacyIdRow>((from, to) => client.from('content_legacy_ids').select('kind,legacy_id,entity_id').in('kind', LEGACY_KINDS).order('kind').order('legacy_id').range(from, to)),
     readAll<SlugHistoryRow>((from, to) => client.from('content_slug_history').select('kind,namespace,scope_id,slug,entity_id')
       .in('kind', ['area', 'heritage_item', 'person']).order('created_at').order('slug').range(from, to)),
@@ -471,7 +550,7 @@ export async function loadPublicContentRows(client: SupabaseClient): Promise<Pub
     readAll<PersonItemRow>((from, to) => client.from('person_heritage_items').select('person_id,item_id,relation,position').order('person_id').order('position').range(from, to)),
     readAll<PersonSourceRow>((from, to) => client.from('person_sources').select('person_id,source_id,position').order('person_id').order('position').range(from, to))
   ])
-  return { areas, areaRegions, categories, sources, items, itemSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources }
+  return { areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources }
 }
 
 export async function loadPublicContent(client: SupabaseClient, options: Omit<BuildOptions, 'loadedAt'> = {}) {

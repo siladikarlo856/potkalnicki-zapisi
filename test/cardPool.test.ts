@@ -50,6 +50,9 @@ function rows(): PublicContentRows {
       item({ id: ID.noSettlement, name: 'Raspelo', slug: 'raspelo', category_id: ID.chapel, municipality_id: ID.kalnik })
     ],
     itemSources: [],
+    clubs: [],
+    clubSeasons: [],
+    clubSources: [],
     legacyIds: [],
     slugHistory: []
   }
@@ -122,7 +125,7 @@ describe('buildCardPool', () => {
 
   it('returns an empty pool when the region snapshot is missing', () => {
     const empty = buildPublicContent({
-      areas: [], areaRegions: [], categories: [], sources: [], items: [], itemSources: [], legacyIds: [], slugHistory: []
+      areas: [], areaRegions: [], categories: [], sources: [], items: [], itemSources: [], clubs: [], clubSeasons: [], clubSources: [], legacyIds: [], slugHistory: []
     }, { loadedAt: 0 })
     const pool = buildCardPool(empty, [])
     expect(pool.cards).toEqual([])

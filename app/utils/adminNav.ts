@@ -11,6 +11,7 @@ export const ADMIN_NAV: NavigationMenuItem[] = [
   { label: 'Riječ dana', icon: 'i-lucide-calendar-days', to: '/admin/rijec-dana' },
   { label: 'Baština', icon: 'i-lucide-landmark', to: '/admin/bastina' },
   { label: 'Osobe', icon: 'i-lucide-user-round', to: '/admin/osobe' },
+  { label: 'Klubovi', icon: 'i-lucide-trophy', to: '/admin/klubovi' },
   { label: 'Kategorije baštine', icon: 'i-lucide-tags', to: '/admin/kategorije' },
   { label: 'Mjesta', icon: 'i-lucide-map-pin', to: '/admin/mjesta' },
   { label: 'Izvori', icon: 'i-lucide-library', to: '/admin/izvori' },

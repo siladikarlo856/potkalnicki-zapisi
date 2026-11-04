@@ -1,9 +1,9 @@
 import type { DailyCategory } from '../dailyWord'
 
-export type CardKind = 'word' | 'place' | 'item' | 'person'
-/** 'word:<wordId>' | 'place:<settlementId>' | 'item:<heritageItemId>' | 'person:<personId>' */
+export type CardKind = 'word' | 'place' | 'item' | 'person' | 'club'
+/** 'word:<wordId>' | 'place:<settlementId>' | 'item:<heritageItemId>' | 'person:<personId>' | 'club:<clubId>' */
 export type CardKey = `${CardKind}:${string}`
-export const CARD_KEY = /^(word|place|item|person):[A-Za-z0-9-]{1,64}$/
+export const CARD_KEY = /^(word|place|item|person|club):[A-Za-z0-9-:]{1,80}$/
 
 export type TopicId = string
 
@@ -58,7 +58,28 @@ export interface PoolPerson extends CardBase {
   verification: PoolItem['verification']
 }
 
-export type PoolCard = PoolWord | PoolPlace | PoolItem | PoolPerson
+export interface PoolClubSeason {
+  season: string
+  seasonLabel: string
+  competition: string
+  team: string
+}
+
+export interface PoolClub extends CardBase {
+  kind: 'club'
+  name: string
+  slug: string
+  sport: string
+  settlementId: string
+  settlementName: string
+  settlementSlug: string
+  municipalityId: string
+  seniorSeason: PoolClubSeason | null
+  verification: PoolItem['verification']
+  difficulty: 1 | 2 | 3
+}
+
+export type PoolCard = PoolWord | PoolPlace | PoolItem | PoolPerson | PoolClub
 
 export interface PoolMunicipality {
   id: string

@@ -1,6 +1,6 @@
 import { pzRoutes } from '../appRoutes'
 import { cardMatchesTopicSelection, unitDative } from '../learn/topics'
-import type { CardKey, CardPool, PoolItem, PoolPlace, PoolWord } from '../learn/types'
+import type { CardKey, CardPool, PoolClub, PoolItem, PoolPlace, PoolWord } from '../learn/types'
 import {
   buildWordHeadwordOptions,
   buildWordMeaningOptions,
@@ -192,6 +192,111 @@ function kartaKojeQuestion(pool: CardPool, place: PoolPlace, difficulty: Difficu
   }
 }
 
+function poolClubs(pool: CardPool, topics: GenerateQuestionsOptions['topics']): PoolClub[] {
+  const slugs = slugMap(pool)
+  return pool.cards.filter((c): c is PoolClub =>
+    c.kind === 'club' && cardMatchesTopicSelection(c, topics, slugs))
+}
+
+function pickClubDistractors(target: PoolClub, pool: PoolClub[], count: number, rng: Rng): PoolClub[] {
+  const others = pool.filter(c => c.id !== target.id && c.name !== target.name)
+  return shuffled(others, rng).slice(0, count)
+}
+
+function uniqueSettlementTargets(pool: PoolClub[]): PoolClub[] {
+  const bySettlement = new Map<string, PoolClub[]>()
+  for (const club of pool) {
+    if (!club.seniorSeason || club.sport !== 'nogomet') continue
+    bySettlement.set(club.settlementId, [...(bySettlement.get(club.settlementId) ?? []), club])
+  }
+  return [...bySettlement.values()].filter(list => list.length === 1).map(list => list[0]!)
+}
+
+function klubMjestoQuestion(pool: CardPool, target: PoolClub, rng: Rng): GameQuestion | null {
+  const distractors = pickClubDistractors(target, poolClubs(pool, target.topics.length ? target.topics : ['sport']), 3, rng)
+  if (distractors.length < 2) return null
+  const options = shuffled([target.name, ...distractors.map(c => c.name)], rng).map(name => ({ hr: name, en: name }))
+  if (!optionsValid(options)) return null
+  const loc = target.settlementName
+  return {
+    id: questionId('klub-mjesto', 'club', target.id),
+    gameId: 'klub-mjesto',
+    card: `club:${target.id}:mjesto` as CardKey,
+    prompt: {
+      hr: `Koji klub igra u ${loc}?`,
+      en: `Which club plays in ${loc}?`
+    },
+    options,
+    correct: options.findIndex(o => o.hr === target.name),
+    explanation: {
+      hr: `U ${loc} igra ${target.name}.`,
+      en: `${target.name} plays in ${loc}.`
+    },
+    archivePath: atlasSettlementPath(target.settlementSlug)
+  }
+}
+
+function klubLigaQuestion(pool: CardPool, target: PoolClub, rng: Rng): GameQuestion | null {
+  const season = target.seniorSeason
+  if (!season) return null
+  const all = poolClubs(pool, ['sport']).filter(c => c.seniorSeason)
+  const competitions = new Set<string>()
+  const distractorNames: string[] = []
+  for (const club of shuffled(all.filter(c => c.id !== target.id), rng)) {
+    const comp = club.seniorSeason!.competition
+    if (comp === season.competition || competitions.has(comp)) continue
+    competitions.add(comp)
+    distractorNames.push(comp)
+    if (distractorNames.length >= 3) break
+  }
+  if (distractorNames.length < 2) return null
+  const options = shuffled([season.competition, ...distractorNames], rng).map(name => ({ hr: name, en: name }))
+  if (!optionsValid(options)) return null
+  return {
+    id: questionId('klub-liga', 'club', target.id),
+    gameId: 'klub-liga',
+    card: `club:${target.id}:liga` as CardKey,
+    prompt: {
+      hr: `U kojoj ligi ${target.name} igra u sezoni ${season.seasonLabel}?`,
+      en: `Which league does ${target.name} play in during ${season.seasonLabel}?`
+    },
+    options,
+    correct: options.findIndex(o => o.hr === season.competition),
+    explanation: {
+      hr: `${target.name} u sezoni ${season.seasonLabel} igra u ligi ${season.competition}.`,
+      en: `${target.name} plays in ${season.competition} in ${season.seasonLabel}.`
+    }
+  }
+}
+
+function klubOdakleQuestion(pool: CardPool, target: PoolClub, difficulty: Difficulty, rng: Rng): GameQuestion | null {
+  const settlementNames = new Set(pool.settlements.map(s => s.name))
+  let names = shuffled([...settlementNames].filter(n => n !== target.settlementName), rng).slice(0, 3)
+  if (difficulty === 'tesko') {
+    const sameMunicipality = pool.settlements.filter(s => s.municipalityId === target.municipalityId && s.name !== target.settlementName)
+    names = shuffled(sameMunicipality.length >= 3 ? sameMunicipality : pool.settlements.filter(s => s.name !== target.settlementName), rng).slice(0, 3).map(s => s.name)
+  }
+  if (names.length < 2) return null
+  const options = shuffled([target.settlementName, ...names], rng).map(name => ({ hr: name, en: name }))
+  if (!optionsValid(options)) return null
+  return {
+    id: questionId('klub-odakle', 'club', target.id),
+    gameId: 'klub-odakle',
+    card: `club:${target.id}:odakle` as CardKey,
+    prompt: {
+      hr: `Odakle je ${target.name}?`,
+      en: `Where is ${target.name} from?`
+    },
+    options,
+    correct: options.findIndex(o => o.hr === target.settlementName),
+    explanation: {
+      hr: `${target.name} dolazi iz naselja ${target.settlementName}.`,
+      en: `${target.name} is from ${target.settlementName}.`
+    },
+    archivePath: atlasSettlementPath(target.settlementSlug)
+  }
+}
+
 function generateOne(
   game: GameId,
   pool: CardPool,
@@ -245,6 +350,33 @@ function generateOne(
     return kartaKojeQuestion(pool, target, difficulty, rng)
   }
 
+  if (game === 'klub-mjesto') {
+    const list = uniqueSettlementTargets(poolClubs(pool, topics)).filter(c => !exclude.has(`club:${c.id}:mjesto` as CardKey))
+    const target = targetKey
+      ? list.find(c => (`club:${c.id}:mjesto` as CardKey) === targetKey)
+      : shuffled(list, rng)[0]
+    if (!target) return null
+    return klubMjestoQuestion(pool, target, rng)
+  }
+
+  if (game === 'klub-liga') {
+    const list = poolClubs(pool, topics).filter(c => c.seniorSeason && !exclude.has(`club:${c.id}:liga` as CardKey))
+    const target = targetKey
+      ? list.find(c => (`club:${c.id}:liga` as CardKey) === targetKey)
+      : shuffled(list, rng)[0]
+    if (!target?.seniorSeason) return null
+    return klubLigaQuestion(pool, target, rng)
+  }
+
+  if (game === 'klub-odakle') {
+    const list = poolClubs(pool, topics).filter(c => !exclude.has(`club:${c.id}:odakle` as CardKey))
+    const target = targetKey
+      ? list.find(c => (`club:${c.id}:odakle` as CardKey) === targetKey)
+      : shuffled(list, rng)[0]
+    if (!target) return null
+    return klubOdakleQuestion(pool, target, difficulty, rng)
+  }
+
   return null
 }
 
@@ -261,6 +393,12 @@ export function generateQuestions(game: GameId, pool: CardPool, options: Generat
     candidates = churchItems(pool, topics).map(i => i.key)
   } else if (game === 'karta-koje') {
     candidates = places(pool, topics).map(p => p.key)
+  } else if (game === 'klub-mjesto') {
+    candidates = uniqueSettlementTargets(poolClubs(pool, topics)).map(c => `club:${c.id}:mjesto` as CardKey)
+  } else if (game === 'klub-liga') {
+    candidates = poolClubs(pool, topics).filter(c => c.seniorSeason).map(c => `club:${c.id}:liga` as CardKey)
+  } else if (game === 'klub-odakle') {
+    candidates = poolClubs(pool, topics).map(c => `club:${c.id}:odakle` as CardKey)
   }
 
   candidates = shuffled(candidates.filter(k => !exclude.has(k)), rng)
@@ -282,7 +420,8 @@ export function generateQuestions(game: GameId, pool: CardPool, options: Generat
 const ROUND_META = {
   rijeci: { topic: { hr: 'Riječi', en: 'Words' } },
   mjesta: { topic: { hr: 'Mjesta', en: 'Places' } },
-  bastina: { topic: { hr: 'Baština', en: 'Heritage' } }
+  bastina: { topic: { hr: 'Baština', en: 'Heritage' } },
+  sport: { topic: { hr: 'Sport i klubovi', en: 'Sport and clubs' } }
 } as const
 
 export function gamesForRound(roundId: keyof typeof ROUND_META, game: GenerateGameId): GameId[] {
@@ -293,11 +432,23 @@ export function gamesForRound(roundId: keyof typeof ROUND_META, game: GenerateGa
   }
   if (roundId === 'mjesta') return game === 'opcina' || game === 'mjesovito' ? ['opcina'] : []
   if (roundId === 'bastina') return game === 'crkva' || game === 'mjesovito' ? ['crkva'] : []
+  if (roundId === 'sport') {
+    if (game === 'klub-mjesto') return ['klub-mjesto']
+    if (game === 'klub-liga') return ['klub-liga']
+    if (game === 'klub-odakle') return ['klub-odakle']
+    if (game === 'mjesovito') return ['klub-mjesto', 'klub-liga', 'klub-odakle']
+    return []
+  }
   return []
 }
 
 export function roundActive(roundId: keyof typeof ROUND_META, topics: GenerateQuestionsOptions['topics'], pool: CardPool): boolean {
   const slugs = slugMap(pool)
+  if (roundId === 'sport') {
+    const selected = topics.includes('sport')
+    if (!selected) return false
+    return pool.cards.some(c => c.kind === 'club' && cardMatchesTopicSelection(c, topics, slugs))
+  }
   const kind = roundId === 'rijeci' ? 'word' : roundId === 'mjesta' ? 'place' : 'item'
   const root = roundId
   const selected = topics.some(t => t === root || t.startsWith(`${root}-`))
@@ -306,7 +457,7 @@ export function roundActive(roundId: keyof typeof ROUND_META, topics: GenerateQu
 }
 
 export function activeRounds(topics: GenerateQuestionsOptions['topics'], pool: CardPool, game: GenerateGameId) {
-  return (['rijeci', 'mjesta', 'bastina'] as const).filter(id => roundActive(id, topics, pool) && gamesForRound(id, game).length)
+  return (['rijeci', 'mjesta', 'bastina', 'sport'] as const).filter(id => roundActive(id, topics, pool) && gamesForRound(id, game).length)
 }
 
 export function generateGameEnabled(game: GenerateGameId, topics: GenerateQuestionsOptions['topics'], pool: CardPool): boolean {

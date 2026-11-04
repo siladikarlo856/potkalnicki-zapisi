@@ -62,6 +62,7 @@ function baseTopics(municipalityTopics: TopicDef[]): TopicDef[] {
     { id: 'bastina-lokaliteti', label: 'Arheološka i povijesna mjesta', parent: 'bastina', kind: 'item', status: 'live' },
     { id: 'bastina-poklonci', label: 'Poklonci, križevi i kipovi', parent: 'bastina', kind: 'item', status: 'live' },
     { id: 'osobe', label: 'Osobe', status: 'soon', soonHref: MEMORY_HREF },
+    { id: 'sport', label: 'Sport i klubovi', kind: 'club', status: 'soon' },
     { id: 'legende', label: 'Legende i priče', status: 'soon', soonHref: MEMORY_HREF }
   ]
 }
@@ -121,6 +122,8 @@ export function cardTopics(
       return itemTopics(card)
     case 'person':
       return ['osobe']
+    case 'club':
+      return ['sport']
   }
 }
 
@@ -156,7 +159,13 @@ export function computeTopicCounts(
   municipalitySlugById: Map<string, string>
 ): TopicCount[] {
   const defs = buildTopicDefs(municipalityLabels)
+  const clubCount = cards.filter(c => c.kind === 'club').length
   return defs.flatMap((def) => {
+    if (def.id === 'sport') {
+      const live = clubCount >= 8
+      const count = live ? clubCount : 0
+      return [{ ...def, status: live ? 'live' as const : 'soon' as const, count }]
+    }
     if (def.parent === 'rijeci' && def.id.startsWith('rijeci-')) {
       const count = countForTopic(def.id, cards)
       if (count < 2) return []

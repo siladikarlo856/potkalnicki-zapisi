@@ -78,6 +78,9 @@ function rows(): PublicContentRows {
       item({ id: ID.outsideItem, name: 'Vanjska', slug: 'vanjska', municipality_id: ID.outside, settlement_id: ID.outsideSettlement })
     ],
     itemSources: [{ item_id: ID.ana, source_id: ID.source, position: 0 }, { item_id: ID.ana, source_id: ID.archivedSource, position: 1 }, { item_id: ID.ana, source_id: id(99), position: 2 }],
+    clubs: [],
+    clubSeasons: [],
+    clubSources: [],
     legacyIds: [
       { kind: 'heritage_item', legacy_id: 'križevci-crkva-sv-ane', entity_id: ID.ana },
       { kind: 'heritage_item', legacy_id: 'krizevci-crkva-sv-ane', entity_id: ID.ana },

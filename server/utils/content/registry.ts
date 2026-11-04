@@ -9,6 +9,7 @@ import { heritageItemKind } from './kinds/heritageItem'
 import { sourceKind } from './kinds/source'
 import { wordKind } from './kinds/word'
 import { personKind } from './kinds/person'
+import { clubKind } from './kinds/club'
 
 // The content registry: one definition per entity kind tells the generic admin handlers
 // (server/api/admin/content/[kind]/*) which table to use, how to validate and project a row,
@@ -22,7 +23,8 @@ const REGISTRY: Record<ContentKind, AnyContentKindDefinition> = {
   word: wordKind,
   heritage_category: heritageCategoryKind,
   heritage_item: heritageItemKind,
-  person: personKind
+  person: personKind,
+  club: clubKind
 }
 
 export function contentKind(kind: ContentKind) {

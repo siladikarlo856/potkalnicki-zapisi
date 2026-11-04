@@ -28,6 +28,8 @@ function matchesPlaceFilter(card: PoolCard, pool: CardPool, placeSlug: string | 
       return card.settlementId === settlement.id || card.municipalityId === settlement.municipalityId
     case 'person':
       return card.areaIds.includes(settlement.id) || card.areaIds.includes(settlement.municipalityId)
+    case 'club':
+      return card.settlementId === settlement.id || card.municipalityId === settlement.municipalityId
   }
 }
 
@@ -71,6 +73,10 @@ function sortNewCards(cards: PoolCard[]): PoolCard[] {
       return a.name.localeCompare(b.name, 'hr')
     }
     if (a.kind === 'person' && b.kind === 'person') {
+      return a.name.localeCompare(b.name, 'hr')
+    }
+    if (a.kind === 'club' && b.kind === 'club') {
+      if (a.difficulty !== b.difficulty) return a.difficulty - b.difficulty
       return a.name.localeCompare(b.name, 'hr')
     }
     return a.key < b.key ? -1 : 1

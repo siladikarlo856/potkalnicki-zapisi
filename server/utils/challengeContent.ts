@@ -25,7 +25,8 @@ function topicLabel(pool: CardPool, topicId: TopicId, lang: 'hr' | 'en'): string
   const en: Record<string, string> = {
     rijeci: 'Words',
     mjesta: 'Places',
-    bastina: 'Heritage'
+    bastina: 'Heritage',
+    sport: 'Sport and clubs'
   }
   return en[topicId] ?? fromPool ?? topicId
 }

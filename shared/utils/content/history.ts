@@ -16,7 +16,7 @@ import { PERSON_AREA_ROLE_LABELS } from './person'
  * `ContentKind` because history also lists kinds whose admin resource is not built yet (the
  * imported areas, heritage items and categories, and words).
  */
-export const HISTORY_KINDS = ['area', 'challenge_template', 'heritage_category', 'heritage_item', 'person', 'source', 'word'] as const
+export const HISTORY_KINDS = ['area', 'challenge_template', 'heritage_category', 'heritage_item', 'person', 'club', 'source', 'word'] as const
 export type HistoryKind = typeof HISTORY_KINDS[number]
 
 export function isHistoryKind(value: unknown): value is HistoryKind {
@@ -50,6 +50,7 @@ export const HISTORY_KIND_META: Record<HistoryKind, HistoryKindMeta> = {
   heritage_category: { singular: 'Kategorija baštine', plural: 'Kategorije baštine', adminPath: '/admin/kategorije' },
   heritage_item: { singular: 'Zapis baštine', plural: 'Zapisi baštine', adminPath: '/admin/bastina' },
   person: { singular: 'Osoba', plural: 'Osobe', adminPath: '/admin/osobe' },
+  club: { singular: 'Klub', plural: 'Klubovi', adminPath: '/admin/klubovi' },
   source: { singular: 'Izvor', plural: 'Izvori', adminPath: '/admin/izvori' },
   word: { singular: 'Riječ', plural: 'Riječi', adminPath: '/admin/rijeci' }
 }
@@ -148,6 +149,20 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
     noindex: { label: 'Noindex' },
     areaLinks: { label: 'Mjesta', values: PERSON_AREA_ROLE_LABELS },
     itemLinks: { label: 'Povezana baština' },
+    sourceIds: { label: 'Izvori' }
+  },
+  club: {
+    name: { label: 'Ime' },
+    slug: { label: 'Slug' },
+    fullName: { label: 'Puni naziv' },
+    sport: { label: 'Sport' },
+    settlementId: { label: 'Naselje' },
+    foundedYear: { label: 'Godina osnivanja' },
+    homeGround: { label: 'Domaći teren' },
+    researchNotes: { label: 'Bilješke istraživanja' },
+    verification: { label: 'Status provjere', values: HERITAGE_VERIFICATION_LABELS },
+    noindex: { label: 'Noindex' },
+    seasons: { label: 'Sezone' },
     sourceIds: { label: 'Izvori' }
   }
 }

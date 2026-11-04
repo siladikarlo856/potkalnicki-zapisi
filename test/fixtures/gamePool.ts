@@ -56,6 +56,9 @@ export function gamePoolRows(): PublicContentRows {
       item({ id: FIXTURE_IDS.marko, name: 'Kapela sv. Marka', slug: 'kapela-marka', category_id: FIXTURE_IDS.chapel, municipality_id: FIXTURE_IDS.town, settlement_id: FIXTURE_IDS.apatovec })
     ],
     itemSources: [],
+    clubs: [],
+    clubSeasons: [],
+    clubSources: [],
     legacyIds: [],
     slugHistory: []
   }

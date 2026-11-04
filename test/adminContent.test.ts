@@ -52,6 +52,7 @@ describe('content helpers', () => {
     expect(isContentKind('source')).toBe(true)
     expect(isContentKind('heritage_item')).toBe(true)
     expect(isContentKind('person')).toBe(true)
+    expect(isContentKind('club')).toBe(true)
     expect(isContentKind('sources')).toBe(false)
   })
 })

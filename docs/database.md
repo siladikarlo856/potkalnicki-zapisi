@@ -324,6 +324,14 @@ If migration succeeded but promotion was rejected, correct branch permissions/di
 
 `20261104010000_persons.sql` adds the `persons` table and sidecars `person_areas`, `person_heritage_items` and `person_sources`, widens `content_legacy_ids`, `content_slug_history` and `heritage_submissions.target_kind` to accept kind `person`, and wires audit, slug history and proposal apply/withdraw like other content rows. Apply before deploying the matching app. The previously deployed app ignores the tables; nothing reads them until WP18 ships public pages. After rollout, verify `\dt public.person*` lists four tables with RLS enabled and that `anon` gets `permission denied`.
 
+## Clubs content (WP20)
+
+`20261104020000_clubs.sql` adds `clubs` (name, slug, full name, sport, settlement, optional founded year and home ground, verification, credits, status), `club_seasons` (club, season matching `YYYY/YY`, competition, team, source URL, checked_at; unique per club, season and team) and `club_sources`. It widens the same kind checks to accept `club`, updates `heritage_submission_withdraw` and `redact_submission_credit` for club rows, and enables RLS with service_role-only access on all three tables. Publishing requires at least one source (enforced in the kind handler). `20261104030000_seed_clubs.sql` imports the 25 clubs from the ksh-clubs-research deliverable (replay-safe `on conflict do nothing`), with 13 verified 2026/27 season rows; NK Kalnik is seeded without a current league season.
+
+Apply both migrations before deploying the matching app. The public snapshot loads published clubs whose settlement is live; the Learn card pool exposes topic `sport` when at least eight club cards exist. Challenge games `klub-mjesto`, `klub-liga` and `klub-odakle` always name the season in league prompts. The admin page `/admin/klubovi` shows an August reminder to refresh season facts.
+
+`node scripts/test-challenges.mjs test/clubs.integration.test.ts` exercises the API, seed replay and RLS on disposable Postgres; `test/clubQuestions.test.ts` covers validators and question copy.
+
 ## Manual fallback
 
 Keep Hostinger auto-deployment **off** throughout this procedure. Do the baseline verification above first. In a checkout of the exact commit to deploy, link and review history and the pending plan:

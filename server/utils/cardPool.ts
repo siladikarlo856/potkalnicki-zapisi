@@ -11,18 +11,20 @@ import type {
   CardKey,
   CardPool,
   PoolCard,
+  PoolClub,
   PoolItem,
   PoolMunicipality,
   PoolPlace,
   PoolSettlementRef,
   PoolWord
 } from '../../shared/utils/learn/types'
+import { formatSeasonLabel } from '../../shared/utils/content/club'
 import { heritageItemPath } from './publicAtlas'
-import type { PublicContent, SnapshotItem, SnapshotSettlement } from './publicContent'
+import type { PublicContent, SnapshotClub, SnapshotItem, SnapshotSettlement } from './publicContent'
 import { getPublicContent } from './publicContent'
 import { publicWords } from './words'
 
-const KIND_ORDER: Record<PoolCard['kind'], number> = { word: 0, place: 1, item: 2, person: 3 }
+const KIND_ORDER: Record<PoolCard['kind'], number> = { word: 0, place: 1, item: 2, person: 3, club: 4 }
 
 const CHURCH_DIFFICULTY_1 = new Set(['church', 'cathedral'])
 const CHURCH_DIFFICULTY_2 = new Set(['chapel', 'chapel-shrine', 'monastery'])
@@ -125,6 +127,34 @@ function buildItemCard(content: PublicContent, item: SnapshotItem): PoolItem | n
   }
 }
 
+function buildClubCard(content: PublicContent, club: SnapshotClub): PoolClub | null {
+  const settlement = content.settlementById.get(club.settlementId)
+  if (!settlement) return null
+  const senior = club.seasons
+    .filter(s => s.team === 'seniori')
+    .sort((a, b) => b.season.localeCompare(a.season))[0]
+  const seniorSeason = senior
+    ? { season: senior.season, seasonLabel: formatSeasonLabel(senior.season), competition: senior.competition, team: senior.team }
+    : null
+  const difficulty: 1 | 2 | 3 = seniorSeason ? (club.sport === 'nogomet' ? 2 : 3) : 3
+  return {
+    kind: 'club',
+    key: `club:${club.id}` as CardKey,
+    id: club.id,
+    topics: [],
+    name: club.name,
+    slug: club.slug,
+    sport: club.sport,
+    settlementId: club.settlementId,
+    settlementName: settlement.name,
+    settlementSlug: settlement.slug,
+    municipalityId: club.municipalityId,
+    seniorSeason,
+    verification: club.verification,
+    difficulty
+  }
+}
+
 function meanCentroid(settlements: SnapshotSettlement[]): { lat: number, lng: number } | null {
   const withCentroid = settlements.filter(s => s.centroid)
   if (!withCentroid.length) return null
@@ -168,6 +198,14 @@ export function buildCardPool(content: PublicContent, words: WordEntry[]): CardP
 
   for (const item of eligibleItems(content)) {
     const card = buildItemCard(content, item)
+    if (card) {
+      card.topics = cardTopics(card, slugByMunicipalityId)
+      cards.push(card)
+    }
+  }
+
+  for (const club of content.clubs) {
+    const card = buildClubCard(content, club)
     if (card) {
       card.topics = cardTopics(card, slugByMunicipalityId)
       cards.push(card)

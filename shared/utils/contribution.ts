@@ -3,7 +3,7 @@
 // Nothing here reaches public content: an admin applies an approved correction through the target's own
 // edit dialog, or opens a draft from a proposal (docs/database.md, "Corrections and proposals inbox").
 
-export const CONTRIBUTION_KINDS = ['word', 'heritage_item', 'area', 'source', 'person'] as const
+export const CONTRIBUTION_KINDS = ['word', 'heritage_item', 'area', 'source', 'person', 'club'] as const
 export type ContributionKind = typeof CONTRIBUTION_KINDS[number]
 export const CONTRIBUTION_MODES = ['correction', 'proposal'] as const
 export type ContributionMode = typeof CONTRIBUTION_MODES[number]
@@ -22,7 +22,8 @@ export const CONTRIBUTION_ALLOWED: Record<ContributionKind, readonly Contributio
   heritage_item: ['correction', 'proposal'],
   area: ['correction', 'proposal'],
   source: ['proposal'],
-  person: ['correction', 'proposal']
+  person: ['correction', 'proposal'],
+  club: ['correction']
 }
 
 export const CONTRIBUTION_KIND_LABELS: Record<ContributionKind, string> = {
@@ -30,7 +31,8 @@ export const CONTRIBUTION_KIND_LABELS: Record<ContributionKind, string> = {
   heritage_item: 'Zapis baštine',
   area: 'Naselje',
   source: 'Izvor',
-  person: 'Osoba'
+  person: 'Osoba',
+  club: 'Klub'
 }
 
 /** The admin page whose dialogs edit each kind; the inbox deep-links there. */
@@ -39,7 +41,8 @@ export const CONTRIBUTION_ADMIN_PATHS: Record<ContributionKind, string> = {
   heritage_item: '/admin/bastina',
   area: '/admin/mjesta',
   source: '/admin/izvori',
-  person: '/admin/osobe'
+  person: '/admin/osobe',
+  club: '/admin/klubovi'
 }
 
 export const SOURCE_PROPOSAL_TYPES = [
@@ -141,6 +144,14 @@ export const CONTRIBUTION_FIELDS: { [K in ContributionKind]: { [M in Contributio
       uuid('settlementId', 'Mjesto u našem kraju', { required: true }),
       long('significance', 'Zašto je važna', 2000, { required: true }),
       { key: 'sourceUrl', label: 'Izvor (URL)', type: 'url', max: 1000, required: true }
+    ]
+  },
+  club: {
+    correction: [
+      text('name', 'Ime', 200, { apply: true }),
+      text('sport', 'Sport', 80, { apply: true }),
+      text('competition', 'Liga (sezona)', 200, { apply: true }),
+      { key: 'sourceUrl', label: 'Izvor (URL)', type: 'url', max: 1000 }
     ]
   }
 }

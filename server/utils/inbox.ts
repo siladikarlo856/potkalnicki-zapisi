@@ -33,6 +33,7 @@ const TARGET_SELECT: Record<ContributionKind, { table: string, columns: string, 
   },
   heritage_item: { table: 'heritage_items', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
   person: { table: 'persons', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
+  club: { table: 'clubs', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
   area: { table: 'areas', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
   source: { table: 'sources', columns: 'id,revision,status,title', label: row => String(row.title), status: row => row.status as ContentStatus }
 }
@@ -65,7 +66,7 @@ async function targetsOf(rows: Row[]) {
 async function createdBy(ids: number[]) {
   const found = new Map<number, InboxCreated>()
   if (!ids.length) return found
-  for (const kind of ['heritage_item', 'area', 'source', 'person'] as const) {
+  for (const kind of ['heritage_item', 'area', 'source', 'person', 'club'] as const) {
     const spec = TARGET_SELECT[kind]
     for (const row of await readByIds(spec.table, `${spec.columns},source_submission_id`, ids.map(String), 'source_submission_id')) {
       found.set(Number(row.source_submission_id), { kind, id: String(row.id), label: spec.label(row), status: spec.status(row) })
@@ -239,6 +240,18 @@ async function correctionDetail(kind: ContributionKind, targetId: string, payloa
     if (payload.died !== undefined) {
       const year = yearFromText(payload.died, 'last')
       if (year) patch.diedYear = year
+    }
+    return { changes: changeList(kind, 'correction', payload, current, shown), patch }
+  }
+
+  if (kind === 'club') {
+    const current = (key: string) => {
+      const value = ({ name: record.name, sport: record.sport, competition: null } as Record<string, unknown>)[key]
+      return typeof value === 'string' && value ? value : null
+    }
+    const patch: Record<string, unknown> = {}
+    for (const field of contributionFields(kind, 'correction')) {
+      if (field.apply && payload[field.key] !== undefined && field.key !== 'competition') patch[field.key] = payload[field.key]
     }
     return { changes: changeList(kind, 'correction', payload, current, shown), patch }
   }
