@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { guessDailyWord, startDailyGame } from '~~/shared/utils/dailyWord'
+import { computed, ref, watch } from 'vue'
+import { dailyWordShareText, guessDailyWord, startDailyGame } from '~~/shared/utils/dailyWord'
 import type { DailyGame, DailyText } from '~~/shared/utils/dailyWord'
 import { describeClue, pluralForm } from '~/utils/dailyClues'
+
+const props = withDefaults(defineProps<{ compactWhenPlayed?: boolean }>(), { compactWhenPlayed: false })
 
 const { locale, t } = useI18n()
 const { payload, status, error, unavailable, refresh } = useDailyWord()
@@ -75,6 +78,36 @@ const loading = computed(() => !error.value && (status.value === 'idle' || statu
 const ready = computed(() => !!payload.value && progress.loaded.value && !!game.value)
 // Before launch the API answers 404 and nothing at all is shown.
 const hidden = computed(() => unavailable.value)
+
+const expanded = ref(false)
+const showCompact = computed(() => props.compactWhenPlayed && !!finished.value && !replaced.value && !expanded.value)
+const shareText = computed(() => payload.value && finished.value ? dailyWordShareText(payload.value.number, finished.value) : '')
+const compactResult = computed(() => {
+  if (!finished.value) return ''
+  const { solved, tries, maxTries } = finished.value
+  return solved ? `${tries}/${maxTries}` : `X/${maxTries}`
+})
+const compactCountdown = computed(() => {
+  if (!payload.value) return ''
+  const minutes = Math.max(0, Math.ceil((Date.parse(payload.value.nextAt) - Date.now()) / 60_000))
+  const hours = Math.floor(minutes / 60)
+  return hours
+    ? t('daily.countdown.hoursMinutes', { h: hours, m: minutes % 60 })
+    : t('daily.countdown.minutes', { m: minutes })
+})
+const shareLabels = computed(() => ({
+  copy: t('daily.share.copy'),
+  copied: t('daily.share.copied'),
+  nativeShare: t('daily.share.nativeShare'),
+  copyError: t('daily.share.copyError'),
+  shareError: t('daily.share.shareError'),
+  whatsapp: t('challenge.whatsapp'),
+  viber: t('challenge.viber')
+}))
+
+watch(finished, () => {
+  expanded.value = false
+})
 </script>
 
 <template>
@@ -110,6 +143,39 @@ const hidden = computed(() => unavailable.value)
         variant="link"
         @click="refresh()"
       />
+    </div>
+
+    <div
+      v-else-if="showCompact && payload && finished && stats"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-default p-3 ring ring-default sm:p-4"
+      data-testid="daily-compact-row"
+    >
+      <p class="min-w-0 text-sm text-muted">
+        {{ t('daily.compactSummary', {
+          n: payload.number,
+          result: compactResult,
+          streak: stats.streak,
+          countdown: compactCountdown
+        }) }}
+      </p>
+      <div class="flex shrink-0 flex-wrap gap-2 print:hidden">
+        <HeritageShareButtons
+          v-if="shareText"
+          prefix="daily-compact"
+          :copy-text="shareText"
+          :share-data="{ title: t('daily.share.shareTitle'), text: shareText }"
+          :message-text="shareText"
+          :labels="shareLabels"
+          emphasis="share"
+        />
+        <UButton
+          :label="t('daily.compactShow')"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          @click="expanded = true"
+        />
+      </div>
     </div>
 
     <div

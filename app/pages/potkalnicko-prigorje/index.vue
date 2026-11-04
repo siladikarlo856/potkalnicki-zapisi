@@ -36,29 +36,69 @@ const regions = computed(() => (overview.value?.municipalities ?? []).map(m => (
 
 <template>
   <div>
-    <UPageHero
-      :title="t('pz.home.heroTitle')"
-      :links="[
-        { label: t('pz.home.playCta'), to: localePath('/potkalnicko-prigorje/igre'), trailingIcon: 'i-lucide-arrow-right', color: 'primary', variant: 'solid', size: 'xl' },
-        { label: t('pz.home.exploreCta'), to: localePath(pzRoutes.explore), icon: 'i-lucide-map', color: 'neutral', variant: 'outline', size: 'xl' },
-        { label: t('challenge.friendTitle'), to: localePath('/potkalnicko-prigorje/izazov'), icon: 'i-lucide-swords', color: 'neutral', variant: 'ghost', size: 'lg' }
-      ]"
-      :ui="{ container: 'py-16 sm:py-24 lg:py-28', title: 'text-4xl sm:text-5xl lg:text-6xl', footer: 'print:hidden' }"
+    <header class="mx-auto max-w-2xl px-4 pb-2 pt-10 sm:pt-14">
+      <p class="text-sm font-medium text-muted">
+        {{ t('pz.home.heroEyebrow') }}
+      </p>
+      <h1 class="mt-2 text-3xl font-bold text-balance text-highlighted sm:text-4xl">
+        {{ t('pz.home.heroTitle') }}
+      </h1>
+      <p class="mt-3 max-w-2xl text-muted">
+        {{ t('pz.home.heroDescription') }}
+      </p>
+    </header>
+
+    <HeritageDailyWord compact-when-played />
+
+    <PzLearnPlaySwitch />
+
+    <div class="mx-auto w-full max-w-2xl px-4 pb-6">
+      <UCard
+        variant="outline"
+        data-testid="friend-challenge"
+      >
+        <div class="space-y-3">
+          <h2 class="text-lg font-semibold text-highlighted">
+            {{ t('challenge.friendTitle') }}
+          </h2>
+          <p class="text-sm text-muted">
+            {{ t('pz.home.friendChallengeBlurb') }}
+          </p>
+          <UButton
+            :to="localePath(pzRoutes.challenge)"
+            :label="t('pz.home.friendChallengeCta')"
+            trailing-icon="i-lucide-arrow-right"
+          />
+        </div>
+      </UCard>
+    </div>
+
+    <UPageSection
+      :title="t('pz.home.regionsTitle')"
+      :description="t('pz.home.regionsDescription')"
+      :ui="{ root: 'border-t border-default' }"
+      data-testid="pet-podrucja"
     >
-      <template #headline>
-        <span class="text-sm font-medium text-muted">{{ t('pz.home.heroEyebrow') }}</span>
-      </template>
-      <template #description>
-        <span class="mt-4 block max-w-2xl">{{ t('pz.home.heroDescription') }}</span>
-      </template>
-    </UPageHero>
+      <ul class="divide-y divide-default rounded-lg ring ring-default">
+        <li
+          v-for="region in regions"
+          :key="region.id"
+        >
+          <ULink
+            :to="region.to"
+            class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
+          >
+            <span class="font-medium text-highlighted">{{ region.label }}</span>
+            <span class="text-muted tabular-nums">{{ t('pz.home.regionCounts', { settlements: region.settlements, items: region.items }) }}</span>
+          </ULink>
+        </li>
+      </ul>
+    </UPageSection>
 
     <UPageSection
       :title="t('pz.home.discoveryTitle')"
       :ui="{ root: 'border-t border-default' }"
     >
-      <HeritageDailyWord />
-
       <div class="grid gap-4 sm:grid-cols-2">
         <UCard
           v-for="card in discoveryCards"
@@ -101,34 +141,13 @@ const regions = computed(() => (overview.value?.municipalities ?? []).map(m => (
     </UPageSection>
 
     <UPageSection
-      :title="t('pz.home.regionsTitle')"
-      :description="t('pz.home.regionsDescription')"
-      :ui="{ root: 'border-t border-default' }"
-      data-testid="pet-podrucja"
-    >
-      <ul class="divide-y divide-default rounded-lg ring ring-default">
-        <li
-          v-for="region in regions"
-          :key="region.id"
-        >
-          <ULink
-            :to="region.to"
-            class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
-          >
-            <span class="font-medium text-highlighted">{{ region.label }}</span>
-            <span class="text-muted tabular-nums">{{ t('pz.home.regionCounts', { settlements: region.settlements, items: region.items }) }}</span>
-          </ULink>
-        </li>
-      </ul>
-    </UPageSection>
-
-    <UPageSection
       id="doprinos"
       orientation="horizontal"
       :title="t('pz.home.contributeTitle')"
       :description="t('pz.home.contributeDescription')"
       :links="[{ label: t('pz.home.contributeCta'), to: localePath('/potkalnicko-prigorje/doprinesi'), trailingIcon: 'i-lucide-arrow-right', color: 'primary', variant: 'solid', size: 'lg' }]"
       :ui="{ root: 'scroll-mt-(--ui-header-height) border-t border-default', container: 'lg:items-start', footer: 'print:hidden' }"
+      data-testid="doprinos"
     />
   </div>
 </template>
