@@ -21,7 +21,7 @@ const T = '2026-11-02T10:00:00.000Z'
 
 function person(id: string, name: string, slug: string, extra: Record<string, unknown> = {}) {
   return {
-    id, name, slug, role: 'književnik', bio: null, born: null, born_year: null, born_place: null,
+    id, name, slug, role: 'književnik', clue: 'Natuknica bez imena.', bio: null, born: null, born_year: null, born_place: null,
     died: '1900.', died_year: 1900, died_place: null, open_questions: null, verification: 'unverified',
     noindex: false, status: 'published', updated_at: T, ...extra
   }

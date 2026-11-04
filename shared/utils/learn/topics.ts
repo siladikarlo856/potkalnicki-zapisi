@@ -171,6 +171,16 @@ export function computeTopicCounts(
       const count = live ? clubCount : 0
       return [{ ...def, status: live ? 'live' as const : 'soon' as const, count }]
     }
+    if (def.id === 'osobe') {
+      const personCount = cards.filter(c => c.kind === 'person').length
+      const live = personCount >= 4
+      return [{
+        ...def,
+        status: live ? 'live' as const : 'soon' as const,
+        soonHref: live ? undefined : MEMORY_HREF,
+        count: live ? personCount : 0
+      }]
+    }
     if (def.parent === 'rijeci' && def.id.startsWith('rijeci-')) {
       const count = countForTopic(def.id, cards)
       if (count < 2) return []

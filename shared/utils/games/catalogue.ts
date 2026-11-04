@@ -197,13 +197,14 @@ export const GAME_CATALOGUE: GameEntry[] = [
   {
     id: 'tko-je-to',
     title: 'Tko je to?',
-    blurb: 'Poveži osobu s mjestom i ulogom.',
+    blurb: 'Poveži natuknicu s imenom osobe iz našeg kraja.',
     topic: 'osobe',
     format: 'odabir',
     minutes: 5,
-    path: pzRoutes.contribute,
-    status: 'soon',
-    challengeable: false
+    path: pzRoutes.tkoJeTo,
+    status: 'live',
+    challengeable: true,
+    needs: { kind: 'person', min: 4 }
   },
   {
     id: 'istina-legenda',
@@ -231,7 +232,7 @@ export function gameVisibleInPool(game: GameEntry, pool: CardPool | null, topic?
     return groupingAvailable(pool)
   }
   if (game.needs) {
-    if (!pool) return true
+    if (!pool) return false
     if (!poolMeetsNeeds(pool, game.needs)) return false
   }
   return true

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { CardPool, PoolItem, PoolPlace, PoolWord } from '~~/shared/utils/learn/types'
-import { poolWordToEntry, settlementArchivePath, wordArchivePath } from '~/utils/learnCard'
-import { municipalityLabel } from '~/utils/learnUi'
+import type { CardPool, PoolItem, PoolPerson, PoolPlace, PoolWord } from '~~/shared/utils/learn/types'
+import { personArchivePath, poolWordToEntry, settlementArchivePath, wordArchivePath } from '~/utils/learnCard'
+import { municipalityLabel, personPlaceLabel } from '~/utils/learnUi'
 import { settlementForSlug } from '~/utils/learnPlace'
 
 const props = defineProps<{
-  card: PoolWord | PoolPlace | PoolItem
+  card: PoolWord | PoolPlace | PoolItem | PoolPerson
   pool: CardPool
   /** When set, word cards can offer a local usage confirmation for this settlement slug. */
   placeSlug?: string
@@ -30,6 +30,7 @@ const placeUnit = computed(() =>
   props.card.kind === 'place' ? municipalityLabel(props.pool, props.card.municipalityId) : '')
 
 const itemCard = computed(() => props.card.kind === 'item' ? props.card : null)
+const personCard = computed(() => props.card.kind === 'person' ? props.card : null)
 const placeCard = computed(() => props.card.kind === 'place' ? props.card : null)
 
 const itemSettlement = computed(() => {
@@ -60,6 +61,9 @@ defineShortcuts({
       <template v-if="flipped && card.kind === 'word'">
         {{ card.headword }}: {{ card.meaning }}
       </template>
+      <template v-else-if="flipped && card.kind === 'person'">
+        {{ card.name }}: {{ card.role }}
+      </template>
     </p>
     <div
       class="relative h-[clamp(15rem,46svh,24rem)] transition-transform duration-500 transform-3d motion-reduce:transition-none"
@@ -78,6 +82,12 @@ defineShortcuts({
             {{ card.headword }}
           </p>
           <p
+            v-else-if="personCard"
+            class="text-lg font-semibold leading-snug text-highlighted sm:text-xl"
+          >
+            {{ personCard.clue }}
+          </p>
+          <p
             v-else
             class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl"
           >
@@ -88,6 +98,12 @@ defineShortcuts({
             class="text-sm text-muted"
           >
             {{ card.partOfSpeech }}
+          </p>
+          <p
+            v-else-if="personCard"
+            class="text-sm text-muted"
+          >
+            {{ t('pz.learn.personPrompt') }}
           </p>
           <p
             v-else-if="card.kind === 'place'"
@@ -227,6 +243,48 @@ defineShortcuts({
             kind="area"
             mode="correction"
             :target="{ id: placeCard.id, label: placeCard.name }"
+          />
+        </template>
+
+        <template v-else-if="personCard">
+          <p class="text-xs font-semibold uppercase tracking-wide text-muted">
+            {{ t('pz.learn.personEyebrow') }}
+          </p>
+          <p class="text-2xl font-bold text-highlighted">
+            {{ personCard.name }}
+          </p>
+          <p class="text-sm text-muted">
+            {{ personCard.years }} · {{ personCard.role }}
+          </p>
+          <p class="text-sm text-highlighted">
+            {{ personPlaceLabel(pool, personCard) }}
+          </p>
+          <PzHeritageStatusBadge :verification="personCard.verification" />
+          <UButton
+            :to="localePath(personArchivePath(personCard.slug))"
+            :label="t('pz.learn.openRecord')"
+            icon="i-lucide-external-link"
+            color="neutral"
+            variant="link"
+            size="sm"
+            class="self-start px-0"
+            @click.stop
+          />
+          <UButton
+            :label="t('pz.learn.suggestCorrection')"
+            icon="i-lucide-pencil"
+            color="neutral"
+            variant="link"
+            size="sm"
+            class="self-start px-0"
+            aria-haspopup="dialog"
+            @click.stop="correctionOpen = true"
+          />
+          <HeritageSuggestDialog
+            v-model:open="correctionOpen"
+            kind="person"
+            mode="correction"
+            :target="{ id: personCard.id, label: personCard.name }"
           />
         </template>
 

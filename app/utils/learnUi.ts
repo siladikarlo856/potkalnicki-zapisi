@@ -1,4 +1,4 @@
-import type { CardPool, PoolCard, PoolItem, PoolPlace, PoolWord } from '~~/shared/utils/learn/types'
+import type { CardPool, PoolCard, PoolItem, PoolPerson, PoolPlace, PoolWord } from '~~/shared/utils/learn/types'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 export function formatLearnStartedAt(iso: string, now = new Date()): string {
@@ -64,8 +64,16 @@ export function topicStats(
   }).filter(row => row.total > 0)
 }
 
-export type DisplayCard = PoolWord | PoolPlace | PoolItem
+export function personPlaceLabel(pool: CardPool, person: PoolPerson): string {
+  const areaId = person.areaIds[0]
+  if (!areaId) return ''
+  const settlement = pool.settlements.find(s => s.id === areaId)
+  if (settlement) return settlement.name
+  return municipalityLabel(pool, areaId)
+}
+
+export type DisplayCard = PoolWord | PoolPlace | PoolItem | PoolPerson
 
 export function isDisplayCard(card: PoolCard | undefined): card is DisplayCard {
-  return card?.kind === 'word' || card?.kind === 'place' || card?.kind === 'item'
+  return card?.kind === 'word' || card?.kind === 'place' || card?.kind === 'item' || card?.kind === 'person'
 }

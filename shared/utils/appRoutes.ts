@@ -17,6 +17,7 @@ export const pzRoutes = {
   mapLearn: `${PZ_ROOT}/igre/uci-kartu`,
   churchWhere: `${PZ_ROOT}/igre/gdje-je-crkva`,
   heritageMatch: `${PZ_ROOT}/igre/spoji`,
+  tkoJeTo: `${PZ_ROOT}/igre/tko-je-to`,
   challenge: `${PZ_ROOT}/izazov`,
   contribute: `${PZ_ROOT}/doprinesi`,
   about: `${PZ_ROOT}/o-projektu`,

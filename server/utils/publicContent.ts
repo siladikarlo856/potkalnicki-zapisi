@@ -65,12 +65,13 @@ export interface ItemRow {
   updated_at: string
 }
 export interface ItemSourceRow { item_id: string, source_id: string, position: number }
-/** A person row as the public snapshot reads it: never `research_notes`, `clue` or `search_text`. */
+/** A person row as the public snapshot reads it: never `research_notes` or `search_text`. `clue` is kept off SnapshotPerson and exposed only via personClueById (Learn/Play). */
 export interface PersonRow {
   id: string
   name: string
   slug: string
   role: string
+  clue?: string
   bio: string | null
   born: string | null
   born_year: number | null
@@ -252,6 +253,8 @@ export interface PublicContent {
   personsByArea: Map<string, string[]>
   /** item id → ids of live persons linked to that item, in display order */
   personsByItem: Map<string, string[]>
+  /** Card-pool clues by person id; not exposed on atlas person pages. */
+  personClueById: Map<string, string>
   clubById: Map<string, SnapshotClub>
   /** `${namespace}/${slug}` → area id, namespace 'lau' (towns and municipalities) or 'settlement' */
   areaBySlug: Map<string, string>
@@ -317,12 +320,15 @@ function buildPersons(
   const sourceLinks = byPerson(rows.personSources)
 
   const persons: SnapshotPerson[] = []
+  const personClueById = new Map<string, string>()
   for (const p of rows.persons ?? []) {
     if (p.status !== 'published') {
       gone.ids.add(p.id)
       gone.persons.add(p.slug)
       continue
     }
+    const clue = p.clue?.trim()
+    if (clue) personClueById.set(p.id, clue)
     const areas = (areaLinks.get(p.id) ?? [])
       .filter(link => areaState.get(link.area_id) === true && AREA_ROLES.has(link.role))
       .map(link => ({ areaId: link.area_id, role: link.role as PersonAreaRole }))
@@ -348,7 +354,7 @@ function buildPersons(
       personsByItem.set(itemId, [...(personsByItem.get(itemId) ?? []), person.id])
     }
   }
-  return { persons, personsByArea, personsByItem }
+  return { persons, personsByArea, personsByItem, personClueById }
 }
 
 export interface BuildOptions {
@@ -453,7 +459,7 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
   settlements.sort(byName)
   items.sort(byName)
 
-  const { persons, personsByArea, personsByItem } = buildPersons(rows, { areaState, itemById: new Map(items.map(i => [i.id, i])), sources, gone })
+  const { persons, personsByArea, personsByItem, personClueById } = buildPersons(rows, { areaState, itemById: new Map(items.map(i => [i.id, i])), sources, gone })
   const clubSources = new Map<string, ClubSourceRow[]>()
   for (const link of rows.clubSources ?? []) {
     if (!sources.has(link.source_id)) continue
@@ -500,7 +506,7 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
     region, municipalities, settlements, items, persons, clubs, categories, sources,
     personById: new Map(persons.map(p => [p.id, p])),
     personBySlug: new Map(persons.map(p => [p.slug, p])),
-    personsByArea, personsByItem,
+    personsByArea, personsByItem, personClueById,
     municipalityById: new Map(municipalities.map(m => [m.id, m])),
     settlementById: new Map(settlements.map(s => [s.id, s])),
     itemById: new Map(items.map(i => [i.id, i])),
@@ -542,9 +548,9 @@ export async function loadPublicContentRows(client: SupabaseClient): Promise<Pub
     readAll<LegacyIdRow>((from, to) => client.from('content_legacy_ids').select('kind,legacy_id,entity_id').in('kind', LEGACY_KINDS).order('kind').order('legacy_id').range(from, to)),
     readAll<SlugHistoryRow>((from, to) => client.from('content_slug_history').select('kind,namespace,scope_id,slug,entity_id')
       .in('kind', ['area', 'heritage_item', 'person']).order('created_at').order('slug').range(from, to)),
-    // research_notes, clue and search_text are private or not public yet: never selected.
+    // research_notes and search_text are private: never selected. clue is loaded for the card pool only.
     readAll<PersonRow>((from, to) => client.from('persons')
-      .select('id,name,slug,role,bio,born,born_year,born_place,died,died_year,died_place,open_questions,verification,noindex,status,updated_at')
+      .select('id,name,slug,role,clue,bio,born,born_year,born_place,died,died_year,died_place,open_questions,verification,noindex,status,updated_at')
       .in('status', VISIBLE).order('id').range(from, to)),
     readAll<PersonAreaRow>((from, to) => client.from('person_areas').select('person_id,area_id,role,position').order('person_id').order('position').range(from, to)),
     readAll<PersonItemRow>((from, to) => client.from('person_heritage_items').select('person_id,item_id,relation,position').order('person_id').order('position').range(from, to)),

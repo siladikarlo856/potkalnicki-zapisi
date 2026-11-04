@@ -21,7 +21,7 @@ export interface GameQuestion {
   optionCards?: CardKey[]
 }
 
-export const CHALLENGEABLE_GAMES = ['znacenje', 'rijec', 'opcina', 'crkva', 'karta-koje', 'karta-tocke', 'klub-mjesto', 'klub-liga', 'klub-odakle'] as const satisfies readonly GameId[]
+export const CHALLENGEABLE_GAMES = ['znacenje', 'rijec', 'opcina', 'crkva', 'karta-koje', 'karta-tocke', 'klub-mjesto', 'klub-liga', 'klub-odakle', 'osoba'] as const satisfies readonly GameId[]
 export type ChallengeableGameId = typeof CHALLENGEABLE_GAMES[number]
 
 export type GenerateGameId = ChallengeableGameId | 'mjesovito'

@@ -14,13 +14,14 @@ import type {
   PoolClub,
   PoolItem,
   PoolMunicipality,
+  PoolPerson,
   PoolPlace,
   PoolSettlementRef,
   PoolWord
 } from '../../shared/utils/learn/types'
 import { formatSeasonLabel } from '../../shared/utils/content/club'
 import { heritageItemPath } from './publicAtlas'
-import type { PublicContent, SnapshotClub, SnapshotItem, SnapshotSettlement } from './publicContent'
+import type { PublicContent, SnapshotClub, SnapshotItem, SnapshotPerson, SnapshotSettlement } from './publicContent'
 import { getPublicContent } from './publicContent'
 import { publicWords } from './words'
 
@@ -128,6 +129,28 @@ function buildItemCard(content: PublicContent, item: SnapshotItem): PoolItem | n
   }
 }
 
+function personYears(person: SnapshotPerson): string {
+  return person.bornYear ? `${person.bornYear}–${person.diedYear}` : String(person.diedYear)
+}
+
+function buildPersonCard(content: PublicContent, person: SnapshotPerson): PoolPerson | null {
+  const clue = content.personClueById.get(person.id)
+  if (!clue) return null
+  return {
+    kind: 'person',
+    key: `person:${person.id}` as CardKey,
+    id: person.id,
+    topics: [],
+    name: person.name,
+    slug: person.slug,
+    years: personYears(person),
+    clue,
+    role: person.role,
+    areaIds: person.areaLinks.map(link => link.areaId),
+    verification: person.verification
+  }
+}
+
 function buildClubCard(content: PublicContent, club: SnapshotClub): PoolClub | null {
   const settlement = content.settlementById.get(club.settlementId)
   if (!settlement) return null
@@ -199,6 +222,14 @@ export function buildCardPool(content: PublicContent, words: PublicWordEntry[]):
 
   for (const item of eligibleItems(content)) {
     const card = buildItemCard(content, item)
+    if (card) {
+      card.topics = cardTopics(card, slugByMunicipalityId)
+      cards.push(card)
+    }
+  }
+
+  for (const person of content.persons) {
+    const card = buildPersonCard(content, person)
     if (card) {
       card.topics = cardTopics(card, slugByMunicipalityId)
       cards.push(card)

@@ -10,6 +10,7 @@ const GAME_LABELS: Record<GenerateGameId, { hr: string, en: string }> = {
   'crkva': { hr: 'Gdje je ta crkva?', en: 'Where is the church?' },
   'karta-koje': { hr: 'Koje je ovo selo?', en: 'Which village is this?' },
   'karta-tocke': { hr: 'Pronađi selo', en: 'Find the village' },
+  'osoba': { hr: 'Tko je to?', en: 'Who is this?' },
   'klub-mjesto': { hr: 'Koji klub igra u mjestu?', en: 'Which club plays in the settlement?' },
   'klub-liga': { hr: 'U kojoj ligi klub igra u sezoni?', en: 'Which league does the club play in?' },
   'klub-odakle': { hr: 'Odakle je klub?', en: 'Where is the club from?' }
@@ -24,7 +25,9 @@ const DIFFICULTY_LABELS: Record<Difficulty, { hr: string, en: string }> = {
 const ROOT_TOPIC_EN: Record<string, string> = {
   rijeci: 'Words',
   mjesta: 'Places',
-  bastina: 'Heritage'
+  bastina: 'Heritage',
+  osobe: 'Persons',
+  sport: 'Sport and clubs'
 }
 
 export function challengeGameLabel(game: GenerateGameId, lang: 'hr' | 'en'): string {

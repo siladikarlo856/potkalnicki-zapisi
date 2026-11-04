@@ -4,6 +4,7 @@ import { buildCardPool } from '../server/utils/cardPool'
 import { buildPublicContent, ATLAS_REGION_SLUG } from '../server/utils/publicContent'
 import type { AreaRow, ItemRow, PublicContentRows } from '../server/utils/publicContent'
 import type { WordEntry } from '../app/types/heritage'
+import { gamePoolRows } from './fixtures/gamePool'
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 const ID = {
@@ -130,5 +131,13 @@ describe('buildCardPool', () => {
     const pool = buildCardPool(empty, [])
     expect(pool.cards).toEqual([])
     expect(pool.municipalities).toEqual([])
+  })
+})
+
+describe('person cards in the pool', () => {
+  it('marks osobe live when at least four person cards exist', () => {
+    const pool = buildCardPool(buildPublicContent(gamePoolRows(), { loadedAt: 0 }), [])
+    expect(pool.cards.filter(c => c.kind === 'person').length).toBe(4)
+    expect(pool.topics.find(t => t.id === 'osobe')).toMatchObject({ status: 'live', count: 4 })
   })
 })

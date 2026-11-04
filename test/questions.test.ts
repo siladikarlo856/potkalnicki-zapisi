@@ -71,6 +71,17 @@ describe('game question generators', () => {
     }
   })
 
+  it('osoba asks who from the clue and links to the profile', () => {
+    const questions = generateQuestions('osoba', pool, { topics: ['osobe'], difficulty: 'srednje', count: 2, rng: mulberry32(42) })
+    expect(questions.length).toBeGreaterThan(0)
+    for (const question of questions) {
+      expect(question.gameId).toBe('osoba')
+      expect(question.prompt.hr).toMatch(/^Tko je to\? /)
+      expect(question.archivePath).toMatch(/\/osobe\//)
+      expect(question.options[question.correct]!.hr).toBe(question.explanation.hr.match(/^To je (.+) \(.+\)\.$/)![1])
+    }
+  })
+
   it('asks community words only in solo play (wordStatus any)', () => {
     const community = { ...pool, cards: pool.cards.map(card => card.kind === 'word' ? { ...card, status: 'community' as const } : card) }
     const base = { topics: ['rijeci'], difficulty: 'srednje' as const, count: 4 }

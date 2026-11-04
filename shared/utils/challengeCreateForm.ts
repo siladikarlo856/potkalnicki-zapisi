@@ -5,7 +5,7 @@ import type { Difficulty, GenerateGameId } from './games/types'
 import { generateGameEnabled } from './games/questions'
 
 const LENGTHS = new Set([5, 10, 15])
-const GAMES = new Set<GenerateGameId>(['mjesovito', 'znacenje', 'rijec', 'opcina', 'crkva', 'karta-koje', 'karta-tocke'])
+const GAMES = new Set<GenerateGameId>(['mjesovito', 'znacenje', 'rijec', 'opcina', 'crkva', 'karta-koje', 'karta-tocke', 'osoba'])
 
 export interface ChallengeCreateFormState {
   topics: TopicId[]

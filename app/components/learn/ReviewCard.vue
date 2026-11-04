@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { CardPool, PoolItem, PoolPlace, PoolWord } from '~~/shared/utils/learn/types'
+import type { CardPool, PoolItem, PoolPerson, PoolPlace, PoolWord } from '~~/shared/utils/learn/types'
 import type { GameQuestion } from '~~/shared/utils/games/types'
 
 const props = defineProps<{
-  card: PoolWord | PoolPlace | PoolItem
+  card: PoolWord | PoolPlace | PoolItem | PoolPerson
   pool: CardPool
   question: GameQuestion
 }>()

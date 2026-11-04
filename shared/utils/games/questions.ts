@@ -1,6 +1,6 @@
 import { pzRoutes } from '../appRoutes'
 import { cardMatchesTopicSelection, unitDative } from '../learn/topics'
-import type { CardKey, CardPool, PoolClub, PoolItem, PoolPlace, PoolWord, TopicId } from '../learn/types'
+import type { CardKey, CardPool, PoolClub, PoolItem, PoolPerson, PoolPlace, PoolWord, TopicId } from '../learn/types'
 import {
   buildWordHeadwordOptions,
   buildWordMeaningOptions,
@@ -9,6 +9,8 @@ import {
   optionsValid,
   pickItemSettlementDistractors,
   pickItemTarget,
+  pickPersonDistractors,
+  pickPersonTarget,
   pickPlaceTarget,
   pickPlaceUnitDistractors,
   pickWordDistractors,
@@ -22,6 +24,7 @@ import type { Difficulty, GameId, GameQuestion, GenerateGameId, GenerateQuestion
 const CHALLENGE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
 
 const atlasSettlementPath = (slug: string) => `${pzRoutes.home}/naselja/${slug}`
+const atlasPersonPath = (slug: string) => `${pzRoutes.persons}/${slug}`
 
 function questionId(game: GameId, kind: string, entityId: string): string {
   const id = `${game}_${kind}_${entityId}`
@@ -49,6 +52,36 @@ function churchItems(pool: CardPool, topics: GenerateQuestionsOptions['topics'])
 
 function settlementName(pool: CardPool, settlementId: string): string {
   return pool.settlements.find(s => s.id === settlementId)?.name ?? settlementId
+}
+
+function poolPersons(pool: CardPool, topics: GenerateQuestionsOptions['topics']): PoolPerson[] {
+  const slugs = slugMap(pool)
+  return pool.cards.filter((c): c is PoolPerson =>
+    c.kind === 'person' && cardMatchesTopicSelection(c, topics, slugs))
+}
+
+function osobaQuestion(pool: CardPool, target: PoolPerson, difficulty: Difficulty, rng: Rng): GameQuestion | null {
+  const distractors = pickPersonDistractors(target, pool, difficulty, rng)
+  if (distractors.length < 2) return null
+  const options = shuffled([target, ...distractors], rng).map(p => ({ hr: p.name, en: p.name }))
+  if (!optionsValid(options)) return null
+  const correct = options.findIndex(o => o.hr === target.name)
+  return {
+    id: questionId('osoba', 'person', target.id),
+    gameId: 'osoba',
+    card: target.key,
+    prompt: {
+      hr: `Tko je to? ${target.clue}`,
+      en: `Who is this? ${target.clue}`
+    },
+    options,
+    correct,
+    explanation: {
+      hr: `To je ${target.name} (${target.years}).`,
+      en: `This is ${target.name} (${target.years}).`
+    },
+    archivePath: atlasPersonPath(target.slug)
+  }
 }
 
 function znacenjeQuestion(pool: CardPool, target: PoolWord, difficulty: Difficulty, rng: Rng, wordStatus?: GenerateQuestionsOptions['wordStatus']): GameQuestion | null {
@@ -435,6 +468,18 @@ function generateOne(
     return klubOdakleQuestion(pool, target, difficulty, rng)
   }
 
+  if (game === 'osoba') {
+    let list = poolPersons(pool, topics).filter(p => !exclude.has(p.key))
+    if (targetKey) {
+      const fixed = list.find(p => p.key === targetKey)
+      if (!fixed) return null
+      list = [fixed]
+    }
+    const target = targetKey ? list[0]! : pickPersonTarget(list, rng)
+    if (!target) return null
+    return osobaQuestion(pool, target, difficulty, rng)
+  }
+
   return null
 }
 
@@ -471,6 +516,8 @@ export function generateQuestions(game: GameId, pool: CardPool, options: Generat
     candidates = poolClubs(pool, topics).filter(c => c.seniorSeason).map(c => `club:${c.id}:liga` as CardKey)
   } else if (game === 'klub-odakle') {
     candidates = poolClubs(pool, topics).map(c => `club:${c.id}:odakle` as CardKey)
+  } else if (game === 'osoba') {
+    candidates = poolPersons(pool, topics).map(p => p.key)
   }
 
   candidates = shuffled(candidates.filter(k => !exclude.has(k)), rng)
@@ -493,14 +540,16 @@ const ROUND_META = {
   rijeci: { topic: { hr: 'Riječi', en: 'Words' } },
   mjesta: { topic: { hr: 'Mjesta', en: 'Places' } },
   bastina: { topic: { hr: 'Baština', en: 'Heritage' } },
-  sport: { topic: { hr: 'Sport i klubovi', en: 'Sport and clubs' } }
+  sport: { topic: { hr: 'Sport i klubovi', en: 'Sport and clubs' } },
+  osobe: { topic: { hr: 'Osobe', en: 'Persons' } }
 } as const
 
 export function gamesForRound(roundId: keyof typeof ROUND_META, game: GenerateGameId): GameId[] {
   if (roundId === 'rijeci') {
     if (game === 'rijec') return ['rijec']
     if (game === 'znacenje') return ['znacenje']
-    return ['znacenje', 'rijec']
+    if (game === 'mjesovito') return ['znacenje', 'rijec']
+    return []
   }
   if (roundId === 'mjesta') {
     if (game === 'opcina' || game === 'mjesovito') return ['opcina']
@@ -516,6 +565,7 @@ export function gamesForRound(roundId: keyof typeof ROUND_META, game: GenerateGa
     if (game === 'mjesovito') return ['klub-mjesto', 'klub-liga', 'klub-odakle']
     return []
   }
+  if (roundId === 'osobe') return game === 'osoba' || game === 'mjesovito' ? ['osoba'] : []
   return []
 }
 
@@ -526,6 +576,10 @@ export function roundActive(roundId: keyof typeof ROUND_META, topics: GenerateQu
     if (!selected) return false
     return pool.cards.some(c => c.kind === 'club' && cardMatchesTopicSelection(c, topics, slugs))
   }
+  if (roundId === 'osobe') {
+    if (!topics.includes('osobe')) return false
+    return pool.cards.some(c => c.kind === 'person' && cardMatchesTopicSelection(c, topics, slugs))
+  }
   const kind = roundId === 'rijeci' ? 'word' : roundId === 'mjesta' ? 'place' : 'item'
   const root = roundId
   const selected = topics.some(t => t === root || t.startsWith(`${root}-`))
@@ -534,7 +588,7 @@ export function roundActive(roundId: keyof typeof ROUND_META, topics: GenerateQu
 }
 
 export function activeRounds(topics: GenerateQuestionsOptions['topics'], pool: CardPool, game: GenerateGameId) {
-  return (['rijeci', 'mjesta', 'bastina', 'sport'] as const).filter(id => roundActive(id, topics, pool) && gamesForRound(id, game).length)
+  return (['rijeci', 'mjesta', 'bastina', 'sport', 'osobe'] as const).filter(id => roundActive(id, topics, pool) && gamesForRound(id, game).length)
 }
 
 export function generateGameEnabled(game: GenerateGameId, topics: GenerateQuestionsOptions['topics'], pool: CardPool): boolean {

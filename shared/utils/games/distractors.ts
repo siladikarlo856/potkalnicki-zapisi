@@ -1,4 +1,4 @@
-import type { CardPool, PoolItem, PoolMunicipality, PoolPlace, PoolWord } from '../learn/types'
+import type { CardPool, PoolItem, PoolMunicipality, PoolPerson, PoolPlace, PoolWord } from '../learn/types'
 import { municipalitySlugMap } from '../learn/topics'
 import type { Difficulty, GameId } from './types'
 import type { Rng } from './rng'
@@ -240,6 +240,52 @@ export function pickItemSettlementDistractors(
   rng: Rng
 ): string[] {
   return pickSettlementDistractors(item, pool, difficulty, rng)
+}
+
+function personMunicipalityIds(pool: CardPool, person: PoolPerson): Set<string> {
+  const ids = new Set<string>()
+  for (const areaId of person.areaIds) {
+    const settlement = pool.settlements.find(s => s.id === areaId)
+    ids.add(settlement ? settlement.municipalityId : areaId)
+  }
+  return ids
+}
+
+export function pickPersonDistractors(
+  target: PoolPerson,
+  pool: CardPool,
+  difficulty: Difficulty,
+  rng: Rng
+): PoolPerson[] {
+  const persons = pool.cards.filter((c): c is PoolPerson => c.kind === 'person')
+  const count = 3
+  const tryRule = (level: Difficulty): PoolPerson[] | null => {
+    let others = persons.filter(p => p.id !== target.id && p.name !== target.name)
+    if (level === 'tesko') {
+      const units = personMunicipalityIds(pool, target)
+      const sameUnit = others.filter(p => [...personMunicipalityIds(pool, p)].some(id => units.has(id)))
+      if (sameUnit.length >= 2) others = sameUnit
+    }
+    const picked = shuffled(others, rng).slice(0, count)
+    const seen = new Set<string>()
+    const unique = picked.filter((p) => {
+      const key = p.name.toLocaleLowerCase('hr')
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    return unique.length >= 2 ? unique : null
+  }
+  for (const level of [difficulty, 'srednje' as Difficulty]) {
+    const result = tryRule(level)
+    if (result) return result
+  }
+  return shuffled(persons.filter(p => p.id !== target.id), rng).slice(0, count)
+}
+
+export function pickPersonTarget(persons: readonly PoolPerson[], rng: Rng): PoolPerson | null {
+  if (!persons.length) return null
+  return shuffled(persons, rng)[0]!
 }
 
 export function municipalityFor(pool: CardPool, id: string): PoolMunicipality | undefined {

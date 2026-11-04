@@ -21,7 +21,7 @@ describe('Potkalnički zapisi person pages', () => {
     expect(page.find('[data-testid="persons-filter"]').exists()).toBe(true)
     expect(page.get('[data-testid="persons-suggest"]').text()).toContain('Predloži osobu')
     expect(page.text()).toContain('Zapisujemo samo preminule i povijesne osobe.')
-    // WP19 adds these; they stay hidden until the person card and "Tko je to?" exist.
+    // WP19 adds these; they stay hidden until the person card and "Tko je to?" exist (≥4 seeded persons).
     expect(page.text()).not.toContain('Uči osobe')
     expect(page.text()).not.toContain('Tko je to?')
   })

@@ -51,7 +51,8 @@ const gameOptions = computed(() => ([
   { id: 'opcina' as const, label: t('challenge.gameMunicipality') },
   { id: 'crkva' as const, label: t('challenge.gameChurch') },
   { id: 'karta-koje' as const, label: t('challenge.gameMapWhich') },
-  { id: 'karta-tocke' as const, label: t('challenge.gameMapFind') }
+  { id: 'karta-tocke' as const, label: t('challenge.gameMapFind') },
+  { id: 'osoba' as const, label: t('challenge.gamePerson') }
 ]))
 
 function gameEnabled(id: GenerateGameId) {

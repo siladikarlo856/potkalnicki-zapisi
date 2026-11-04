@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AtlasPersonListResponse } from '~~/shared/types/publicAtlas'
+import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -7,6 +8,7 @@ defineI18nRoute({ locales: ['hr'] })
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const unit = computed(() => typeof route.query.opcina === 'string' ? route.query.opcina : '')
 const { data: page } = await useAtlasFetch<AtlasPersonListResponse>(
@@ -15,6 +17,7 @@ const { data: page } = await useAtlasFetch<AtlasPersonListResponse>(
 
 const proposalOpen = ref(false)
 const units = computed(() => [{ slug: '', label: t('pz.persons.filterAll') }, ...(page.value?.municipalities ?? [])])
+const playReady = computed(() => (page.value?.total ?? 0) >= 4)
 
 function selectUnit(slug: string) {
   router.replace({ query: slug ? { opcina: slug } : {} })
@@ -72,6 +75,21 @@ useSeoMeta({
 
     <UPageSection :ui="{ root: 'border-t border-default' }">
       <div class="flex flex-wrap gap-3">
+        <UButton
+          v-if="playReady"
+          :to="localePath(`${pzRoutes.learn}?teme=osobe`)"
+          :label="t('pz.persons.learn')"
+          icon="i-lucide-graduation-cap"
+          color="primary"
+        />
+        <UButton
+          v-if="playReady"
+          :to="localePath(pzRoutes.tkoJeTo)"
+          :label="t('pz.persons.whoIsIt')"
+          icon="i-lucide-user-round"
+          color="neutral"
+          variant="outline"
+        />
         <UButton
           :label="t('pz.persons.suggest')"
           icon="i-lucide-plus"

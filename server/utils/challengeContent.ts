@@ -7,11 +7,12 @@ import type { Rng } from '../../shared/utils/games/rng'
 import {
   activeRounds,
   gamesForRound,
+  generateGameEnabled,
   generateQuestions,
   ROUND_META
 } from '../../shared/utils/games/questions'
 import { CHALLENGEABLE_GAMES } from '../../shared/utils/games/types'
-import type { GameQuestion } from '../../shared/utils/games/types'
+import type { GameQuestion, GenerateGameId } from '../../shared/utils/games/types'
 
 const LENGTHS = new Set([5, 10, 15])
 const TOPIC_ID = /^[a-z0-9-]{1,40}$/
@@ -27,7 +28,8 @@ function topicLabel(pool: CardPool, topicId: TopicId, lang: 'hr' | 'en'): string
     rijeci: 'Words',
     mjesta: 'Places',
     bastina: 'Heritage',
-    sport: 'Sport and clubs'
+    sport: 'Sport and clubs',
+    osobe: 'Persons'
   }
   return en[topicId] ?? fromPool ?? topicId
 }
@@ -49,7 +51,9 @@ export function parseGenerateInput(body: unknown, pool: CardPool): GenerateChall
   if (difficulty !== 'lako' && difficulty !== 'srednje' && difficulty !== 'tesko') throw new Error('Invalid difficulty')
   const length = body.length
   if (typeof length !== 'number' || !LENGTHS.has(length)) throw new Error('Invalid length')
-  return { topics, game: game as GenerateChallengeInput['game'], difficulty, length: length as GenerateChallengeInput['length'] }
+  const parsed: GenerateChallengeInput = { topics, game: game as GenerateChallengeInput['game'], difficulty, length: length as GenerateChallengeInput['length'] }
+  if (!generateGameEnabled(parsed.game as GenerateGameId, parsed.topics, pool)) throw new Error('Invalid game')
+  return parsed
 }
 
 function toChallengeQuestion(question: GameQuestion): ChallengeQuestion {

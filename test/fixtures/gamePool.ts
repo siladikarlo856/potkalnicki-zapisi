@@ -24,7 +24,11 @@ export const FIXTURE_IDS = {
   church: id(20),
   chapel: id(21),
   ana: id(30),
-  marko: id(31)
+  marko: id(31),
+  personA: id(50),
+  personB: id(51),
+  personC: id(52),
+  personD: id(53)
 }
 
 function area(row: Partial<PublicContentRows['areas'][number]> & Pick<PublicContentRows['areas'][number], 'id' | 'kind' | 'name'>) {
@@ -81,7 +85,37 @@ export function gamePoolRows(): PublicContentRows {
     clubSeasons: [],
     clubSources: [],
     legacyIds: [],
-    slugHistory: []
+    slugHistory: [],
+    persons: [
+      {
+        id: FIXTURE_IDS.personA, name: 'Ana Prva', slug: 'ana-prva', role: 'učiteljica', clue: 'Prva natuknica bez imena.',
+        bio: null, born: '1800.', born_year: 1800, born_place: null, died: '1850.', died_year: 1850, died_place: null,
+        open_questions: null, verification: 'verified', noindex: false, status: 'published', updated_at: '2026-11-01T10:00:00+00:00'
+      },
+      {
+        id: FIXTURE_IDS.personB, name: 'Bruno Drugi', slug: 'bruno-drugi', role: 'kapelan', clue: 'Druga natuknica bez imena.',
+        bio: null, born: '1810.', born_year: 1810, born_place: null, died: '1860.', died_year: 1860, died_place: null,
+        open_questions: null, verification: 'verified', noindex: false, status: 'published', updated_at: '2026-11-01T10:00:00+00:00'
+      },
+      {
+        id: FIXTURE_IDS.personC, name: 'Cvijeta Treća', slug: 'cvijeta-treca', role: 'pjevačica', clue: 'Treća natuknica bez imena.',
+        bio: null, born: '1820.', born_year: 1820, born_place: null, died: '1870.', died_year: 1870, died_place: null,
+        open_questions: null, verification: 'verified', noindex: false, status: 'published', updated_at: '2026-11-01T10:00:00+00:00'
+      },
+      {
+        id: FIXTURE_IDS.personD, name: 'Damir Četvrti', slug: 'damir-cetvrti', role: 'skladatelj', clue: 'Četvrta natuknica bez imena.',
+        bio: null, born: '1830.', born_year: 1830, born_place: null, died: '1880.', died_year: 1880, died_place: null,
+        open_questions: null, verification: 'verified', noindex: false, status: 'published', updated_at: '2026-11-01T10:00:00+00:00'
+      }
+    ],
+    personAreas: [
+      { person_id: FIXTURE_IDS.personA, area_id: FIXTURE_IDS.krizevci, role: 'rodjen', position: 0 },
+      { person_id: FIXTURE_IDS.personB, area_id: FIXTURE_IDS.apatovec, role: 'rodjen', position: 0 },
+      { person_id: FIXTURE_IDS.personC, area_id: FIXTURE_IDS.kalnikSettlement, role: 'rodjen', position: 0 },
+      { person_id: FIXTURE_IDS.personD, area_id: FIXTURE_IDS.farSettlement, role: 'rodjen', position: 0 }
+    ],
+    personItems: [],
+    personSources: []
   }
 }
 

@@ -88,7 +88,7 @@ describe('persons in the public snapshot', () => {
     }
     await loadPublicContentRows({ from: query } as never)
     expect(selects.persons).toBeDefined()
-    expect(selects.persons).not.toMatch(/research_notes|clue|search_text|credits/)
+    expect(selects.persons).not.toMatch(/research_notes|search_text|credits/)
     expect(Object.keys(selects)).toEqual(expect.arrayContaining(['person_areas', 'person_heritage_items', 'person_sources']))
   })
 })

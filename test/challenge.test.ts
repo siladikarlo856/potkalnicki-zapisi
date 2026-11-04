@@ -76,8 +76,10 @@ describe('challenge editorial contract and nickname validation', () => {
 
   it('validates generate input and builds random challenges with meta and card fields', () => {
     const pool = fixtureCardPool()
-    expect(() => parseGenerateInput({ topics: ['osobe'], game: 'mjesovito', difficulty: 'srednje', length: 10 }, pool)).toThrow()
+    expect(() => parseGenerateInput({ topics: ['osobe'], game: 'karta-koje', difficulty: 'srednje', length: 10 }, pool)).toThrow()
+    expect(parseGenerateInput({ topics: ['osobe'], game: 'osoba', difficulty: 'srednje', length: 10 }, pool).game).toBe('osoba')
     expect(() => parseGenerateInput({ topics: ['mjesta'], game: 'karta-koje', difficulty: 'srednje', length: 10 }, pool)).not.toThrow()
+    expect(() => parseGenerateInput({ topics: ['rijeci'], game: 'karta-koje', difficulty: 'srednje', length: 10 }, pool)).toThrow()
     const mapQuestion = generateQuestions('karta-koje', pool, { topics: ['mjesta'], difficulty: 'srednje', count: 1, rng: mulberry32(1) })[0]
     expect(mapQuestion?.display).toMatchObject({ type: 'map-target', point: { lat: expect.any(Number), lng: expect.any(Number) } })
     const input = parseGenerateInput({ topics: ['rijeci', 'mjesta', 'bastina'], game: 'mjesovito', difficulty: 'srednje', length: 10 }, pool)

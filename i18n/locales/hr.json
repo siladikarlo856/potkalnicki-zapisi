@@ -709,6 +709,7 @@
     "gameChurch": "Gdje je ta crkva?",
     "gameMapWhich": "Koje je ovo selo?",
     "gameMapFind": "Pronađi selo (4 točke)",
+    "gamePerson": "Tko je to?",
     "difficultyLabel": "Težina",
     "difficulty": {
       "lako": "Lako",
@@ -817,6 +818,8 @@
       "suggestCorrection": "✎ Predloži ispravak",
       "placePrompt": "Kojoj općini ili gradu pripada?",
       "itemPrompt": "Gdje se nalazi?",
+      "personPrompt": "Tko je to?",
+      "personEyebrow": "Osoba",
       "placeItemCount": "{count} zapisa baštine",
       "summaryTitle": "Gotovo! Znaš {known} od {n}.",
       "learnedLabel": "naučeno",
@@ -1040,7 +1043,10 @@
       "matchTitle": "Spoji crkvu i selo",
       "matchDescription": "Spoji svaki zapis s naseljem.",
       "matchHint": "Spoji svaki zapis s naseljem — tri runde po četiri para. Bodovi se broje samo za parove pogodene iz prvog pokušaja.",
-      "matchBoardOf": "Runda {i} od {n}"
+      "matchBoardOf": "Runda {i} od {n}",
+      "whoEyebrow": "Osobe",
+      "whoTitle": "Tko je to?",
+      "whoDescription": "Pročitaj natuknicu i odaberi pravo ime."
     },
     "map": {
       "layers": "Sloj karte",
