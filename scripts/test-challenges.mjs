@@ -1,7 +1,7 @@
 // Disposable Postgres + PostgREST; never starts, resets or migrates the shared Supabase stack.
 import { execFileSync, spawn } from 'node:child_process'
 import { createHmac, randomBytes } from 'node:crypto'
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { createServer } from 'node:http'
 
@@ -12,6 +12,18 @@ let proxy
 const password = randomBytes(24).toString('hex')
 const secret = randomBytes(32).toString('hex')
 const docker = args => execFileSync('docker', args, { encoding: 'utf8' }).trim()
+// Gitea Actions runs the job itself in a container while mounting the host's Docker socket.
+// Ports published on the host are then outside the job's loopback, so when this script runs
+// inside the job container, the sidecars join that container's network namespace instead.
+const jobContainer = (() => {
+  if (!existsSync('/.dockerenv')) return null
+  try {
+    return docker(['inspect', '--format', '{{.Id}}', readFileSync('/etc/hostname', 'utf8').trim()])
+  } catch {
+    return null
+  }
+})()
+const networkArgs = jobContainer ? ['--network', `container:${jobContainer}`] : ['-p', '127.0.0.1::3000']
 const sql = input => execFileSync('docker', ['exec', '-i', name, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1'], { input, encoding: 'utf8' })
 const jwt = (role) => {
   const body = [Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url'), Buffer.from(JSON.stringify({ role, exp: Math.floor(Date.now() / 1000) + 86400 })).toString('base64url')].join('.')
@@ -19,7 +31,7 @@ const jwt = (role) => {
 }
 
 try {
-  docker(['run', '-d', '--name', name, '-e', `POSTGRES_PASSWORD=${password}`, '-p', '127.0.0.1::3000', 'postgres:18.6'])
+  docker(['run', '-d', '--name', name, ...networkArgs, '-e', `POSTGRES_PASSWORD=${password}`, 'postgres:18.6'])
   let ready = false
   for (let i = 0; i < 100; i++) {
     try {
@@ -35,7 +47,7 @@ try {
   const migrations = new URL('../supabase/migrations/', import.meta.url)
   for (const file of readdirSync(migrations).filter(f => f.endsWith('.sql')).sort()) sql(readFileSync(new URL(file, migrations), 'utf8'))
   docker(['run', '-d', '--name', rest, '--network', `container:${name}`, '-e', `PGRST_DB_URI=postgres://postgres:${password}@127.0.0.1:5432/postgres`, '-e', 'PGRST_DB_ANON_ROLE=anon', '-e', `PGRST_JWT_SECRET=${secret}`, 'postgrest/postgrest:v16.5'])
-  const port = docker(['port', name, '3000/tcp']).split(':').at(-1)
+  const port = jobContainer ? 3000 : docker(['port', name, '3000/tcp']).split(':').at(-1)
   const url = `http://127.0.0.1:${port}`
   for (let i = 0; i < 100; i++) {
     try {
