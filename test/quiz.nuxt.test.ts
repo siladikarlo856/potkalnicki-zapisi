@@ -1,6 +1,5 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import { createClient } from '@supabase/supabase-js'
 import { clearNuxtData, clearNuxtState, useNuxtApp } from '#imports'
 import type { CardPool } from '../shared/utils/learn/types'
 import { GAME_SCORES_KEY } from '../shared/utils/games/scores'
@@ -8,10 +7,17 @@ import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
 import Quiz from '../app/pages/potkalnicko-prigorje/igre/kviz.vue'
 import sampleWords from './fixtures/heritage/words.json'
 import sampleAreas from './fixtures/heritage/areas.json'
-import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
 
-const fake = await startFakeSupabase()
-const db = createClient(fake.url, SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+type Word = typeof sampleWords[number]
+
+// The page only sees the two endpoints below, so the words behind them are a plain in-memory catalogue:
+// which words are active is all a test changes. The real word and pool APIs run against Postgres in
+// test/api.serial.integration.test.ts.
+const catalogue = new Map<string, { entry: Word, active: boolean }>()
+const activeEntries = () => [...catalogue.values()].filter(word => word.active).map(word => word.entry)
+const setActive = (id: string, active: boolean) => {
+  catalogue.get(id)!.active = active
+}
 const seeds = sampleWords.slice(0, 4)
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 let pending: Promise<void> | undefined
@@ -28,18 +34,14 @@ function storedWord(wordId: string) {
 registerEndpoint('/api/heritage/words', async () => {
   await pending
   if (unavailable) throw new Error('Word service unavailable')
-  const { data, error } = await db.from('heritage_words').select('entry').eq('active', true)
-  if (error) throw error
-  return { words: data!.map(row => row.entry), areas: sampleAreas }
+  return { words: activeEntries(), areas: sampleAreas }
 })
 
 // The quiz draws its questions from the card pool: build one from the same active words, as the pool API does.
 registerEndpoint('/api/learn/pool', async () => {
   await pending
   if (unavailable) throw new Error('Pool unavailable')
-  const { data, error } = await db.from('heritage_words').select('entry').eq('active', true)
-  if (error) throw error
-  const cards = data!.map(row => row.entry as typeof sampleWords[number]).map(entry => ({
+  const cards = activeEntries().map(entry => ({
     kind: 'word' as const,
     key: `word:${entry.id}` as const,
     id: entry.id,
@@ -60,16 +62,13 @@ registerEndpoint('/api/challenges', { method: 'POST', handler: async (event) => 
   return { code: 'quizproof1234567890' }
 } })
 
-beforeAll(async () => {
-  for (const entry of sampleWords.slice(0, 5)) {
-    const { error } = await db.from('heritage_words').insert({ id: entry.id, entry, areas: sampleAreas, active: false })
-    expect(error).toBeNull()
-  }
+beforeAll(() => {
+  for (const entry of sampleWords.slice(0, 5)) catalogue.set(entry.id, { entry, active: false })
 })
-beforeEach(async () => {
+beforeEach(() => {
   localStorage.clear()
   clearNuxtState(['heritage-progress', 'heritage-progress-loaded', 'pz-game-scores', 'pz-game-scores-loaded'])
-  for (const entry of seeds) await db.from('heritage_words').update({ active: true }).eq('id', entry.id)
+  for (const entry of seeds) setActive(entry.id, true)
 })
 afterEach(() => {
   release?.()
@@ -80,7 +79,6 @@ afterEach(() => {
   wrapper = undefined
   clearNuxtData(['active-heritage-words', 'card-pool'])
 })
-afterAll(() => fake.stop())
 
 async function mountQuiz(lang: 'hr' = 'hr') {
   await useNuxtApp().$i18n.setLocale(lang)
@@ -215,7 +213,7 @@ describe('quiz variant dialog', () => {
 
 describe('limited active words', () => {
   it.each([0, 1, 2])('shows the empty state with %i active words', async (count) => {
-    for (const entry of seeds.slice(count)) await db.from('heritage_words').update({ active: false }).eq('id', entry.id)
+    for (const entry of seeds.slice(count)) setActive(entry.id, false)
     const page = await mountQuiz()
     await expect.poll(() => page.text()).toContain('Trebamo još riječi')
     expect(page.text()).toContain('barem dva različita značenja')
@@ -223,7 +221,7 @@ describe('limited active words', () => {
   })
 
   it('asks with three options when only three words are active', async () => {
-    await db.from('heritage_words').update({ active: false }).eq('id', seeds[3]!.id)
+    setActive(seeds[3]!.id, false)
     const page = await mountQuiz()
     await expect.poll(() => page.findAll(OPTION).length).toBe(3)
     expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe('Odgovorena pitanja')
@@ -313,17 +311,14 @@ describe.each([
     const extras = Array.from({ length: 9 }, (_, index) => ({
       ...seeds[0]!, id: `extra-${index}`, headword: `extra-${index}`, meaning: { hr: `značenje ${index}`, en: `meaning ${index}` }, partOfSpeech: 'imenica', variants: []
     }))
-    for (const entry of extras) {
-      const { error } = await db.from('heritage_words').insert({ id: entry.id, entry, areas: sampleAreas, active: true })
-      expect(error).toBeNull()
-    }
+    for (const entry of extras) catalogue.set(entry.id, { entry, active: true })
     try {
       const page = await mountQuiz()
       await expect.poll(() => page.findAll(OPTION).length).toBe(4)
       // 13 active words, one round of ten.
       expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 10')
     } finally {
-      for (const entry of extras) await db.from('heritage_words').delete().eq('id', entry.id)
+      for (const entry of extras) catalogue.delete(entry.id)
     }
   })
 })
