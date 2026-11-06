@@ -136,10 +136,10 @@ describe.skipIf(!db.enabled)('real challenge HTTP and Postgres behavior', () => 
       } else played = await state(await player.request(path(played, 'continue'), { phase, index: played.participant!.index }))
     }
 
-    const db = createClient(url!, key, { auth: { persistSession: false } })
+    const service = db.service
     const code = randomBytes(12).toString('base64url')
     const hash = createHash('sha256').update(randomBytes(32)).digest('hex')
-    const recorded = await db.rpc('heritage_challenge_action', { p_action: 'create_completed', p_code: code, p_hash: hash, p_input: { nickname: 'Iva', content, results } })
+    const recorded = await service.rpc('heritage_challenge_action', { p_action: 'create_completed', p_code: code, p_hash: hash, p_input: { nickname: 'Iva', content, results } })
     expect(recorded.error).toBeNull()
     const completed = recorded.data as ChallengeState
 
@@ -153,7 +153,7 @@ describe.skipIf(!db.enabled)('real challenge HTTP and Postgres behavior', () => 
     expect(perQuestion(code)).toBe(perQuestion(game.code))
     expect(perQuestion(code)).toBe('0:true:100,1:false:0,2:true:100')
 
-    const mismatched = await db.rpc('heritage_challenge_action', { p_action: 'create_completed', p_code: randomBytes(12).toString('base64url'), p_hash: hash, p_input: { nickname: 'Iva', content, results: [true] } })
+    const mismatched = await service.rpc('heritage_challenge_action', { p_action: 'create_completed', p_code: randomBytes(12).toString('base64url'), p_hash: hash, p_input: { nickname: 'Iva', content, results: [true] } })
     expect(mismatched.error?.code).toBe('PT400')
   })
 
