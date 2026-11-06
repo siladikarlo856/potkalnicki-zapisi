@@ -33,9 +33,10 @@
 }
 
 html[data-site="pz"] {
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --ui-primary: #4E6357;
-  --ui-text-dimmed: #797769;
+  --ui-text-dimmed: #6B695C;
   --ui-text-muted: #48473A;
   --ui-text-toned: #48473A;
   --ui-text: #1C1C16;
@@ -50,11 +51,43 @@ html[data-site="pz"] {
   --ui-border-muted: #CAC7B6;
   --ui-border-accented: #797769;
   --ui-border-inverted: #374B40;
+
+  /* Status colours: teal, brick and ochre instead of Nuxt UI's greens and reds, which clash with sage. */
+  --ui-success: #1D6470;
+  --ui-error: #A0402A;
+  --ui-warning: #7F5310;
+  --pz-success-soft: #D5EAEC;
+  --pz-error-soft: #F7E0D8;
+  --pz-warning-soft: #F8E9CC;
+
+  /* Wheat is a fill, never a text colour on paper. */
+  --pz-wheat: #FADFB0;
+  --focus-ring: #374B40;
+
+  /* Radii: controls md, cards lg, sheets and the hero slab xl, badges sm. */
+  --pz-radius-sm: 4px;
+  --pz-radius-md: 8px;
+  --pz-radius-lg: 12px;
+  --pz-radius-xl: 20px;
+
+  /* Sizes, used as max-w-(--pz-measure), min-h-(--pz-tap-min) and so on. */
+  --pz-tap-min: 44px;
+  --pz-option-min: 56px;
+  --pz-header-h: 56px;
+  --pz-tabbar-h: 64px;
+  --pz-measure: 680px;
+  --pz-game-col: 560px;
+  --pz-side-panel: 340px;
+  --pz-page-max: 1200px;
+
+  /* Shadows only add depth to a surface that already has a border. */
+  --pz-shadow-sheet: 0 -8px 24px rgba(28, 28, 22, 0.12);
+  --pz-shadow-lift: 0 2px 6px rgba(28, 28, 22, 0.08);
 }
 
 html.dark[data-site="pz"] {
   --ui-primary: #B5CCBD;
-  --ui-text-dimmed: #CAC7B6;
+  --ui-text-dimmed: #A5A293;
   --ui-text-muted: #CAC7B6;
   --ui-text-toned: #CAC7B6;
   --ui-text: #E6E2D9;
@@ -67,12 +100,155 @@ html.dark[data-site="pz"] {
   --ui-bg-inverted: #D1E8D9;
   --ui-border: #48473A;
   --ui-border-muted: #48473A;
-  --ui-border-accented: #949181;
+  --ui-border-accented: #A5A293;
   --ui-border-inverted: #D1E8D9;
+
+  --ui-success: #8CCFD9;
+  --ui-error: #F2A48E;
+  --ui-warning: #E9C27A;
+  --pz-success-soft: #17343A;
+  --pz-error-soft: #3E211A;
+  --pz-warning-soft: #3A2E17;
+  --pz-wheat: #4A3A1E;
+  --focus-ring: #D1E8D9;
+
+  --pz-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5);
+  --pz-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 html[data-site="pz"] :is(h1, h2, h3, .font-serif) {
   font-family: var(--font-serif);
+}
+
+/*
+ * Nuxt UI's vertical page sections centre their heading block. The design
+ * keeps section headings left-aligned, so the pz site undoes the centring.
+ * This rule is unlayered, so it beats the component's layered utilities.
+ */
+html[data-site="pz"] [data-slot="root"][data-orientation="vertical"] > [data-slot="container"] > [data-slot="wrapper"] {
+  > [data-slot="header"] > :is([data-slot="title"], [data-slot="description"]) {
+    text-align: left;
+  }
+
+  > [data-slot="header"] > :is([data-slot="headline"], [data-slot="leading"]),
+  > [data-slot="footer"] > [data-slot="links"] {
+    justify-content: flex-start;
+  }
+}
+
+/*
+ * Focus: a 3px ring at 2px offset on everything focusable, in the pz ring
+ * colour, and wheat on inverted slabs where the ring colour would vanish.
+ * Unlayered, so it wins over Nuxt UI's own focus-visible utilities.
+ */
+html[data-site="pz"] :is(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"]), [role="button"], [role="tab"], [role="option"], [role="menuitem"], [role="switch"], [role="checkbox"], [role="radio"]):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+html[data-site="pz"] .bg-inverted :is(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"]), [role="button"], [role="tab"], [role="option"], [role="menuitem"], [role="switch"], [role="checkbox"], [role="radio"]):focus-visible {
+  outline-color: var(--pz-wheat);
+}
+
+/*
+ * The 13 Potkalnički zapisi type styles. Serif is for names (titles, headwords),
+ * Inter for interface and reading copy. The classes are opt-in, so adding them
+ * changes nothing until a pz component uses one.
+ */
+@utility pz-display-lg {
+  font-family: var(--font-serif);
+  font-size: 56px;
+  line-height: 60px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility pz-display {
+  font-family: var(--font-serif);
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility pz-headword {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  line-height: 52px;
+  font-weight: 700;
+}
+
+@utility pz-h1 {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 600;
+}
+
+@utility pz-h2 {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+}
+
+@utility pz-h3 {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+@utility pz-lead {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+@utility pz-body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+@utility pz-body-sm {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+@utility pz-label {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+@utility pz-caption {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+@utility pz-overline {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@utility pz-numeral {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /*

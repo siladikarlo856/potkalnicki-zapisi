@@ -94,6 +94,19 @@ export default defineNuxtConfig({
     }
   },
 
+  // @nuxt/fonts (loaded by Nuxt UI) finds the families in main.css. Source Serif 4 needs the
+  // optical-size axis asked for by name, and the weights are pinned to the ones the pz type scale uses.
+  fonts: {
+    families: [
+      { name: 'Inter', weights: [400, 500, 600, 700] },
+      {
+        name: 'Source Serif 4',
+        weights: [400, 600, 700],
+        providerOptions: { google: { experimental: { variableAxis: { opsz: [['8', '60']] } } } }
+      }
+    ]
+  },
+
   i18n: {
     baseUrl: 'https://karlo-siladi.from.hr',
     defaultLocale: 'hr',
