@@ -1,1 +1,3 @@
-export default defineEventHandler(event => enterChallenge(event, true))
+import { createChallenge } from '../../challenges'
+
+export default defineEventHandler(event => createChallenge(event))

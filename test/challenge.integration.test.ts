@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import type { ChallengeContent, ChallengeLeaderboard, ChallengeState } from '../shared/utils/challenge'
-import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
+import { validateChallengeContent } from '../server/challenges/content'
 import { contentUuid } from './helpers/contentUuid'
 import sample from './fixtures/heritage/challenge.json'
 import { integrationDb } from './support/integrationDb'

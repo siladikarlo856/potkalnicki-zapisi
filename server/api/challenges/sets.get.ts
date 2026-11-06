@@ -1,3 +1,3 @@
-import { publishedChallengeSets } from '../../utils/challengeTemplates'
+import { listChallengeSets } from '../../challenges'
 
-export default defineEventHandler(async () => publishedChallengeSets())
+export default defineEventHandler(() => listChallengeSets())
