@@ -1,20 +1,10 @@
 import type { ChallengeMeta } from './challenge'
 import type { CardPool, TopicId } from './learn/types'
 import type { Difficulty, GenerateGameId } from './games/types'
+import { gameDefinition } from './games/definitions'
 
-const GAME_LABELS: Record<GenerateGameId, { hr: string, en: string }> = {
-  'mjesovito': { hr: 'Mješovito', en: 'Mixed' },
-  'znacenje': { hr: 'Kaj to znači?', en: 'What does it mean?' },
-  'rijec': { hr: 'Kak se to veli?', en: 'Local word' },
-  'opcina': { hr: 'Kojoj općini pripada?', en: 'Which municipality?' },
-  'crkva': { hr: 'Gdje je ta crkva?', en: 'Where is the church?' },
-  'karta-koje': { hr: 'Koje je ovo selo?', en: 'Which village is this?' },
-  'karta-tocke': { hr: 'Pronađi selo', en: 'Find the village' },
-  'osoba': { hr: 'Tko je to?', en: 'Who is this?' },
-  'klub-mjesto': { hr: 'Koji klub igra u mjestu?', en: 'Which club plays in the settlement?' },
-  'klub-liga': { hr: 'U kojoj ligi klub igra u sezoni?', en: 'Which league does the club play in?' },
-  'klub-odakle': { hr: 'Odakle je klub?', en: 'Where is the club from?' }
-}
+/** The mixed game draws from several games, so it has no Game definition of its own. */
+const MIXED_GAME_LABEL = { hr: 'Mješovito', en: 'Mixed' }
 
 const DIFFICULTY_LABELS: Record<Difficulty, { hr: string, en: string }> = {
   lako: { hr: 'Lako', en: 'Easy' },
@@ -31,7 +21,8 @@ const ROOT_TOPIC_EN: Record<string, string> = {
 }
 
 export function challengeGameLabel(game: GenerateGameId, lang: 'hr' | 'en'): string {
-  return GAME_LABELS[game][lang]
+  if (game === 'mjesovito') return MIXED_GAME_LABEL[lang]
+  return gameDefinition(game).label[lang]
 }
 
 export function challengeDifficultyLabel(difficulty: Difficulty, lang: 'hr' | 'en'): string {

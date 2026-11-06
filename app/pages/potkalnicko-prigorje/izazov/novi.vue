@@ -2,7 +2,7 @@
 import type { ChallengeSetPublic, ChallengeState, GenerateChallengeInput } from '~~/shared/utils/challenge'
 import type { TopicId } from '~~/shared/utils/learn/types'
 import type { Difficulty, GenerateGameId } from '~~/shared/utils/games/types'
-import { applyChallengeCreateQuery, challengeCreateGameEnabled, defaultChallengeCreateForm } from '~~/shared/utils/challengeCreateForm'
+import { applyChallengeCreateQuery, challengeCreateGameEnabled, challengeCreateGameOptions, defaultChallengeCreateForm } from '~~/shared/utils/challengeCreateForm'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
@@ -44,16 +44,7 @@ const { remember } = useChallengeList()
 
 const liveTopics = computed(() => pool.value.topics.filter(topic => topic.status === 'live' && topic.count > 0))
 
-const gameOptions = computed(() => ([
-  { id: 'mjesovito' as const, label: t('challenge.gameMixed') },
-  { id: 'znacenje' as const, label: t('challenge.gameMeaning') },
-  { id: 'rijec' as const, label: t('challenge.gameWord') },
-  { id: 'opcina' as const, label: t('challenge.gameMunicipality') },
-  { id: 'crkva' as const, label: t('challenge.gameChurch') },
-  { id: 'karta-koje' as const, label: t('challenge.gameMapWhich') },
-  { id: 'karta-tocke' as const, label: t('challenge.gameMapFind') },
-  { id: 'osoba' as const, label: t('challenge.gamePerson') }
-]))
+const gameOptions = challengeCreateGameOptions('hr')
 
 function gameEnabled(id: GenerateGameId) {
   return challengeCreateGameEnabled(id, selectedTopics.value, pool.value)
@@ -61,7 +52,7 @@ function gameEnabled(id: GenerateGameId) {
 
 watch([selectedTopics, pool], () => {
   if (!gameEnabled(game.value)) {
-    const fallback = gameOptions.value.find(option => gameEnabled(option.id))
+    const fallback = gameOptions.find(option => gameEnabled(option.id))
     if (fallback) game.value = fallback.id
   }
 }, { deep: true })

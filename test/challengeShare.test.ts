@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { challengeInviteShareText } from '../app/utils/shareResult'
+import { challengeGameLabel, challengeInviteShareText } from '../app/utils/shareResult'
+import { GAME_DEFINITIONS } from '../shared/utils/games/definitions'
 
 describe('challengeInviteShareText', () => {
   it('formats the Croatian invite with topics, difficulty and closing date', () => {
@@ -27,5 +28,19 @@ describe('challengeInviteShareText', () => {
       targetScore: 400
     })
     expect(text).toContain('Rezultat za dostići: 400 bodova')
+  })
+})
+
+describe('challengeGameLabel', () => {
+  it('names each challengeable game by its Game definition label', () => {
+    for (const definition of GAME_DEFINITIONS.filter(d => d.challengeable)) {
+      expect(challengeGameLabel(definition.id as never, 'hr')).toBe(definition.label.hr)
+      expect(challengeGameLabel(definition.id as never, 'en')).toBe(definition.label.en)
+    }
+  })
+
+  it('names the mixed game', () => {
+    expect(challengeGameLabel('mjesovito', 'hr')).toBe('Mješovito')
+    expect(challengeGameLabel('mjesovito', 'en')).toBe('Mixed')
   })
 })

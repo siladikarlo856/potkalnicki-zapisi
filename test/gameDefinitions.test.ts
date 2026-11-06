@@ -1,9 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { GAME_DEFINITIONS, gameDefinition } from '../shared/utils/games/definitions'
+import { CHALLENGEABLE_GAMES, GAME_DEFINITIONS, gameDefinition } from '../shared/utils/games/definitions'
 import { GAME_CATALOGUE } from '../shared/utils/games/catalogue'
-import { CHALLENGEABLE_GAMES } from '../shared/utils/games/types'
 import { pzRoutes } from '../shared/utils/appRoutes'
 
 const igreDir = fileURLToPath(new URL('../app/pages/potkalnicko-prigorje/igre/', import.meta.url))
@@ -22,9 +21,11 @@ describe('Game definitions', () => {
     }
   })
 
-  it('marks exactly the challengeable games as challengeable', () => {
-    const challengeable = GAME_DEFINITIONS.filter(d => d.challengeable).map(d => d.id)
-    expect(new Set(challengeable)).toEqual(new Set(CHALLENGEABLE_GAMES))
+  it('lets a Challenge be made from the quiz, map, heritage, person and club games', () => {
+    expect(new Set(CHALLENGEABLE_GAMES)).toEqual(new Set([
+      'znacenje', 'rijec', 'opcina', 'crkva', 'karta-koje', 'karta-tocke', 'osoba',
+      'klub-mjesto', 'klub-liga', 'klub-odakle'
+    ]))
   })
 
   it('builds the catalogue from the definitions that have catalogue meta', () => {

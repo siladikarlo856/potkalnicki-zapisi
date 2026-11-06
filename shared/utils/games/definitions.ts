@@ -114,7 +114,7 @@ const DEFINITIONS = {
   },
   // Played only in a Challenge: no catalogue tile.
   'karta-tocke': {
-    label: { hr: 'Pronađi selo', en: 'Find the village' },
+    label: { hr: 'Pronađi selo (4 točke)', en: 'Find the village (4 points)' },
     challengeable: true
   },
   'klub-mjesto': {
@@ -134,6 +134,15 @@ const DEFINITIONS = {
 /** One record per game, in catalogue order. */
 export const GAME_DEFINITIONS: readonly GameDefinition[] = Object.entries(DEFINITIONS)
   .map(([id, definition]) => ({ id: id as GameId, ...definition }))
+
+/** The games a Challenge can be made from, in catalogue order. */
+export type ChallengeableGameId = {
+  [Id in keyof typeof DEFINITIONS]: typeof DEFINITIONS[Id]['challengeable'] extends true ? Id : never
+}[keyof typeof DEFINITIONS]
+
+export const CHALLENGEABLE_GAMES: readonly ChallengeableGameId[] = GAME_DEFINITIONS
+  .filter(definition => definition.challengeable)
+  .map(definition => definition.id as ChallengeableGameId)
 
 const BY_ID = new Map(GAME_DEFINITIONS.map(definition => [definition.id, definition]))
 
