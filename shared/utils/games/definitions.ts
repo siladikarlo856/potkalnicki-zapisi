@@ -2,6 +2,12 @@ import { pzRoutes } from '../appRoutes'
 import type { CardKey, CardKind } from '../learn/types'
 import { encodeCardKey, type CardKeyParts } from './cardKey'
 import type { GameId } from './types'
+import type { QuestionGenerator } from './questionGenerators/generator'
+import { klubLigaQuestions, klubMjestoQuestions, klubOdakleQuestions } from './questionGenerators/clubs'
+import { crkvaQuestions } from './questionGenerators/heritage'
+import { osobaQuestions } from './questionGenerators/persons'
+import { kartaKojeQuestions, kartaTockeQuestions, opcinaQuestions } from './questionGenerators/places'
+import { rijecQuestions, znacenjeQuestions } from './questionGenerators/words'
 
 export type GameFormat = 'dnevna' | 'odabir' | 'karta' | 'upisi' | 'spoji' | 'razvrstaj' | 'grupiraj' | 'bez-greske'
 
@@ -30,6 +36,8 @@ export interface GameDefinition {
   challengeable: boolean
   /** The card a question of this game is about: its kind and, when the game asks something else about that card, the key's suffix. */
   questionCard?: Omit<CardKeyParts, 'id'>
+  /** How the game makes its multiple-choice questions. Every challengeable game has one. */
+  questions?: QuestionGenerator
   catalogue?: GameCatalogueMeta
 }
 
@@ -44,12 +52,14 @@ const DEFINITIONS = {
     label: { hr: 'Kaj to znači?', en: 'What does it mean?' },
     challengeable: true,
     questionCard: { kind: 'word' },
+    questions: znacenjeQuestions,
     catalogue: { blurb: 'Deset pitanja o značenju riječi — brzi kviz.', topic: 'rijeci', format: 'odabir', minutes: 5, path: pzRoutes.quiz, status: 'live' }
   },
   'rijec': {
     label: { hr: 'Kak se to veli?', en: 'Local word' },
     challengeable: true,
     questionCard: { kind: 'word' },
+    questions: rijecQuestions,
     catalogue: { blurb: 'Pročitaj značenje i pogodi kak se to kod nas veli.', topic: 'rijeci', format: 'odabir', minutes: 5, path: pzRoutes.askWord, status: 'live' }
   },
   'karta': {
@@ -61,6 +71,7 @@ const DEFINITIONS = {
     label: { hr: 'Koje je ovo selo?', en: 'Which village is this?' },
     challengeable: true,
     questionCard: { kind: 'place' },
+    questions: kartaKojeQuestions,
     catalogue: { blurb: 'Pogledaj točku na karti i odaberi pravo ime.', topic: 'mjesta', format: 'karta', minutes: 8, path: pzRoutes.mapWhich, status: 'live', needs: { kind: 'place', min: 4 } }
   },
   'uci-kartu': {
@@ -77,6 +88,7 @@ const DEFINITIONS = {
     label: { hr: 'Kojoj općini pripada?', en: 'Which municipality?' },
     challengeable: true,
     questionCard: { kind: 'place' },
+    questions: opcinaQuestions,
     catalogue: { blurb: 'Deset pitanja: pogodi općinu ili grad kojem selo pripada.', topic: 'mjesta', format: 'odabir', minutes: 5, path: pzRoutes.opcine, status: 'live', needs: { kind: 'place', min: 10 } }
   },
   'sela-i-opcine': {
@@ -103,6 +115,7 @@ const DEFINITIONS = {
     label: { hr: 'Gdje je ta crkva?', en: 'Where is the church?' },
     challengeable: true,
     questionCard: { kind: 'item' },
+    questions: crkvaQuestions,
     catalogue: { blurb: 'Poveži sakralni zapis s naseljem u kojem se nalazi.', topic: 'bastina', format: 'odabir', minutes: 5, path: pzRoutes.churchWhere, status: 'live', needs: { kind: 'item', min: 10 } }
   },
   'spoji': {
@@ -114,6 +127,7 @@ const DEFINITIONS = {
     label: { hr: 'Tko je to?', en: 'Who is this?' },
     challengeable: true,
     questionCard: { kind: 'person' },
+    questions: osobaQuestions,
     catalogue: { blurb: 'Poveži natuknicu s imenom osobe iz našeg kraja.', topic: 'osobe', format: 'odabir', minutes: 5, path: pzRoutes.tkoJeTo, status: 'live', needs: { kind: 'person', min: 4 } }
   },
   'istina-legenda': {
@@ -125,22 +139,26 @@ const DEFINITIONS = {
   'karta-tocke': {
     label: { hr: 'Pronađi selo (4 točke)', en: 'Find the village (4 points)' },
     challengeable: true,
-    questionCard: { kind: 'place', suffix: 'tocke' }
+    questionCard: { kind: 'place', suffix: 'tocke' },
+    questions: kartaTockeQuestions
   },
   'klub-mjesto': {
     label: { hr: 'Koji klub igra u mjestu?', en: 'Which club plays in the settlement?' },
     challengeable: true,
-    questionCard: { kind: 'club', suffix: 'mjesto' }
+    questionCard: { kind: 'club', suffix: 'mjesto' },
+    questions: klubMjestoQuestions
   },
   'klub-liga': {
     label: { hr: 'U kojoj ligi klub igra u sezoni?', en: 'Which league does the club play in?' },
     challengeable: true,
-    questionCard: { kind: 'club', suffix: 'liga' }
+    questionCard: { kind: 'club', suffix: 'liga' },
+    questions: klubLigaQuestions
   },
   'klub-odakle': {
     label: { hr: 'Odakle je klub?', en: 'Where is the club from?' },
     challengeable: true,
-    questionCard: { kind: 'club', suffix: 'odakle' }
+    questionCard: { kind: 'club', suffix: 'odakle' },
+    questions: klubOdakleQuestions
   }
 } satisfies Record<GameId, Omit<GameDefinition, 'id'>>
 

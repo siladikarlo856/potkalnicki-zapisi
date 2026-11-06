@@ -28,6 +28,13 @@ describe('Game definitions', () => {
     ]))
   })
 
+  it('gives every challengeable game, and only those, a question generator and a question card', () => {
+    for (const definition of GAME_DEFINITIONS) {
+      expect(Boolean(definition.questions), definition.id).toBe(definition.challengeable)
+      expect(Boolean(definition.questionCard), definition.id).toBe(definition.challengeable)
+    }
+  })
+
   it('builds the catalogue from the definitions that have catalogue meta', () => {
     const withCatalogue = GAME_DEFINITIONS.filter(d => d.catalogue)
     expect(GAME_CATALOGUE.map(entry => entry.id)).toEqual(withCatalogue.map(d => d.id))
