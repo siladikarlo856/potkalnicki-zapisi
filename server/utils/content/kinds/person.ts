@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentReferenceGroup } from '../../../../shared/utils/content/common'
 import { validatePerson, type PersonAreaLink, type PersonItemLink } from '../../../../shared/utils/content/person'
 import { defineContentKind } from '../definition'
+import { missingLinkIssues, missingSourceIssues } from '../linkCheck'
 
 async function loadAreaLinks(db: SupabaseClient, personId: string) {
   const { data, error } = await db.from('person_areas').select('area_id,role,position').eq('person_id', personId).order('position')
@@ -96,15 +97,16 @@ export const personKind = defineContentKind({
     itemLinks: await loadItemLinks(db, entity.id),
     sourceIds: await loadSourceIds(db, entity.id)
   }),
+  // "A Published person needs a source" is a rule of validatePerson, so it is refused before any write.
+  checkLinks: async (db, value) => [
+    ...await missingLinkIssues(db, 'areas', value.areaLinks.map((link, index) => [`areaLinks.${index}.areaId`, link.areaId] as const), 'To mjesto ne postoji.'),
+    ...await missingLinkIssues(db, 'heritage_items', value.itemLinks.map((link, index) => [`itemLinks.${index}.itemId`, link.itemId] as const), 'Taj zapis baštine ne postoji.'),
+    ...await missingSourceIssues(db, value.sourceIds)
+  ],
   persistEntity: async (db, id, value) => {
-    const status = value.status as string
-    const sourceIds = (value.sourceIds as string[]) ?? []
-    if (status === 'published' && !sourceIds.length) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid content', data: { code: 'invalid', message: 'Osoba treba barem jedan izvor.', issues: [{ path: 'sourceIds', message: 'Osoba treba barem jedan izvor.' }] } })
-    }
     await saveAreaLinks(db, id, (value.areaLinks as PersonAreaLink[]) ?? [])
     await saveItemLinks(db, id, (value.itemLinks as PersonItemLink[]) ?? [])
-    await saveSourceIds(db, id, sourceIds)
+    await saveSourceIds(db, id, (value.sourceIds as string[]) ?? [])
   },
   async enrichRows(db, rows) {
     if (!rows.length) return rows

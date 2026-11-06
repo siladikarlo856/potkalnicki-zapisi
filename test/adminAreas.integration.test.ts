@@ -54,6 +54,18 @@ describe.skipIf(!url)('admin areas API over real Postgres', () => {
     expect(sql(`select count(*) from area_regions where area_id = '${response.body.entity.id}' and region_id = '${region}'`)).toBe('1')
   })
 
+  it('refuses a region membership that is not a region before saving the area', async () => {
+    const town = sql(`select id from areas where kind = 'town' and slug = 'grad-krizevci' limit 1`)
+    const slug = `kit-test-bez-regije-${crypto.randomUUID().slice(0, 8)}`
+    const response = await api(BASE, {
+      method: 'POST',
+      body: { kind: 'settlement', name: 'kit-test Bez regije', parentId: town, slug, status: 'draft', regionIds: [town] }
+    })
+    expect(response.status, JSON.stringify(response.body)).toBe(400)
+    expect(response.body.data?.issues).toContainEqual(expect.objectContaining({ path: 'regionIds.0' }))
+    expect(sql(`select count(*) from areas where slug = '${slug}'`)).toBe('0')
+  })
+
   it('lists with the lau kind filter and blocks delete when referenced', async () => {
     const list = await api<ContentList<Area>>(`${BASE}?kind=lau&size=25`)
     expect(list.status).toBe(200)

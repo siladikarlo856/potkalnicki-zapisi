@@ -62,9 +62,21 @@ export function editable(def: AnyContentKindDefinition, source: Row) {
   return Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]))
 }
 
-/** The kind's validator, after its derived fields have been filled from the database. */
+/**
+ * Every rule of the kind, checked before anything is written: its validator (after derived fields have
+ * been filled from the database), then the rules on linked rows. A save with issues writes nothing.
+ */
 export async function validateInput(def: AnyContentKindDefinition, input: Row, id?: string) {
-  return def.validate(def.prepareInput ? await def.prepareInput(useDatabaseClient(), input) : input, id)
+  const db = useDatabaseClient()
+  const validation = def.validate(def.prepareInput ? await def.prepareInput(db, input) : input, id)
+  if (validation.issues.length || !def.checkLinks) return validation
+  let linkIssues: ContentIssue[]
+  try {
+    linkIssues = await def.checkLinks(db, validation.value)
+  } catch (error) {
+    contentDatabaseError(def, error as { code?: string, message: string })
+  }
+  return { ...validation, issues: linkIssues }
 }
 
 export function conflict(def: AnyContentKindDefinition, current: Row): never {

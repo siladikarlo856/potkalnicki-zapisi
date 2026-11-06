@@ -124,6 +124,71 @@ describe.skipIf(!url)('person content over real Postgres', () => {
     sql(`delete from persons where id = '${id}'`)
   })
 
+  it('checks every content rule before writing: a refused person save leaves no persons row created or changed', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
+    const source = sql(`select id from sources limit 1`)
+    const missing = crypto.randomUUID()
+    const person = (slug: string) => ({
+      name: `kit-test Pravila ${suffix}`,
+      slug,
+      died: '1. 1. 1900.',
+      diedYear: 1900,
+      verification: 'unverified',
+      researchNotes: ''
+    })
+    const rows = (slug: string) => sql(`select count(*) from persons where slug = '${slug}'`)
+
+    // A Published person needs a source.
+    const noSourceSlug = `kit-test-pravila-bez-izvora-${suffix}`
+    const noSource = await api('/api/admin/content/person', { method: 'POST', body: { ...person(noSourceSlug), status: 'published', sourceIds: [] } })
+    expect(noSource.status).toBe(400)
+    expect(noSource.body.data?.issues).toContainEqual(expect.objectContaining({ path: 'sourceIds' }))
+    expect(rows(noSourceSlug)).toBe('0')
+
+    // A source, place or heritage item that does not exist is refused before the person is saved.
+    const missingSlug = `kit-test-pravila-nepostojeci-${suffix}`
+    const missingLinks = await api('/api/admin/content/person', {
+      method: 'POST',
+      body: {
+        ...person(missingSlug),
+        status: 'draft',
+        sourceIds: [source, missing],
+        areaLinks: [{ areaId: missing, role: 'rodjen' }],
+        itemLinks: [{ itemId: missing, relation: 'nepostojeća veza' }]
+      }
+    })
+    expect(missingLinks.status, JSON.stringify(missingLinks.body)).toBe(400)
+    expect(missingLinks.body.data?.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'sourceIds.1' }),
+      expect.objectContaining({ path: 'areaLinks.0.areaId' }),
+      expect.objectContaining({ path: 'itemLinks.0.itemId' })
+    ]))
+    expect(rows(missingSlug)).toBe('0')
+
+    // An existing person keeps its row and links when an update is refused.
+    const slug = `kit-test-pravila-${suffix}`
+    const draft = await api<{ entity: Person }>('/api/admin/content/person', {
+      method: 'POST',
+      body: { ...person(slug), status: 'draft', sourceIds: [source], areaLinks: [{ areaId: settlement, role: 'rodjen' }] }
+    })
+    expect(draft.status, JSON.stringify(draft.body)).toBe(201)
+    const id = draft.body.entity.id
+    const before = sql(`select revision || ' ' || status || ' ' || name from persons where id = '${id}'`)
+    for (const change of [{ status: 'published', sourceIds: [] }, { name: 'kit-test Promijenjeno', sourceIds: [missing] }]) {
+      const refused = await api(`/api/admin/content/person/${id}`, {
+        method: 'PATCH',
+        body: { ...draft.body.entity, revision: draft.body.entity.revision, ...change }
+      })
+      expect(refused.status, JSON.stringify(refused.body)).toBe(400)
+      expect(sql(`select revision || ' ' || status || ' ' || name from persons where id = '${id}'`)).toBe(before)
+      expect(sql(`select string_agg(source_id::text, ',') from person_sources where person_id = '${id}'`)).toBe(source)
+      expect(sql(`select count(*) from person_areas where person_id = '${id}'`)).toBe('1')
+    }
+
+    sql(`delete from persons where id = '${id}'`)
+  })
+
   it('lists persons in admin search', async () => {
     const listed = await api<ContentList<Person>>('/api/admin/content/person?q=kit-test')
     expect(listed.status).toBe(200)

@@ -4,6 +4,7 @@ import {
   AREA_KINDS, AREA_KIND_LAU, areaAdminLabel, areaKindMayJoinRegion, type AreaFields, type AreaKind, type AreaValue, validateArea
 } from '../../../../shared/utils/content/area'
 import { defineContentKind } from '../definition'
+import { missingLinkIssues } from '../linkCheck'
 
 const EXAMPLES = 5
 
@@ -115,6 +116,10 @@ export const areaKind = defineContentKind<AreaFields & { status: ContentStatus }
   },
   references: areaReferences,
   loadEntity: loadRegionIds,
+  // The area_regions trigger would refuse a region id that is not a region, but only after the area is saved.
+  checkLinks: async (db, value) => missingLinkIssues(
+    db, 'areas', (value as unknown as AreaValue).regionIds.map((regionId, index) => [`regionIds.${index}`, regionId] as const), 'Ta regija ne postoji.', { column: 'kind', value: 'region' }
+  ),
   persistEntity: async (db, id, value) => syncRegionIds(db, id, value as unknown as AreaValue),
   lookupLabel: (row: Record<string, unknown>) => areaAdminLabel(row.kind as AreaKind, String(row.name ?? '')),
   inputFields: ['regionIds']
