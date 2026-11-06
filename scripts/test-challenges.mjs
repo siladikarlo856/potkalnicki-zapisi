@@ -9,6 +9,7 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const name = `ksh-challenge-test-${randomBytes(5).toString('hex')}`
 const rest = `${name}-rest`
 let proxy
+const HOP_HEADERS = new Set(['connection', 'keep-alive', 'transfer-encoding', 'content-length', 'content-encoding'])
 const password = randomBytes(24).toString('hex')
 const secret = randomBytes(32).toString('hex')
 const docker = args => execFileSync('docker', args, { encoding: 'utf8' }).trim()
@@ -66,19 +67,30 @@ try {
       const upstream = await fetch(url + request.url.replace(/^\/rest\/v1/, ''), {
         method: request.method, headers, body: chunks.length ? Buffer.concat(chunks) : undefined
       })
-      response.writeHead(upstream.status, Object.fromEntries(upstream.headers))
-      response.end(Buffer.from(await upstream.arrayBuffer()))
-    } catch { response.writeHead(502).end() }
+      const body = Buffer.from(await upstream.arrayBuffer())
+      // fetch has already decoded the body and owns the upstream connection, so its framing headers do not apply.
+      const forwarded = Object.fromEntries([...upstream.headers].filter(([key]) => !HOP_HEADERS.has(key)))
+      response.writeHead(upstream.status, { ...forwarded, 'content-length': body.length })
+      response.end(body)
+    } catch {
+      if (response.headersSent) response.destroy()
+      else response.writeHead(502).end()
+    }
   })
+  // Outlive the clients' idle keep-alive, so a reused connection is never closed under a request
+  // ("fetch failed: other side closed").
+  proxy.keepAliveTimeout = 60_000
   await new Promise(resolve => proxy.listen(0, '127.0.0.1', resolve))
   const testFiles = process.argv.slice(2).length
     ? process.argv.slice(2)
     : [
         'test/challenge.integration.test.ts', 'test/dailyWord.integration.test.ts', 'test/content.integration.test.ts', 'test/contentSeed.integration.test.ts',
         'test/wordColumns.integration.test.ts', 'test/wordAreas.integration.test.ts', 'test/adminContent.integration.test.ts', 'test/adminAreas.integration.test.ts', 'test/adminHeritage.integration.test.ts', 'test/adminWords.integration.test.ts', 'test/contentHistory.integration.test.ts',
-        'test/challengeTemplates.integration.test.ts', 'test/challengeSets.integration.test.ts', 'test/publicContent.integration.test.ts', 'test/atlasPages.integration.test.ts', 'test/contractMigration.integration.test.ts'
+        'test/challengeTemplates.integration.test.ts', 'test/challengeSets.integration.test.ts', 'test/publicContent.integration.test.ts', 'test/atlasPages.integration.test.ts', 'test/contractMigration.integration.test.ts',
+        // Project node-serial: one at a time, after all of the above (vitest.config.ts).
+        'test/api.serial.integration.test.ts', 'test/dailyWordResolver.serial.integration.test.ts', 'test/dailyApi.serial.integration.test.ts', 'test/dailyAdminApi.serial.integration.test.ts'
       ]
-  const child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--project=node', ...testFiles], {
+  const child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--project=node', '--project=node-serial', ...testFiles], {
     cwd: root, stdio: 'inherit', env: {
       ...process.env, TEST_CHALLENGE_API_URL: `http://127.0.0.1:${proxy.address().port}`, TEST_CHALLENGE_SERVICE_KEY: jwt('service_role'),
       TEST_CHALLENGE_PUBLIC_KEY: jwt('anon'), TEST_CHALLENGE_CONTAINER: name

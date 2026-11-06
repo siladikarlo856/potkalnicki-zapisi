@@ -4,45 +4,29 @@ import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { fetch, getServerLogs, startServer, url, useTestContext } from '@nuxt/test-utils/e2e'
-import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
-import { createClient } from '@supabase/supabase-js'
 import type { AdminWord, PublicWords, WordInput } from '../shared/utils/word'
 import atlasPrerenderRoutes from './fixtures/atlas/prerender-routes.json'
 import { getAtlas, heritageItemByRoute, settlementByCode } from './helpers/atlasFixtures'
-import { buildPublicContent } from '../server/utils/publicContent'
+import { loadPublicContent } from '../server/utils/publicContent'
 import { sitemapEntries, SITE_URL } from '../server/utils/sitemap'
-import { fakeContentRows } from './helpers/fakeContentSeed'
 import { contentUuid } from './helpers/contentUuid'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
 const SECRET = 'test-review-secret-0123456789'
 const SESSION_PASSWORD = 'test-admin-session-password-0123456789'
 const RATE_LIMIT_MAX = 3
 
-// By default the app talks to a small fake of Supabase's REST API (test/helpers/fakeSupabase.ts),
-// so this suite needs no Docker. To run it against the real local stack instead (after
-// `pnpm db:up`), set TEST_SUPABASE_URL and TEST_SUPABASE_SERVICE_ROLE_KEY,
-// which is what `pnpm test:local-db` does.
-const real = process.env.TEST_SUPABASE_URL
-  ? {
-      url: process.env.TEST_SUPABASE_URL,
-      serviceRoleKey: process.env.TEST_SUPABASE_SERVICE_ROLE_KEY ?? ''
-    }
-  : null
-const fake = real ? null : await startFakeSupabase()
-const supabase = real ?? { url: fake!.url, serviceRoleKey: SERVICE_ROLE_KEY }
-
-afterAll(() => fake?.stop())
-
-await setupNuxtServer({
-  NUXT_SUPABASE_URL: supabase.url,
-  NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey,
+// The site and its API against the seeded test database (`node scripts/test-challenges.mjs`). A serial file
+// (vitest.config.ts): the sitemap and atlas checks compare against all published content, which no other file may
+// be changing meanwhile.
+const harness = await integrationDb({ server: {
   NUXT_REVIEW_SECRET: SECRET,
   // Keep the daily word closed here so the runtime-config override stays covered.
   NUXT_DAILY_WORD_EPOCH: '9999-01-01',
   NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD,
   NUXT_SUBMISSION_RATE_LIMIT_MAX: String(RATE_LIMIT_MAX)
-})
+} })
+const supabase = { url: harness.url, serviceRoleKey: harness.serviceKey }
 
 let ipCounter = 0
 // Each test gets its own client address so the per-IP limits don't leak between tests.
@@ -75,14 +59,14 @@ async function listAll() {
 
 const valid = { text: 'Kaj to znači?', type: 'expression', placeId: 'geonames:3194024', name: 'Ana', contact: 'ana@example.com', consentPublish: true, locale: 'hr' }
 
-const db = createClient(supabase.url, supabase.serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
+const db = harness.service
 const wordIds: string[] = []
 afterAll(async () => {
   for (const id of wordIds) await db.from('heritage_words').delete().eq('id', id)
 })
 
-// An imported area (the town of Križevci): its id is the same in the fake and in the real database, and words
-// refer to areas by id, so a usage needs a row in the areas table to be public.
+// A seeded area (the town of Križevci): words refer to areas by id, so a usage needs a row in the areas table
+// to be public.
 const TEST_AREA = contentUuid('area:krizevci')
 
 function wordInput(active = false): WordInput {
@@ -118,7 +102,7 @@ async function readPublic(limit?: number) {
   return await response.json() as PublicWords
 }
 
-describe('Potkalnički zapisi learning and challenge choice', () => {
+describe.skipIf(!harness.enabled)('Potkalnički zapisi learning and challenge choice', () => {
   it('serves the play catalogue and friend challenge on the games hub', async () => {
     const response = await request('/potkalnicko-prigorje/igre')
     expect(response.status).toBe(200)
@@ -145,7 +129,7 @@ describe('Potkalnički zapisi learning and challenge choice', () => {
   })
 })
 
-describe('Potkalnički zapisi app home', () => {
+describe.skipIf(!harness.enabled)('Potkalnički zapisi app home', () => {
   it('renders the phase 2 hero, project scope teaser and contribute band', async () => {
     const response = await request('/potkalnicko-prigorje')
     expect(response.status).toBe(200)
@@ -171,7 +155,7 @@ describe('Potkalnički zapisi app home', () => {
   })
 })
 
-describe('Potkalnički zapisi contribute and about pages', () => {
+describe.skipIf(!harness.enabled)('Potkalnički zapisi contribute and about pages', () => {
   it('renders the contribution type picker', async () => {
     const picker = await request('/potkalnicko-prigorje/doprinesi')
     expect(picker.status).toBe(200)
@@ -198,7 +182,7 @@ describe('Potkalnički zapisi contribute and about pages', () => {
   })
 })
 
-describe('Potkalnički zapisi quiz catalog', () => {
+describe.skipIf(!harness.enabled)('Potkalnički zapisi quiz catalog', () => {
   it('renders the play catalogue with the daily word first', async () => {
     const response = await request('/potkalnicko-prigorje/igre')
     expect(response.status).toBe(200)
@@ -218,7 +202,7 @@ describe('Potkalnički zapisi quiz catalog', () => {
   })
 })
 
-describe('word admin and public word APIs', () => {
+describe.skipIf(!harness.enabled)('word admin and public word APIs', () => {
   it('prerenderes learn routes with a client-side loading skeleton', async () => {
     for (const path of ['/potkalnicko-prigorje/uci', '/potkalnicko-prigorje/uci/sesija']) {
       const response = await request(path)
@@ -386,11 +370,7 @@ describe('word admin and public word APIs', () => {
     expect(body.word).toMatchObject({ headword: 'arhivska riječ', slug })
     expect(Array.isArray(body.related)).toBe(true)
     expect((await request('/api/heritage/words/nepostojeca-rijec')).status).toBe(404)
-    if (fake) {
-      fake.seedSlugHistory({ kind: 'word', namespace: '', scope_id: null, slug: 'stara-arhivska', entity_id: word.entry.id })
-    } else {
-      expect((await db.from('content_slug_history').insert({ kind: 'word', namespace: '', scope_id: null, slug: 'stara-arhivska', entity_id: word.entry.id })).error).toBeNull()
-    }
+    expect((await db.from('content_slug_history').insert({ kind: 'word', namespace: '', scope_id: null, slug: 'stara-arhivska', entity_id: word.entry.id })).error).toBeNull()
     expect((await db.from('heritage_words').update({ slug: newSlug }).eq('id', word.entry.id)).error).toBeNull()
     const redirect = await request('/api/heritage/words/stara-arhivska')
     expect(redirect.status).toBe(200)
@@ -410,7 +390,7 @@ describe('word admin and public word APIs', () => {
   })
 })
 
-describe('GET /api/learn/pool', () => {
+describe.skipIf(!harness.enabled)('GET /api/learn/pool', () => {
   it('returns the card pool with short public caching', async () => {
     const response = await request('/api/learn/pool')
     expect(response.status).toBe(200)
@@ -422,17 +402,18 @@ describe('GET /api/learn/pool', () => {
   })
 })
 
-describe('GET /api/heritage/daily', () => {
+describe.skipIf(!harness.enabled)('GET /api/heritage/daily', () => {
   it('stays closed before a configured launch day and touches no data', async () => {
-    const before = fake?.daily.length
+    const days = () => harness.sql('select count(*) from public.heritage_daily_words;')
+    const before = days()
     const response = await request('/api/heritage/daily')
     expect(response.status).toBe(404)
     expect(await response.text()).toContain('not-started')
-    if (fake) expect(fake.daily.length).toBe(before)
+    expect(days()).toBe(before)
   })
 })
 
-describe('admin session', () => {
+describe.skipIf(!harness.enabled)('admin session', () => {
   it('rejects a wrong password and rate limits the eleventh failure', async () => {
     const ip = newClient()
     for (let attempt = 0; attempt < 10; attempt++) {
@@ -459,7 +440,7 @@ describe('admin session', () => {
   })
 })
 
-describe('POST /api/submissions', () => {
+describe.skipIf(!harness.enabled)('POST /api/submissions', () => {
   it('refuses the retired targetRef form of a correction: a correction names its target with targetKind and targetId', async () => {
     const response = await submit({
       ...valid,
@@ -677,7 +658,7 @@ describe('POST /api/submissions', () => {
   })
 })
 
-describe('Croatian place search and selection API', () => {
+describe.skipIf(!harness.enabled)('Croatian place search and selection API', () => {
   it('searches Potkalničko prigorje settlements without diacritics and preserves labels', async () => {
     const response = await request('/api/places?q=krizevci')
     expect(response.status).toBe(200)
@@ -767,13 +748,15 @@ describe('Croatian place search and selection API', () => {
     expect(stored.placeCatalogVersion).not.toBe('forged')
   })
 
-  it.skipIf(!fake)('keeps legacy free-text review rows readable and unassigned', async () => {
-    fake!.seed({ text: 'legacy location row', place: 'Somewhere near Orehovec', locale: 'hr', type: null, name: null, contact: null, consent_publish: true, consent_version: '2026-10-27' })
+  it('keeps legacy free-text review rows readable and unassigned', async () => {
+    // Rows from before the place picker have only the free-text place.
+    const { error } = await db.from('heritage_submissions').insert({ text: 'legacy location row', place: 'Somewhere near Orehovec', locale: 'hr', type: null, name: null, contact: null, consent_publish: true, consent_version: '2026-10-27' })
+    expect(error).toBeNull()
     expect((await listAll()).find(row => row.text === 'legacy location row')).toMatchObject({ place: 'Somewhere near Orehovec', placeId: null, placeCatalogVersion: null, placeContext: null })
   })
 })
 
-describe('admin and review API guard', () => {
+describe.skipIf(!harness.enabled)('admin and review API guard', () => {
   const apiRoot = fileURLToPath(new URL('../server/api/', import.meta.url))
 
   // Every route file under server/api/admin and server/api/review, as a method and a sample path.
@@ -836,7 +819,7 @@ describe('admin and review API guard', () => {
   })
 })
 
-describe('review API', () => {
+describe.skipIf(!harness.enabled)('review API', () => {
   const routes = [
     { method: 'GET', path: '/api/review/submissions' },
     { method: 'PATCH', path: '/api/review/submissions/1', body: { status: 'approved' } },
@@ -875,15 +858,20 @@ describe('review API', () => {
     expect((await request('/api/review/submissions', { secret: SECRET, ip: `198.51.100.99, ${ip}` })).status).toBe(429)
   })
 
-  it('lists every pending submission, with no cap', async () => {
+  it('lists every pending submission, with no cap, and refuses new ones past the pending backlog cap', async () => {
     const texts = Array.from({ length: 1001 }, (_, i) => `uncapped ${i}`)
-    for (const [i, text] of texts.entries()) {
-      expect((await submit({ ...valid, text }, `10.0.${i >> 8}.${i & 255}`)).status).toBe(201)
+    // Written directly: past PENDING_CAP (1000) pending rows the API stops taking submissions.
+    harness.sql(`insert into public.heritage_submissions (text, locale, consent_publish, consent_version)
+      select 'uncapped ' || i, 'hr', true, '2026-10-27' from generate_series(0, 1000) as i;`)
+    try {
+      const response = await request('/api/review/submissions', { secret: SECRET })
+      const rows = await response.json() as Array<Record<string, unknown>>
+      const listed = new Set(rows.map(row => row.text))
+      expect(texts.every(text => listed.has(text))).toBe(true)
+      expect((await submit({ ...valid, text: 'over the backlog cap' })).status).toBe(503)
+    } finally {
+      harness.sql('delete from public.heritage_submissions where text like \'uncapped %\';')
     }
-    const response = await request('/api/review/submissions', { secret: SECRET })
-    const rows = await response.json() as Array<Record<string, unknown>>
-    const listed = new Set(rows.map(row => row.text))
-    expect(texts.every(text => listed.has(text))).toBe(true)
   })
 
   it('lists pending submissions by default', async () => {
@@ -935,18 +923,7 @@ describe('review API', () => {
   })
 })
 
-describe.skipIf(!fake)('Supabase keys', () => {
-  it('submits and reviews with the same secret key', () => {
-    const inserts = fake!.requests.filter(r => r.method === 'POST')
-    const others = fake!.requests.filter(r => r.method !== 'POST')
-    expect(inserts.length).toBeGreaterThan(0)
-    expect(others.length).toBeGreaterThan(0)
-    expect(inserts.every(r => r.role === 'service_role')).toBe(true)
-    expect(others.every(r => r.role === 'service_role')).toBe(true)
-  })
-})
-
-describe('server-only credentials', () => {
+describe.skipIf(!harness.enabled)('server-only credentials', () => {
   it('does not publish the database key or review password in HTML or built public files', async () => {
     const secrets = [supabase.serviceRoleKey, SECRET, process.env.NUXT_SUPABASE_SERVICE_ROLE_KEY, process.env.SUPABASE_API_KEY].filter((value): value is string => Boolean(value))
     for (const path of ['/heritage', '/en/heritage', '/review']) {
@@ -964,7 +941,7 @@ describe('server-only credentials', () => {
   })
 })
 
-describe('multiple-choice pages', () => {
+describe.skipIf(!harness.enabled)('multiple-choice pages', () => {
   it('renders Croatian loading copy for the client-fetched quiz from the production server', async () => {
     const response = await fetch('/potkalnicko-prigorje/igre/kviz')
     expect(response.status).toBe(200)
@@ -983,7 +960,7 @@ function metaContent(html: string, key: string) {
   return tag?.match(/content="([^"]*)"/)?.[1]
 }
 
-describe('atlas SSR pages', () => {
+describe.skipIf(!harness.enabled)('atlas SSR pages', () => {
   it('serves every prerendered atlas route with 200', async () => {
     for (const path of atlasPrerenderRoutes as string[]) {
       expect((await fetch(path)).status, path).toBe(200)
@@ -1000,14 +977,15 @@ describe('atlas SSR pages', () => {
   })
 })
 
-describe('public discovery, sharing metadata and error pages', () => {
+describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error pages', () => {
   it('publishes only public localized routes in the sitemap and blocks private routes in robots.txt', async () => {
     const sitemap = await (await fetch('/sitemap.xml')).text()
     const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
     const noindexPaths = new Set(getAtlas().heritage
       .filter(item => item.noindex && item.settlementCode)
       .map(item => `/potkalnicko-prigorje/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`))
-    const content = buildPublicContent(fakeContentRows(), {})
+    const content = await loadPublicContent(db)
+    const personSlugs = harness.sql('select slug from public.persons where status = \'published\' and not noindex order by slug;').split('\n').filter(Boolean)
     const { data: wordRows } = await db.from('heritage_words').select('slug,updated_at').eq('active', true).not('slug', 'is', null)
     const wordEntries = (wordRows ?? [])
       .filter(row => row.slug)
@@ -1020,6 +998,7 @@ describe('public discovery, sharing metadata and error pages', () => {
       'https://karlo-siladi.from.hr/en',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/govor',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
+      ...personSlugs.map(slug => `https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe/${slug}`),
       ...wordEntries.map(w => `https://karlo-siladi.from.hr/potkalnicko-prigorje/govor/${w.slug}`),
       ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
     ].sort())
@@ -1120,7 +1099,7 @@ const reviewRoutes = [
   { method: 'DELETE', path: '/api/review/daily/2099-01-01' }
 ]
 
-describe('Supabase settings', () => {
+describe.skipIf(!harness.enabled)('Supabase settings', () => {
   it('submits and reviews using only the names Hostinger injects', async () => {
     await startServer({ env: { ...blank, SUPABASE_URL: supabase.url, SUPABASE_API_KEY: supabase.serviceRoleKey } })
     expect((await submit({ ...valid, text: 'plain names' })).status).toBe(201)
@@ -1163,7 +1142,7 @@ describe('Supabase settings', () => {
   })
 })
 
-describe('Umami analytics', () => {
+describe.skipIf(!harness.enabled)('Umami analytics', () => {
   for (const path of ['/', '/potkalnicko-prigorje', '/admin/prijava']) {
     it(`serves ${path} without any third-party analytics script or website ID`, async () => {
       const html = await (await fetch(path)).text()
@@ -1173,7 +1152,7 @@ describe('Umami analytics', () => {
   }
 })
 
-describe('public atlas API', () => {
+describe.skipIf(!harness.enabled)('public atlas API', () => {
   it('refuses invalid parameters before reading content', async () => {
     for (const path of [
       '/api/content/target?kind=word&id=x',
@@ -1185,8 +1164,7 @@ describe('public atlas API', () => {
     }
   })
 
-  // The fake database serves the atlas seed through the same snapshot loader as production.
-  it.skipIf(real)('serves the atlas API from the fake content tables', async () => {
+  it('serves the seeded atlas through the snapshot loader', async () => {
     for (const path of ['/api/atlas/overview', '/api/atlas/heritage', '/api/atlas/settlements/apatovec', '/api/content/target?id=kalnik-crkva-sv-brcka']) {
       const response = await request(path)
       expect(response.status, path).toBe(200)
@@ -1194,7 +1172,7 @@ describe('public atlas API', () => {
     }
   })
 
-  it.runIf(real)('serves the imported atlas with a short public cache', async () => {
+  it('serves the imported atlas with a short public cache', async () => {
     const response = await request('/api/atlas/overview')
     expect(response.status).toBe(200)
     expect(response.headers.get('cache-control')).toBe('public, max-age=60, stale-while-revalidate=300')
