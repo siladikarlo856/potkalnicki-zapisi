@@ -25,7 +25,7 @@ const discoveryCards = computed(() => [
   { key: 'stories' as const, icon: 'i-lucide-book-heart', soon: true, to: undefined }
 ])
 
-const regions = computed(() => (overview.value?.municipalities ?? []).map(m => ({
+const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []).map(m => ({
   id: m.id,
   slug: m.slug,
   ...m.stats,
@@ -55,22 +55,22 @@ const regions = computed(() => (overview.value?.municipalities ?? []).map(m => (
     <HeritageChallengeHomeSection />
 
     <UPageSection
-      :title="t('pz.home.regionsTitle')"
-      :description="t('pz.home.regionsDescription')"
+      :title="t('pz.home.scopeTitle')"
+      :description="t('pz.home.scopeDescription')"
       :ui="{ root: 'border-t border-default' }"
-      data-testid="pet-podrucja"
+      data-testid="obuhvat"
     >
       <ul class="divide-y divide-default rounded-lg ring ring-default">
         <li
-          v-for="region in regions"
-          :key="region.id"
+          v-for="municipality in scopeMunicipalities"
+          :key="municipality.id"
         >
           <ULink
-            :to="region.to"
+            :to="municipality.to"
             class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
           >
-            <span class="font-medium text-highlighted">{{ region.label }}</span>
-            <span class="text-muted tabular-nums">{{ t('pz.home.regionCounts', { settlements: region.settlements, items: region.items }) }}</span>
+            <span class="font-medium text-highlighted">{{ municipality.label }}</span>
+            <span class="text-muted tabular-nums">{{ t('pz.home.scopeCounts', { settlements: municipality.settlements, items: municipality.items }) }}</span>
           </ULink>
         </li>
       </ul>

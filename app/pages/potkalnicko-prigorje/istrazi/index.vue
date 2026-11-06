@@ -16,7 +16,7 @@ useSeoMeta({
 
 const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
 
-const regions = computed(() => (overview.value?.municipalities ?? []).map(m => ({
+const municipalities = computed(() => (overview.value?.municipalities ?? []).map(m => ({
   ...m,
   label: m.label,
   stats: m.stats,
@@ -38,16 +38,16 @@ const regions = computed(() => (overview.value?.municipalities ?? []).map(m => (
         data-testid="municipality-list"
       >
         <li
-          v-for="region in regions"
-          :key="region.id"
+          v-for="municipality in municipalities"
+          :key="municipality.id"
         >
           <ULink
-            :to="region.to"
+            :to="municipality.to"
             class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-4 text-sm hover:bg-elevated/40"
           >
-            <span class="font-medium text-highlighted">{{ region.label }}</span>
+            <span class="font-medium text-highlighted">{{ municipality.label }}</span>
             <span class="text-muted tabular-nums">
-              {{ t('pz.home.regionCounts', { settlements: region.stats.settlements, items: region.stats.items }) }}
+              {{ t('pz.home.scopeCounts', { settlements: municipality.stats.settlements, items: municipality.stats.items }) }}
             </span>
           </ULink>
         </li>

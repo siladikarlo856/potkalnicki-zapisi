@@ -776,9 +776,9 @@
           "description": "Sačuvaj ono što se prenosi generacijama."
         }
       },
-      "regionsTitle": "Pet područja",
-      "regionsDescription": "Radni obuhvat projekta, ne službena granica prigorja.",
-      "regionCounts": "{settlements} naselja · {items} zapisa",
+      "scopeTitle": "Obuhvat projekta",
+      "scopeDescription": "Općine koje projekt zasad pokriva: radna, a ne službena granica prigorja.",
+      "scopeCounts": "{settlements} naselja · {items} zapisa",
       "contributeTitle": "Znaš riječ, priču ili staru fotografiju?",
       "contributeDescription": "Pošalji je — prije objave sve pregledamo.",
       "contributeCta": "Doprinesi"
