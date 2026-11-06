@@ -88,40 +88,17 @@ export async function enterChallenge(event: H3Event, create: boolean) {
   const existing = participantHash(event, code)
   const token = existing ? null : randomBytes(32).toString('base64url')
   const hash = existing ?? tokenHash(token!)
-  let state = await challengeRpc(create ? 'create' : 'join', code, hash, {
-    nickname, ...(create ? { content } : {})
+  // A Quiz-result challenge is recorded already finished, with the creator's Quiz results, in one call.
+  const action = quiz ? 'create_completed' : create ? 'create' : 'join'
+  const state = await challengeRpc(action, code, hash, {
+    nickname, ...(create ? { content } : {}), ...(quiz ? { results: quiz.results } : {})
   })
-  if (quiz) state = await completeQuizChallenge(code, hash, content!, quiz.results)
   if (token) setCookie(event, `heritage_${code}`, token, {
     httpOnly: true, secure: !import.meta.dev && getRequestURL(event).protocol === 'https:',
     sameSite: 'lax', path: `/api/challenges/${code}`, maxAge: 365 * 86400
   })
   setResponseStatus(event, create ? 201 : 200)
   return state
-}
-
-async function completeQuizChallenge(code: string, hash: string, content: ChallengeContent, results: boolean[]) {
-  let completed: ChallengeState | undefined
-  const questions = content.rounds.flatMap(round => round.questions)
-  for (const [index, question] of questions.entries()) {
-    await challengeRpc('reveal', code, hash)
-    let state = await challengeRpc('answer', code, hash, {
-      questionId: question.id,
-      selected: results[index] ? question.correct : (question.correct + 1) % question.options.length
-    })
-    state = await challengeRpc('continue', code, hash, {
-      phase: state.participant!.phase,
-      index: state.participant!.index
-    })
-    if (state.participant?.phase === 'round') {
-      state = await challengeRpc('continue', code, hash, {
-        phase: state.participant.phase,
-        index: state.participant.index
-      })
-    }
-    completed = state
-  }
-  return completed!
 }
 
 function challengeMetaFromContent(content: unknown): ChallengeMeta | null {
