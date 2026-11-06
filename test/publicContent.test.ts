@@ -3,7 +3,8 @@ import {
   ATLAS_REGION_SLUG,
   PublicContentUnavailableError,
   buildPublicContent,
-  createSnapshotStore
+  createSnapshotStore,
+  derive
 } from '../server/utils/publicContent'
 import type { AreaRow, ItemRow, PublicContentRows } from '../server/utils/publicContent'
 import {
@@ -367,5 +368,74 @@ describe('snapshot store', () => {
     const retry = store.get()
     loads[1]!.resolve('v1')
     expect(await retry).toBe('v1')
+  })
+})
+
+describe('derive', () => {
+  function setup() {
+    let revision = 0
+    const store = createSnapshotStore({ load: async () => ({ revision: ++revision }) })
+    const computed: number[] = []
+    const derived = derive(store, async (snapshot) => {
+      computed.push(snapshot.revision)
+      return `pool@${snapshot.revision}`
+    })
+    return { store, derived, computed }
+  }
+
+  it('recomputes on the next read after the snapshot is invalidated', async () => {
+    const { store, derived } = setup()
+    expect(await derived.get()).toBe('pool@1')
+    store.invalidate()
+    expect(await derived.get()).toBe('pool@2')
+  })
+
+  it('computes once per snapshot, however many reads follow', async () => {
+    const { store, derived, computed } = setup()
+    await derived.get()
+    await derived.get()
+    store.invalidate()
+    await derived.get()
+    await derived.get()
+    expect(computed).toEqual([1, 2])
+  })
+
+  it('shares one computation between concurrent reads of the same snapshot', async () => {
+    const { derived, computed } = setup()
+    expect(await Promise.all([derived.get(), derived.get(), derived.get()])).toEqual(['pool@1', 'pool@1', 'pool@1'])
+    expect(computed).toEqual([1])
+  })
+
+  it('keeps the newer value when a computation for a replaced snapshot finishes later', async () => {
+    let revision = 0
+    const store = createSnapshotStore({ load: async () => ({ revision: ++revision }) })
+    const gates: Array<() => void> = []
+    const derived = derive(store, snapshot => new Promise<string>((resolve) => {
+      gates.push(() => resolve(`pool@${snapshot.revision}`))
+    }))
+    const before = derived.get()
+    await vi.waitFor(() => expect(gates).toHaveLength(1))
+    store.invalidate()
+    const after = derived.get()
+    await vi.waitFor(() => expect(gates).toHaveLength(2))
+    gates[1]!()
+    expect(await after).toBe('pool@2')
+    gates[0]!()
+    expect(await before).toBe('pool@1')
+    expect(await derived.get()).toBe('pool@2')
+    expect(gates).toHaveLength(2)
+  })
+
+  it('does not keep a failed computation, so the next read retries', async () => {
+    const store = createSnapshotStore({ load: async () => ({ revision: 1 }) })
+    let attempts = 0
+    const derived = derive(store, () => {
+      attempts++
+      if (attempts === 1) throw new Error('words unavailable')
+      return 'pool'
+    })
+    await expect(derived.get()).rejects.toThrow('words unavailable')
+    expect(await derived.get()).toBe('pool')
+    expect(attempts).toBe(2)
   })
 })

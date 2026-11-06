@@ -22,7 +22,7 @@ import type {
 import { formatSeasonLabel } from '../../shared/utils/content/club'
 import { heritageItemPath } from './publicAtlas'
 import type { PublicContent, SnapshotClub, SnapshotItem, SnapshotPerson, SnapshotSettlement } from './publicContent'
-import { getPublicContent } from './publicContent'
+import { derive, getPublicContent } from './publicContent'
 import { publicWords } from './words'
 
 const KIND_ORDER: Record<PoolCard['kind'], number> = { word: 0, place: 1, item: 2, person: 3, club: 4 }
@@ -281,42 +281,14 @@ export function buildCardPool(content: PublicContent, words: PublicWordEntry[]):
   }
 }
 
-type PoolCache = {
-  at: number
-  contentLoadedAt: number
-  value: CardPool
-  pending?: Promise<CardPool>
-}
-
-let cache: PoolCache | null = null
-
-export function invalidateCardPool() {
-  cache = null
-}
-
-async function loadPool(): Promise<CardPool> {
-  const content = await getPublicContent()
+// Derived from the public content snapshot: a word edit invalidates the snapshot, and the next read
+// rebuilds the pool from the new snapshot and the active words.
+const cardPool = derive({ get: getPublicContent }, async (content) => {
   if (!content.region) return emptyPool()
   const { words } = await publicWords()
   return buildCardPool(content, words)
-}
+})
 
-export async function getCardPool(): Promise<CardPool> {
-  const content = await getPublicContent()
-  const now = Date.now()
-  if (cache && !cache.pending && now - cache.at < 60_000 && cache.contentLoadedAt === content.loadedAt) {
-    return cache.value
-  }
-  if (cache?.pending) return cache.pending
-
-  const previous = cache
-  const pending = loadPool().then((value) => {
-    cache = { at: Date.now(), contentLoadedAt: content.loadedAt, value }
-    return value
-  }, (error) => {
-    if (cache?.pending === pending) cache = previous
-    throw error
-  })
-  cache = { at: cache?.at ?? 0, contentLoadedAt: content.loadedAt, value: cache?.value ?? emptyPool(), pending }
-  return pending
+export function getCardPool(): Promise<CardPool> {
+  return cardPool.get()
 }
