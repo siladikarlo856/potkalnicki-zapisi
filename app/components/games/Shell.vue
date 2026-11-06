@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { mulberry32, shuffled } from '~~/shared/utils/games/rng'
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { Difficulty, GameId, GameQuestion } from '~~/shared/utils/games/types'
 import type { QuizChallengeInput } from '~~/shared/utils/challenge'
 import type { CardKey, TopicId } from '~~/shared/utils/learn/types'
@@ -8,7 +9,8 @@ import type { CardKey, TopicId } from '~~/shared/utils/learn/types'
 // The shell owns the round state; renderers only show the question and report which option was picked.
 const props = defineProps<{
   gameId: GameId
-  title: string
+  /** Defaults to the game's label. */
+  title?: string
   questions: GameQuestion[]
   topics?: TopicId[]
   difficulty?: Difficulty
@@ -21,6 +23,7 @@ const { recordAnswer } = useProgress()
 const { recordBest } = useGameScores()
 
 const lang = computed(() => locale.value === 'en' ? 'en' : 'hr')
+const roundTitle = computed(() => props.title ?? gameDefinition(props.gameId).label[lang.value])
 const round = shallowRef<GameQuestion[]>(props.questions)
 const practice = ref(false)
 const index = ref(0)
@@ -240,7 +243,7 @@ defineExpose({ answer, next })
       v-else
       ref="result"
       :game-id="gameId"
-      :title="title"
+      :title="roundTitle"
       :questions="round"
       :results="results"
       :practice="practice"

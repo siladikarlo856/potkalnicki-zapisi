@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import { generateQuestions } from '~~/shared/utils/games/questions'
 import { slugMap } from '~~/shared/utils/games/distractors'
@@ -8,6 +9,8 @@ import type { CardKey, PoolItem, TopicId } from '~~/shared/utils/learn/types'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('crkva')
 
 const GAME_LENGTH = 10
 const { t } = useI18n()
@@ -34,7 +37,7 @@ function poolItem(key: CardKey): PoolItem | undefined {
 }
 
 function newRound() {
-  return generateQuestions('crkva', pool.value, {
+  return generateQuestions(game.id, pool.value, {
     topics: topics.value,
     difficulty: difficulty.value,
     count: GAME_LENGTH,
@@ -143,7 +146,7 @@ useSeoMeta({
       </template>
       <GamesShell
         v-else
-        game-id="crkva"
+        :game-id="game.id"
         :title="t('pz.play.churchTitle')"
         :questions="questions"
         :topics="topics"

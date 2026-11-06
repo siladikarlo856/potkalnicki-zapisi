@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import { generateQuestions } from '~~/shared/utils/games/questions'
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { Difficulty, GameQuestion } from '~~/shared/utils/games/types'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('osoba')
 
 const GAME_LENGTH = 10
 const { t } = useI18n()
@@ -17,7 +20,7 @@ const loading = computed(() => !error.value && (status.value === 'idle' || statu
 const hasPersons = computed(() => pool.value.cards.filter(card => card.kind === 'person').length >= 4)
 
 function newRound() {
-  return generateQuestions('osoba', pool.value, {
+  return generateQuestions(game.id, pool.value, {
     topics: ['osobe'],
     difficulty: difficulty.value,
     count: GAME_LENGTH,
@@ -90,7 +93,7 @@ useSeoMeta({
       />
       <GamesShell
         v-else
-        game-id="osoba"
+        :game-id="game.id"
         :title="t('pz.play.whoTitle')"
         :questions="questions"
         :topics="['osobe']"

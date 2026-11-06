@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GAME_CATALOGUE } from '~~/shared/utils/games/catalogue'
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { GameId, GameQuestion } from '~~/shared/utils/games/types'
 import type { QuizChallengeInput } from '~~/shared/utils/challenge'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
@@ -24,8 +24,8 @@ const total = computed(() => props.questions.length)
 const correct = computed(() => props.results.filter(Boolean).length)
 const lang = computed(() => locale.value === 'en' ? 'en' : 'hr')
 const misses = computed(() => props.questions.filter((_, index) => props.results[index] === false))
-const entry = computed(() => GAME_CATALOGUE.find(game => game.id === props.gameId))
-const canChallenge = computed(() => !props.practice && Boolean(entry.value?.challengeable) && total.value > 0)
+const definition = computed(() => gameDefinition(props.gameId))
+const canChallenge = computed(() => !props.practice && definition.value.challengeable && total.value > 0)
 // Before WP13 adds the create flow, other games link to the challenge page.
 const challengeHref = computed(() => localePath(pzRoutes.challenge))
 const headline = computed(() => `${props.title} ${correct.value}/${total.value}`)
@@ -152,7 +152,7 @@ defineExpose({ focus: () => heading.value?.focus() })
       v-if="!practice && total"
       :results="results"
       :headline="headline"
-      :path="entry?.path ?? pzRoutes.games"
+      :path="definition.catalogue?.path ?? pzRoutes.games"
     />
   </div>
 </template>

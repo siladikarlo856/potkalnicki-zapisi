@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import { generateQuestions } from '~~/shared/utils/games/questions'
 import type { Difficulty, GameQuestion } from '~~/shared/utils/games/types'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('rijec')
 
 const GAME_LENGTH = 10
 const { t } = useI18n()
@@ -18,7 +21,7 @@ const loading = computed(() => !error.value && (status.value === 'idle' || statu
 const hasWords = computed(() => pool.value.cards.filter(card => card.kind === 'word').length >= 3)
 
 function newRound() {
-  return generateQuestions('rijec', pool.value, {
+  return generateQuestions(game.id, pool.value, {
     topics: ['rijeci'],
     difficulty: difficulty.value,
     count: GAME_LENGTH,
@@ -92,7 +95,7 @@ useSeoMeta({
       />
       <GamesShell
         v-else
-        game-id="rijec"
+        :game-id="game.id"
         :title="t('pz.play.askTitle')"
         :questions="questions"
         :topics="['rijeci']"
