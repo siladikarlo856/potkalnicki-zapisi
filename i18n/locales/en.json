@@ -231,6 +231,46 @@
       "entryHeritage": "Heritage",
       "entrySpeech": "Our speech",
       "municipalitiesTitle": "Municipalities"
+    },
+    "kit": {
+      "sheet": {
+        "close": "Close",
+        "discard": "Close and discard what you typed?"
+      },
+      "empty": {
+        "title": "We are still collecting records in {place}.",
+        "ask": "Do you know how people speak here, what stands at the crossroads or who came from this place? Tell us.",
+        "known": "What we already know",
+        "municipality": "Municipality",
+        "nearby": "Nearby settlements"
+      },
+      "factPanel": {
+        "facts": "Details",
+        "trust": "Reliability",
+        "sources": "Sources",
+        "unknown": "unknown",
+        "play": "Play with this"
+      },
+      "cards": {
+        "forms": {
+          "one": "{n} form",
+          "few": "{n} forms",
+          "other": "{n} forms"
+        },
+        "villages": {
+          "one": "in {n} village",
+          "few": "in {n} villages",
+          "other": "in {n} villages"
+        },
+        "here": "Here: {form}",
+        "questions": {
+          "one": "{n} question",
+          "few": "{n} questions",
+          "other": "{n} questions"
+        },
+        "minutes": "~{n} min",
+        "soon": "Soon"
+      }
     }
   }
 }
