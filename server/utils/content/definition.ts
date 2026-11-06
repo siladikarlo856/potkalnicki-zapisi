@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
-import type { ContentKind, ContentReferenceGroup, ContentStatus, ContentValidation } from '../../../shared/utils/content/common'
+import type { ContentIssue, ContentKind, ContentReferenceGroup, ContentStatus, ContentValidation } from '../../../shared/utils/content/common'
 
 // The shape of one entry in the content registry (registry.ts).
 
@@ -66,7 +66,15 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   inputFields?: readonly string[]
   /** Loads API fields not stored on the main row (e.g. region membership). */
   loadEntity?(db: SupabaseClient, entity: Record<string, unknown> & { id: string }): Promise<Record<string, unknown>>
-  /** Persists API fields not stored on the main row after a successful save or restore. */
+  /**
+   * Rules on a validated value that need the database (e.g. every linked source exists). Runs with
+   * `validate`, before any write; a non-empty result refuses the save like any validation issue.
+   */
+  checkLinks?(db: SupabaseClient, value: V & Record<string, unknown>): Promise<ContentIssue[]>
+  /**
+   * Persists API fields not stored on the main row after a successful save or restore. It only
+   * writes: every rule belongs in `validate` or `checkLinks`, which run before the main row is saved.
+   */
   persistEntity?(db: SupabaseClient, id: string, value: Record<string, unknown>): Promise<void>
 }
 

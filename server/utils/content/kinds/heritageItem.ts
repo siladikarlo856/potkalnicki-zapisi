@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { validateHeritageItem } from '../../../../shared/utils/content/heritageItem'
 import { defineContentKind } from '../definition'
+import { missingSourceIssues } from '../linkCheck'
 
 async function loadSourceIds(db: SupabaseClient, itemId: string) {
   const { data, error } = await db.from('heritage_item_sources')
@@ -52,6 +53,7 @@ export const heritageItemKind = defineContentKind({
   references: async () => [],
   inputFields: ['sourceIds'],
   loadEntity: async (db, entity) => ({ sourceIds: await loadSourceIds(db, entity.id) }),
+  checkLinks: async (db, value) => missingSourceIssues(db, value.sourceIds),
   persistEntity: async (db, id, value) => saveSourceIds(db, id, (value.sourceIds as string[]) ?? []),
   async enrichRows(db, rows) {
     if (!rows.length) return rows

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentReferenceGroup } from '../../../../shared/utils/content/common'
 import { formatSeasonLabel, validateClub, type ClubSeasonValue } from '../../../../shared/utils/content/club'
 import { defineContentKind } from '../definition'
+import { missingSourceIssues } from '../linkCheck'
 
 async function loadSeasons(db: SupabaseClient, clubId: string) {
   const { data, error } = await db.from('club_seasons').select('season,competition,team,source_url,checked_at').eq('club_id', clubId).order('season', { ascending: false }).order('team')
@@ -80,14 +81,11 @@ export const clubKind = defineContentKind({
     seasons: await loadSeasons(db, entity.id),
     sourceIds: await loadSourceIds(db, entity.id)
   }),
+  // "A Published club needs a source" is a rule of validateClub, so it is refused before any write.
+  checkLinks: async (db, value) => missingSourceIssues(db, value.sourceIds),
   persistEntity: async (db, id, value) => {
-    const status = value.status as string
-    const sourceIds = (value.sourceIds as string[]) ?? []
-    if (status === 'published' && !sourceIds.length) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid content', data: { code: 'invalid', message: 'Klub treba barem jedan izvor.', issues: [{ path: 'sourceIds', message: 'Klub treba barem jedan izvor.' }] } })
-    }
     await saveSeasons(db, id, (value.seasons as ClubSeasonValue[]) ?? [])
-    await saveSourceIds(db, id, sourceIds)
+    await saveSourceIds(db, id, (value.sourceIds as string[]) ?? [])
   },
   async enrichRows(db, rows) {
     if (!rows.length) return rows
