@@ -150,7 +150,7 @@ describe('Potkalnički zapisi learning and challenge choice', () => {
 })
 
 describe('Potkalnički zapisi app home', () => {
-  it('renders the phase 2 hero, regions teaser and contribute band', async () => {
+  it('renders the phase 2 hero, project scope teaser and contribute band', async () => {
     const response = await request('/potkalnicko-prigorje')
     expect(response.status).toBe(200)
     const html = await response.text()
@@ -163,8 +163,11 @@ describe('Potkalnički zapisi app home', () => {
     expect(html).toContain('/potkalnicko-prigorje/igre')
     expect(window.document.querySelector('#doprinos')).not.toBeNull()
     expect(window.document.querySelector('a[href="/potkalnicko-prigorje/doprinesi"]')).not.toBeNull()
-    expect(window.document.querySelector('[data-testid="pet-podrucja"]')?.textContent).toContain('Grad Križevci')
-    expect(window.document.querySelector('[data-testid="pet-podrucja"]')?.textContent).toContain('60 naselja · 34 zapisa')
+    const scope = window.document.querySelector('[data-testid="obuhvat"]')
+    expect(scope?.textContent).toContain('Obuhvat projekta')
+    expect(scope?.textContent).not.toContain('Pet područja')
+    expect(scope?.textContent).toContain('Grad Križevci')
+    expect(scope?.textContent).toContain('60 naselja · 34 zapisa')
     expect(window.document.querySelector('[data-testid="quiz-catalog"]')).toBeNull()
     expect(window.document.querySelector('#doprinos form')).toBeNull()
     expect(html).not.toContain('i-lucide-construction')
