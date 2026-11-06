@@ -32,7 +32,7 @@ describe('game catalogue', () => {
 
   it('hides live games whose needs the pool cannot meet', () => {
     const needsGame = {
-      id: 'needs-words',
+      id: 'znacenje' as const,
       title: 'Test',
       blurb: 'Test',
       topic: 'rijeci' as const,

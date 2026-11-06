@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { formatTimerSeconds, matchSettlement, nabrojiTimerSeconds } from '~~/shared/utils/games/matchSettlement'
 import type { PoolMunicipality } from '~~/shared/utils/learn/types'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('nabroji')
 
 const { t } = useI18n()
 const { recordBest } = useGameScores()
@@ -84,14 +87,14 @@ function finishRound() {
   stopTimer()
   phase.value = 'result'
   if (unit.value && settlementNames.value.length) {
-    recordBest('nabroji', found.value.length, settlementNames.value.length)
+    recordBest(game.id, found.value.length, settlementNames.value.length)
   }
 }
 
 function reveal() {
   stopTimer()
   phase.value = 'reveal'
-  recordBest('nabroji', found.value.length, settlementNames.value.length)
+  recordBest(game.id, found.value.length, settlementNames.value.length)
 }
 
 function submit() {

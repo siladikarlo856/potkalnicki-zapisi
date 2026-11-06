@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import { generateQuestions } from '~~/shared/utils/games/questions'
 import type { GameQuestion } from '~~/shared/utils/games/types'
@@ -6,6 +7,8 @@ import { QUIZ_LENGTH } from '~/utils/multipleChoice'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('znacenje')
 
 const { locale, t } = useI18n()
 const { pool, status, error, refresh } = useCardPool()
@@ -21,7 +24,7 @@ const loading = computed(() => !error.value && (status.value === 'idle' || statu
 
 // `znacenje` at Srednje starts at once, as the quiz always has: no start screen.
 function newRound() {
-  return generateQuestions('znacenje', pool.value, {
+  return generateQuestions(game.id, pool.value, {
     topics: ['rijeci'],
     difficulty: 'srednje',
     count: QUIZ_LENGTH,
@@ -108,8 +111,7 @@ useSeoMeta({
 
         <GamesShell
           v-else
-          game-id="znacenje"
-          title="Kaj to znači?"
+          :game-id="game.id"
           :questions="questions"
           :topics="['rijeci']"
           difficulty="srednje"
