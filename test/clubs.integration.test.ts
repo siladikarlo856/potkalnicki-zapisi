@@ -1,30 +1,12 @@
-import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { Club } from '../shared/utils/content/club'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'content-club-review-secret-0123456789'
 
-if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET })
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-
-function failure(input: string) {
-  try {
-    sql(input)
-    return ''
-  } catch (error) {
-    return String(error)
-  }
-}
+const db = await integrationDb({ server: { NUXT_REVIEW_SECRET: SECRET } })
+const { sql, failure, fetch } = db
 
 async function api<T = Record<string, unknown>>(path: string, init: { method?: string, body?: unknown, auth?: boolean } = {}) {
   const headers: Record<string, string> = {}
@@ -35,7 +17,7 @@ async function api<T = Record<string, unknown>>(path: string, init: { method?: s
   return { status: response.status, body: (text ? JSON.parse(text) : null) as T & { entity?: Club } }
 }
 
-describe.skipIf(!url)('club content over real Postgres', () => {
+describe.skipIf(!db.enabled)('club content over real Postgres', () => {
   it('creates, publishes with seasons and sources, refuses publish without sources, records slug history, denies anon', async () => {
     const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
     const sourceA = sql(`select id from sources limit 1`)

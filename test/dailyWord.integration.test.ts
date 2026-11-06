@@ -1,32 +1,15 @@
-import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 import { resolveDailyWord } from '../server/utils/dailyWord'
+import { integrationDb } from './support/integrationDb'
 
 // Run with `node scripts/test-challenges.mjs`, which provisions a disposable Postgres and
 // PostgREST, applies every migration and removes both afterwards. Skipped everywhere else.
 // Words are added with fresh UUID ids (word ids must be UUIDs), and only those are ever deactivated, so the
 // seed words used by the challenge tests are left alone.
-const url = process.env.TEST_CHALLENGE_API_URL
-const serviceKey = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const publicKey = process.env.TEST_CHALLENGE_PUBLIC_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-function failure(input: string) {
-  try {
-    sql(input)
-  } catch (error) {
-    return String((error as { stderr?: string }).stderr ?? error)
-  }
-  throw new Error(`Expected the statement to fail: ${input}`)
-}
-const options = { auth: { persistSession: false, autoRefreshToken: false } }
-const service = createClient(url ?? 'http://localhost', serviceKey || 'service', options)
+const db = await integrationDb()
+const { sql, failure } = db
+const service = db.service
 const snapshot = (tag: string) => `'${JSON.stringify({ options: [{ id: 'a', text: { hr: tag } }, { id: 'b', text: { hr: 'drugo' } }], correctOptionId: 'a', villageAreaId: null, clues: [] })}'::jsonb`
 
 function entry(id: string) {
@@ -42,9 +25,9 @@ async function addWords(count: number) {
   expect(error).toBeNull()
   return ids
 }
-const clientFor = () => createClient(url ?? 'http://localhost', serviceKey || 'service', options)
+const clientFor = () => db.client()
 
-describe.skipIf(!url)('heritage_daily_words on Postgres', () => {
+describe.skipIf(!db.enabled)('heritage_daily_words on Postgres', () => {
   it('denies every public role, in SQL and through PostgREST', async () => {
     const [word] = await addWords(1)
     for (const role of ['anon', 'authenticated']) {
@@ -55,7 +38,7 @@ describe.skipIf(!url)('heritage_daily_words on Postgres', () => {
         'delete from public.heritage_daily_words'
       ]) expect(failure(`set role ${role}; ${statement};`)).toMatch(/permission denied/)
     }
-    const anon = createClient(url!, publicKey, options)
+    const anon = db.client('anon')
     expect((await anon.from('heritage_daily_words').select('*')).error).not.toBeNull()
     expect((await anon.from('heritage_daily_words').insert({ day: '2031-02-01', word_id: word, source: 'auto' })).error).not.toBeNull()
     expect((await service.from('heritage_daily_words').select('*')).error).toBeNull()

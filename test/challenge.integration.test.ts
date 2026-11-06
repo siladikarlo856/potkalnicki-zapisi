@@ -1,26 +1,18 @@
-import { execFileSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { ChallengeContent, ChallengeLeaderboard, ChallengeState } from '../shared/utils/challenge'
 import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
 import { contentUuid } from './helpers/contentUuid'
 import sample from './fixtures/heritage/challenge.json'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
 // Run with `node scripts/test-challenges.mjs`. It provisions and removes ONLY its own
 // containers, applies every migration and exercises the production HTTP + RPC paths.
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 // What a new fixed challenge stores: the seeded current template, with its revision and id.
 // challengeTemplates.integration.test.ts switches the current template only to an identical copy.
 const currentChallengeContent = validateChallengeContent({ ...sample, version: 1, templateId: contentUuid('challenge_template:sample') })
-if (url) await setupNuxtServer({
-  NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key,
-  NUXT_CHALLENGE_RATE_LIMIT_CREATE: '3', NUXT_CHALLENGE_RATE_LIMIT_JOIN: '3'
-})
+const db = await integrationDb({ server: { NUXT_CHALLENGE_RATE_LIMIT_CREATE: '3', NUXT_CHALLENGE_RATE_LIMIT_JOIN: '3' } })
+const { sql, fetch } = db
 
 let ipIndex = 0
 function client() {
@@ -58,10 +50,6 @@ async function create(player = client()) {
   return { player, game }
 }
 const path = (game: ChallengeState, action = '') => `/api/challenges/${game.code}${action ? `/${action}` : ''}`
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
 const literal = (value: unknown) => `'${JSON.stringify(value).replaceAll('\'', '\'\'')}'::jsonb`
 async function aged(age: number, closesIn: number, content: ChallengeContent = currentChallengeContent) {
   const code = randomBytes(12).toString('base64url')
@@ -80,7 +68,7 @@ async function complete(player: Player, game: ChallengeState, skip = true) {
   return game
 }
 
-describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
+describe.skipIf(!db.enabled)('real challenge HTTP and Postgres behavior', () => {
   it('creates a challenge from the played quiz round and records the creator score immediately', async () => {
     const player = client()
     // Seeded words have UUID ids; take three active ones with distinct meanings from the database.
@@ -240,8 +228,7 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     expect(revealed.feedback).toBeNull()
     expect(JSON.stringify(revealed)).not.toContain('correct')
     expect(JSON.stringify(revealed)).not.toContain('explanation')
-    const db = createClient(url!, key, { auth: { persistSession: false } })
-    const rows = await db.from('heritage_challenge_participants').select('*').eq('challenge_code', game.code)
+    const rows = await db.client().from('heritage_challenge_participants').select('*').eq('challenge_code', game.code)
     expect(rows.error).toBeNull()
     const token = player.cookie.split('=')[1]!
     expect(rows.data![0]!.token_hash).toBe(createHash('sha256').update(token).digest('hex'))
@@ -342,7 +329,7 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     const next = await aged(0, 7, changed)
     expect(next.game.title.hr).toBe('Nova datoteka')
     expect((await state(await player.request(path(game)))).title).toEqual(game.title)
-    const anon = createClient(url!, process.env.TEST_CHALLENGE_PUBLIC_KEY!, { auth: { persistSession: false } })
+    const anon = db.client('anon')
     for (const table of ['heritage_challenges', 'heritage_challenge_participants', 'heritage_challenge_answers']) expect((await anon.from(table).select('*')).error).not.toBeNull()
     expect((await anon.rpc('heritage_challenge_action', { p_action: 'state', p_code: game.code })).error).not.toBeNull()
     expect((await anon.rpc('heritage_challenge_scoreboard', { p_code: game.code })).error).not.toBeNull()

@@ -1,32 +1,15 @@
-import { execFileSync } from 'node:child_process'
 import { randomBytes, randomUUID } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 import { atlasSlug } from '../shared/utils/atlasSlug'
+import { integrationDb } from './support/integrationDb'
 
 // Word admin columns (20261103030000_word_admin_columns.sql) on a real Postgres. Run with
 // `node scripts/test-challenges.mjs`, which provisions a disposable Postgres and PostgREST, applies every
 // migration and removes both afterwards. Skipped everywhere else. Every test adds its own words with
 // fresh UUID ids and uniquely tagged headwords, so it never touches the seeded words or other suites.
-const url = process.env.TEST_CHALLENGE_API_URL
-const serviceKey = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const publicKey = process.env.TEST_CHALLENGE_PUBLIC_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-function failure(input: string) {
-  try {
-    sql(input)
-  } catch (error) {
-    return String((error as { stderr?: string }).stderr ?? error)
-  }
-  throw new Error(`Expected the statement to fail: ${input}`)
-}
-const options = { auth: { persistSession: false, autoRefreshToken: false } }
-const service = createClient(url ?? 'http://localhost', serviceKey || 'service', options)
+const db = await integrationDb()
+const { sql, failure } = db
+const service = db.service
 const quote = (value: string) => `'${value.replace(/'/g, '\'\'')}'`
 // Letters only, so a tag never changes how a headword is slugged.
 const tag = () => [...randomBytes(6)].map(b => String.fromCharCode(97 + (b % 26))).join('')
@@ -49,7 +32,7 @@ async function addWord(headword: string, fields: Record<string, unknown> = {}) {
   return data!
 }
 
-describe.skipIf(!url)('heritage_words admin columns on Postgres', () => {
+describe.skipIf(!db.enabled)('heritage_words admin columns on Postgres', () => {
   it('gave every word that existed before the migration a slug and a baseline revision', () => {
     // Baseline rows exist only for words present when the migration ran: the 61 reloaded seed words.
     const rows = sql(`select w.id, w.slug, w.entry->>'headword', w.revision, w.updated_at = w.created_at, r.data ? 'search_text', r.data->>'slug' = w.slug
@@ -178,7 +161,7 @@ describe.skipIf(!url)('heritage_words admin columns on Postgres', () => {
       expect(failure(`set role ${role}; select public.content_slug('a');`)).toMatch(/permission denied/)
       expect(failure(`set role ${role}; select slug from public.heritage_words;`)).toMatch(/permission denied/)
     }
-    const anon = createClient(url!, publicKey, options)
+    const anon = db.client('anon')
     expect((await anon.rpc('content_slug', { value: 'a' })).error).not.toBeNull()
     expect(sql('select public.content_slug(\'Kapela sv. Ane\');')).toBe('kapela-sv-ane')
   })

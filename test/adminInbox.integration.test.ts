@@ -1,25 +1,17 @@
-import { execFileSync } from 'node:child_process'
 import { createHmac, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { InboxDetail, InboxList } from '../shared/types/inbox'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
 // The corrections and proposals inbox end to end on a real Postgres: the public submission rules, the inbox API,
 // applying a correction and publishing a proposal's draft through the content API, withdrawal, and the spam
 // hardening. Run with `node scripts/test-challenges.mjs test/adminInbox.integration.test.ts`; skipped elsewhere.
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'inbox-review-secret-0123456789abcdef'
 const SESSION_PASSWORD = 'inbox-admin-session-password-0123456789'
 
-if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET, NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD })
+const db = await integrationDb({ server: { NUXT_REVIEW_SECRET: SECRET, NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD } })
+const { sql, fetch } = db
 
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
 const unique = () => randomBytes(4).toString('hex')
 
 interface Reply<T> { status: number, body: T & { data?: { issues?: Array<Record<string, string>>, message?: string } } }
@@ -85,7 +77,7 @@ async function latestSubmissionId(type: string) {
   return sql(`select max(id) from public.heritage_submissions where type = '${type}';`)
 }
 
-describe.skipIf(!url)('corrections and proposals inbox over real Postgres', () => {
+describe.skipIf(!db.enabled)('corrections and proposals inbox over real Postgres', () => {
   it('guards the inbox like every other admin route', async () => {
     expect((await fetch('/api/admin/inbox')).status).toBe(401)
     expect((await fetch('/api/admin/inbox/summary')).status).toBe(401)
