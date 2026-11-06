@@ -1,24 +1,19 @@
-import { fileURLToPath } from 'node:url'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { fetch, setup } from '@nuxt/test-utils/e2e'
+import { fetch } from '@nuxt/test-utils/e2e'
 import { addDays, zagrebDay } from '../shared/utils/dailyWord'
 import type { DailyAdminOverview, DailyPinResult } from '../shared/utils/dailyAdmin'
 import type { Area, WordEntry } from '../app/types/heritage'
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
+import { setupNuxtServer } from './support/nuxtServer'
 
 const SECRET = 'test-review-secret-0123456789'
 const fake = await startFakeSupabase()
 afterAll(() => fake.stop())
 
-await setup({
-  rootDir: fileURLToPath(new URL('..', import.meta.url)),
-  server: true,
-  setupTimeout: 300_000,
-  env: {
-    NUXT_SUPABASE_URL: fake.url,
-    NUXT_SUPABASE_SERVICE_ROLE_KEY: SERVICE_ROLE_KEY,
-    NUXT_REVIEW_SECRET: SECRET
-  }
+await setupNuxtServer({
+  NUXT_SUPABASE_URL: fake.url,
+  NUXT_SUPABASE_SERVICE_ROLE_KEY: SERVICE_ROLE_KEY,
+  NUXT_REVIEW_SECRET: SECRET
 })
 
 const areas: Area[] = [

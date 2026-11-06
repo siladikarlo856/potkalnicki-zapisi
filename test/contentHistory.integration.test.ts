@@ -1,10 +1,10 @@
 import { execFileSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { fetch, setup } from '@nuxt/test-utils/e2e'
+import { fetch } from '@nuxt/test-utils/e2e'
 import type { ContentList } from '../shared/utils/content/common'
 import type { HistoryLog, HistoryRestoreResult, HistoryRevisions } from '../shared/utils/content/history'
 import type { Source } from '../shared/utils/content/source'
+import { setupNuxtServer } from './support/nuxtServer'
 
 // Change history over real Postgres: the revisions the audit trigger records, their field diffs,
 // restoring a version (an update, a recreation after a hard delete, stale and invalid cases) and
@@ -15,10 +15,7 @@ const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
 const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'content-history-review-secret-0123456789'
 
-if (url) await setup({
-  rootDir: fileURLToPath(new URL('..', import.meta.url)), server: true, setupTimeout: 300_000,
-  env: { NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET }
-})
+if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET })
 
 function sql(input: string) {
   if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')

@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { fetch, getServerLogs, setup, startServer, url, useTestContext } from '@nuxt/test-utils/e2e'
+import { fetch, getServerLogs, startServer, url, useTestContext } from '@nuxt/test-utils/e2e'
 import { SERVICE_ROLE_KEY, startFakeSupabase } from './helpers/fakeSupabase'
 import { createClient } from '@supabase/supabase-js'
 import type { AdminWord, PublicWords, WordInput } from '../shared/utils/word'
@@ -13,6 +13,7 @@ import { buildPublicContent } from '../server/utils/publicContent'
 import { sitemapEntries, SITE_URL } from '../server/utils/sitemap'
 import { fakeContentRows } from './helpers/fakeContentSeed'
 import { contentUuid } from './helpers/contentUuid'
+import { setupNuxtServer } from './support/nuxtServer'
 
 const SECRET = 'test-review-secret-0123456789'
 const SESSION_PASSWORD = 'test-admin-session-password-0123456789'
@@ -33,19 +34,14 @@ const supabase = real ?? { url: fake!.url, serviceRoleKey: SERVICE_ROLE_KEY }
 
 afterAll(() => fake?.stop())
 
-await setup({
-  rootDir: fileURLToPath(new URL('..', import.meta.url)),
-  server: true,
-  setupTimeout: 300_000,
-  env: {
-    NUXT_SUPABASE_URL: supabase.url,
-    NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey,
-    NUXT_REVIEW_SECRET: SECRET,
-    // Keep the daily word closed here so the runtime-config override stays covered.
-    NUXT_DAILY_WORD_EPOCH: '9999-01-01',
-    NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD,
-    NUXT_SUBMISSION_RATE_LIMIT_MAX: String(RATE_LIMIT_MAX)
-  }
+await setupNuxtServer({
+  NUXT_SUPABASE_URL: supabase.url,
+  NUXT_SUPABASE_SERVICE_ROLE_KEY: supabase.serviceRoleKey,
+  NUXT_REVIEW_SECRET: SECRET,
+  // Keep the daily word closed here so the runtime-config override stays covered.
+  NUXT_DAILY_WORD_EPOCH: '9999-01-01',
+  NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD,
+  NUXT_SUBMISSION_RATE_LIMIT_MAX: String(RATE_LIMIT_MAX)
 })
 
 let ipCounter = 0
@@ -128,7 +124,7 @@ describe('Potkalnički zapisi learning and challenge choice', () => {
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
-    const window = new Window()
+    const window = new Window({ url: url('/') }) // resolves the page's relative preload links
     window.document.body.innerHTML = html
     const catalog = window.document.querySelector('[data-testid="play-catalog"]')!
     expect(catalog).not.toBeNull()
@@ -155,7 +151,7 @@ describe('Potkalnički zapisi app home', () => {
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
-    const window = new Window()
+    const window = new Window({ url: url('/') }) // resolves the page's relative preload links
     window.document.body.innerHTML = html
     expect(window.document.body.textContent).toContain('Otkrij priče koje čine Potkalničko prigorje.')
     expect(html).toContain('data-testid="learn-play-switch"')
@@ -181,7 +177,7 @@ describe('Potkalnički zapisi contribute and about pages', () => {
     expect(picker.status).toBe(200)
     const pickerHtml = await picker.text()
     const { Window } = await import('happy-dom')
-    const pickerWindow = new Window()
+    const pickerWindow = new Window({ url: url('/') }) // resolves the page's relative preload links
     pickerWindow.document.body.innerHTML = pickerHtml
     expect(pickerWindow.document.querySelector('[data-testid="contribute-type-picker"]')).not.toBeNull()
     expect(pickerHtml).toContain('Pošalji riječ ili izraz')
@@ -208,7 +204,7 @@ describe('Potkalnički zapisi quiz catalog', () => {
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
-    const window = new Window()
+    const window = new Window({ url: url('/') }) // resolves the page's relative preload links
     window.document.body.innerHTML = html
     const catalog = window.document.querySelector('[data-testid="play-catalog"]')!
     expect(catalog).not.toBeNull()
@@ -957,7 +953,7 @@ describe('server-only credentials', () => {
       const html = await (await fetch(path)).text()
       for (const secret of secrets) expect(html).not.toContain(secret)
     }
-    const publicDir = resolve(useTestContext().nuxt!.options.nitro.output.dir!, 'public')
+    const publicDir = resolve(useTestContext().options.nuxtConfig.nitro!.output!.dir!, 'public')
     const files = await readdir(publicDir, { recursive: true, withFileTypes: true })
     expect(files.filter(file => file.isFile()).length).toBeGreaterThan(0)
     for (const file of files.filter(file => file.isFile())) {

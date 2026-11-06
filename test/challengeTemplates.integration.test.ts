@@ -1,11 +1,11 @@
 import { execFileSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { fetch, setup } from '@nuxt/test-utils/e2e'
+import { fetch } from '@nuxt/test-utils/e2e'
 import type { ContentList } from '../shared/utils/content/common'
 import type { ChallengeTemplate } from '../shared/utils/content/challengeTemplate'
 import { contentUuid } from './helpers/contentUuid'
 import sample from './fixtures/heritage/challenge.json'
+import { setupNuxtServer } from './support/nuxtServer'
 
 // Challenge templates over real Postgres: the seed, the "current" rules of
 // 20261103100000_challenge_templates.sql and the admin API for the challenge_template kind. Run with
@@ -21,10 +21,7 @@ const SECRET = 'challenge-template-review-secret-0123456789'
 const SAMPLE_ID = contentUuid('challenge_template:sample')
 const { version: _version, ...sampleContent } = sample
 
-if (url) await setup({
-  rootDir: fileURLToPath(new URL('..', import.meta.url)), server: true, setupTimeout: 300_000,
-  env: { NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET }
-})
+if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET })
 
 function psql(input: string) {
   if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')

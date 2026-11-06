@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process'
 import { createHmac, randomBytes } from 'node:crypto'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { fetch, setup } from '@nuxt/test-utils/e2e'
+import { fetch } from '@nuxt/test-utils/e2e'
 import type { InboxDetail, InboxList } from '../shared/types/inbox'
+import { setupNuxtServer } from './support/nuxtServer'
 
 // The corrections and proposals inbox end to end on a real Postgres: the public submission rules, the inbox API,
 // applying a correction and publishing a proposal's draft through the content API, withdrawal, and the spam
@@ -14,10 +14,7 @@ const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'inbox-review-secret-0123456789abcdef'
 const SESSION_PASSWORD = 'inbox-admin-session-password-0123456789'
 
-if (url) await setup({
-  rootDir: fileURLToPath(new URL('..', import.meta.url)), server: true, setupTimeout: 300_000,
-  env: { NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET, NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD }
-})
+if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET, NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD })
 
 function sql(input: string) {
   if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')

@@ -9,7 +9,7 @@ Supabase's [migration guide](https://supabase.com/docs/guides/deployment/databas
 Do this before merging app changes that require a new schema. These commands are production operations for the owner to run; CI does not repair history automatically.
 
 1. Turn off the Node.js app's automatic deployment from `main` in Hostinger before proceeding. Keep the currently deployed app running.
-2. Install **Supabase CLI 2.122.0** (the version pinned in `.github/workflows/production.yml`). In a checkout of the latest `main`, authenticate and inspect history:
+2. Install **Supabase CLI 2.122.0** (the version pinned in `.gitea/workflows/production.yml`). In a checkout of the latest `main`, authenticate and inspect history:
 
    ```bash
    supabase --version
@@ -45,7 +45,7 @@ Do this before merging app changes that require a new schema. These commands are
    | `SUPABASE_DB_PASSWORD` | The production project's Postgres database password. |
    | `SUPABASE_PROJECT_REF` | The production project reference from the Supabase dashboard/project URL. |
 
-   These are GitHub Actions secrets, separate from the app's Hostinger runtime variables. No production credentials are used on pull requests. If any secret is absent, the production job exits successfully with a **Production rollout skipped** notice, without linking, migrating, or promoting a branch. A green workflow with this notice is not a completed rollout.
+   These are Gitea Actions repository secrets (Settings → Actions → Secrets), separate from the app's Hostinger runtime variables. No production credentials are used on pull requests. If any secret is absent, the production job exits successfully with a **Production rollout skipped** notice, without linking, migrating, or promoting a branch. A green workflow with this notice is not a completed rollout.
 5. Create a `production` branch pointing to the **currently deployed, schema-compatible commit**, which must be an ancestor of `main`:
 
    ```bash

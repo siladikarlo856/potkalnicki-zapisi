@@ -19,7 +19,8 @@ export default defineConfig(async () => ({
           name: 'node',
           include: ['test/**/*.test.ts'],
           exclude: ['test/**/*.nuxt.test.ts'],
-          // The API tests build the app once before they run.
+          // Server tests share one Nuxt build per run (test/support/nuxtServer.ts).
+          globalSetup: ['test/support/globalSetup.ts'],
           hookTimeout: 300_000,
           testTimeout: 30_000
         }

@@ -1,0 +1,44 @@
+name: ci
+
+on: push
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Both Vitest steps below run on the same checkout, so they share one Nuxt build
+      # (test/support/globalSetup.ts) instead of building it again.
+      NUXT_TEST_REUSE_BUILD: '1'
+      # The runner's act-toolcache volume persists between jobs (Node is already served
+      # from it). Keeping the pnpm store there replaces actions/cache, whose cache server
+      # is not reachable from Gitea job containers here and cost ~9.5 min in timeouts per run.
+      PNPM_STORE: /opt/hostedtoolcache/pnpm-store
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Install node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --store-dir "$PNPM_STORE"
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Challenge, daily word and content database behavior (isolated containers)
+        run: node scripts/test-challenges.mjs
