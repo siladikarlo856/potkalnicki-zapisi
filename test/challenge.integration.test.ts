@@ -121,6 +121,54 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     })
   })
 
+  it('records a finished Quiz-result challenge in one call, matching a Participant who played the same answers', async () => {
+    const question = (id: string, correct: number) => ({
+      id, mechanic: 'multiple-choice' as const, prompt: { hr: id, en: id },
+      options: [{ hr: 'A', en: 'A' }, { hr: 'B', en: 'B' }, { hr: 'C', en: 'C' }], correct, explanation: { hr: 'X', en: 'X' }
+    })
+    const content = validateChallengeContent({
+      version: 1, sample: false, title: { hr: 'Kviz', en: 'Quiz' },
+      rounds: [
+        { id: 'a', topic: { hr: 'Prvi', en: 'First' }, questions: [question('q1', 0), question('q2', 2)] },
+        { id: 'b', topic: { hr: 'Drugi', en: 'Second' }, questions: [question('q3', 1)] }
+      ]
+    })
+    const results = [true, false, true]
+
+    // The Participant way: reveal, answer and continue through every question.
+    const { player, game } = await aged(0, 7, content)
+    let played = game
+    while (played.participant?.phase !== 'finished') {
+      const phase = played.participant!.phase
+      if (phase === 'ready') played = await state(await player.request(path(played, 'reveal'), {}))
+      else if (phase === 'question') {
+        const index = played.participant!.index
+        const correct = content.rounds.flatMap(r => r.questions)[index]!.correct
+        played = await state(await player.request(path(played, 'answer'), { questionId: played.question!.id, selected: results[index] ? correct : (correct + 1) % 3 }))
+      } else played = await state(await player.request(path(played, 'continue'), { phase, index: played.participant!.index }))
+    }
+
+    const db = createClient(url!, key, { auth: { persistSession: false } })
+    const code = randomBytes(12).toString('base64url')
+    const hash = createHash('sha256').update(randomBytes(32)).digest('hex')
+    const recorded = await db.rpc('heritage_challenge_action', { p_action: 'create_completed', p_code: code, p_hash: hash, p_input: { nickname: 'Iva', content, results } })
+    expect(recorded.error).toBeNull()
+    const completed = recorded.data as ChallengeState
+
+    const comparable = ({ code: _code, createdAt: _created, closesAt: _closes, participant, ...rest }: ChallengeState) =>
+      ({ ...rest, participant: participant && { ...participant, completedAt: typeof participant.completedAt } })
+    expect(comparable(completed)).toEqual(comparable(played))
+    expect(completed.participant).toMatchObject({ phase: 'finished', total: 200, index: 3 })
+    expect(completed.participant!.rounds.map(r => [r.answered, r.score])).toEqual([[2, 100], [1, 100]])
+    expect(new Date(completed.closesAt).getTime() - new Date(completed.createdAt).getTime()).toBe(7 * 86400000)
+    const perQuestion = (challenge: string) => sql(`select string_agg(a.question_index || ':' || a.correct || ':' || a.points, ',' order by a.question_index) from heritage_challenge_answers a join heritage_challenge_participants p on p.id = a.participant_id where p.challenge_code = '${challenge}' and a.answered_at is not null`)
+    expect(perQuestion(code)).toBe(perQuestion(game.code))
+    expect(perQuestion(code)).toBe('0:true:100,1:false:0,2:true:100')
+
+    const mismatched = await db.rpc('heritage_challenge_action', { p_action: 'create_completed', p_code: randomBytes(12).toString('base64url'), p_hash: hash, p_input: { nickname: 'Iva', content, results: [true] } })
+    expect(mismatched.error?.code).toBe('PT400')
+  })
+
   it('creates a random challenge from the card pool and plays through to the leaderboard', async () => {
     const player = client()
     const response = await player.request('/api/challenges', {
