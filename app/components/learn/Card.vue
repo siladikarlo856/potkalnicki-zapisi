@@ -259,7 +259,7 @@ defineShortcuts({
           <p class="text-sm text-highlighted">
             {{ personPlaceLabel(pool, personCard) }}
           </p>
-          <PzHeritageStatusBadge :verification="personCard.verification" />
+          <PzVerificationBadge :verification="personCard.verification" />
           <UButton
             :to="localePath(personArchivePath(personCard.slug))"
             :label="t('pz.learn.openRecord')"
@@ -295,7 +295,7 @@ defineShortcuts({
           <p class="text-lg text-highlighted">
             {{ itemSettlement }} · {{ itemUnit }} · {{ itemCard.categoryLabel }}
           </p>
-          <PzHeritageStatusBadge :verification="itemCard.verification" />
+          <PzVerificationBadge :verification="itemCard.verification" />
           <UButton
             :to="localePath(itemCard.path)"
             :label="t('pz.learn.openRecord')"

@@ -996,7 +996,7 @@ describe('atlas SSR pages', () => {
     const html = await (await fetch(path)).text()
     expect(metaContent(html, 'og:title')).toBe(`${item.name} · Potkalnički zapisi`)
     expect(metaContent(html, 'robots')).toBe('index, follow')
-    expect(html).toContain('data-testid="heritage-status-unverified"')
+    expect(html).toContain('data-testid="verification-badge-unverified"')
   })
 })
 

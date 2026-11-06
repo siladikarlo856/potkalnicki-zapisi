@@ -152,7 +152,7 @@ useSeoMeta({
       >
         <template #default="{ question, selected, answer }">
           <div class="mb-3 flex justify-center">
-            <PzHeritageStatusBadge
+            <PzVerificationBadge
               :verification="poolItem(question.card)?.verification"
               data-testid="church-status-badge"
             />

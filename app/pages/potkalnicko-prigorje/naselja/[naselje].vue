@@ -76,7 +76,7 @@ useSeoMeta({
               <span class="font-medium text-highlighted">{{ item.name }}</span>
               <span class="ml-2 text-muted">{{ item.categoryLabel }}</span>
             </span>
-            <PzHeritageStatusBadge :verification="item.verification" />
+            <PzVerificationBadge :verification="item.verification" />
           </ULink>
           <div
             v-else
@@ -89,7 +89,7 @@ useSeoMeta({
                 class="ml-1 text-muted"
               >({{ item.locality }})</span>
             </span>
-            <PzHeritageStatusBadge :verification="item.verification" />
+            <PzVerificationBadge :verification="item.verification" />
           </div>
         </li>
       </ul>

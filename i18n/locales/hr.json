@@ -866,10 +866,6 @@
       "filterMunicipality": "Općina",
       "filterCategory": "Kategorija",
       "filterAll": "Sve",
-      "statusUnverified": "U provjeri",
-      "statusInReview": "U pregledu",
-      "statusVerified": "Provjereno",
-      "statusNeedsUpdate": "Treba ažurirati",
       "fieldLocation": "Naselje",
       "fieldMunicipality": "Općina",
       "researchTitle": "Što još provjeravamo",
@@ -931,8 +927,6 @@
       "sourcesTitle": "Izvori",
       "learnWord": "Uči ovu riječ",
       "relatedTitle": "Slične riječi",
-      "statusVerified": "Provjereno",
-      "statusCommunity": "Od zajednice",
       "empty": "Nema riječi koje odgovaraju pretrazi.",
       "anonymousSource": "Anonimno"
     },
@@ -1115,6 +1109,18 @@
             "Službene stranice općina i grada (kad su dostupne)"
           ]
         }
+      }
+    },
+    "trust": {
+      "verification": {
+        "unverified": "U provjeri",
+        "verified": "Provjereno",
+        "needsUpdate": "Treba ažurirati"
+      },
+      "protection": {
+        "protected": "Zaštićeno kulturno dobro",
+        "preventive": "Preventivno zaštićeno",
+        "unknown": "Zaštita: nepoznato"
       }
     }
   },

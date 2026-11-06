@@ -46,7 +46,7 @@ describe('Potkalnički zapisi phase 3 atlas routes', () => {
       route: { path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } }
     })
     await vi.waitFor(() => expect(page.find('[data-testid="heritage-item-page"]').exists()).toBe(true))
-    expect(page.find('[data-testid="heritage-status-unverified"]').exists()).toBe(true)
+    expect(page.find('[data-testid="verification-badge-unverified"]').exists()).toBe(true)
     expect(page.text()).toContain('Što još provjeravamo')
     expect(page.text()).toContain(item!.researchNotes.slice(0, 20))
   })

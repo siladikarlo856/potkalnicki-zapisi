@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AtlasItemStatus } from '~~/shared/types/atlas'
 import type { WordPageResponse } from '~~/shared/types/publicSpeech'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
@@ -17,10 +18,7 @@ const related = computed(() => payload.value?.related ?? [])
 
 const correctionOpen = ref(false)
 
-const statusLabel = computed(() => {
-  if (!word.value) return ''
-  return word.value.status === 'verified' ? t('pz.speech.statusVerified') : t('pz.speech.statusCommunity')
-})
+const verification = computed<AtlasItemStatus>(() => word.value?.status === 'verified' ? 'verified' : 'unverified')
 
 const learnLink = computed(() => word.value
   ? localePath(`${pzRoutes.learn}/sesija?kartice=${encodeURIComponent(`word:${word.value.id}`)}`)
@@ -46,7 +44,7 @@ useSeoMeta({
       </template>
       <template #description>
         <div class="flex flex-wrap items-center gap-2">
-          <PzHeritageStatusBadge :label="statusLabel" />
+          <PzVerificationBadge :verification="verification" />
           <span
             v-if="word.partOfSpeech"
             class="text-sm text-muted"
