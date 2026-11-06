@@ -51,6 +51,9 @@ const announcement = computed(() => {
   return `${t(isCorrect.value ? 'pz.play.right' : 'pz.play.wrong')} ${t('pz.play.correctAnswer', { answer: current.options[current.correct]![lang.value] })} ${t('pz.play.score', { score: score.value })}`
 })
 
+// The sticky action bar takes the tab bar's place while a round is in play; the result brings it back.
+useHidePzTabBar(() => Boolean(question.value), 'game')
+
 const heading = useTemplateRef<HTMLElement>('heading')
 const feedback = useTemplateRef<HTMLElement>('feedback')
 const result = useTemplateRef<{ focus: () => void }>('result')

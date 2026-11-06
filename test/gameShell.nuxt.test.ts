@@ -6,6 +6,7 @@ import KakSeVeli from '../app/pages/potkalnicko-prigorje/igre/kak-se-veli.vue'
 import { GAME_SCORES_KEY } from '../shared/utils/games/scores'
 import type { GameQuestion } from '../shared/utils/games/types'
 import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
+import { usePzTabBar } from '../app/composables/usePzTabBar'
 
 const words = ['krumper', 'avijon', 'afinger', 'srednja', 'zdenec'].map((headword, i) => ({
   kind: 'word' as const,
@@ -57,6 +58,21 @@ async function mountShell() {
 const wrongIndex = (q: GameQuestion) => (q.correct + 1) % q.options.length
 
 describe('GameShell', () => {
+  it('holds the tab bar down while a round is in play and releases it for the result and on leaving', async () => {
+    const { hidden, holds } = usePzTabBar()
+    const shell = await mountShell()
+    expect(holds.value).toEqual(['game'])
+    expect(hidden.value).toBe(true)
+    for (const q of questions) {
+      await shell.get(`[data-testid="game-option-${q.correct}"]`).trigger('click')
+      await shell.get('[data-testid="game-next"]').trigger('click')
+    }
+    expect(hidden.value).toBe(false)
+    shell.unmount()
+    wrapper = undefined
+    expect(hidden.value).toBe(false)
+  })
+
   it('shows the header, the options and the score', async () => {
     const page = await mountShell()
     expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')

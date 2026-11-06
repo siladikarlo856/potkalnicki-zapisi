@@ -17,6 +17,17 @@ describe('Potkalnički zapisi phase 3 atlas routes', () => {
     expect(page.findAll('li').length).toBe(5)
   })
 
+  it('opens the explore hub with three equal entries: places, Baština, Naš govor', async () => {
+    const page = await mountSuspended(Explore, { route: '/potkalnicko-prigorje/istrazi' })
+    const entries = page.findAll('[data-testid="explore-entries"] a')
+    expect(entries.map(entry => entry.find('b').text())).toEqual(['Mjesta', 'Baština', 'Naš govor'])
+    expect(entries.map(entry => entry.attributes('href'))).toEqual([
+      '/potkalnicko-prigorje/istrazi#opcine',
+      '/potkalnicko-prigorje/bastina',
+      '/potkalnicko-prigorje/govor'
+    ])
+  })
+
   it('renders a municipality settlement list', async () => {
     const page = await mountSuspended(Municipality, {
       route: { path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', params: { opcina: 'opcina-kalnik' } }

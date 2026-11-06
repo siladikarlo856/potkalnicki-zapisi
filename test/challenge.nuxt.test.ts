@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { useNuxtApp } from '#imports'
 import Challenge from '../app/components/heritage/ChallengeExperience.vue'
+import { usePzTabBar } from '../app/composables/usePzTabBar'
 import ChallengeShare from '../app/components/heritage/ChallengeShare.vue'
 import type { ChallengeState } from '../shared/utils/challenge'
 
@@ -43,6 +44,7 @@ beforeEach(() => {
 })
 afterEach(() => {
   wrapper?.unmount()
+  expect(usePzTabBar().hidden.value).toBe(false)
   Object.defineProperty(navigator, 'clipboard', clipboardDescriptor ?? { configurable: true, value: undefined })
   Object.defineProperty(navigator, 'share', shareDescriptor ?? { configurable: true, value: undefined })
 })
@@ -54,6 +56,8 @@ describe('hr early challenge sharing', () => {
     wrapper = await mountSuspended(Challenge, { props: { code }, route: `/potkalnicko-prigorje/izazov/${code}` })
     await expect.poll(() => wrapper!.find('[data-testid="challenge-share"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="challenge-finish"]').exists()).toBe(false)
+    // After "Kreni" the sticky action bar takes the tab bar's place.
+    expect(usePzTabBar().holds.value).toEqual(['challenge'])
     expect(wrapper.get('[data-testid="challenge-scoreboard-link"]').attributes('href')).toBe(`/potkalnicko-prigorje/izazov/${code}/ljestvica`)
     expect(wrapper.text()).toContain('Otvoren do')
     expect(wrapper.find('a[href="/potkalnicko-prigorje/izazov"]').exists()).toBe(true)

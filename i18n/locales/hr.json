@@ -858,7 +858,13 @@
       "categoriesTitle": "Kategorije u zapisima",
       "settlementsTitle": "Naselja",
       "settlementItemCount": "{count} zapisa",
-      "settlementPageDescription": "{name} ({municipality}) · {count} zapisa u inventaru"
+      "settlementPageDescription": "{name} ({municipality}) · {count} zapisa u inventaru",
+      "hubTitle": "Istraži",
+      "hubIntro": "{municipalities} općina, {settlements} naselja i sve što smo o njima zapisali.",
+      "entryPlaces": "Mjesta",
+      "entryHeritage": "Baština",
+      "entrySpeech": "Naš govor",
+      "municipalitiesTitle": "Općine"
     },
     "heritage": {
       "listTitle": "Sakralna baština",
@@ -1122,6 +1128,17 @@
         "preventive": "Preventivno zaštićeno",
         "unknown": "Zaštita: nepoznato"
       }
+    },
+    "nav": {
+      "main": "Glavna navigacija",
+      "sections": "Odjeljci",
+      "home": "Početna",
+      "games": "Igre",
+      "explore": "Istraži",
+      "contribute": "Doprinesi",
+      "menu": "Izbornik",
+      "menuDescription": "Svi odjeljci, jezik i privatnost.",
+      "privacy": "Privatnost"
     }
   },
   "daily": {

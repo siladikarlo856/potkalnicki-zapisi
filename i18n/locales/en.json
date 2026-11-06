@@ -212,6 +212,25 @@
         "preventive": "Preventively protected",
         "unknown": "Protection: unknown"
       }
+    },
+    "nav": {
+      "main": "Main navigation",
+      "sections": "Sections",
+      "home": "Home",
+      "games": "Games",
+      "explore": "Explore",
+      "contribute": "Contribute",
+      "menu": "Menu",
+      "menuDescription": "All sections, language and privacy.",
+      "privacy": "Privacy"
+    },
+    "explore": {
+      "hubTitle": "Explore",
+      "hubIntro": "{municipalities} municipalities, {settlements} settlements and everything we have written down about them.",
+      "entryPlaces": "Places",
+      "entryHeritage": "Heritage",
+      "entrySpeech": "Our speech",
+      "municipalitiesTitle": "Municipalities"
     }
   }
 }
