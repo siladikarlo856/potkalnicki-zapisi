@@ -1,25 +1,16 @@
-import { execFileSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { ContentList, ContentReferences } from '../shared/utils/content/common'
 import type { Source } from '../shared/utils/content/source'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
 // The generic admin content API (/api/admin/content/:kind) over real Postgres: the revision,
 // search and audit triggers, foreign-key restricted deletes and the error mapping. Run with
 // `node scripts/test-challenges.mjs`, which provisions a disposable Postgres and PostgREST and
 // applies every migration; skipped everywhere else. Rows created here use a `kit-test` title.
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'content-kit-review-secret-0123456789'
 
-if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET })
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
+const db = await integrationDb({ server: { NUXT_REVIEW_SECRET: SECRET } })
+const { sql, fetch } = db
 
 let ip = 0
 async function api<T = Record<string, unknown>>(path: string, init: { method?: string, body?: unknown, auth?: boolean, origin?: string } = {}) {
@@ -39,7 +30,7 @@ const create = async (body: Record<string, unknown>) => {
   return response.body.entity
 }
 
-describe.skipIf(!url)('admin content API over real Postgres', () => {
+describe.skipIf(!db.enabled)('admin content API over real Postgres', () => {
   it('is closed without the session or secret, and never cached', async () => {
     const response = await api(BASE, { auth: false })
     expect(response.status).toBe(401)

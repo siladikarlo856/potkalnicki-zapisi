@@ -1,31 +1,14 @@
-import { execFileSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
+import { integrationDb } from './support/integrationDb'
 
 // Content tables (20261103010000_content_tables.sql) on a real Postgres. Run with
 // `node scripts/test-challenges.mjs`, which provisions a disposable Postgres and PostgREST, applies
 // every migration and removes both afterwards. Skipped everywhere else. Every test builds its own
 // uniquely named places, so the tests are independent of each other and of the seed data.
-const url = process.env.TEST_CHALLENGE_API_URL
-const serviceKey = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const publicKey = process.env.TEST_CHALLENGE_PUBLIC_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-function failure(input: string) {
-  try {
-    sql(input)
-  } catch (error) {
-    return String((error as { stderr?: string }).stderr ?? error)
-  }
-  throw new Error(`Expected the statement to fail: ${input}`)
-}
-const options = { auth: { persistSession: false, autoRefreshToken: false } }
-const service = createClient(url ?? 'http://localhost', serviceKey || 'service', options)
+const db = await integrationDb()
+const { sql, failure } = db
+const service = db.service
 
 const TABLES = ['areas', 'area_regions', 'heritage_categories', 'sources', 'heritage_items', 'heritage_item_sources',
   'content_legacy_ids', 'content_slug_history', 'content_revisions']
@@ -63,7 +46,7 @@ function contentUuid(name: string) {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-describe.skipIf(!url)('content tables on Postgres', () => {
+describe.skipIf(!db.enabled)('content tables on Postgres', () => {
   it('derives deterministic UUIDv8 ids and folds accents for search', () => {
     const vectors = {
       'heritage_word:hiza': 'f13d74f1-67db-843e-9d87-84ca34aeda1e',
@@ -98,7 +81,7 @@ describe.skipIf(!url)('content tables on Postgres', () => {
       expect(failure(`set role ${role}; select public.content_uuid('a');`)).toMatch(/permission denied/)
       expect(failure(`set role ${role}; insert into public.sources(title, type) values ('x', 'other');`)).toMatch(/permission denied/)
     }
-    const anon = createClient(url!, publicKey, options)
+    const anon = db.client('anon')
     for (const table of TABLES) expect((await anon.from(table).select('*')).error).not.toBeNull()
     expect((await anon.from('sources').insert({ title: 'Anonimno', type: 'other' })).error).not.toBeNull()
     expect((await anon.rpc('content_fold', { value: 'a' })).error).not.toBeNull()

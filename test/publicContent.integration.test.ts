@@ -1,6 +1,4 @@
-import { execFileSync } from 'node:child_process'
 import { randomBytes, randomUUID } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 import municipalities from './fixtures/atlas/municipalities.json'
 import settlements from './fixtures/atlas/settlements.json'
@@ -9,23 +7,18 @@ import prerenderRoutes from './fixtures/atlas/prerender-routes.json'
 import { createSnapshotStore, loadPublicContent } from '../server/utils/publicContent'
 import { contentTarget, personDetail, personList, resolveHeritageItem, resolveMunicipality, resolvePerson, resolveSettlement, settlementPage } from '../server/utils/publicAtlas'
 import { sitemapEntries, SITE_URL } from '../server/utils/sitemap'
+import { integrationDb } from './support/integrationDb'
 
 // The public read layer on a real Postgres and PostgREST with every migration and the atlas import applied.
 // Run with `node scripts/test-challenges.mjs`; skipped everywhere else. The imported atlas is only read here.
 // Lifecycle checks (renames, moves, archiving, drafts) use their own region and places, so the scope of the
 // real region Potkalničko prigorje, which other suites count, never changes.
-const url = process.env.TEST_CHALLENGE_API_URL
-const serviceKey = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-const service = createClient(url ?? 'http://localhost', serviceKey || 'service', { auth: { persistSession: false, autoRefreshToken: false } })
+const db = await integrationDb()
+const { sql } = db
+const service = db.service
 const routable = (prerenderRoutes as string[]).filter(path => /\/(istrazi|naselja|bastina)\/./.test(path))
 
-describe.skipIf(!url)('public read layer on Postgres', () => {
+describe.skipIf(!db.enabled)('public read layer on Postgres', () => {
   it('serves the whole imported atlas', async () => {
     const content = await loadPublicContent(service)
     expect(content.region).toMatchObject({ slug: 'potkalnicko-prigorje', name: 'Potkalničko prigorje' })

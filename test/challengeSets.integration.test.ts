@@ -1,25 +1,16 @@
-import { execFileSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { ChallengeSetPublic, ChallengeState } from '../shared/utils/challenge'
 import type { ChallengeTemplate } from '../shared/utils/content/challengeTemplate'
 import { contentUuid } from './helpers/contentUuid'
 import sample from './fixtures/heritage/challenge.json'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'challenge-sets-review-secret-0123456789'
 const SAMPLE_ID = contentUuid('challenge_template:sample')
 const { version: _version, ...sampleContent } = sample
 
-if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET })
-
-function psql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
+const db = await integrationDb({ server: { NUXT_REVIEW_SECRET: SECRET } })
+const { sql, fetch } = db
 
 let ip = 0
 async function api<T = Record<string, unknown>>(path: string, init: { method?: string, body?: unknown } = {}) {
@@ -39,7 +30,7 @@ async function api<T = Record<string, unknown>>(path: string, init: { method?: s
 
 const BASE = '/api/admin/content/challenge_template'
 
-describe.skipIf(!url)('published challenge sets API', () => {
+describe.skipIf(!db.enabled)('published challenge sets API', () => {
   it('lists published sets without leaking questions or answers', async () => {
     const { status, body } = await api<ChallengeSetPublic[]>('/api/challenges/sets')
     expect(status).toBe(200)
@@ -74,9 +65,9 @@ describe.skipIf(!url)('published challenge sets API', () => {
       body: { nickname: 'SetIgra', set: setId }
     })
     expect(challenge.status, JSON.stringify(challenge.body)).toBe(201)
-    expect(psql(`select content->'meta'->>'source' from heritage_challenges where code = '${challenge.body.code}'`)).toBe('set')
-    expect(psql(`select content->'meta'->'topics'->>0 from heritage_challenges where code = '${challenge.body.code}'`)).toBe('rijeci')
-    expect(psql(`select content->>'templateId' from heritage_challenges where code = '${challenge.body.code}'`)).toBe(setId)
+    expect(sql(`select content->'meta'->>'source' from heritage_challenges where code = '${challenge.body.code}'`)).toBe('set')
+    expect(sql(`select content->'meta'->'topics'->>0 from heritage_challenges where code = '${challenge.body.code}'`)).toBe('rijeci')
+    expect(sql(`select content->>'templateId' from heritage_challenges where code = '${challenge.body.code}'`)).toBe(setId)
 
     await api(`${BASE}/${setId}?mode=hard`, { method: 'DELETE' })
   })

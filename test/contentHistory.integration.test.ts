@@ -1,26 +1,17 @@
-import { execFileSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { ContentList } from '../shared/utils/content/common'
 import type { HistoryLog, HistoryRestoreResult, HistoryRevisions } from '../shared/utils/content/history'
 import type { Source } from '../shared/utils/content/source'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
 // Change history over real Postgres: the revisions the audit trigger records, their field diffs,
 // restoring a version (an update, a recreation after a hard delete, stale and invalid cases) and
 // the global log. Run with `node scripts/test-challenges.mjs` (disposable Postgres and PostgREST,
 // every migration applied); skipped everywhere else. Rows created here have a `history-test` title.
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'content-history-review-secret-0123456789'
 
-if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET })
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
+const db = await integrationDb({ server: { NUXT_REVIEW_SECRET: SECRET } })
+const { sql, fetch } = db
 
 let ip = 0
 async function api<T = Record<string, unknown>>(path: string, init: { method?: string, body?: unknown, auth?: boolean } = {}) {
@@ -46,7 +37,7 @@ const edit = async (id: string, body: Record<string, unknown>) => {
 const history = (id: string, query = '') => api<HistoryRevisions>(`${BASE}/${id}/revisions${query}`)
 const restore = (id: string, body: Record<string, unknown>) => api<HistoryRestoreResult>(`${BASE}/${id}/restore`, { method: 'POST', body })
 
-describe.skipIf(!url)('change history over real Postgres', () => {
+describe.skipIf(!db.enabled)('change history over real Postgres', () => {
   it('is closed without the session or secret', async () => {
     const id = '6f1c1c36-3a5e-4b7f-9a52-0d3f0b6c1a10'
     expect((await api(`${BASE}/${id}/revisions`, { auth: false })).status).toBe(401)

@@ -1,14 +1,9 @@
-import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { integrationDb } from './support/integrationDb'
 
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-
+const db = await integrationDb()
+const { sql } = db
 const SEED_SLUGS = [
   'marko-krizevcanin',
   'ivan-vitez-od-sredne',
@@ -18,7 +13,7 @@ const SEED_SLUGS = [
   'zlatko-spoljar'
 ]
 
-describe.skipIf(!process.env.TEST_CHALLENGE_API_URL)('persons seed on Postgres', () => {
+describe.skipIf(!db.enabled)('persons seed on Postgres', () => {
   it('replays idempotently with six persons, sources and resolved links', () => {
     const seed = readFileSync(new URL('../supabase/migrations/20261104050000_seed_persons.sql', import.meta.url), 'utf8')
     sql(seed)

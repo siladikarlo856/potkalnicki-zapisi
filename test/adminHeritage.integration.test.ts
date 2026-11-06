@@ -1,22 +1,13 @@
-import { execFileSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { ContentList } from '../shared/utils/content/common'
 import type { HeritageCategory } from '../shared/utils/content/category'
 import type { HeritageItem } from '../shared/utils/content/heritageItem'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'content-kit-review-secret-0123456789'
 
-if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET })
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
+const db = await integrationDb({ server: { NUXT_REVIEW_SECRET: SECRET } })
+const { sql, fetch } = db
 
 async function api<T = Record<string, unknown>>(path: string, init: { method?: string, body?: unknown } = {}) {
   const headers: Record<string, string> = {}
@@ -27,7 +18,7 @@ async function api<T = Record<string, unknown>>(path: string, init: { method?: s
   return { status: response.status, body: (text ? JSON.parse(text) : null) as T & { data?: Record<string, unknown> } }
 }
 
-describe.skipIf(!url)('heritage admin content over real Postgres', () => {
+describe.skipIf(!db.enabled)('heritage admin content over real Postgres', () => {
   it('creates a category and an item with ordered sources, then archives the item', async () => {
     const suffix = crypto.randomUUID().slice(0, 8)
     const category = await api<{ entity: HeritageCategory }>('/api/admin/content/heritage_category', {
