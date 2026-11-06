@@ -171,6 +171,102 @@ describe.skipIf(!db.enabled)('person content over real Postgres', () => {
     sql(`delete from persons where id = '${id}'`)
   })
 
+  it('keeps a person\'s sources, places and heritage items when a save leaves those fields out', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
+    const item = sql(`select id from heritage_items limit 1`)
+    const source = sql(`select id from sources limit 1`)
+    const links = (id: string) => [
+      sql(`select string_agg(source_id::text, ',') from person_sources where person_id = '${id}'`),
+      sql(`select string_agg(area_id || ':' || role, ',') from person_areas where person_id = '${id}'`),
+      sql(`select string_agg(item_id || ':' || relation, ',') from person_heritage_items where person_id = '${id}'`)
+    ]
+    const expected = [source, `${settlement}:rodjen`, `${item}:povezana kapela`]
+
+    let saved = (await api<{ entity: Person }>('/api/admin/content/person', {
+      method: 'POST',
+      body: {
+        name: `kit-test Izostavljeno ${suffix}`,
+        slug: `kit-test-izostavljeno-${suffix}`,
+        died: '1. 1. 1900.',
+        diedYear: 1900,
+        verification: 'unverified',
+        status: 'draft',
+        sourceIds: [source],
+        areaLinks: [{ areaId: settlement, role: 'rodjen' }],
+        itemLinks: [{ itemId: item, relation: 'povezana kapela' }]
+      }
+    })).body.entity
+    const id = saved.id
+
+    // A Draft keeps its links; a Published person keeps the source it needs, so the save is not refused.
+    for (const change of [{ name: `kit-test Izostavljeno nova ${suffix}` }, { status: 'published' }, { role: 'svećenik' }]) {
+      const response = await api<{ entity: Person }>(`/api/admin/content/person/${id}`, {
+        method: 'PATCH',
+        body: { revision: saved.revision, ...change }
+      })
+      expect(response.status, JSON.stringify(response.body)).toBe(200)
+      saved = response.body.entity
+      expect(saved).toMatchObject(change)
+      expect(saved.sourceIds).toEqual([source])
+      expect(links(id)).toEqual(expected)
+    }
+
+    sql(`delete from persons where id = '${id}'`)
+  })
+
+  it('saves a person and its links in one transaction: a failing link write leaves nothing written', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
+    const source = sql(`select id from sources limit 1`)
+    // Source links are written last; make that write fail for this test's persons only.
+    sql(`
+      create function public.kit_test_fail_person_source() returns trigger language plpgsql as $$
+      begin
+        if exists (select 1 from public.persons where id = new.person_id and name like 'kit-test Neuspjeh%') then
+          raise exception 'Forced link failure';
+        end if;
+        return new;
+      end $$;
+      create trigger kit_test_fail_person_source before insert on public.person_sources
+        for each row execute function public.kit_test_fail_person_source();
+    `)
+    try {
+      const slug = `kit-test-neuspjeh-${suffix}`
+      const created = await api('/api/admin/content/person', {
+        method: 'POST',
+        body: {
+          name: `kit-test Neuspjeh ${suffix}`, slug, died: '1900.', diedYear: 1900, verification: 'unverified',
+          status: 'draft', sourceIds: [source], areaLinks: [{ areaId: settlement, role: 'rodjen' }]
+        }
+      })
+      expect(created.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select count(*) from persons where slug = '${slug}'`)).toBe('0')
+
+      const draft = await api<{ entity: Person }>('/api/admin/content/person', {
+        method: 'POST',
+        body: {
+          name: `kit-test Uspjeh ${suffix}`, slug: `kit-test-uspjeh-${suffix}`, died: '1900.', diedYear: 1900,
+          verification: 'unverified', status: 'draft', sourceIds: [source], areaLinks: [{ areaId: settlement, role: 'rodjen' }]
+        }
+      })
+      expect(draft.status, JSON.stringify(draft.body)).toBe(201)
+      const id = draft.body.entity.id
+      const before = sql(`select revision || ' ' || name from persons where id = '${id}'`)
+      const updated = await api(`/api/admin/content/person/${id}`, {
+        method: 'PATCH',
+        body: { revision: draft.body.entity.revision, name: `kit-test Neuspjeh ${suffix}`, areaLinks: [{ areaId: settlement, role: 'umro' }] }
+      })
+      expect(updated.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select revision || ' ' || name from persons where id = '${id}'`)).toBe(before)
+      expect(sql(`select string_agg(area_id || ':' || role, ',') from person_areas where person_id = '${id}'`)).toBe(`${settlement}:rodjen`)
+      expect(sql(`select string_agg(source_id::text, ',') from person_sources where person_id = '${id}'`)).toBe(source)
+      sql(`delete from persons where id = '${id}'`)
+    } finally {
+      sql(`drop trigger kit_test_fail_person_source on public.person_sources; drop function public.kit_test_fail_person_source();`)
+    }
+  })
+
   it('lists persons in admin search', async () => {
     const listed = await api<ContentList<Person>>('/api/admin/content/person?q=kit-test')
     expect(listed.status).toBe(200)

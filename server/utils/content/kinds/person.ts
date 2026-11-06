@@ -103,6 +103,20 @@ export const personKind = defineContentKind({
     ...await missingLinkIssues(db, 'heritage_items', value.itemLinks.map((link, index) => [`itemLinks.${index}.itemId`, link.itemId] as const), 'Taj zapis baštine ne postoji.'),
     ...await missingSourceIssues(db, value.sourceIds)
   ],
+  // The persons row and its link tables in one transaction (supabase/migrations/20261107000000_person_save.sql).
+  persist: async (db, id, value, { row, revision }) => {
+    const { data, error } = await db.rpc('content_person_save', {
+      p_id: id,
+      p_revision: revision ?? null,
+      p_row: row,
+      p_area_links: value.areaLinks,
+      p_item_links: value.itemLinks,
+      p_source_ids: value.sourceIds
+    })
+    if (error) throw error
+    return (data as string | null) ?? null
+  },
+  // Still used by a history restore; it moves to `persist` with the other kinds.
   persistEntity: async (db, id, value) => {
     await saveAreaLinks(db, id, (value.areaLinks as PersonAreaLink[]) ?? [])
     await saveItemLinks(db, id, (value.itemLinks as PersonItemLink[]) ?? [])

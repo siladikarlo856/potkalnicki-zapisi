@@ -76,6 +76,23 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
    * writes: every rule belongs in `validate` or `checkLinks`, which run before the main row is saved.
    */
   persistEntity?(db: SupabaseClient, id: string, value: Record<string, unknown>): Promise<void>
+  /**
+   * Saves a validated value — the main row and everything stored beside it — in one database
+   * transaction (typically a per-kind Postgres function). When a kind has it, create and update use it
+   * instead of writing the main row and then calling `persistEntity`, and an update starts from the
+   * full stored entity (`loadEntity` included), so a field the request leaves out keeps its value.
+   * It only writes: every rule runs before it, in `validate` and `checkLinks`.
+   * Resolves to the saved id, or null when the row is gone or no longer at `options.revision`.
+   * Database errors are thrown as they come (PostgREST shape) for the store to map.
+   */
+  persist?(db: SupabaseClient, id: string | null, value: V & Record<string, unknown>, options: ContentPersistOptions): Promise<string | null>
+}
+
+export interface ContentPersistOptions {
+  /** The main-table columns for the value (the store's field → column mapping), plus transient columns such as apply_submission_id. */
+  row: Record<string, unknown>
+  /** On an update: the revision the save is based on. The write happens only while the row is still at it. */
+  revision?: number
 }
 
 export function defineContentKind<V extends { status: ContentStatus }>(definition: ContentKindDefinition<V>) {
