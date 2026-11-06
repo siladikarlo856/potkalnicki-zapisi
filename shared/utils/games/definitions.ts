@@ -1,5 +1,6 @@
 import { pzRoutes } from '../appRoutes'
-import type { CardKind } from '../learn/types'
+import type { CardKey, CardKind } from '../learn/types'
+import { encodeCardKey, type CardKeyParts } from './cardKey'
 import type { GameId } from './types'
 
 export type GameFormat = 'dnevna' | 'odabir' | 'karta' | 'upisi' | 'spoji' | 'razvrstaj' | 'grupiraj' | 'bez-greske'
@@ -27,6 +28,8 @@ export interface GameDefinition {
   label: { hr: string, en: string }
   /** Whether a Challenge can be made from this game. */
   challengeable: boolean
+  /** The card a question of this game is about: its kind and, when the game asks something else about that card, the key's suffix. */
+  questionCard?: Omit<CardKeyParts, 'id'>
   catalogue?: GameCatalogueMeta
 }
 
@@ -40,11 +43,13 @@ const DEFINITIONS = {
   'znacenje': {
     label: { hr: 'Kaj to znači?', en: 'What does it mean?' },
     challengeable: true,
+    questionCard: { kind: 'word' },
     catalogue: { blurb: 'Deset pitanja o značenju riječi — brzi kviz.', topic: 'rijeci', format: 'odabir', minutes: 5, path: pzRoutes.quiz, status: 'live' }
   },
   'rijec': {
     label: { hr: 'Kak se to veli?', en: 'Local word' },
     challengeable: true,
+    questionCard: { kind: 'word' },
     catalogue: { blurb: 'Pročitaj značenje i pogodi kak se to kod nas veli.', topic: 'rijeci', format: 'odabir', minutes: 5, path: pzRoutes.askWord, status: 'live' }
   },
   'karta': {
@@ -55,6 +60,7 @@ const DEFINITIONS = {
   'karta-koje': {
     label: { hr: 'Koje je ovo selo?', en: 'Which village is this?' },
     challengeable: true,
+    questionCard: { kind: 'place' },
     catalogue: { blurb: 'Pogledaj točku na karti i odaberi pravo ime.', topic: 'mjesta', format: 'karta', minutes: 8, path: pzRoutes.mapWhich, status: 'live', needs: { kind: 'place', min: 4 } }
   },
   'uci-kartu': {
@@ -70,6 +76,7 @@ const DEFINITIONS = {
   'opcina': {
     label: { hr: 'Kojoj općini pripada?', en: 'Which municipality?' },
     challengeable: true,
+    questionCard: { kind: 'place' },
     catalogue: { blurb: 'Deset pitanja: pogodi općinu ili grad kojem selo pripada.', topic: 'mjesta', format: 'odabir', minutes: 5, path: pzRoutes.opcine, status: 'live', needs: { kind: 'place', min: 10 } }
   },
   'sela-i-opcine': {
@@ -95,6 +102,7 @@ const DEFINITIONS = {
   'crkva': {
     label: { hr: 'Gdje je ta crkva?', en: 'Where is the church?' },
     challengeable: true,
+    questionCard: { kind: 'item' },
     catalogue: { blurb: 'Poveži sakralni zapis s naseljem u kojem se nalazi.', topic: 'bastina', format: 'odabir', minutes: 5, path: pzRoutes.churchWhere, status: 'live', needs: { kind: 'item', min: 10 } }
   },
   'spoji': {
@@ -105,6 +113,7 @@ const DEFINITIONS = {
   'osoba': {
     label: { hr: 'Tko je to?', en: 'Who is this?' },
     challengeable: true,
+    questionCard: { kind: 'person' },
     catalogue: { blurb: 'Poveži natuknicu s imenom osobe iz našeg kraja.', topic: 'osobe', format: 'odabir', minutes: 5, path: pzRoutes.tkoJeTo, status: 'live', needs: { kind: 'person', min: 4 } }
   },
   'istina-legenda': {
@@ -115,19 +124,23 @@ const DEFINITIONS = {
   // Played only in a Challenge: no catalogue tile.
   'karta-tocke': {
     label: { hr: 'Pronađi selo (4 točke)', en: 'Find the village (4 points)' },
-    challengeable: true
+    challengeable: true,
+    questionCard: { kind: 'place', suffix: 'tocke' }
   },
   'klub-mjesto': {
     label: { hr: 'Koji klub igra u mjestu?', en: 'Which club plays in the settlement?' },
-    challengeable: true
+    challengeable: true,
+    questionCard: { kind: 'club', suffix: 'mjesto' }
   },
   'klub-liga': {
     label: { hr: 'U kojoj ligi klub igra u sezoni?', en: 'Which league does the club play in?' },
-    challengeable: true
+    challengeable: true,
+    questionCard: { kind: 'club', suffix: 'liga' }
   },
   'klub-odakle': {
     label: { hr: 'Odakle je klub?', en: 'Where is the club from?' },
-    challengeable: true
+    challengeable: true,
+    questionCard: { kind: 'club', suffix: 'odakle' }
   }
 } satisfies Record<GameId, Omit<GameDefinition, 'id'>>
 
@@ -148,4 +161,9 @@ const BY_ID = new Map(GAME_DEFINITIONS.map(definition => [definition.id, definit
 
 export function gameDefinition(id: GameId): GameDefinition {
   return BY_ID.get(id)!
+}
+
+/** The CardKey a question of this game carries for the entity it asks about. */
+export function questionCardKey(game: ChallengeableGameId, entityId: string): CardKey {
+  return encodeCardKey({ ...gameDefinition(game).questionCard!, id: entityId })
 }

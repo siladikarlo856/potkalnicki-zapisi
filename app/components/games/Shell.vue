@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { mulberry32, shuffled } from '~~/shared/utils/games/rng'
+import { decodeCardKey } from '~~/shared/utils/games/cardKey'
 import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { Difficulty, GameId, GameQuestion } from '~~/shared/utils/games/types'
 import type { QuizChallengeInput } from '~~/shared/utils/challenge'
@@ -36,12 +37,13 @@ const finished = computed(() => index.value >= round.value.length)
 const isCorrect = computed(() => Boolean(question.value) && selected.value === question.value!.correct)
 const score = computed(() => results.value.filter(Boolean).length)
 const completed = computed(() => index.value + Number(answered.value))
-const wordId = (card: CardKey) => card.slice(card.indexOf(':') + 1)
+const wordId = (card: CardKey) => decodeCardKey(card)?.id ?? ''
+const isWordCard = (card: CardKey) => decodeCardKey(card)?.kind === 'word'
 
 // The creator's own round is kept for `znacenje` challenges ("Moja runda"): option cards map back to word ids.
 const quizPayload = computed<QuizChallengeInput | null>(() => {
   if (props.gameId !== 'znacenje' || practice.value || !round.value.length) return null
-  if (!round.value.every(item => item.optionCards?.length === item.options.length && item.card.startsWith('word:'))) return null
+  if (!round.value.every(item => item.optionCards?.length === item.options.length && isWordCard(item.card))) return null
   return {
     questions: round.value.map(item => ({ id: wordId(item.card), optionIds: item.optionCards!.map(wordId) })),
     results: results.value

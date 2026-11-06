@@ -17,6 +17,7 @@ import {
   pickWordTarget,
   slugMap
 } from './distractors'
+import { questionCardKey } from './definitions'
 import type { Rng } from './rng'
 import { shuffled } from './rng'
 import type { Difficulty, GameId, GameQuestion, GenerateGameId, GenerateQuestionsOptions } from './types'
@@ -261,7 +262,7 @@ function kartaTockeQuestion(pool: CardPool, target: PoolPlace, difficulty: Diffi
   return {
     id: questionId('karta-tocke', 'place', target.id),
     gameId: 'karta-tocke',
-    card: `place:${target.id}:tocke` as CardKey,
+    card: questionCardKey('karta-tocke', target.id),
     prompt: { hr: `Gdje je ${target.name}?`, en: `Where is ${target.name}?` },
     options,
     correct,
@@ -303,7 +304,7 @@ function klubMjestoQuestion(pool: CardPool, target: PoolClub, rng: Rng): GameQue
   return {
     id: questionId('klub-mjesto', 'club', target.id),
     gameId: 'klub-mjesto',
-    card: `club:${target.id}:mjesto` as CardKey,
+    card: questionCardKey('klub-mjesto', target.id),
     prompt: {
       hr: `Koji klub igra u ${loc}?`,
       en: `Which club plays in ${loc}?`
@@ -337,7 +338,7 @@ function klubLigaQuestion(pool: CardPool, target: PoolClub, rng: Rng): GameQuest
   return {
     id: questionId('klub-liga', 'club', target.id),
     gameId: 'klub-liga',
-    card: `club:${target.id}:liga` as CardKey,
+    card: questionCardKey('klub-liga', target.id),
     prompt: {
       hr: `U kojoj ligi ${target.name} igra u sezoni ${season.seasonLabel}?`,
       en: `Which league does ${target.name} play in during ${season.seasonLabel}?`
@@ -364,7 +365,7 @@ function klubOdakleQuestion(pool: CardPool, target: PoolClub, difficulty: Diffic
   return {
     id: questionId('klub-odakle', 'club', target.id),
     gameId: 'klub-odakle',
-    card: `club:${target.id}:odakle` as CardKey,
+    card: questionCardKey('klub-odakle', target.id),
     prompt: {
       hr: `Odakle je ${target.name}?`,
       en: `Where is ${target.name} from?`
@@ -433,36 +434,36 @@ function generateOne(
   }
 
   if (game === 'karta-tocke') {
-    const list = places(pool, topics).filter(p => !exclude.has(`place:${p.id}:tocke` as CardKey))
+    const list = places(pool, topics).filter(p => !exclude.has(questionCardKey('karta-tocke', p.id)))
     const target = targetKey
-      ? list.find(p => (`place:${p.id}:tocke` as CardKey) === targetKey)
+      ? list.find(p => questionCardKey('karta-tocke', p.id) === targetKey)
       : pickPlaceTarget(list, difficulty, rng)
     if (!target) return null
     return kartaTockeQuestion(pool, target, difficulty, rng)
   }
 
   if (game === 'klub-mjesto') {
-    const list = uniqueSettlementTargets(poolClubs(pool, topics)).filter(c => !exclude.has(`club:${c.id}:mjesto` as CardKey))
+    const list = uniqueSettlementTargets(poolClubs(pool, topics)).filter(c => !exclude.has(questionCardKey('klub-mjesto', c.id)))
     const target = targetKey
-      ? list.find(c => (`club:${c.id}:mjesto` as CardKey) === targetKey)
+      ? list.find(c => questionCardKey('klub-mjesto', c.id) === targetKey)
       : shuffled(list, rng)[0]
     if (!target) return null
     return klubMjestoQuestion(pool, target, rng)
   }
 
   if (game === 'klub-liga') {
-    const list = poolClubs(pool, topics).filter(c => c.seniorSeason && !exclude.has(`club:${c.id}:liga` as CardKey))
+    const list = poolClubs(pool, topics).filter(c => c.seniorSeason && !exclude.has(questionCardKey('klub-liga', c.id)))
     const target = targetKey
-      ? list.find(c => (`club:${c.id}:liga` as CardKey) === targetKey)
+      ? list.find(c => questionCardKey('klub-liga', c.id) === targetKey)
       : shuffled(list, rng)[0]
     if (!target?.seniorSeason) return null
     return klubLigaQuestion(pool, target, rng)
   }
 
   if (game === 'klub-odakle') {
-    const list = poolClubs(pool, topics).filter(c => !exclude.has(`club:${c.id}:odakle` as CardKey))
+    const list = poolClubs(pool, topics).filter(c => !exclude.has(questionCardKey('klub-odakle', c.id)))
     const target = targetKey
-      ? list.find(c => (`club:${c.id}:odakle` as CardKey) === targetKey)
+      ? list.find(c => questionCardKey('klub-odakle', c.id) === targetKey)
       : shuffled(list, rng)[0]
     if (!target) return null
     return klubOdakleQuestion(pool, target, difficulty, rng)
@@ -509,13 +510,13 @@ export function generateQuestions(game: GameId, pool: CardPool, options: Generat
   } else if (game === 'karta-koje') {
     candidates = places(pool, topics).map(p => p.key)
   } else if (game === 'karta-tocke') {
-    candidates = places(pool, topics).map(p => `place:${p.id}:tocke` as CardKey)
+    candidates = places(pool, topics).map(p => questionCardKey('karta-tocke', p.id))
   } else if (game === 'klub-mjesto') {
-    candidates = uniqueSettlementTargets(poolClubs(pool, topics)).map(c => `club:${c.id}:mjesto` as CardKey)
+    candidates = uniqueSettlementTargets(poolClubs(pool, topics)).map(c => questionCardKey('klub-mjesto', c.id))
   } else if (game === 'klub-liga') {
-    candidates = poolClubs(pool, topics).filter(c => c.seniorSeason).map(c => `club:${c.id}:liga` as CardKey)
+    candidates = poolClubs(pool, topics).filter(c => c.seniorSeason).map(c => questionCardKey('klub-liga', c.id))
   } else if (game === 'klub-odakle') {
-    candidates = poolClubs(pool, topics).map(c => `club:${c.id}:odakle` as CardKey)
+    candidates = poolClubs(pool, topics).map(c => questionCardKey('klub-odakle', c.id))
   } else if (game === 'osoba') {
     candidates = poolPersons(pool, topics).map(p => p.key)
   }
