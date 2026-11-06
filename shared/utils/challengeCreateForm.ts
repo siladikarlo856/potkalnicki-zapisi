@@ -3,9 +3,22 @@ import { DEFAULT_GENERATE } from './challenge'
 import type { CardPool, TopicId } from './learn/types'
 import type { Difficulty, GenerateGameId } from './games/types'
 import { generateGameEnabled } from './games/questions'
+import { CHALLENGEABLE_GAMES } from './games/definitions'
+import { challengeGameLabel } from './challengeShare'
 
 const LENGTHS = new Set([5, 10, 15])
-const GAMES = new Set<GenerateGameId>(['mjesovito', 'znacenje', 'rijec', 'opcina', 'crkva', 'karta-koje', 'karta-tocke', 'osoba'])
+/** The mixed game first, then every challengeable game in catalogue order. */
+const GAMES: readonly GenerateGameId[] = ['mjesovito', ...CHALLENGEABLE_GAMES]
+
+export interface ChallengeCreateGameOption {
+  id: GenerateGameId
+  label: string
+}
+
+/** The games a Challenge can be created from, as the create form offers them. */
+export function challengeCreateGameOptions(lang: 'hr' | 'en'): ChallengeCreateGameOption[] {
+  return GAMES.map(id => ({ id, label: challengeGameLabel(id, lang) }))
+}
 
 export interface ChallengeCreateFormState {
   topics: TopicId[]
@@ -44,7 +57,7 @@ export function applyChallengeCreateQuery(
     if (parsed.length) next.topics = parsed
   }
   const igra = queryParam(query.igra)
-  if (GAMES.has(igra as GenerateGameId)) next.game = igra as GenerateGameId
+  if (GAMES.includes(igra as GenerateGameId)) next.game = igra as GenerateGameId
   const tezina = queryParam(query.tezina)
   if (tezina === 'lako' || tezina === 'srednje' || tezina === 'tesko') next.difficulty = tezina
   const n = Number(queryParam(query.n))
