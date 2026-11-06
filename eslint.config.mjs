@@ -7,7 +7,10 @@ import { getDefaultAttributes } from 'eslint-plugin-better-tailwindcss/api/defau
 export default withNuxt(
   globalIgnores([
     // Agent harness runtime directory, injected locally; not part of the project sources.
-    '.opencode/**'
+    '.opencode/**',
+    // Vendored agent skills (mattpocock/skills, pinned in skills-lock.json); not project sources.
+    '.agents/**',
+    '.claude/**'
   ]),
   betterTailwindcss.configs['correctness-error'],
   {
