@@ -3,25 +3,14 @@ import type { ChallengeTemplateContent } from '../../shared/utils/content/challe
 import { validateChallengeContent } from '../../shared/utils/content/challengeTemplate'
 import { isUuid } from '../../shared/utils/content/common'
 import { challengeSetPublic } from './challengeContent'
+import { derive, getPublicContent, invalidatePublicContent } from './publicContent'
 
 // The current challenge template (Izazovi in the admin), as the snapshot a new fixed challenge
 // stores: the template content plus `version` (the template revision) and `templateId`.
 //
-// It is read through a small in-process cache, like the public content snapshot: fresh for 60 s,
-// refreshed by one request at a time, kept when a refresh fails, and dropped by every admin write
-// to the templates (the content kind's afterWrite), so a switch is live on the next request in this
-// process. With several processes the TTL bounds how long another one keeps the old template.
-
-const TTL_MS = 60_000
-
-interface Snapshot {
-  content: ChallengeContent
-  loadedAt: number
-}
-
-let cached: Snapshot | null = null
-let pending: Promise<ChallengeContent> | null = null
-let generation = 0
+// It is derived from the public content snapshot: every admin write to the templates invalidates the
+// snapshot (contentAfterWrite), so a switch is live on the next request in this process. With several
+// processes the snapshot's background refresh bounds how long another one keeps the old template.
 
 async function loadCurrent(): Promise<ChallengeContent> {
   const { data, error } = await useDatabaseClient().from('heritage_challenge_templates')
@@ -40,36 +29,18 @@ async function loadCurrent(): Promise<ChallengeContent> {
   }
 }
 
-export async function currentChallengeContent(): Promise<ChallengeContent> {
-  if (cached && Date.now() - cached.loadedAt < TTL_MS) return cached.content
-  if (!pending) {
-    const started = generation
-    const request = loadCurrent().then((content) => {
-      // A write during the load may have changed the template; keep only what is still current.
-      if (started === generation) cached = { content, loadedAt: Date.now() }
-      return content
-    })
-    pending = request
-    request.then(() => undefined, () => undefined).finally(() => {
-      if (pending === request) pending = null
-    })
-  }
-  try {
-    return await pending
-  } catch (error) {
-    if (cached) {
-      console.error('[challenge] Refreshing the current challenge template failed; serving the last one.')
-      return cached.content
-    }
-    throw error
-  }
+const current = derive({ get: getPublicContent }, loadCurrent)
+
+export function currentChallengeContent(): Promise<ChallengeContent> {
+  return current.get()
 }
 
-/** After an admin write: the next request reads the database again. */
+/**
+ * Kept for the challenge_template kind's afterWrite; contentAfterWrite already invalidates the snapshot
+ * before that hook runs, so this only repeats it.
+ */
 export function invalidateCurrentChallengeContent() {
-  generation++
-  pending = null
-  cached = null
+  invalidatePublicContent()
 }
 
 export async function publishedChallengeSets() {
