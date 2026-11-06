@@ -3,7 +3,7 @@ import type { ContentErrorData, ContentIssue, ContentList, ContentLookupItem, Co
 import {
   CONTENT_BODY_LIMIT, CONTENT_LOOKUP_LIMIT, CONTENT_PAGE_SIZES, CONTENT_SEARCH_MAX, CONTENT_STATUSES, contentFold, isUuid
 } from '../../../shared/utils/content/common'
-import type { AnyContentKindDefinition, ContentFilter } from './definition'
+import type { AnyContentKindDefinition, ContentFilter, ContentPersistOptions } from './definition'
 
 // Generic admin operations over one registry definition. The database owns the invariants:
 // `revision`, `updated_at` and `search_text` are set by the `content_before_write` trigger, every
@@ -254,11 +254,26 @@ export async function contentAfterWrite(event: H3Event, def: AnyContentKindDefin
   await def.afterWrite?.(event)
 }
 
+/** Saves through the kind's one-transaction `persist`, mapping a database error like any other write. */
+async function persistValue(def: AnyContentKindDefinition, id: string | null, value: Row, options: ContentPersistOptions) {
+  try {
+    return await def.persist!(useDatabaseClient(), id, value, options)
+  } catch (error) {
+    contentDatabaseError(def, error as { code?: string, message: string })
+  }
+}
+
 export async function createContent(event: H3Event, def: AnyContentKindDefinition) {
   const body = editable(def, await readInput(event, def))
   const { value, issues } = await validateInput(def, body)
   if (issues.length) invalid(issues)
   const row = toRow(def, value)
+  if (def.persist) {
+    const id = await persistValue(def, null, value as Row, { row })
+    await contentAfterWrite(event, def)
+    setResponseStatus(event, 201)
+    return { entity: (await getContent(def, id!)).entity }
+  }
   if (def.adapter?.createId) row.id = def.adapter.createId(value)
   const { data, error } = await useDatabaseClient().from(def.table).insert(row).select(selectList(def)).single()
   if (error) contentDatabaseError(def, error)
@@ -283,8 +298,17 @@ export async function updateContent(event: H3Event, def: AnyContentKindDefinitio
   const current = await requireRow(def, id)
   if (current.revision !== revision) conflict(def, current)
 
-  const { value, issues } = await validateInput(def, { ...editable(def, toEntity(def, current)), ...editable(def, body) }, id)
+  // A kind that saves in one transaction merges over its full stored entity, links included.
+  const stored = def.persist ? (await getContent(def, id)).entity : toEntity(def, current)
+  const { value, issues } = await validateInput(def, { ...editable(def, stored), ...editable(def, body) }, id)
   if (issues.length) invalid(issues)
+  if (def.persist) {
+    const saved = await persistValue(def, id, value as Row, { row: { ...toRow(def, value), ...applyColumns(def, body) }, revision })
+    // Someone saved between the read and the write.
+    if (!saved) conflict(def, await requireRow(def, id))
+    await contentAfterWrite(event, def)
+    return { entity: (await getContent(def, id)).entity }
+  }
   const { data, error } = await useDatabaseClient().from(def.table).update({ ...toRow(def, value), ...applyColumns(def, body) })
     .eq('id', id).eq('revision', revision).select(selectList(def))
   if (error) contentDatabaseError(def, error)
