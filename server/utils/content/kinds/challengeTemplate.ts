@@ -1,5 +1,5 @@
 import { CHALLENGE_LIMITS, validateChallengeTemplate } from '../../../../shared/utils/content/challengeTemplate'
-import { invalidateCurrentChallengeContent } from '../../challengeTemplates'
+import { invalidateCurrentChallengeContent } from '../../../challenges'
 import { defineContentKind } from '../definition'
 
 // Challenge templates (Izazovi). Nothing refers to a template: every challenge keeps its own

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import sample from './fixtures/heritage/challenge.json'
-import { challengeSetPublic } from '../server/utils/challengeContent'
+import { challengeSetPublic } from '../server/challenges/content'
 import type { ChallengeTemplateContent } from '../shared/utils/content/challengeTemplate'
 
 const { version: _version, ...content } = sample as ChallengeTemplateContent & { version: number }

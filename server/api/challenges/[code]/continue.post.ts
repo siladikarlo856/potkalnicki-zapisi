@@ -1,1 +1,3 @@
-export default defineEventHandler(event => changeChallenge(event, 'continue'))
+import { continueChallenge } from '../../../challenges'
+
+export default defineEventHandler(event => continueChallenge(event))

@@ -1,8 +1,12 @@
 import type { WordEntry } from '../../app/types/heritage'
-import type { CardPool, TopicId } from '../../shared/utils/learn/types'
-import type { ChallengeContent, ChallengeQuestion, ChallengeSetPublic, GenerateChallengeInput, QuizChallengeInput } from '../../shared/utils/challenge'
+import type { CardKey, CardPool, TopicId } from '../../shared/utils/learn/types'
+import type {
+  ChallengeContent, ChallengeMeta, ChallengeQuestion, ChallengeSetPublic, GenerateChallengeInput, QuizChallengeInput
+} from '../../shared/utils/challenge'
+import type { ContentIssue } from '../../shared/utils/content/common'
+import { isRecord, isUuid } from '../../shared/utils/content/common'
 import type { ChallengeTemplateContent } from '../../shared/utils/content/challengeTemplate'
-import { challengeSummary, validateChallengeContent } from '../../shared/utils/content/challengeTemplate'
+import { challengeSummary, validateChallengeTemplateContent } from '../../shared/utils/content/challengeTemplate'
 import type { Rng } from '../../shared/utils/games/rng'
 import {
   activeRounds,
@@ -14,12 +18,55 @@ import {
 import { CHALLENGEABLE_GAMES } from '../../shared/utils/games/types'
 import type { GameQuestion, GenerateGameId } from '../../shared/utils/games/types'
 
+// The shape of a Challenge's content: the one place that builds, parses and projects the snapshot
+// `heritage_challenges.content` stores. Private to the Challenge module (index.ts); the Challenge
+// template rules it builds on are shared with the admin dialog (shared/utils/content/challengeTemplate.ts).
+
+/**
+ * Validates a challenge snapshot: template content plus `version` and, for snapshots of a template,
+ * `templateId`. Throws on the first problem, because a snapshot is built by the server and an invalid
+ * one is a bug, not user input.
+ */
+export function validateChallengeContent(input: unknown): ChallengeContent {
+  const body = isRecord(input) ? input : {}
+  const { value, issues } = validateChallengeTemplateContent(input)
+  const extra: ContentIssue[] = []
+  const version = body.version
+  if (typeof version !== 'number' || !Number.isSafeInteger(version) || version < 1) extra.push({ path: 'version', message: 'Verzija mora biti pozitivan cijeli broj.' })
+  if (body.templateId !== undefined && !isUuid(body.templateId)) extra.push({ path: 'templateId', message: 'Identifikator predloška mora biti UUID.' })
+  const first = [...extra, ...issues][0]
+  if (first) throw new Error(`Invalid challenge content: ${first.path || '(content)'}: ${first.message}`)
+  return {
+    version: version as number,
+    ...(body.templateId === undefined ? {} : { templateId: (body.templateId as string).toLowerCase() }),
+    ...value
+  }
+}
+
+/** The snapshot a Fixed challenge stores from a Challenge template row; throws when the row is invalid. */
+export function templateChallengeContent(template: { id: string, revision: number, content: unknown }, meta?: ChallengeMeta): ChallengeContent {
+  return validateChallengeContent({
+    ...(isRecord(template.content) ? template.content : {}),
+    ...(meta ? { meta } : {}),
+    version: template.revision,
+    templateId: template.id
+  })
+}
+
+/** The cards behind a challenge's questions, once each, in question order. */
+export function challengeQuestionCards(content: ChallengeContent): CardKey[] {
+  const seen = new Set<CardKey>()
+  const cards: CardKey[] = []
+  for (const question of content.rounds.flatMap(round => round.questions)) {
+    if (!question.card || seen.has(question.card)) continue
+    seen.add(question.card)
+    cards.push(question.card)
+  }
+  return cards
+}
+
 const LENGTHS = new Set([5, 10, 15])
 const TOPIC_ID = /^[a-z0-9-]{1,40}$/
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 function topicLabel(pool: CardPool, topicId: TopicId, lang: 'hr' | 'en'): string {
   const fromPool = pool.topics.find(t => t.id === topicId)?.label
@@ -76,7 +123,7 @@ export function generatedChallengeContent(input: GenerateChallengeInput, pool: C
   const perRound = roundsOrder.map(() => 0)
   for (let i = 0; i < input.length; i++) perRound[i % roundsOrder.length]!++
 
-  const used = new Set<import('../../shared/utils/learn/types').CardKey>()
+  const used = new Set<CardKey>()
   const builtRounds = roundsOrder.map((roundId, index) => {
     const games = gamesForRound(roundId, input.game)
     const need = perRound[index]!
@@ -141,7 +188,7 @@ export function generatedChallengeContent(input: GenerateChallengeInput, pool: C
 }
 
 // Challenge snapshots built on the server. Fixed challenges copy the current template
-// (challengeTemplates.ts); quiz challenges are rebuilt here from the words just played.
+// (templateChallengeContent); quiz challenges are rebuilt here from the words just played.
 
 export function quizChallengeContent(input: QuizChallengeInput, activeWords: readonly WordEntry[]): ChallengeContent {
   const fail = () => {
