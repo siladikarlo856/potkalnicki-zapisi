@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { ChallengeState, ChallengeText } from '~~/shared/utils/challenge'
+import type { ChallengeLeaderboard, ChallengeState, ChallengeText } from '~~/shared/utils/challenge'
+import type { GameQuestion } from '~~/shared/utils/games/types'
 import { DEFAULT_GENERATE } from '~~/shared/utils/challenge'
 import { challengeDifficultyLabel, challengeMetaTopicSummary } from '~~/shared/utils/challengeShare'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
@@ -30,7 +31,6 @@ const overview = ref<typeof DEFAULT_OVERVIEW | null>(null)
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
-const entering = ref(false)
 const nickname = ref('')
 const text = (value: ChallengeText) => value[locale.value === 'en' ? 'en' : 'hr']
 const participant = computed(() => state.value?.participant)
@@ -38,8 +38,9 @@ const question = computed(() => state.value?.question)
 const feedback = computed(() => state.value?.feedback)
 const details = computed(() => state.value ?? overview.value)
 const closed = computed(() => state.value?.closed && !participant.value?.completedAt)
-// After "Kreni" the sticky action bar replaces the tab bar; the finished result and the intro keep it.
-useHidePzTabBar(() => Boolean(participant.value) && participant.value?.phase !== 'finished' && !closed.value, 'challenge')
+// Every step of the challenge ends in the sticky action bar (Kreni, Dalje, Sljedeća runda, Podijeli rezultat), which
+// takes the tab bar's place from the intro on, so the two never stack at the bottom of the screen.
+useHidePzTabBar(() => Boolean(state.value), 'challenge')
 const readyRound = computed(() => {
   let remaining = participant.value?.index ?? 0
   for (const [index, round] of (state.value?.rounds ?? []).entries()) {
@@ -142,7 +143,6 @@ async function act(action: 'create' | 'join' | 'reveal' | 'answer' | 'continue',
       else update(state.value)
     }
     if (action === 'create') await navigateTo(localePath(`/potkalnicko-prigorje/izazov/${state.value.code}`))
-    entering.value = false
   } catch (cause) {
     error.value = message(cause)
     // The answer may have reached the server even when its response was lost.
@@ -165,6 +165,66 @@ async function enter() {
   await act(props.code ? 'join' : 'create', props.code ? { nickname: name } : { nickname: name, generate: DEFAULT_GENERATE })
 }
 
+const board = ref<ChallengeLeaderboard | null>(null)
+const shareOpen = ref(false)
+const origin = ref('')
+const feedbackCard = useTemplateRef<{ focus: () => void }>('feedbackCard')
+
+async function loadBoard() {
+  if (!props.code) return
+  try {
+    board.value = await $fetch<ChallengeLeaderboard>(`/api/challenges/${props.code}/leaderboard`)
+  } catch {
+    board.value = null
+  }
+}
+watch(() => participant.value?.phase, (phase) => {
+  if (phase === 'round' || phase === 'finished') void loadBoard()
+}, { immediate: true })
+watch(feedback, async (value) => {
+  if (!value) return
+  await nextTick()
+  feedbackCard.value?.focus()
+})
+
+const myRow = computed(() => board.value?.rows.find(row => row.nickname === participant.value?.nickname))
+const sharedRank = computed(() => Boolean(myRow.value && board.value?.rows.some(row => row !== myRow.value && row.rank === myRow.value!.rank)))
+const boardPreview = computed(() => (board.value?.rows ?? []).slice(0, 5))
+const lastRound = computed(() => {
+  const rounds = participant.value?.rounds ?? []
+  const index = rounds.findLastIndex(round => round.answered === round.count)
+  return index < 0 ? null : { index, ...rounds[index]! }
+})
+// The multiple-choice renderer of the game kit, fed from the challenge's question. The right answer is only
+// known once it is answered, so it stays out of range until then.
+const optionsQuestion = computed(() => question.value
+  ? { id: question.value.id, prompt: question.value.prompt, options: question.value.options, correct: feedback.value?.correct ?? -1 } as unknown as GameQuestion
+  : null)
+const optionsSelected = computed(() => feedback.value ? (feedback.value.selected ?? -1) : null)
+const lastQuestion = computed(() => (participant.value?.index ?? 0) + 1 >= (state.value?.questionCount ?? 0))
+const shareUrl = computed(() => state.value ? origin.value + localePath(`/potkalnicko-prigorje/izazov/${state.value.code}`) : '')
+const resultMessage = computed(() => state.value && participant.value
+  ? `${t('pz.challenge.shareResultText', { title: text(state.value.title), points: participant.value.total })}\n${t('pz.share.invite')}\n${shareUrl.value}`
+  : '')
+
+function openShare() {
+  shareOpen.value = true
+}
+
+// The one primary action of the screen, in the sticky bar on mobile and under the content from 1024px up.
+interface PrimaryAction { label: string, icon?: string, trailing?: string, to?: string, submit?: string, run?: () => unknown }
+const primary = computed((): PrimaryAction | null => {
+  if (state.value?.closed) return { label: t('pz.challenge.newChallenge'), icon: 'i-lucide-flag', to: localePath('/potkalnicko-prigorje/izazov') }
+  if (!participant.value) return state.value ? { label: t('challenge.enter'), trailing: 'i-lucide-arrow-right', submit: 'challenge-enter-form' } : null
+  if (participant.value.phase === 'ready') {
+    const first = participant.value.index === 0 || state.value!.rounds.slice(0, readyRound.value).reduce((n, r) => n + r.count, 0) === participant.value.index
+    return { label: t(first ? 'challenge.playFirst' : 'challenge.nextQuestion'), trailing: 'i-lucide-arrow-right', run: () => act('reveal') }
+  }
+  if (participant.value.phase === 'round') return { label: t(participant.value.completedAt ? 'challenge.finish' : 'challenge.nextRound'), trailing: 'i-lucide-arrow-right', run: advance }
+  if (participant.value.phase === 'finished') return { label: t('pz.challenge.shareResult'), icon: 'i-lucide-share-2', run: openShare }
+  return null
+})
+
 async function advance() {
   if (!participant.value) return
   await act('continue', { phase: participant.value.phase, index: participant.value.index })
@@ -178,18 +238,19 @@ function chooseMapOption(index: number) {
 }
 
 onMounted(() => {
+  origin.value = window.location.origin
   void load()
 })
 </script>
 
 <template>
-  <UContainer class="max-w-3xl py-10 sm:py-16">
+  <UContainer class="max-w-3xl py-6 sm:py-10">
     <UButton
       :to="localePath('/potkalnicko-prigorje')"
       color="neutral"
       variant="link"
       icon="i-lucide-arrow-left"
-      class="mb-6"
+      class="mb-4 min-h-(--pz-tap-min)"
     >
       {{ t('challenge.heritage') }}
     </UButton>
@@ -202,34 +263,35 @@ onMounted(() => {
     </p>
     <div
       v-else
-      class="space-y-6"
+      class="flex flex-col gap-6"
     >
-      <header class="space-y-3">
-        <UBadge
-          v-if="details?.sample"
-          color="warning"
-          variant="subtle"
-        >
-          {{ t('challenge.sample') }}
-        </UBadge>
-        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
+      <header class="relative flex flex-col gap-3 overflow-hidden rounded-(--pz-radius-xl) py-2">
+        <PzRidge
+          v-if="!participant"
+          class="absolute -top-2 right-0 h-28 w-3/4 opacity-80"
+        />
+        <p class="pz-overline relative text-muted">
+          {{ t('pz.challenge.introOverline') }}
+        </p>
+        <HeritageSampleBadge v-if="details?.sample" />
+        <h1 class="pz-display relative text-highlighted wrap-anywhere">
           {{ props.code && details ? text(details.title) : overview ? text(overview.title) : t('challenge.newTitle') }}
         </h1>
         <p
           v-if="!participant && !props.code && overview?.summary"
-          class="text-lg text-muted"
+          class="pz-lead relative text-muted"
         >
           {{ text(overview.summary) }}
         </p>
         <p
           v-else-if="!participant"
-          class="text-lg text-muted"
+          class="pz-lead relative text-muted"
         >
           {{ t(props.code ? 'challenge.intro' : 'challenge.newIntro') }}
         </p>
         <div
           v-if="metaChips.length"
-          class="flex flex-wrap gap-2"
+          class="relative flex flex-wrap gap-2"
           data-testid="challenge-meta-chips"
         >
           <UBadge
@@ -243,19 +305,25 @@ onMounted(() => {
         </div>
         <p
           v-if="state"
-          class="text-sm text-muted"
+          class="pz-body-sm relative inline-flex items-center gap-1.5 text-muted"
         >
+          <UIcon
+            name="i-lucide-calendar"
+            class="size-4"
+          />
           {{ t(state.closed ? 'challenge.closedAt' : 'challenge.closes', { date }) }}
         </p>
       </header>
 
       <div
         v-if="state"
-        class="flex flex-wrap gap-3"
+        class="flex flex-wrap gap-2"
       >
         <UButton
           :to="localePath(`/potkalnicko-prigorje/izazov/${state.code}/ljestvica`)"
-          icon="i-lucide-list-ordered"
+          icon="i-lucide-trophy"
+          color="neutral"
+          variant="outline"
           data-testid="challenge-scoreboard-link"
         >
           {{ t(state.closed ? 'challenge.final' : 'challenge.leaderboard') }}
@@ -263,7 +331,7 @@ onMounted(() => {
         <UButton
           :to="localePath('/potkalnicko-prigorje/izazov')"
           color="neutral"
-          variant="outline"
+          variant="ghost"
         >
           {{ t('challenge.ownChallenge') }}
         </UButton>
@@ -292,138 +360,156 @@ onMounted(() => {
 
       <UAlert
         v-if="state?.closed"
-        :title="t('challenge.closed')"
-        :description="t('challenge.closedNotice')"
-        color="neutral"
-        icon="i-lucide-lock-keyhole"
+        :title="t('pz.challenge.closedOn', { date })"
+        :description="t('pz.challenge.closedRead')"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-lock"
+        data-testid="challenge-closed"
       />
 
-      <template v-if="details && !participant && !closed">
-        <div class="grid gap-3 sm:grid-cols-3">
-          <UCard
+      <!-- 1 · Intro: the rules in short rows, the nickname, Kreni in the sticky bar -->
+      <form
+        v-if="details && !participant && !closed"
+        id="challenge-enter-form"
+        class="flex flex-col gap-6"
+        data-testid="challenge-intro"
+        @submit.prevent="enter"
+      >
+        <div class="grid grid-cols-3 gap-2">
+          <div
             v-for="(round, index) in details.rounds"
             :key="index"
+            class="min-w-0 rounded-(--pz-radius-md) border border-default bg-default p-3"
           >
-            <p class="text-sm text-primary">
+            <p class="pz-overline text-muted">
               {{ t('challenge.round', { number: index + 1 }) }}
             </p>
-            <h2 class="mt-2 font-semibold">
+            <h2 class="pz-h3 mt-1 text-highlighted wrap-anywhere">
               {{ text(round.topic) }}
             </h2>
-            <p class="mt-2 text-sm text-muted">
+            <p class="pz-body-sm text-muted">
               {{ t('challenge.questions', { count: round.count }) }}
             </p>
-          </UCard>
+          </div>
         </div>
-        <p class="font-semibold">
-          {{ t('challenge.maximum', { points: details.maxScore }) }}
-        </p>
-        <p
-          v-if="state?.targetScore !== null && state?.targetScore !== undefined"
-          class="text-primary"
+        <ul class="m-0 flex list-none flex-col gap-3 p-0">
+          <li class="flex items-center gap-3">
+            <span class="grid size-10 shrink-0 place-items-center rounded-(--pz-radius-md) bg-accented text-default"><UIcon
+              name="i-lucide-layers"
+              class="size-5"
+            /></span>
+            <span class="pz-body">{{ t('challenge.maximum', { points: details.maxScore }) }}</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="grid size-10 shrink-0 place-items-center rounded-(--pz-radius-md) bg-accented text-default"><UIcon
+              name="i-lucide-users"
+              class="size-5"
+            /></span>
+            <span class="pz-body">{{ t('pz.challenge.samePool') }}</span>
+          </li>
+          <li
+            v-if="state"
+            class="flex items-center gap-3"
+          >
+            <span class="grid size-10 shrink-0 place-items-center rounded-(--pz-radius-md) bg-accented text-default"><UIcon
+              name="i-lucide-calendar"
+              class="size-5"
+            /></span>
+            <span class="pz-body">{{ t('challenge.closes', { date }) }}</span>
+          </li>
+          <li
+            v-if="state?.targetScore !== null && state?.targetScore !== undefined"
+            class="flex items-center gap-3"
+          >
+            <span class="grid size-10 shrink-0 place-items-center rounded-(--pz-radius-md) bg-accented text-default"><UIcon
+              name="i-lucide-target"
+              class="size-5"
+            /></span>
+            <span class="pz-body">{{ t('challenge.target', { points: state.targetScore }) }}</span>
+          </li>
+        </ul>
+        <UFormField
+          :label="t('challenge.nickname')"
+          :help="t('challenge.nicknameHelp')"
+          required
         >
-          {{ t('challenge.target', { points: state.targetScore }) }}
-        </p>
-        <div class="space-y-3 text-sm text-muted">
-          <p>{{ t('challenge.rules') }}</p>
-          <p>{{ t('challenge.resumeNotice') }}</p>
-          <p>{{ t('challenge.interruption') }}</p>
-          <p>{{ t('challenge.expiry') }}</p>
+          <UInput
+            v-model="nickname"
+            name="nickname"
+            autocomplete="nickname"
+            :maxlength="24"
+            size="xl"
+            class="w-full"
+          />
+        </UFormField>
+        <div class="flex flex-col gap-2">
+          <p class="pz-body-sm text-muted">
+            {{ t('challenge.rules') }}
+          </p>
+          <p class="pz-body-sm text-muted">
+            {{ t('challenge.resumeNotice') }}
+          </p>
+          <p class="pz-body-sm text-muted">
+            {{ t('challenge.interruption') }}
+          </p>
+          <p class="pz-body-sm text-muted">
+            {{ t('challenge.expiry') }}
+          </p>
         </div>
         <UButton
-          v-if="!entering"
-          size="lg"
-          icon="i-lucide-flag"
-          @click="entering = true"
+          type="submit"
+          :loading="busy"
+          trailing-icon="i-lucide-arrow-right"
+          size="xl"
+          block
+          class="hidden lg:flex"
+          data-testid="challenge-enter"
         >
-          {{ t(props.code ? 'challenge.join' : 'challenge.playFirst') }}
+          {{ t(props.code ? 'challenge.enter' : 'challenge.create') }}
         </UButton>
-        <p
-          v-if="props.code && !entering && state"
-          class="text-sm text-muted"
-        >
-          {{ t('challenge.shareLaterHint') }}
-        </p>
-        <UCard v-else>
-          <form
-            class="space-y-5"
-            @submit.prevent="enter"
-          >
-            <h2 class="text-xl font-semibold">
-              {{ t('challenge.nicknameTitle') }}
-            </h2>
-            <UFormField
-              :label="t('challenge.nickname')"
-              :help="t('challenge.nicknameHelp')"
-              required
-            >
-              <UInput
-                v-model="nickname"
-                name="nickname"
-                autocomplete="nickname"
-                :maxlength="24"
-                class="w-full"
-                autofocus
-              />
-            </UFormField>
-            <div class="flex flex-wrap gap-3">
-              <UButton
-                type="submit"
-                :loading="busy"
-              >
-                {{ t(props.code ? 'challenge.enter' : 'challenge.create') }}
-              </UButton>
-              <UButton
-                color="neutral"
-                variant="ghost"
-                :disabled="busy"
-                @click="entering = false"
-              >
-                {{ t('challenge.cancel') }}
-              </UButton>
-            </div>
-          </form>
-        </UCard>
-      </template>
+      </form>
 
       <template v-if="participant && !closed">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="text-muted">{{ participant.nickname }}</span>
-          <strong aria-live="polite">{{ t('challenge.total', { points: participant.total }) }}</strong>
+          <span class="pz-body-sm text-muted wrap-anywhere">{{ participant.nickname }}</span>
+          <strong
+            class="pz-label text-highlighted"
+            aria-live="polite"
+          >{{ t('challenge.total', { points: participant.total }) }}</strong>
         </div>
 
-        <UCard
+        <!-- 2 · Before a round: which round is next -->
+        <section
           v-if="participant.phase === 'ready'"
-          class="space-y-4"
+          class="flex flex-col gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4"
+          data-testid="challenge-ready"
         >
-          <div class="space-y-4">
-            <p class="text-sm text-primary">
-              {{ t('challenge.round', { number: readyRound + 1 }) }}
-            </p>
-            <h2 class="text-xl font-semibold">
-              {{ text(state!.rounds[readyRound]!.topic) }}
-            </h2>
-            <p class="text-sm text-muted">
-              {{ t('challenge.interruption') }}
-            </p>
-            <UButton
-              :loading="busy"
-              @click="act('reveal')"
-            >
-              {{ t(participant.index === 0 || state!.rounds.slice(0, readyRound).reduce((n, r) => n + r.count, 0) === participant.index ? 'challenge.playFirst' : 'challenge.nextQuestion') }}
-            </UButton>
-          </div>
-        </UCard>
+          <p class="pz-overline text-muted">
+            {{ t('pz.challenge.roundOverline', { number: readyRound + 1, count: state!.rounds.length, topic: text(state!.rounds[readyRound]!.topic) }) }}
+          </p>
+          <h2 class="pz-h2 text-highlighted">
+            {{ text(state!.rounds[readyRound]!.topic) }}
+          </h2>
+          <p class="pz-body-sm text-muted">
+            {{ t('challenge.interruption') }}
+          </p>
+        </section>
 
-        <UCard
-          v-if="question"
+        <!-- 3 · A question: the game kit's options and feedback, an explicit Dalje -->
+        <section
+          v-if="question && optionsQuestion"
+          class="flex flex-col gap-4"
           data-testid="challenge-question"
         >
-          <div class="space-y-5">
-            <div class="text-sm text-primary">
-              {{ t('challenge.round', { number: question.round + 1 }) }} · {{ t('challenge.question', { number: question.number, count: state!.rounds[question.round]!.count }) }}
-            </div>
-            <h2 class="text-xl leading-relaxed font-semibold">
+          <p class="pz-overline text-muted">
+            {{ t('challenge.round', { number: question.round + 1 }) }} · {{ t('challenge.question', { number: question.number, count: state!.rounds[question.round]!.count }) }}
+          </p>
+          <div class="flex flex-col gap-4 rounded-(--pz-radius-lg) bg-muted p-4">
+            <h2
+              id="challenge-prompt"
+              class="pz-h2 text-highlighted wrap-anywhere"
+            >
               {{ text(question.prompt) }}
             </h2>
             <GamesMapView
@@ -439,127 +525,219 @@ onMounted(() => {
               data-testid="challenge-map"
               @select-index="chooseMapOption"
             />
-            <div
-              class="grid gap-3"
-              role="group"
-              :aria-label="text(question.prompt)"
-            >
-              <UButton
-                v-for="(option, index) in question.options"
-                :key="index"
-                :color="feedback ? index === feedback.correct ? 'success' : index === feedback.selected ? 'error' : 'neutral' : pendingMapChoice === index ? 'primary' : 'neutral'"
-                :variant="feedback && index === feedback.correct ? 'subtle' : pendingMapChoice === index && !feedback ? 'solid' : 'outline'"
-                :disabled="busy || !!feedback || !!state?.closed"
-                size="lg"
-                class="justify-start whitespace-normal text-left"
-                :data-option="index"
-                @click="act('answer', { questionId: question.id, selected: index })"
-              >
-                <span class="shrink-0 font-bold">{{ String.fromCharCode(65 + index) }}.</span>
-                {{ text(option) }}
-              </UButton>
-            </div>
-            <UButton
-              v-if="!feedback && !state?.closed"
-              color="neutral"
-              variant="ghost"
-              :disabled="busy"
-              @click="act('answer', { questionId: question.id, selected: null })"
-            >
-              {{ t('challenge.skip') }}
-            </UButton>
-            <div
-              v-if="feedback"
-              class="space-y-4 border-t border-default pt-5"
-              role="status"
+            <GamesOptions
+              :question="optionsQuestion"
+              :selected="optionsSelected"
+              labelledby="challenge-prompt"
+              @select="(index: number) => !busy && !state?.closed && act('answer', { questionId: question!.id, selected: index })"
+            />
+          </div>
+          <UButton
+            v-if="!feedback && !state?.closed"
+            color="neutral"
+            variant="ghost"
+            :disabled="busy"
+            class="self-start"
+            @click="act('answer', { questionId: question.id, selected: null })"
+          >
+            {{ t('challenge.skip') }}
+          </UButton>
+          <template v-if="feedback">
+            <GamesFeedback
+              ref="feedbackCard"
+              :correct="feedback.points > 0"
+              :title="feedback.selected === null ? t('challenge.skipped') : undefined"
+              :answer="text(question.options[feedback.correct]!)"
+              :explanation="text(feedback.explanation)"
+              :lang="lang"
               data-testid="challenge-feedback"
             >
-              <p class="text-lg font-semibold">
-                {{ t(feedback.selected === null ? 'challenge.skipped' : feedback.points ? 'challenge.correct' : 'challenge.incorrect') }} {{ t('challenge.earned', { points: feedback.points }) }}
+              <p class="pz-body-sm text-muted">
+                {{ t('challenge.earned', { points: feedback.points }) }}
               </p>
-              <p class="font-semibold">
-                {{ t('challenge.correctAnswer', { answer: text(question.options[feedback.correct]!) }) }}
-              </p>
-              <p class="leading-relaxed text-muted">
-                {{ text(feedback.explanation) }}
-              </p>
-              <UButton
-                :loading="busy"
-                trailing-icon="i-lucide-arrow-right"
-                @click="advance"
-              >
-                {{ t('challenge.continue') }}
-              </UButton>
-            </div>
-          </div>
-        </UCard>
+            </GamesFeedback>
+            <GamesDalje
+              :last="lastQuestion"
+              @next="advance"
+            />
+          </template>
+        </section>
 
-        <UCard
+        <!-- 4 · After a round: the round's total and where you stand -->
+        <section
           v-if="participant.phase === 'round'"
+          class="flex flex-col gap-4"
           data-testid="challenge-round-summary"
         >
-          <div class="space-y-5">
-            <h2 class="text-2xl font-semibold">
-              {{ t('challenge.roundSummary') }}
+          <div class="flex flex-col items-center gap-2 pt-2 text-center">
+            <h2 class="pz-overline text-muted">
+              {{ t('challenge.roundSummary') }}<template v-if="lastRound">
+                · {{ text(lastRound.topic) }}
+              </template>
             </h2>
-            <div
-              v-for="(round, index) in participant.rounds.filter(r => r.answered === r.count)"
-              :key="index"
-              class="flex items-center justify-between gap-3"
+            <p
+              v-if="lastRound"
+              class="pz-numeral text-[56px]/[60px] text-highlighted"
             >
-              <span>{{ text(round.topic) }}</span><strong>{{ round.score }} / {{ round.count * 100 }}</strong>
-            </div>
-            <p class="text-sm text-muted">
-              {{ t('challenge.resumeNotice') }}
+              {{ lastRound.score }} / {{ lastRound.count * 100 }}
             </p>
-            <UButton
-              :loading="busy"
-              @click="advance"
-            >
-              {{ t(participant.completedAt ? 'challenge.finish' : 'challenge.nextRound') }}
-            </UButton>
           </div>
-        </UCard>
+          <div class="grid grid-cols-3 gap-2">
+            <div
+              v-for="(round, index) in participant.rounds"
+              :key="index"
+              class="rounded-(--pz-radius-md) border bg-default p-3"
+              :class="index === lastRound?.index ? 'border-2 border-primary' : 'border-default'"
+            >
+              <b
+                class="block text-2xl/7 font-bold tabular-nums"
+                :class="round.answered === round.count ? 'text-highlighted' : 'text-dimmed'"
+              >{{ round.answered === round.count ? round.score : '–' }}</b>
+              <span class="pz-caption text-muted">{{ t('pz.challenge.roundTotal', { number: index + 1 }) }}</span>
+            </div>
+          </div>
+          <p
+            class="pz-body flex flex-wrap items-center justify-between gap-2 rounded-(--pz-radius-lg) border border-default bg-muted px-4 py-3"
+            data-testid="challenge-standing"
+          >
+            <span>
+              {{ t('pz.challenge.totalLine', { points: participant.total }) }}<template v-if="myRow">
+                · <b>{{ myRow.rank }}.</b>
+              </template>
+            </span>
+            <NuxtLink
+              :to="localePath(`/potkalnicko-prigorje/izazov/${state!.code}/ljestvica`)"
+              class="pz-body-sm font-semibold underline"
+            >
+              {{ t('challenge.leaderboard') }}
+            </NuxtLink>
+          </p>
+          <p class="pz-body-sm text-muted">
+            {{ t('challenge.resumeNotice') }}
+          </p>
+        </section>
 
-        <div
+        <!-- 5 · Finished: the total, your rank, the leaderboard preview, Podijeli rezultat -->
+        <section
           v-if="participant.phase === 'finished'"
-          class="space-y-6"
+          class="flex flex-col gap-4"
           data-testid="challenge-finish"
         >
-          <UAlert
-            :title="t('challenge.finished')"
-            :description="t('challenge.finishedNotice')"
-            color="success"
-            icon="i-lucide-trophy"
-          />
-          <UCard>
-            <div class="space-y-4">
-              <div
-                v-for="(round, index) in participant.rounds"
-                :key="index"
-                class="flex items-center justify-between gap-3"
-              >
-                <span>{{ text(round.topic) }}</span><strong>{{ round.score }} / {{ round.count * 100 }}</strong>
-              </div>
+          <div class="flex flex-col items-center gap-3 pt-2 text-center">
+            <h2 class="pz-overline text-muted">
+              {{ t('pz.challenge.finalOverline') }}
+            </h2>
+            <p class="pz-numeral text-[56px]/[60px] text-highlighted">
+              {{ participant.total }} / {{ state!.maxScore }}
+            </p>
+            <p
+              v-if="myRow"
+              class="pz-lead"
+              data-testid="challenge-your-rank"
+            >
+              {{ t(sharedRank ? 'pz.challenge.sharedRank' : 'pz.challenge.yourRank', { rank: myRow.rank }) }}
+            </p>
+            <PzStitch />
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div
+              v-for="(round, index) in participant.rounds"
+              :key="index"
+              class="min-w-0 rounded-(--pz-radius-md) border border-default bg-default p-3"
+            >
+              <b class="block text-2xl/7 font-bold text-highlighted tabular-nums">{{ round.score }}</b>
+              <span class="pz-caption text-muted wrap-anywhere">{{ text(round.topic) }} · {{ round.count * 100 }}</span>
             </div>
-          </UCard>
+          </div>
+          <div
+            v-if="boardPreview.length"
+            class="rounded-(--pz-radius-lg) border border-default bg-default p-2"
+          >
+            <PzLeaderboard
+              :rows="boardPreview"
+              :round-count="state!.rounds.length"
+              :me="participant.nickname"
+              :closed="state!.closed"
+              :caption="text(state!.title)"
+            />
+          </div>
+          <UButton
+            :to="localePath(`/potkalnicko-prigorje/izazov/${state!.code}/ljestvica`)"
+            icon="i-lucide-trophy"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            block
+          >
+            {{ t('pz.challenge.fullBoard') }}
+          </UButton>
           <UButton
             v-if="learnHref"
             :to="learnHref"
-            size="lg"
             icon="i-lucide-book-open"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            block
             data-testid="challenge-learn-cards"
           >
             {{ t('challenge.learnQuestions') }}
           </UButton>
-        </div>
+        </section>
       </template>
+
+      <!-- Pozovi: the link preview and the share rows -->
       <HeritageChallengeShare
-        v-if="state"
+        v-if="state && !state.closed"
         id="challenge-share"
         :code="state.code"
+        :title="text(state.title)"
         :invite="shareInvite"
       />
+
+      <!-- The screen's one primary action: the sticky bar below 1024px, under the content from there up -->
+      <template v-if="primary && !(question && feedback)">
+        <template v-if="!primary.submit">
+          <UButton
+            :to="primary.to"
+            :label="primary.label"
+            :icon="primary.icon"
+            :trailing-icon="primary.trailing"
+            :loading="busy"
+            size="xl"
+            block
+            class="hidden lg:flex"
+            data-testid="challenge-primary-desktop"
+            @click="primary.run?.()"
+          />
+        </template>
+        <PzStickyActionBar class="-mx-4 sm:-mx-6">
+          <UButton
+            :to="primary.to"
+            :label="primary.label"
+            :icon="primary.icon"
+            :trailing-icon="primary.trailing"
+            :type="primary.submit ? 'submit' : 'button'"
+            :form="primary.submit"
+            :loading="busy"
+            size="xl"
+            block
+            data-testid="challenge-primary"
+            @click="primary.run?.()"
+          />
+        </PzStickyActionBar>
+      </template>
     </div>
+
+    <PzShareSheet
+      v-if="state && participant"
+      v-model:open="shareOpen"
+      :title="t('pz.challenge.shareResult')"
+      :context="t('pz.share.resultContext')"
+      :message="resultMessage"
+      :url="shareUrl"
+      preview
+      prefix="challenge-result"
+    />
   </UContainer>
 </template>
