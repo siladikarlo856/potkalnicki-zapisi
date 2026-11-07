@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyChallengeCreateQuery, challengeCreateGameEnabled, defaultChallengeCreateForm } from '../shared/utils/challengeCreateForm'
+import { applyChallengeCreateQuery, challengeCreateGameEnabled, challengeCreateGameOptions, defaultChallengeCreateForm } from '../shared/utils/challengeCreateForm'
 import { fixtureCardPool } from './fixtures/gamePool'
 
 describe('challenge create form helpers', () => {
@@ -28,5 +28,22 @@ describe('challenge create form helpers', () => {
 
   it('starts from the default generate preset', () => {
     expect(defaultChallengeCreateForm().length).toBe(10)
+  })
+
+  it('offers every challengeable game, club games included, after the mixed game', () => {
+    expect(challengeCreateGameOptions('hr').map(option => option.id)).toEqual([
+      'mjesovito', 'znacenje', 'rijec', 'karta-koje', 'opcina', 'crkva', 'osoba',
+      'karta-tocke', 'klub-mjesto', 'klub-liga', 'klub-odakle'
+    ])
+  })
+
+  it('labels each game option with its game name', () => {
+    const labels = Object.fromEntries(challengeCreateGameOptions('hr').map(option => [option.id, option.label]))
+    expect(labels['mjesovito']).toBe('Mješovito')
+    expect(labels['klub-liga']).toBe('U kojoj ligi klub igra u sezoni?')
+  })
+
+  it('prefills a club game from the query', () => {
+    expect(applyChallengeCreateQuery({ igra: 'klub-odakle' }, live).game).toBe('klub-odakle')
   })
 })

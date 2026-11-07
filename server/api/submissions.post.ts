@@ -1,4 +1,5 @@
 import type { ContributionKind } from '../../shared/utils/contribution'
+import { allPublished, findPublished } from '../utils/content/records'
 
 const MAX_BODY_BYTES = 16 * 1024
 // A visitor may send a few corrections about one record, not dozens.
@@ -8,15 +9,15 @@ function invalidIssue(field: SubmissionIssue['field'], code: SubmissionIssue['co
   return createError({ statusCode: 400, statusMessage: 'Invalid submission', data: { issues: [{ field, code, ...(path ? { path } : {}) }] } })
 }
 
-// A proposal for a heritage item or settlement names rows a draft is built from: they must exist and be public.
+// A Proposal names Published rows its Draft is built from (a category, a settlement or municipality, a parent town).
 async function assertProposalReferences(kind: ContributionKind, payload: Record<string, string>) {
   if (kind === 'heritage_item') {
-    if (!await assertPublishedRows('heritage_categories', payload.categoryId ? [payload.categoryId] : [])) throw invalidIssue('payload', 'invalid', 'categoryId')
+    if (payload.categoryId && !await findPublished('heritage_category', payload.categoryId)) throw invalidIssue('payload', 'invalid', 'categoryId')
     const places = [payload.settlementId, payload.municipalityId].filter(Boolean) as string[]
-    if (!await assertPublishedRows('areas', places)) throw invalidIssue('payload', 'invalid', payload.settlementId ? 'settlementId' : 'municipalityId')
-  } else if (kind === 'area' && !await assertPublishedRows('areas', [payload.parentId!], ['town', 'municipality'])) {
+    if (!await allPublished('area', places)) throw invalidIssue('payload', 'invalid', payload.settlementId ? 'settlementId' : 'municipalityId')
+  } else if (kind === 'area' && !await findPublished('area', { id: payload.parentId!, kind: ['town', 'municipality'] })) {
     throw invalidIssue('payload', 'invalid', 'parentId')
-  } else if (kind === 'person' && !await assertPublishedRows('areas', [payload.settlementId!], ['settlement'])) {
+  } else if (kind === 'person' && !await findPublished('area', { id: payload.settlementId!, kind: 'settlement' })) {
     throw invalidIssue('payload', 'invalid', 'settlementId')
   }
 }

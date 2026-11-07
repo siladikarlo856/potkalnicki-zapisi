@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GAME_CATALOGUE } from '~~/shared/utils/games/catalogue'
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { GameId, GameQuestion } from '~~/shared/utils/games/types'
 import type { QuizChallengeInput } from '~~/shared/utils/challenge'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
@@ -27,8 +27,8 @@ const total = computed(() => props.questions.length)
 const correct = computed(() => props.results.filter(Boolean).length)
 const lang = computed(() => locale.value === 'en' ? 'en' : 'hr')
 const misses = computed(() => props.questions.filter((_, index) => props.results[index] === false))
-const entry = computed(() => GAME_CATALOGUE.find(game => game.id === props.gameId))
-const canChallenge = computed(() => !props.practice && Boolean(entry.value?.challengeable) && total.value > 0)
+const definition = computed(() => gameDefinition(props.gameId))
+const canChallenge = computed(() => !props.practice && definition.value.challengeable && total.value > 0)
 const canShare = computed(() => !props.practice && total.value > 0)
 // With a creator round the primary opens the create form in place; otherwise it goes to the challenge page.
 const challengeHref = computed(() => localePath(pzRoutes.challenge))
@@ -41,7 +41,7 @@ const verdict = computed(() => {
   return t(ratio >= 0.8 ? 'pz.play.verdictHigh' : ratio >= 0.5 ? 'pz.play.verdictMid' : 'pz.play.verdictLow')
 })
 const headline = computed(() => `${props.title} · ${correct.value}/${total.value}`)
-const shareUrl = computed(() => origin.value + localePath(entry.value?.path ?? pzRoutes.games))
+const shareUrl = computed(() => origin.value + localePath(definition.value.catalogue?.path ?? pzRoutes.games))
 const shareMessage = computed(() => resultShareMessage({
   headline: headline.value,
   results: props.results,

@@ -1,26 +1,13 @@
-import { execFileSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
+import { integrationDb } from './support/integrationDb'
 
 // The atomic apply trigger of 20261103110000_contributions_inbox.sql on a real Postgres: the write that
 // applies a correction or a proposal approves the submission, records where it went, adds the credit and
 // attributes the revision, all in one statement, and a refused apply changes nothing. Run with
 // `node scripts/test-challenges.mjs test/contentApply.integration.test.ts`; skipped everywhere else.
-const url = process.env.TEST_CHALLENGE_API_URL
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-function failure(input: string) {
-  try {
-    sql(input)
-  } catch (error) {
-    return String((error as { stderr?: string }).stderr ?? error)
-  }
-  throw new Error(`Expected the statement to fail: ${input}`)
-}
+const db = await integrationDb()
+const { sql, failure } = db
 const quote = (value: string | null) => value === null ? 'null' : `'${value.replace(/'/g, '\'\'')}'`
 const unique = () => randomBytes(4).toString('hex')
 const json = (query: string) => JSON.parse(sql(query)) as Record<string, unknown>
@@ -45,7 +32,7 @@ function submission(type: 'correction' | 'proposal', target: { kind: string, id?
 }
 const submissionRow = (id: string) => json(`select to_jsonb(s) from public.heritage_submissions s where id = ${id};`)
 
-describe.skipIf(!url)('atomic apply of submissions on Postgres', () => {
+describe.skipIf(!db.enabled)('atomic apply of submissions on Postgres', () => {
   it('applies a correction in one write: approval, applied_*, credit and an attributed revision', () => {
     const p = place()
     const target = item(p)

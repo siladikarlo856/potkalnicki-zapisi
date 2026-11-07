@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentReferenceGroup } from '../../../../shared/utils/content/common'
-import { validatePerson, type PersonAreaLink, type PersonItemLink } from '../../../../shared/utils/content/person'
+import { validatePerson, type PersonAreaLink } from '../../../../shared/utils/content/person'
 import { defineContentKind } from '../definition'
+import { missingLinkIssues, missingSourceIssues } from '../linkCheck'
 
 async function loadAreaLinks(db: SupabaseClient, personId: string) {
   const { data, error } = await db.from('person_areas').select('area_id,role,position').eq('person_id', personId).order('position')
@@ -19,34 +20,6 @@ async function loadSourceIds(db: SupabaseClient, personId: string) {
   const { data, error } = await db.from('person_sources').select('source_id,position').eq('person_id', personId).order('position')
   if (error) throw error
   return (data ?? []).map(row => row.source_id as string)
-}
-
-async function saveAreaLinks(db: SupabaseClient, personId: string, links: PersonAreaLink[]) {
-  const { error: deleteError } = await db.from('person_areas').delete().eq('person_id', personId)
-  if (deleteError) throw deleteError
-  if (!links.length) return
-  const { error } = await db.from('person_areas').insert(links.map((link, position) => ({
-    person_id: personId, area_id: link.areaId, role: link.role, position
-  })))
-  if (error) throw error
-}
-
-async function saveItemLinks(db: SupabaseClient, personId: string, links: PersonItemLink[]) {
-  const { error: deleteError } = await db.from('person_heritage_items').delete().eq('person_id', personId)
-  if (deleteError) throw deleteError
-  if (!links.length) return
-  const { error } = await db.from('person_heritage_items').insert(links.map((link, position) => ({
-    person_id: personId, item_id: link.itemId, relation: link.relation, position
-  })))
-  if (error) throw error
-}
-
-async function saveSourceIds(db: SupabaseClient, personId: string, sourceIds: string[]) {
-  const { error: deleteError } = await db.from('person_sources').delete().eq('person_id', personId)
-  if (deleteError) throw deleteError
-  if (!sourceIds.length) return
-  const { error } = await db.from('person_sources').insert(sourceIds.map((source_id, position) => ({ person_id: personId, source_id, position })))
-  if (error) throw error
 }
 
 function formatYears(bornYear: number | null, diedYear: number) {
@@ -76,6 +49,7 @@ export const personKind = defineContentKind({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   labelColumn: 'name',
+  createdFrom: 'source_submission_id',
   validate: validatePerson,
   sorts: { name: 'name', verification: 'verification', diedYear: 'died_year' },
   defaultSort: 'name',
@@ -90,52 +64,59 @@ export const personKind = defineContentKind({
     if (count) groups.push({ kind: 'person_area', label: 'Veze na mjesta', count, blocking: false, items: [] })
     return groups
   },
-  inputFields: ['areaLinks', 'itemLinks', 'sourceIds'],
-  loadEntity: async (db, entity) => ({
-    areaLinks: await loadAreaLinks(db, entity.id),
-    itemLinks: await loadItemLinks(db, entity.id),
-    sourceIds: await loadSourceIds(db, entity.id)
-  }),
-  persistEntity: async (db, id, value) => {
-    const status = value.status as string
-    const sourceIds = (value.sourceIds as string[]) ?? []
-    if (status === 'published' && !sourceIds.length) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid content', data: { code: 'invalid', message: 'Osoba treba barem jedan izvor.', issues: [{ path: 'sourceIds', message: 'Osoba treba barem jedan izvor.' }] } })
-    }
-    await saveAreaLinks(db, id, (value.areaLinks as PersonAreaLink[]) ?? [])
-    await saveItemLinks(db, id, (value.itemLinks as PersonItemLink[]) ?? [])
-    await saveSourceIds(db, id, sourceIds)
+  sidecars: {
+    fields: ['areaLinks', 'itemLinks', 'sourceIds'],
+    load: async (db, id) => ({
+      areaLinks: await loadAreaLinks(db, id),
+      itemLinks: await loadItemLinks(db, id),
+      sourceIds: await loadSourceIds(db, id)
+    })
   },
-  async enrichRows(db, rows) {
-    if (!rows.length) return rows
-    const ids = rows.map(row => row.id as string)
-    const areaRows = new Map<string, string[]>()
-    const { data: links, error } = await db.from('person_areas').select('person_id,area_id,position').in('person_id', ids).order('position')
+  // "A Published person needs a source" is a rule of validatePerson, so it is refused before any write.
+  checkLinks: async (db, value) => [
+    ...await missingLinkIssues(db, 'areas', value.areaLinks.map((link, index) => [`areaLinks.${index}.areaId`, link.areaId] as const), 'To mjesto ne postoji.'),
+    ...await missingLinkIssues(db, 'heritage_items', value.itemLinks.map((link, index) => [`itemLinks.${index}.itemId`, link.itemId] as const), 'Taj zapis baštine ne postoji.'),
+    ...await missingSourceIssues(db, value.sourceIds)
+  ],
+  // The persons row and its link tables in one transaction (supabase/migrations/20261107000000_content_save.sql).
+  persist: async (db, id, value, { row, revision }) => {
+    const { data, error } = await db.rpc('content_person_save', {
+      p_id: id,
+      p_revision: revision ?? null,
+      p_row: row,
+      p_area_links: value.areaLinks,
+      p_item_links: value.itemLinks,
+      p_source_ids: value.sourceIds
+    })
     if (error) throw error
-    const areaIds = [...new Set((links ?? []).map(row => row.area_id as string))]
-    const areaNames = new Map<string, string>()
-    if (areaIds.length) {
-      const { data: areas } = await db.from('areas').select('id,name').in('id', areaIds)
-      for (const area of areas ?? []) areaNames.set(area.id as string, area.name as string)
-    }
-    for (const link of links ?? []) {
-      const key = link.person_id as string
-      const label = areaNames.get(link.area_id as string)
-      if (!label) continue
-      const list = areaRows.get(key) ?? []
-      if (!list.includes(label)) list.push(label)
-      areaRows.set(key, list)
-    }
-    return rows.map(row => ({
-      ...row,
-      years_label: formatYears(row.born_year as number | null, row.died_year as number),
-      places_label: (areaRows.get(row.id as string) ?? []).slice(0, 3).join(' · ') || null
-    }))
+    return (data as string | null) ?? null
   },
-  toEntityExtra(row: Record<string, unknown>) {
-    return {
-      yearsLabel: (row.years_label as string | null | undefined) ?? null,
-      placesLabel: (row.places_label as string | null | undefined) ?? null
+  // The years and up to three places, for the admin list.
+  async derive(db, values) {
+    const ids = values.map(value => value.id).filter((id): id is string => typeof id === 'string')
+    const places = new Map<string, string[]>()
+    if (ids.length) {
+      const { data: links, error } = await db.from('person_areas').select('person_id,area_id,position').in('person_id', ids).order('position')
+      if (error) throw error
+      const areaIds = [...new Set((links ?? []).map(row => row.area_id as string))]
+      const areaNames = new Map<string, string>()
+      if (areaIds.length) {
+        const { data: areas, error: areaError } = await db.from('areas').select('id,name').in('id', areaIds)
+        if (areaError) throw areaError
+        for (const area of areas ?? []) areaNames.set(area.id as string, area.name as string)
+      }
+      for (const link of links ?? []) {
+        const label = areaNames.get(link.area_id as string)
+        if (!label) continue
+        const list = places.get(link.person_id as string) ?? []
+        if (!list.includes(label)) list.push(label)
+        places.set(link.person_id as string, list)
+      }
     }
+    return values.map(value => ({
+      ...value,
+      yearsLabel: typeof value.diedYear === 'number' ? formatYears(value.bornYear as number | null, value.diedYear) : null,
+      placesLabel: (places.get(value.id as string) ?? []).slice(0, 3).join(' · ') || null
+    }))
   }
 })

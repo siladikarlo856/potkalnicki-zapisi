@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { mulberry32, shuffled } from '~~/shared/utils/games/rng'
+import { decodeCardKey } from '~~/shared/utils/games/cardKey'
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { Difficulty, GameId, GameQuestion } from '~~/shared/utils/games/types'
 import type { QuizChallengeInput } from '~~/shared/utils/challenge'
 import type { CardKey, TopicId } from '~~/shared/utils/learn/types'
@@ -8,7 +10,8 @@ import type { CardKey, TopicId } from '~~/shared/utils/learn/types'
 // The shell owns the round state; renderers only show the question and report which option was picked.
 const props = defineProps<{
   gameId: GameId
-  title: string
+  /** Defaults to the game's label. */
+  title?: string
   questions: GameQuestion[]
   topics?: TopicId[]
   difficulty?: Difficulty
@@ -21,6 +24,7 @@ const { recordAnswer } = useProgress()
 const { recordBest } = useGameScores()
 
 const lang = computed(() => locale.value === 'en' ? 'en' : 'hr')
+const roundTitle = computed(() => props.title ?? gameDefinition(props.gameId).label[lang.value])
 const round = shallowRef<GameQuestion[]>(props.questions)
 const practice = ref(false)
 const index = ref(0)
@@ -32,12 +36,13 @@ const answered = computed(() => selected.value !== null)
 const finished = computed(() => index.value >= round.value.length)
 const isCorrect = computed(() => Boolean(question.value) && selected.value === question.value!.correct)
 const score = computed(() => results.value.filter(Boolean).length)
-const wordId = (card: CardKey) => card.slice(card.indexOf(':') + 1)
+const wordId = (card: CardKey) => decodeCardKey(card)?.id ?? ''
+const isWordCard = (card: CardKey) => decodeCardKey(card)?.kind === 'word'
 
 // The creator's own round is kept for `znacenje` challenges ("Moja runda"): option cards map back to word ids.
 const quizPayload = computed<QuizChallengeInput | null>(() => {
   if (props.gameId !== 'znacenje' || practice.value || !round.value.length) return null
-  if (!round.value.every(item => item.optionCards?.length === item.options.length && item.card.startsWith('word:'))) return null
+  if (!round.value.every(item => item.optionCards?.length === item.options.length && isWordCard(item.card))) return null
   return {
     questions: round.value.map(item => ({ id: wordId(item.card), optionIds: item.optionCards!.map(wordId) })),
     results: results.value
@@ -197,7 +202,7 @@ defineExpose({ answer, next })
       v-else
       ref="result"
       :game-id="gameId"
-      :title="title"
+      :title="roundTitle"
       :questions="round"
       :results="results"
       :practice="practice"

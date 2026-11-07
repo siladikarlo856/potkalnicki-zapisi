@@ -2,8 +2,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { ChallengeTemplateContent } from '../shared/utils/content/challengeTemplate'
 import {
-  CHALLENGE_LIMITS, challengeSummary, validateChallengeContent, validateChallengeTemplate, validateChallengeTemplateContent
+  CHALLENGE_LIMITS, challengeSummary, validateChallengeTemplate, validateChallengeTemplateContent
 } from '../shared/utils/content/challengeTemplate'
+import { validateChallengeContent } from '../server/challenges/content'
 import {
   addOption, addQuestion, addRound, blankChallengeTemplateContent, challengeIds, duplicateQuestion, isBlankQuestion,
   moveItem, moveOption, removeOption

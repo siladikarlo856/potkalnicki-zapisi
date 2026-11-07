@@ -1,1 +1,3 @@
-export default defineEventHandler(event => changeChallenge(event, 'reveal'))
+import { revealChallengeQuestion } from '../../../challenges'
+
+export default defineEventHandler(event => revealChallengeQuestion(event))

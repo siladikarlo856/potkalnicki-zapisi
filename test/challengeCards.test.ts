@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { challengeQuestionCards } from '../server/utils/challenges'
-import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
+import { challengeQuestionCards, generatedChallengeContent, parseGenerateInput, validateChallengeContent } from '../server/challenges/content'
 import sample from './fixtures/heritage/challenge.json'
-import { generatedChallengeContent, parseGenerateInput } from '../server/utils/challengeContent'
 import { mulberry32 } from '../shared/utils/games/rng'
 import { fixtureCardPool } from './fixtures/gamePool'
 

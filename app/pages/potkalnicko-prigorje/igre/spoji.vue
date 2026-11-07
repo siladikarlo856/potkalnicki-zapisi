@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import {
   generateHeritageMatchBoards,
@@ -8,6 +9,8 @@ import type { HeritageMatchBoard } from '~~/shared/utils/games/heritageMatch'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('spoji')
 
 const { t } = useI18n()
 const { pool, status, error, refresh } = useCardPool()
@@ -43,7 +46,7 @@ function onBoardComplete(firstTryScore: number) {
   roundScores.value = [...roundScores.value, firstTryScore]
   if (boardIndex.value + 1 >= boards.value.length) {
     finished.value = true
-    recordBest('spoji', totalScore.value, maxScore.value)
+    recordBest(game.id, totalScore.value, maxScore.value)
     return
   }
   boardIndex.value += 1

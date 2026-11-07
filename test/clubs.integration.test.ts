@@ -1,30 +1,12 @@
-import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { Club } from '../shared/utils/content/club'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 const SECRET = 'content-club-review-secret-0123456789'
 
-if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET })
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-
-function failure(input: string) {
-  try {
-    sql(input)
-    return ''
-  } catch (error) {
-    return String(error)
-  }
-}
+const db = await integrationDb({ server: { NUXT_REVIEW_SECRET: SECRET } })
+const { sql, failure, fetch } = db
 
 async function api<T = Record<string, unknown>>(path: string, init: { method?: string, body?: unknown, auth?: boolean } = {}) {
   const headers: Record<string, string> = {}
@@ -35,7 +17,7 @@ async function api<T = Record<string, unknown>>(path: string, init: { method?: s
   return { status: response.status, body: (text ? JSON.parse(text) : null) as T & { entity?: Club } }
 }
 
-describe.skipIf(!url)('club content over real Postgres', () => {
+describe.skipIf(!db.enabled)('club content over real Postgres', () => {
   it('creates, publishes with seasons and sources, refuses publish without sources, records slug history, denies anon', async () => {
     const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
     const sourceA = sql(`select id from sources limit 1`)
@@ -79,6 +61,85 @@ describe.skipIf(!url)('club content over real Postgres', () => {
 
     expect(failure('set role anon; select count(*) from public.clubs;')).toMatch(/permission denied/)
     sql(`delete from clubs where id = '${id}'`)
+  })
+
+  it('keeps a club\'s seasons and sources when a save leaves those fields out', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
+    const source = sql(`select id from sources limit 1`)
+    const seasons = () => sql(`select string_agg(season || ':' || competition, ',') from club_seasons where club_id = '${id}'`)
+    let saved = (await api<{ entity: Club }>('/api/admin/content/club', {
+      method: 'POST',
+      body: {
+        name: `kit-test Izostavljeno ${suffix}`, slug: `kit-test-izostavljeno-${suffix}`, sport: 'nogomet', settlementId: settlement,
+        researchNotes: '', verification: 'unverified', noindex: false, status: 'draft', sourceIds: [source],
+        seasons: [{ season: '2026/27', competition: 'III ŽNL-a', team: 'seniori', sourceUrl: null, checkedAt: '2026-11-04' }]
+      }
+    })).body.entity!
+    const id = saved.id
+
+    // A Draft keeps its links; a Published club keeps the source it needs, so the save is not refused.
+    for (const change of [{ name: `kit-test Izostavljeno nova ${suffix}` }, { status: 'published' }, { homeGround: 'kit-test igralište' }]) {
+      const response = await api<{ entity: Club }>(`/api/admin/content/club/${id}`, { method: 'PATCH', body: { revision: saved.revision, ...change } })
+      expect(response.status, JSON.stringify(response.body)).toBe(200)
+      saved = response.body.entity!
+      expect(saved).toMatchObject({ ...change, sourceIds: [source] })
+      expect(sql(`select string_agg(source_id::text, ',') from club_sources where club_id = '${id}'`)).toBe(source)
+      expect(seasons()).toBe('2026/27:III ŽNL-a')
+    }
+
+    sql(`delete from clubs where id = '${id}'`)
+  })
+
+  it('saves a club, its seasons and sources in one transaction: a failing source write leaves nothing written', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
+    const source = sql(`select id from sources limit 1 offset 0`)
+    const otherSource = sql(`select id from sources limit 1 offset 1`)
+    const club = (name: string, slug: string) => ({
+      name, slug, sport: 'nogomet', settlementId: settlement, researchNotes: '', verification: 'unverified', noindex: false,
+      status: 'draft', sourceIds: [source],
+      seasons: [{ season: '2026/27', competition: 'III ŽNL-a', team: 'seniori', sourceUrl: null, checkedAt: '2026-11-04' }]
+    })
+    // Sources are written last; make that write fail for this test's clubs only.
+    sql(`
+      create function public.kit_test_fail_club_source() returns trigger language plpgsql as $$
+      begin
+        if exists (select 1 from public.clubs where id = new.club_id and name like 'kit-test Neuspjeh%') then
+          raise exception 'Forced link failure';
+        end if;
+        return new;
+      end $$;
+      create trigger kit_test_fail_club_source before insert on public.club_sources
+        for each row execute function public.kit_test_fail_club_source();
+    `)
+    try {
+      const slug = `kit-test-neuspjeh-${suffix}`
+      const created = await api('/api/admin/content/club', { method: 'POST', body: club(`kit-test Neuspjeh ${suffix}`, slug) })
+      expect(created.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select count(*) from clubs where slug = '${slug}'`)).toBe('0')
+
+      const draft = await api<{ entity: Club }>('/api/admin/content/club', {
+        method: 'POST', body: club(`kit-test Uspjeh ${suffix}`, `kit-test-uspjeh-${suffix}`)
+      })
+      expect(draft.status, JSON.stringify(draft.body)).toBe(201)
+      const id = draft.body.entity!.id
+      const before = sql(`select revision || ' ' || name from clubs where id = '${id}'`)
+      const updated = await api(`/api/admin/content/club/${id}`, {
+        method: 'PATCH',
+        body: {
+          revision: draft.body.entity!.revision, name: `kit-test Neuspjeh ${suffix}`, sourceIds: [otherSource],
+          seasons: [{ season: '2025/26', competition: 'II ŽNL-a', team: 'seniori', sourceUrl: null, checkedAt: '2026-11-04' }]
+        }
+      })
+      expect(updated.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select revision || ' ' || name from clubs where id = '${id}'`)).toBe(before)
+      expect(sql(`select string_agg(season || ':' || competition, ',') from club_seasons where club_id = '${id}'`)).toBe('2026/27:III ŽNL-a')
+      expect(sql(`select string_agg(source_id::text, ',') from club_sources where club_id = '${id}'`)).toBe(source)
+      sql(`delete from clubs where id = '${id}'`)
+    } finally {
+      sql(`drop trigger kit_test_fail_club_source on public.club_sources; drop function public.kit_test_fail_club_source();`)
+    }
   })
 
   it('replays the clubs seed idempotently with at least eight clubs', () => {

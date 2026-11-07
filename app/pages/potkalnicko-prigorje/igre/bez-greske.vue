@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { BEZ_GRESKE_SCORE_MAX, nextBezGreskeQuestion } from '~~/shared/utils/games/bezGreske'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import type { CardKey } from '~~/shared/utils/learn/types'
@@ -6,6 +7,8 @@ import type { GameQuestion } from '~~/shared/utils/games/types'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('bez-greske')
 
 const { t, locale } = useI18n()
 const lang = computed(() => locale.value === 'en' ? 'en' : 'hr')
@@ -22,7 +25,7 @@ const finished = ref(false)
 const used = ref<Set<CardKey>>(new Set())
 
 const loading = computed(() => !error.value && (status.value === 'idle' || status.value === 'pending'))
-const bestStreak = computed(() => best('bez-greske'))
+const bestStreak = computed(() => best(game.id))
 
 function drawQuestion() {
   const rng = mulberry32((seed.value + streak.value) >>> 0)
@@ -62,7 +65,7 @@ async function pick(option: number) {
     used.value = new Set([...used.value, current.card])
     streak.value += 1
   } else {
-    recordBest('bez-greske', streak.value, BEZ_GRESKE_SCORE_MAX)
+    recordBest(game.id, streak.value, BEZ_GRESKE_SCORE_MAX)
   }
   await nextTick()
   feedback.value?.focus()

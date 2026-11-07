@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, readonly, ref } from 'vue'
 import { useState } from '#imports'
 import type { CardKey } from '~~/shared/utils/learn/types'
+import { decodeCardKey, encodeCardKey } from '~~/shared/utils/games/cardKey'
 import {
   INTERVAL_DAYS,
   addDays,
@@ -110,15 +111,16 @@ function migrateV1(v1: ProgressV1): ProgressV2 {
 }
 
 function wordKey(wordId: string): CardKey {
-  return `word:${wordId}` as CardKey
+  return encodeCardKey({ kind: 'word', id: wordId })
 }
 
 function wordProgressFromCards(cards: Record<string, CardProgress>): Record<string, WordProgress> {
   const words: Record<string, WordProgress> = {}
   for (const [key, card] of Object.entries(cards)) {
-    if (!Object.hasOwn(cards, key) || !key.startsWith('word:')) continue
-    const wordId = key.slice(5)
-    words[wordId] = { seen: card.seen, known: card.known, missed: card.missed, lastPlayed: card.lastPlayed }
+    if (!Object.hasOwn(cards, key)) continue
+    const parts = decodeCardKey(key)
+    if (parts?.kind !== 'word' || parts.suffix) continue
+    words[parts.id] = { seen: card.seen, known: card.known, missed: card.missed, lastPlayed: card.lastPlayed }
   }
   return words
 }

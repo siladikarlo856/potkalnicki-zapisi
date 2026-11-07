@@ -1,17 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import type { InboxCreated, InboxDetail, InboxDraftResult, InboxFilters, InboxList, InboxRow, InboxTarget } from '../../shared/types/inbox'
 import { atlasSlug } from '../../shared/utils/atlasSlug'
-import type { ContentStatus } from '../../shared/utils/content/common'
 import type { ContributionChange, ContributionKind, ContributionPayload } from '../../shared/utils/contribution'
-import { applyWordCorrection, contributionFields, isContributionKind, SOURCE_PROPOSAL_TYPES } from '../../shared/utils/contribution'
+import { applyWordCorrection, CONTRIBUTION_KINDS, contributionFields, isContributionKind, SOURCE_PROPOSAL_TYPES } from '../../shared/utils/contribution'
 import type { SubmissionStatus } from '../../shared/utils/submission'
 import { contentKind } from './content/registry'
-import { suggestContentSlug } from './content/areaLookup'
-import { contentDatabaseError, fail, getContent } from './content/store'
+import { createDraft, createdFrom, findPublished, readContent, suggestSlug } from './content/records'
+import { fail, getContent } from './content/store'
 import type { ContentEntityRecord } from './content/store'
 import { placeById } from './places'
 import type { SubmissionRow } from './submissions'
-import { toSubmission } from './submissions'
+import { linkedHeadwords, toSubmission } from './submissions'
+import { draftWord } from './words'
 
 // The admin side of corrections and proposals: the unified inbox (/admin/prijedlozi), the detail an admin applies
 // a correction from, drafts made from proposals, and withdrawal. Applying itself is an ordinary update of the
@@ -25,38 +25,14 @@ function escapeLike(value: string) {
 
 // ---- Targets and created rows ------------------------------------------------------------------------------
 
-const TARGET_SELECT: Record<ContributionKind, { table: string, columns: string, label: (row: Row) => string, status: (row: Row) => ContentStatus }> = {
-  word: {
-    table: 'heritage_words', columns: 'id,revision,active,archived_at,headword:entry->>headword',
-    label: row => String(row.headword ?? ''),
-    status: row => row.archived_at ? 'archived' : row.active ? 'published' : 'draft'
-  },
-  heritage_item: { table: 'heritage_items', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
-  person: { table: 'persons', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
-  club: { table: 'clubs', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
-  area: { table: 'areas', columns: 'id,revision,status,name', label: row => String(row.name), status: row => row.status as ContentStatus },
-  source: { table: 'sources', columns: 'id,revision,status,title', label: row => String(row.title), status: row => row.status as ContentStatus }
-}
-
-async function readByIds(table: string, columns: string, ids: string[], key = 'id') {
-  const rows: Row[] = []
-  const unique = [...new Set(ids)]
-  for (let from = 0; from < unique.length; from += 100) {
-    const { data, error } = await useDatabaseClient().from(table).select(columns).in(key, unique.slice(from, from + 100))
-    if (error) databaseError(error)
-    rows.push(...(data as unknown as Row[]))
-  }
-  return rows
-}
-
+/** What each Correction points at, as it is now (a row that is gone is left out). */
 async function targetsOf(rows: Row[]) {
   const found = new Map<string, InboxTarget>()
-  for (const kind of Object.keys(TARGET_SELECT) as ContributionKind[]) {
+  for (const kind of CONTRIBUTION_KINDS) {
     const ids = rows.filter(row => row.target_kind === kind && row.target_id).map(row => String(row.target_id))
     if (!ids.length) continue
-    const spec = TARGET_SELECT[kind]
-    for (const row of await readByIds(spec.table, spec.columns, ids)) {
-      found.set(`${kind}:${row.id}`, { kind, id: String(row.id), label: spec.label(row), state: 'ok', status: spec.status(row), revision: Number(row.revision) })
+    for (const record of await readContent(kind, ids)) {
+      found.set(`${kind}:${record.id}`, { kind, id: record.id, label: record.label, state: 'ok', status: record.status, revision: Number(record.revision) })
     }
   }
   return found
@@ -66,15 +42,10 @@ async function targetsOf(rows: Row[]) {
 async function createdBy(ids: number[]) {
   const found = new Map<number, InboxCreated>()
   if (!ids.length) return found
-  for (const kind of ['heritage_item', 'area', 'source', 'person', 'club'] as const) {
-    const spec = TARGET_SELECT[kind]
-    for (const row of await readByIds(spec.table, `${spec.columns},source_submission_id`, ids.map(String), 'source_submission_id')) {
-      found.set(Number(row.source_submission_id), { kind, id: String(row.id), label: spec.label(row), status: spec.status(row) })
+  for (const kind of CONTRIBUTION_KINDS) {
+    for (const [submissionId, record] of await createdFrom(kind, ids)) {
+      found.set(submissionId, { kind, id: record.id, label: record.label, status: record.status })
     }
-  }
-  const spec = TARGET_SELECT.word
-  for (const row of await readByIds(spec.table, `${spec.columns},submission_id`, ids.map(String), 'submission_id')) {
-    found.set(Number(row.submission_id), { kind: 'word', id: String(row.id), label: spec.label(row), status: spec.status(row) })
   }
   return found
 }
@@ -97,11 +68,7 @@ function inboxRows(submissions: Awaited<ReturnType<typeof listSubmissionRows>>, 
 }
 
 async function listSubmissionRows(rows: Row[]) {
-  const headwords = new Map<string, string>()
-  const wordIds = [...new Set(rows.flatMap(row => row.word_id ? [String(row.word_id)] : []))]
-  if (wordIds.length) {
-    for (const word of await readByIds('heritage_words', 'id,headword:entry->>headword', wordIds)) headwords.set(String(word.id), String(word.headword ?? ''))
-  }
+  const headwords = await linkedHeadwords(rows.flatMap(row => row.word_id ? [String(row.word_id)] : []))
   return rows.map(row => toSubmission(row as unknown as SubmissionRow, headwords))
 }
 
@@ -163,19 +130,14 @@ async function inboxRow(id: number) {
 
 // ---- Detail: changes and the patch for the edit dialog ---------------------------------------------------------
 
-async function labels(table: 'areas' | 'heritage_categories', ids: string[]) {
-  const column = table === 'areas' ? 'name' : 'label_hr'
-  const found = new Map<string, string>()
-  for (const row of await readByIds(table, `id,${column}`, ids)) found.set(String(row.id), String(row[column]))
-  return found
+async function labels(kind: 'area' | 'heritage_category', ids: string[]) {
+  return new Map((await readContent(kind, ids)).map(record => [record.id, record.label]))
 }
 
 async function areaIdByGeonames(placeId: string | undefined) {
   const match = placeId ? /^geonames:(\d+)$/.exec(placeId) : null
   if (!match) return null
-  const { data, error } = await useDatabaseClient().from('areas').select('id').eq('geonames_id', match[1]!).eq('status', 'published').limit(1)
-  if (error) databaseError(error)
-  return (data?.[0]?.id as string | undefined) ?? null
+  return (await findPublished('area', { geonamesId: match[1]! }))?.id ?? null
 }
 
 function placeName(placeId: string | undefined) {
@@ -207,8 +169,8 @@ async function correctionDetail(kind: ContributionKind, targetId: string, payloa
   const { entity } = await getContent(contentKind(kind), targetId)
   const record = entity as ContentEntityRecord & Row
   const ids = { categories: [payload.categoryId].filter(Boolean) as string[], areas: [payload.settlementId, record.settlementId as string | null].filter(Boolean) as string[] }
-  const categoryLabels = await labels('heritage_categories', ids.categories)
-  const areaLabels = await labels('areas', ids.areas)
+  const categoryLabels = await labels('heritage_category', ids.categories)
+  const areaLabels = await labels('area', ids.areas)
   const shown = (key: string, value: string) => {
     if (key === 'categoryId') return categoryLabels.get(value) ?? value
     if (key === 'settlementId') return areaLabels.get(value) ?? value
@@ -269,9 +231,8 @@ async function correctionDetail(kind: ContributionKind, targetId: string, payloa
   }
   // A new settlement moves the item to that settlement's municipality too.
   if (kind === 'heritage_item' && payload.settlementId) {
-    const { data, error } = await useDatabaseClient().from('areas').select('parent_id').eq('id', payload.settlementId).maybeSingle()
-    if (error) databaseError(error)
-    if (data?.parent_id) patch.municipalityId = data.parent_id
+    const [settlement] = await readContent('area', [payload.settlementId])
+    if (settlement?.parentId) patch.municipalityId = settlement.parentId
   }
   return { changes: changeList(kind, 'correction', payload, current, shown), patch }
 }
@@ -289,8 +250,8 @@ export async function inboxDetail(id: number): Promise<InboxDetail> {
   if (submission.type === 'proposal' && submission.targetKind) {
     const categoryIds = [payload.categoryId].filter(Boolean) as string[]
     const areaIds = [payload.settlementId, payload.municipalityId, payload.parentId].filter(Boolean) as string[]
-    const categoryLabels = await labels('heritage_categories', categoryIds)
-    const areaLabels = await labels('areas', areaIds)
+    const categoryLabels = await labels('heritage_category', categoryIds)
+    const areaLabels = await labels('area', areaIds)
     const shown = (key: string, value: string) => key === 'categoryId'
       ? categoryLabels.get(value) ?? value
       : ['settlementId', 'municipalityId', 'parentId'].includes(key)
@@ -345,17 +306,17 @@ function staleProposal(): never {
   fail(409, 'Proposal references are gone', { code: 'stale-proposal', message: 'Prijedlog upućuje na zapis koji više ne postoji. Odbij ga ili dodaj zapis ručno.' })
 }
 
-async function existingDraft(kind: Exclude<ContributionKind, 'word'>, id: number) {
-  const spec = TARGET_SELECT[kind]
-  const { data, error } = await useDatabaseClient().from(spec.table).select('id').eq('source_submission_id', id).limit(1)
-  if (error) databaseError(error)
-  return (data?.[0]?.id as string | undefined) ?? null
+/** A row of the kind (any status), or null: a Draft built from a Proposal must point at rows that still exist. */
+async function existing(kind: 'area' | 'heritage_category', id: string | undefined) {
+  if (!id) return null
+  return (await readContent(kind, [id]))[0] ?? null
 }
 
 /**
- * The draft row a proposal turns into, idempotent like `promoteSubmission`: the unique `source_submission_id`
- * makes a repeated or concurrent call return the first draft. Publishing the draft applies the proposal.
- * Words keep their own flow (`promoteSubmission`), which reads the proposal's payload.
+ * The Draft a Proposal turns into: its payload mapped to the kind's fields and saved through the kind's own
+ * validation and save (`createDraft`), as an admin create is. Idempotent: a repeated or concurrent call returns
+ * the first Draft. Publishing the Draft applies the Proposal. A plain word, expression or memory becomes a word
+ * Draft the same way (`draftWord`).
  */
 export async function draftFromProposal(id: number): Promise<InboxDraftResult> {
   const row = await readSubmissionRow(id)
@@ -364,91 +325,80 @@ export async function draftFromProposal(id: number): Promise<InboxDraftResult> {
   if (row.type === 'correction' || (!plain && !isContributionKind(kind))) fail(400, 'Not a proposal', { message: 'Samo se prijedlozi pretvaraju u skice.' })
   if (row.status === 'rejected') fail(409, 'Rejected', { message: 'Odbijeni prijedlog se ne može pretvoriti u skicu.' })
 
-  if (plain || kind === 'word') {
-    const word = await promoteSubmission(id)
-    return { kind: 'word', id: word.entry.id, created: true }
-  }
-  const proposalKind = kind as Exclude<ContributionKind, 'word'>
-  const prior = await existingDraft(proposalKind, id)
-  if (prior) return { kind: proposalKind, id: prior, created: false }
+  const draftKind = plain ? 'word' : kind as ContributionKind
+  const prior = (await createdFrom(draftKind, [id])).get(id)
+  if (prior) return { kind: draftKind, id: prior.id, created: false }
+  if (draftKind === 'word') return { kind: 'word', ...await draftWord(row) }
+  const draft = await createDraft(draftKind, await draftValue(draftKind, (row.payload ?? {}) as ContributionPayload), { submissionId: id })
+  return { kind: draftKind, ...draft }
+}
 
-  const payload = (row.payload ?? {}) as ContributionPayload
-  const db = useDatabaseClient()
-  let table: string
-  let values: Row
-  if (proposalKind === 'heritage_item') {
-    table = 'heritage_items'
+/** A Proposal's payload as the API fields of its kind. */
+async function draftValue(kind: Exclude<ContributionKind, 'word'>, payload: ContributionPayload): Promise<Row> {
+  if (kind === 'heritage_item') {
     let municipalityId = payload.municipalityId
     if (payload.settlementId) {
-      const { data, error } = await db.from('areas').select('parent_id').eq('id', payload.settlementId).eq('kind', 'settlement').maybeSingle()
-      if (error) databaseError(error)
-      if (!data?.parent_id) staleProposal()
-      municipalityId = data.parent_id as string
+      const settlement = await existing('area', payload.settlementId)
+      if (settlement?.kind !== 'settlement' || !settlement.parentId) staleProposal()
+      municipalityId = settlement.parentId as string
     }
-    const { data: category, error: categoryError } = await db.from('heritage_categories').select('id').eq('id', payload.categoryId!).maybeSingle()
-    if (categoryError) databaseError(categoryError)
-    if (!category || !municipalityId) staleProposal()
-    values = {
-      name: payload.name, slug: await suggestContentSlug(db, table, atlasSlug(payload.name!) || 'zapis', payload.settlementId ?? null),
-      category_id: payload.categoryId, municipality_id: municipalityId, settlement_id: payload.settlementId ?? null,
-      locality: payload.locality ?? null, description: payload.description ?? null, status: 'draft'
+    if (!await existing('heritage_category', payload.categoryId) || !municipalityId) staleProposal()
+    return {
+      name: payload.name,
+      slug: await suggestSlug(kind, atlasSlug(payload.name!) || 'zapis', payload.settlementId ?? null),
+      categoryId: payload.categoryId,
+      municipalityId,
+      settlementId: payload.settlementId ?? null,
+      locality: payload.locality ?? null,
+      description: payload.description ?? null,
+      verification: 'unverified',
+      researchNotes: '',
+      sourceIds: []
     }
-  } else if (proposalKind === 'area') {
-    table = 'areas'
-    const { data: parent, error } = await db.from('areas').select('id').eq('id', payload.parentId!).in('kind', ['town', 'municipality']).maybeSingle()
-    if (error) databaseError(error)
-    if (!parent) staleProposal()
-    values = {
-      kind: 'settlement', parent_id: payload.parentId, name: payload.name,
-      slug: await suggestContentSlug(db, table, atlasSlug(payload.name!) || 'naselje', null), status: 'draft'
+  }
+  if (kind === 'area') {
+    const parent = await existing('area', payload.parentId)
+    if (parent?.kind !== 'town' && parent?.kind !== 'municipality') staleProposal()
+    return {
+      kind: 'settlement',
+      parentId: payload.parentId,
+      name: payload.name,
+      slug: await suggestSlug(kind, atlasSlug(payload.name!) || 'naselje', null),
+      regionIds: []
     }
-  } else if (proposalKind === 'person') {
-    table = 'persons'
-    const { data: settlement, error } = await db.from('areas').select('id').eq('id', payload.settlementId!).eq('kind', 'settlement').maybeSingle()
-    if (error) databaseError(error)
-    if (!settlement) staleProposal()
+  }
+  if (kind === 'person') {
+    if ((await existing('area', payload.settlementId))?.kind !== 'settlement') staleProposal()
     const diedYear = yearFromText(payload.died, 'last')
     const bornYear = yearFromText(payload.born)
     if (!diedYear || (bornYear && bornYear > diedYear)) {
       fail(422, 'Proposal needs a valid year', { code: 'invalid', message: 'Prijedlog nema upotrebljivu godinu smrti. Odbij ga ili dodaj osobu ručno.' })
     }
     const note = [payload.sourceUrl && `Izvor: ${payload.sourceUrl}`, payload.significance].filter(Boolean).join('\n\n')
-    values = {
+    return {
       name: payload.name,
-      slug: await suggestContentSlug(db, table, atlasSlug(payload.name!) || 'osoba', null),
+      slug: await suggestSlug(kind, atlasSlug(payload.name!) || 'osoba', null),
       born: payload.born ?? null,
-      born_year: bornYear,
+      bornYear,
       died: payload.died!,
-      died_year: diedYear,
+      diedYear,
       bio: payload.significance ?? null,
       role: (payload.significance ?? '').slice(0, 200),
-      research_notes: note,
-      status: 'draft'
+      researchNotes: note,
+      verification: 'unverified',
+      areaLinks: [{ areaId: payload.settlementId, role: 'djelovao' }],
+      itemLinks: [],
+      sourceIds: []
     }
-  } else {
-    table = 'sources'
+  }
+  if (kind === 'source') {
     const note = [payload.author && `Autor: ${payload.author}`, payload.year && `Godina: ${payload.year}`, payload.note].filter(Boolean).join('\n')
-    values = {
-      title: payload.title, type: (SOURCE_PROPOSAL_TYPES as readonly string[]).includes(payload.type ?? '') ? payload.type : 'other',
-      url: payload.url ?? null, note: note || null, status: 'draft'
+    return {
+      title: payload.title,
+      type: (SOURCE_PROPOSAL_TYPES as readonly string[]).includes(payload.type ?? '') ? payload.type : 'other',
+      url: payload.url ?? null,
+      note: note || null
     }
   }
-  const { data, error } = await db.from(table).insert({ ...values, source_submission_id: id }).select('id').single()
-  if (error) {
-    // A concurrent call made the draft first.
-    if (error.code === '23505' && /source_submission_id/.test(error.message)) {
-      const again = await existingDraft(proposalKind, id)
-      if (again) return { kind: proposalKind, id: again, created: false }
-    }
-    contentDatabaseError(contentKind(proposalKind), error)
-  }
-  const createdId = data.id as string
-  if (proposalKind === 'person' && payload.settlementId) {
-    const { error: linkError } = await db.from('person_areas').insert({
-      person_id: createdId, area_id: payload.settlementId, role: 'djelovao', position: 0
-    })
-    if (linkError) contentDatabaseError(contentKind('person'), linkError)
-  }
-  invalidatePublicContent()
-  return { kind: proposalKind, id: createdId, created: true }
+  fail(400, 'Not a proposal', { message: 'Samo se prijedlozi pretvaraju u skice.' })
 }

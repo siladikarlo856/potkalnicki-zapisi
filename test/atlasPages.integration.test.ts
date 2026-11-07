@@ -1,15 +1,13 @@
 import { performance } from 'node:perf_hooks'
-import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 import { createSnapshotStore, loadPublicContent } from '../server/utils/publicContent'
+import { integrationDb } from './support/integrationDb'
 
-const url = process.env.TEST_CHALLENGE_API_URL
-const serviceKey = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const service = createClient(url ?? 'http://localhost', serviceKey || 'service', { auth: { persistSession: false, autoRefreshToken: false } })
+const db = await integrationDb()
 
-describe.skipIf(!url)('atlas snapshot performance on Postgres', () => {
+describe.skipIf(!db.enabled)('atlas snapshot performance on Postgres', () => {
   it('serves a warm snapshot with p95 under 150 ms', async () => {
-    const store = createSnapshotStore({ load: () => loadPublicContent(service) })
+    const store = createSnapshotStore({ load: () => loadPublicContent(db.service) })
     await store.get()
     const samples: number[] = []
     for (let i = 0; i < 20; i++) {

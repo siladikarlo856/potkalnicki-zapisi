@@ -1,5 +1,4 @@
-import { challengeOverview } from '../../utils/challengeContent'
-import { currentChallengeContent } from '../../utils/challengeTemplates'
+import { readChallengeIntroduction } from '../../challenges'
 
-// The introduction of a new fixed challenge, from the current challenge template.
-export default defineEventHandler(async () => challengeOverview(await currentChallengeContent()))
+// The introduction of a new Fixed challenge, from the current Challenge template.
+export default defineEventHandler(() => readChallengeIntroduction())

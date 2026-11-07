@@ -641,6 +641,38 @@ export function createSnapshotStore<T>(options: SnapshotStoreOptions<T>) {
   }
 }
 
+/** Anything that serves a current value: a snapshot store, or a function in front of one. */
+export interface DerivationSource<T> {
+  get: () => Promise<T>
+}
+
+/**
+ * A value computed from a snapshot, recomputed whenever the source serves a different snapshot (an
+ * invalidation or a background refresh replaced it), so it is never staler than the snapshot itself.
+ * Concurrent reads of one snapshot share one computation; a failed computation is not kept, so the next
+ * read tries again. A computation for a snapshot that has since been replaced is dropped.
+ */
+export function derive<T, U>(source: DerivationSource<T>, compute: (snapshot: T) => Promise<U> | U) {
+  let computed: { snapshot: T, value: U } | null = null
+  let inflight: { snapshot: T, promise: Promise<U> } | null = null
+
+  return {
+    async get(): Promise<U> {
+      const snapshot = await source.get()
+      if (computed?.snapshot === snapshot) return computed.value
+      if (inflight?.snapshot === snapshot) return inflight.promise
+      const promise = Promise.resolve().then(() => compute(snapshot)).then((value) => {
+        if (inflight?.promise === promise) computed = { snapshot, value }
+        return value
+      }).finally(() => {
+        if (inflight?.promise === promise) inflight = null
+      })
+      inflight = { snapshot, promise }
+      return promise
+    }
+  }
+}
+
 const store = createSnapshotStore({ load: () => loadPublicContent(useDatabaseClient()) })
 
 /** The current public content snapshot; answers 503 when the database is unreachable on a cold start. */
@@ -655,8 +687,10 @@ export async function getPublicContent(): Promise<PublicContent> {
   }
 }
 
-/** Call after every content write in this process, so the next public request reads the database again. */
+/**
+ * Call after every content write in this process, so the next public request reads the database again.
+ * Values derived from the snapshot (the card pool, the current Challenge template) follow on their next read.
+ */
 export function invalidatePublicContent() {
   store.invalidate()
-  void import('./cardPool').then(m => m.invalidateCardPool())
 }

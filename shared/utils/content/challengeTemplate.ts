@@ -1,6 +1,6 @@
 import type { ChallengeContent, ChallengeMeta, ChallengeQuestion, ChallengeText } from '../challenge'
-import type { ContentEntity, ContentIssue, ContentStatus, ContentValidation } from './common'
-import { contentStatus, isRecord, isUuid, issueCollector } from './common'
+import type { ContentEntity, ContentStatus, ContentValidation } from './common'
+import { contentStatus, isRecord, issueCollector } from './common'
 import { CARD_KEY, type CardKey, type TopicId } from '../learn/types'
 import { CHALLENGEABLE_GAMES, type Difficulty, type QuestionDisplay } from '../games/types'
 import { MAP_FRAME } from '../games/mapFrame'
@@ -8,7 +8,9 @@ import { MAP_FRAME } from '../games/mapFrame'
 // Challenge templates (Izazovi): the fixed challenge sets an admin edits. The current template is
 // copied into every new fixed challenge as an immutable snapshot (`heritage_challenges.content`).
 // One set of rules serves the admin dialog, the admin API and every snapshot (fixed or built from a
-// played quiz), so a template that saves is always one a challenge can be created from.
+// played quiz), so a template that saves is always one a challenge can be created from. The snapshot
+// itself (template content plus `version` and `templateId`) is parsed by the Challenge module
+// (server/challenges/content.ts).
 
 export const CHALLENGE_LIMITS = {
   name: 200,
@@ -292,27 +294,6 @@ export function validateChallengeTemplate(input: unknown): ContentValidation<Cha
     check.add('isCurrent', 'Trenutni izazov mora biti objavljen.')
   }
   return { value: { name, content: content.value, isCurrent: isCurrent === true, status }, issues: check.issues }
-}
-
-/**
- * Validates a challenge snapshot (what `heritage_challenges.content` stores): template content plus
- * `version` and, for snapshots of a template, `templateId`. Throws on the first problem, because a
- * snapshot is built by the server and an invalid one is a bug, not user input.
- */
-export function validateChallengeContent(input: unknown): ChallengeContent {
-  const body = isRecord(input) ? input : {}
-  const { value, issues } = validateChallengeTemplateContent(input)
-  const extra: ContentIssue[] = []
-  const version = body.version
-  if (typeof version !== 'number' || !Number.isSafeInteger(version) || version < 1) extra.push({ path: 'version', message: 'Verzija mora biti pozitivan cijeli broj.' })
-  if (body.templateId !== undefined && !isUuid(body.templateId)) extra.push({ path: 'templateId', message: 'Identifikator predloška mora biti UUID.' })
-  const first = [...extra, ...issues][0]
-  if (first) throw new Error(`Invalid challenge content: ${first.path || '(content)'}: ${first.message}`)
-  return {
-    version: version as number,
-    ...(body.templateId === undefined ? {} : { templateId: (body.templateId as string).toLowerCase() }),
-    ...value
-  }
 }
 
 /**

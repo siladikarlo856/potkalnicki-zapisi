@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import { buildSelaOpcineBoard, SELA_OPCINE_CHIP_COUNT, type SelaOpcineBoard } from '~~/shared/utils/games/selaOpcine'
 import type { Difficulty } from '~~/shared/utils/games/types'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('sela-i-opcine')
 
 const { t } = useI18n()
 const { recordBest } = useGameScores()
@@ -66,7 +69,7 @@ const score = computed(() => {
 function verify() {
   if (!board.value || checked.value) return
   checked.value = true
-  recordBest('sela-i-opcine', score.value, SELA_OPCINE_CHIP_COUNT)
+  recordBest(game.id, score.value, SELA_OPCINE_CHIP_COUNT)
   phase.value = 'result'
 }
 

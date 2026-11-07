@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import { generateQuestions } from '~~/shared/utils/games/questions'
 import type { Difficulty, GameQuestion } from '~~/shared/utils/games/types'
@@ -8,6 +9,8 @@ const GAME_LENGTH = 10
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('karta-koje')
 
 const { t } = useI18n()
 const { pool, status, error, refresh } = useCardPool()
@@ -21,7 +24,7 @@ const places = computed(() => pool.value.cards.filter((c): c is PoolPlace => c.k
 const municipalities = computed(() => pool.value.municipalities)
 
 function newRound() {
-  return generateQuestions('karta-koje', pool.value, {
+  return generateQuestions(game.id, pool.value, {
     topics: ['mjesta'],
     difficulty: difficulty.value,
     count: GAME_LENGTH,
@@ -88,7 +91,7 @@ useSeoMeta({
 
       <GamesShell
         v-else-if="questions.length"
-        game-id="karta-koje"
+        :game-id="game.id"
         :title="t('pz.map.whichTitle')"
         :questions="questions"
         :topics="['mjesta']"

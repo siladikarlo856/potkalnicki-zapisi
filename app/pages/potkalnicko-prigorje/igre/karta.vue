@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { gameDefinition } from '~~/shared/utils/games/definitions'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import { pickPlaceTarget } from '~~/shared/utils/games/distractors'
@@ -10,6 +11,8 @@ const ROUND_LENGTH = 10
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
+
+const game = gameDefinition('karta')
 
 const { t } = useI18n()
 const localePath = useLocalePath()
@@ -101,7 +104,7 @@ function nextQuestion() {
   feedback.value = null
   if (finished.value) {
     const max = difficulty.value === 'tesko' ? ROUND_LENGTH * 1000 : ROUND_LENGTH * 100
-    recordBest('karta', totalScore.value, max)
+    recordBest(game.id, totalScore.value, max)
   }
 }
 

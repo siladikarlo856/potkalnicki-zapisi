@@ -1,23 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentReferenceGroup, ContentStatus } from '../../../../shared/utils/content/common'
 import {
-  AREA_KINDS, AREA_KIND_LAU, areaAdminLabel, areaKindMayJoinRegion, type AreaFields, type AreaKind, type AreaValue, validateArea
+  AREA_KINDS, AREA_KIND_LAU, areaAdminLabel, type AreaFields, type AreaKind, type AreaValue, validateArea
 } from '../../../../shared/utils/content/area'
 import { defineContentKind } from '../definition'
+import { missingLinkIssues } from '../linkCheck'
 
 const EXAMPLES = 5
 
-async function loadRegionIds(db: SupabaseClient, entity: { id: string }) {
-  const { data, error } = await db.from('area_regions').select('region_id').eq('area_id', entity.id).order('region_id')
+async function loadRegionIds(db: SupabaseClient, id: string) {
+  const { data, error } = await db.from('area_regions').select('region_id').eq('area_id', id).order('region_id')
   if (error) throw error
   return { regionIds: (data ?? []).map(row => String(row.region_id).toLowerCase()) }
-}
-
-async function syncRegionIds(db: SupabaseClient, id: string, value: AreaValue) {
-  await db.from('area_regions').delete().eq('area_id', id)
-  if (!areaKindMayJoinRegion(value.kind) || !value.regionIds.length) return
-  const { error } = await db.from('area_regions').insert(value.regionIds.map(region_id => ({ area_id: id, region_id })))
-  if (error) throw error
 }
 
 async function areaReferences(db: SupabaseClient, id: string): Promise<ContentReferenceGroup[]> {
@@ -98,6 +92,7 @@ export const areaKind = defineContentKind<AreaFields & { status: ContentStatus }
     description: 'description'
   },
   labelColumn: 'name',
+  createdFrom: 'source_submission_id',
   validate: (input, id) => validateArea(input, id),
   sorts: { name: 'name', kind: 'kind' },
   defaultSort: 'name',
@@ -114,8 +109,19 @@ export const areaKind = defineContentKind<AreaFields & { status: ContentStatus }
     areas_geonames: 'geonamesId'
   },
   references: areaReferences,
-  loadEntity: loadRegionIds,
-  persistEntity: async (db, id, value) => syncRegionIds(db, id, value as unknown as AreaValue),
-  lookupLabel: (row: Record<string, unknown>) => areaAdminLabel(row.kind as AreaKind, String(row.name ?? '')),
-  inputFields: ['regionIds']
+  sidecars: { fields: ['regionIds'], load: loadRegionIds },
+  // The area_regions trigger would refuse a region id that is not a region, but only after the area is saved.
+  checkLinks: async (db, value) => missingLinkIssues(
+    db, 'areas', (value as unknown as AreaValue).regionIds.map((regionId, index) => [`regionIds.${index}`, regionId] as const), 'Ta regija ne postoji.', { column: 'kind', value: 'region' }
+  ),
+  // The areas row and its region membership in one transaction (supabase/migrations/20261107000000_content_save.sql).
+  // validateArea already empties regionIds for a kind that cannot join a region.
+  persist: async (db, id, value, { row, revision }) => {
+    const { data, error } = await db.rpc('content_area_save', {
+      p_id: id, p_revision: revision ?? null, p_row: row, p_region_ids: (value as unknown as AreaValue).regionIds
+    })
+    if (error) throw error
+    return (data as string | null) ?? null
+  },
+  lookupLabel: (row: Record<string, unknown>) => areaAdminLabel(row.kind as AreaKind, String(row.name ?? ''))
 })

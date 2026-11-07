@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
 import type { ContributionKind, ContributionPayload } from '../../shared/utils/contribution'
+import { findPublished, readContent } from './content/records'
 import { placeById } from './places'
 
 const TABLE = 'heritage_submissions'
@@ -120,24 +121,13 @@ export async function listSubmissions(status: SubmissionStatus | 'all', type?: S
 }
 
 // Review shows which word a contribution is about, so the headwords of the linked words are read in one go.
-async function linkedHeadwords(ids: string[]) {
-  const headwords = new Map<string, string>()
-  const unique = [...new Set(ids)]
-  for (let from = 0; from < unique.length; from += 100) {
-    const { data, error } = await useDatabaseClient().from('heritage_words').select('id,entry').in('id', unique.slice(from, from + 100))
-    if (error) databaseError(error)
-    for (const word of data as Array<{ id: string, entry: { headword?: unknown } }>) {
-      if (typeof word.entry?.headword === 'string') headwords.set(word.id, word.entry.headword)
-    }
-  }
-  return headwords
+export async function linkedHeadwords(ids: string[]) {
+  return new Map((await readContent('word', ids)).filter(word => word.label).map(word => [word.id, word.label]))
 }
 
 // Contributions from the daily word may only point at a word that is live, so nobody can attach text to a draft.
 export async function assertActiveWord(id: string, locale: unknown) {
-  const { data, error } = await useDatabaseClient().from('heritage_words').select('id').eq('id', id).eq('active', true)
-  if (error) databaseError(error)
-  if (!data.length) {
+  if (!await findPublished('word', id)) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Invalid submission',

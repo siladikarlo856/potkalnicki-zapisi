@@ -1,31 +1,15 @@
-import { execFileSync } from 'node:child_process'
 import { randomBytes, randomUUID } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
+import { integrationDb } from './support/integrationDb'
 
 // Word areas from the areas table (20261103120000_word_areas.sql) on a real Postgres. Run with
 // `node scripts/test-challenges.mjs`, which provisions a disposable Postgres and PostgREST, applies
 // every migration and removes both afterwards. Skipped everywhere else.
 // Every test adds its own words and areas with fresh UUIDs; it never touches the seeded data.
-const url = process.env.TEST_CHALLENGE_API_URL
-const serviceKey = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
-function failure(input: string) {
-  try {
-    sql(input)
-  } catch (error) {
-    return String((error as { stderr?: string }).stderr ?? error)
-  }
-  throw new Error(`Expected the statement to fail: ${input}`)
-}
-
-const options = { auth: { persistSession: false, autoRefreshToken: false } }
-const service = createClient(url ?? 'http://localhost', serviceKey || 'service', options)
+const db = await integrationDb()
+const { sql, failure } = db
+const service = db.service
 const quote = (value: string) => `'${value.replace(/'/g, '\'\'')}'`
 const tag = () => [...randomBytes(6)].map(b => String.fromCharCode(97 + (b % 26))).join('')
 
@@ -54,7 +38,7 @@ function entry(id: string, headword: string, areaIds: string[] = []) {
   }
 }
 
-describe.skipIf(!url)('heritage_word_areas on Postgres', () => {
+describe.skipIf(!db.enabled)('heritage_word_areas on Postgres', () => {
   it('table exists with correct structure, RLS on, only service_role can read', async () => {
     expect(sql(`select relrowsecurity from pg_class where oid = 'public.heritage_word_areas'::regclass;`)).toBe('t')
     expect(failure(`set role anon; select count(*) from public.heritage_word_areas;`)).toMatch(/permission denied/)

@@ -1,26 +1,18 @@
-import { execFileSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { ChallengeContent, ChallengeLeaderboard, ChallengeState } from '../shared/utils/challenge'
-import { validateChallengeContent } from '../shared/utils/content/challengeTemplate'
+import { validateChallengeContent } from '../server/challenges/content'
 import { contentUuid } from './helpers/contentUuid'
 import sample from './fixtures/heritage/challenge.json'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
 // Run with `node scripts/test-challenges.mjs`. It provisions and removes ONLY its own
 // containers, applies every migration and exercises the production HTTP + RPC paths.
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
 // What a new fixed challenge stores: the seeded current template, with its revision and id.
 // challengeTemplates.integration.test.ts switches the current template only to an identical copy.
 const currentChallengeContent = validateChallengeContent({ ...sample, version: 1, templateId: contentUuid('challenge_template:sample') })
-if (url) await setupNuxtServer({
-  NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key,
-  NUXT_CHALLENGE_RATE_LIMIT_CREATE: '3', NUXT_CHALLENGE_RATE_LIMIT_JOIN: '3'
-})
+const db = await integrationDb({ server: { NUXT_CHALLENGE_RATE_LIMIT_CREATE: '3', NUXT_CHALLENGE_RATE_LIMIT_JOIN: '3' } })
+const { sql, fetch } = db
 
 let ipIndex = 0
 function client() {
@@ -58,10 +50,6 @@ async function create(player = client()) {
   return { player, game }
 }
 const path = (game: ChallengeState, action = '') => `/api/challenges/${game.code}${action ? `/${action}` : ''}`
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
 const literal = (value: unknown) => `'${JSON.stringify(value).replaceAll('\'', '\'\'')}'::jsonb`
 async function aged(age: number, closesIn: number, content: ChallengeContent = currentChallengeContent) {
   const code = randomBytes(12).toString('base64url')
@@ -80,7 +68,7 @@ async function complete(player: Player, game: ChallengeState, skip = true) {
   return game
 }
 
-describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
+describe.skipIf(!db.enabled)('real challenge HTTP and Postgres behavior', () => {
   it('creates a challenge from the played quiz round and records the creator score immediately', async () => {
     const player = client()
     // Seeded words have UUID ids; take three active ones with distinct meanings from the database.
@@ -119,6 +107,54 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
       id: `quiz-${a.id}`,
       options: [c, a, b].map(w => ({ hr: w.hr, en: w.en || w.hr }))
     })
+  })
+
+  it('records a finished Quiz-result challenge in one call, matching a Participant who played the same answers', async () => {
+    const question = (id: string, correct: number) => ({
+      id, mechanic: 'multiple-choice' as const, prompt: { hr: id, en: id },
+      options: [{ hr: 'A', en: 'A' }, { hr: 'B', en: 'B' }, { hr: 'C', en: 'C' }], correct, explanation: { hr: 'X', en: 'X' }
+    })
+    const content = validateChallengeContent({
+      version: 1, sample: false, title: { hr: 'Kviz', en: 'Quiz' },
+      rounds: [
+        { id: 'a', topic: { hr: 'Prvi', en: 'First' }, questions: [question('q1', 0), question('q2', 2)] },
+        { id: 'b', topic: { hr: 'Drugi', en: 'Second' }, questions: [question('q3', 1)] }
+      ]
+    })
+    const results = [true, false, true]
+
+    // The Participant way: reveal, answer and continue through every question.
+    const { player, game } = await aged(0, 7, content)
+    let played = game
+    while (played.participant?.phase !== 'finished') {
+      const phase = played.participant!.phase
+      if (phase === 'ready') played = await state(await player.request(path(played, 'reveal'), {}))
+      else if (phase === 'question') {
+        const index = played.participant!.index
+        const correct = content.rounds.flatMap(r => r.questions)[index]!.correct
+        played = await state(await player.request(path(played, 'answer'), { questionId: played.question!.id, selected: results[index] ? correct : (correct + 1) % 3 }))
+      } else played = await state(await player.request(path(played, 'continue'), { phase, index: played.participant!.index }))
+    }
+
+    const service = db.service
+    const code = randomBytes(12).toString('base64url')
+    const hash = createHash('sha256').update(randomBytes(32)).digest('hex')
+    const recorded = await service.rpc('heritage_challenge_action', { p_action: 'create_completed', p_code: code, p_hash: hash, p_input: { nickname: 'Iva', content, results } })
+    expect(recorded.error).toBeNull()
+    const completed = recorded.data as ChallengeState
+
+    const comparable = ({ code: _code, createdAt: _created, closesAt: _closes, participant, ...rest }: ChallengeState) =>
+      ({ ...rest, participant: participant && { ...participant, completedAt: typeof participant.completedAt } })
+    expect(comparable(completed)).toEqual(comparable(played))
+    expect(completed.participant).toMatchObject({ phase: 'finished', total: 200, index: 3 })
+    expect(completed.participant!.rounds.map(r => [r.answered, r.score])).toEqual([[2, 100], [1, 100]])
+    expect(new Date(completed.closesAt).getTime() - new Date(completed.createdAt).getTime()).toBe(7 * 86400000)
+    const perQuestion = (challenge: string) => sql(`select string_agg(a.question_index || ':' || a.correct || ':' || a.points, ',' order by a.question_index) from heritage_challenge_answers a join heritage_challenge_participants p on p.id = a.participant_id where p.challenge_code = '${challenge}' and a.answered_at is not null`)
+    expect(perQuestion(code)).toBe(perQuestion(game.code))
+    expect(perQuestion(code)).toBe('0:true:100,1:false:0,2:true:100')
+
+    const mismatched = await service.rpc('heritage_challenge_action', { p_action: 'create_completed', p_code: randomBytes(12).toString('base64url'), p_hash: hash, p_input: { nickname: 'Iva', content, results: [true] } })
+    expect(mismatched.error?.code).toBe('PT400')
   })
 
   it('creates a random challenge from the card pool and plays through to the leaderboard', async () => {
@@ -192,8 +228,7 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     expect(revealed.feedback).toBeNull()
     expect(JSON.stringify(revealed)).not.toContain('correct')
     expect(JSON.stringify(revealed)).not.toContain('explanation')
-    const db = createClient(url!, key, { auth: { persistSession: false } })
-    const rows = await db.from('heritage_challenge_participants').select('*').eq('challenge_code', game.code)
+    const rows = await db.client().from('heritage_challenge_participants').select('*').eq('challenge_code', game.code)
     expect(rows.error).toBeNull()
     const token = player.cookie.split('=')[1]!
     expect(rows.data![0]!.token_hash).toBe(createHash('sha256').update(token).digest('hex'))
@@ -294,7 +329,7 @@ describe.skipIf(!url)('real challenge HTTP and Postgres behavior', () => {
     const next = await aged(0, 7, changed)
     expect(next.game.title.hr).toBe('Nova datoteka')
     expect((await state(await player.request(path(game)))).title).toEqual(game.title)
-    const anon = createClient(url!, process.env.TEST_CHALLENGE_PUBLIC_KEY!, { auth: { persistSession: false } })
+    const anon = db.client('anon')
     for (const table of ['heritage_challenges', 'heritage_challenge_participants', 'heritage_challenge_answers']) expect((await anon.from(table).select('*')).error).not.toBeNull()
     expect((await anon.rpc('heritage_challenge_action', { p_action: 'state', p_code: game.code })).error).not.toBeNull()
     expect((await anon.rpc('heritage_challenge_scoreboard', { p_code: game.code })).error).not.toBeNull()

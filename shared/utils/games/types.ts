@@ -1,7 +1,12 @@
 import type { CardKey, TopicId } from '../learn/types'
+import type { ChallengeableGameId } from './definitions'
 
 export type Difficulty = 'lako' | 'srednje' | 'tesko'
-export type GameId = 'znacenje' | 'rijec' | 'opcina' | 'crkva' | 'spoji' | 'karta' | 'karta-koje' | 'karta-tocke' | 'osoba' | 'klub-mjesto' | 'klub-liga' | 'klub-odakle' | 'sela-i-opcine' | 'nabroji' | 'grupiraj' | 'bez-greske'
+/** Every game has one id; its Game definition lives in `./definitions`. */
+export type GameId
+  = | 'znacenje' | 'rijec' | 'opcina' | 'crkva' | 'spoji' | 'karta' | 'karta-koje' | 'karta-tocke' | 'osoba'
+    | 'klub-mjesto' | 'klub-liga' | 'klub-odakle' | 'sela-i-opcine' | 'nabroji' | 'grupiraj' | 'bez-greske'
+    | 'rijec-dana' | 'kartice' | 'uci-kartu' | 'istina-legenda'
 
 export type QuestionDisplay
   = | { type: 'map-target', point: { lat: number, lng: number } }
@@ -21,8 +26,9 @@ export interface GameQuestion {
   optionCards?: CardKey[]
 }
 
-export const CHALLENGEABLE_GAMES = ['znacenje', 'rijec', 'opcina', 'crkva', 'karta-koje', 'karta-tocke', 'klub-mjesto', 'klub-liga', 'klub-odakle', 'osoba'] as const satisfies readonly GameId[]
-export type ChallengeableGameId = typeof CHALLENGEABLE_GAMES[number]
+// Derived from the Game definition registry; re-exported for existing callers.
+export { CHALLENGEABLE_GAMES } from './definitions'
+export type { ChallengeableGameId } from './definitions'
 
 export type GenerateGameId = ChallengeableGameId | 'mjesovito'
 

@@ -1,5 +1,4 @@
 import { CHALLENGE_LIMITS, validateChallengeTemplate } from '../../../../shared/utils/content/challengeTemplate'
-import { invalidateCurrentChallengeContent } from '../../challengeTemplates'
 import { defineContentKind } from '../definition'
 
 // Challenge templates (Izazovi). Nothing refers to a template: every challenge keeps its own
@@ -19,7 +18,5 @@ export const challengeTemplateKind = defineContentKind({
   uniqueConstraints: { heritage_challenge_templates_current: 'isCurrent' },
   // Restoring an older version changes the questions, never which template is current.
   restoreKeeps: ['isCurrent'],
-  // A save can change which template new challenges use.
-  afterWrite: invalidateCurrentChallengeContent,
   bodyLimit: CHALLENGE_LIMITS.bodyBytes
 })

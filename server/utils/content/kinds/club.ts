@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentReferenceGroup } from '../../../../shared/utils/content/common'
-import { formatSeasonLabel, validateClub, type ClubSeasonValue } from '../../../../shared/utils/content/club'
+import { formatSeasonLabel, validateClub } from '../../../../shared/utils/content/club'
 import { defineContentKind } from '../definition'
+import { missingSourceIssues } from '../linkCheck'
 
 async function loadSeasons(db: SupabaseClient, clubId: string) {
   const { data, error } = await db.from('club_seasons').select('season,competition,team,source_url,checked_at').eq('club_id', clubId).order('season', { ascending: false }).order('team')
@@ -21,29 +22,6 @@ async function loadSourceIds(db: SupabaseClient, clubId: string) {
   return (data ?? []).map(row => row.source_id as string)
 }
 
-async function saveSeasons(db: SupabaseClient, clubId: string, seasons: ClubSeasonValue[]) {
-  const { error: deleteError } = await db.from('club_seasons').delete().eq('club_id', clubId)
-  if (deleteError) throw deleteError
-  if (!seasons.length) return
-  const { error } = await db.from('club_seasons').insert(seasons.map(s => ({
-    club_id: clubId,
-    season: s.season,
-    competition: s.competition,
-    team: s.team,
-    source_url: s.sourceUrl,
-    checked_at: s.checkedAt
-  })))
-  if (error) throw error
-}
-
-async function saveSourceIds(db: SupabaseClient, clubId: string, sourceIds: string[]) {
-  const { error: deleteError } = await db.from('club_sources').delete().eq('club_id', clubId)
-  if (deleteError) throw deleteError
-  if (!sourceIds.length) return
-  const { error } = await db.from('club_sources').insert(sourceIds.map((source_id, position) => ({ club_id: clubId, source_id, position })))
-  if (error) throw error
-}
-
 export const clubKind = defineContentKind({
   kind: 'club',
   table: 'clubs',
@@ -61,6 +39,7 @@ export const clubKind = defineContentKind({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   labelColumn: 'name',
+  createdFrom: 'source_submission_id',
   validate: validateClub,
   sorts: { name: 'name', sport: 'sport', verification: 'verification' },
   defaultSort: 'name',
@@ -75,47 +54,44 @@ export const clubKind = defineContentKind({
     if (count) groups.push({ kind: 'club_season', label: 'Sezone', count, blocking: false, items: [] })
     return groups
   },
-  inputFields: ['seasons', 'sourceIds'],
-  loadEntity: async (db, entity) => ({
-    seasons: await loadSeasons(db, entity.id),
-    sourceIds: await loadSourceIds(db, entity.id)
-  }),
-  persistEntity: async (db, id, value) => {
-    const status = value.status as string
-    const sourceIds = (value.sourceIds as string[]) ?? []
-    if (status === 'published' && !sourceIds.length) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid content', data: { code: 'invalid', message: 'Klub treba barem jedan izvor.', issues: [{ path: 'sourceIds', message: 'Klub treba barem jedan izvor.' }] } })
-    }
-    await saveSeasons(db, id, (value.seasons as ClubSeasonValue[]) ?? [])
-    await saveSourceIds(db, id, sourceIds)
+  sidecars: {
+    fields: ['seasons', 'sourceIds'],
+    load: async (db, id) => ({ seasons: await loadSeasons(db, id), sourceIds: await loadSourceIds(db, id) })
   },
-  async enrichRows(db, rows) {
-    if (!rows.length) return rows
-    const ids = rows.map(row => row.id as string)
-    const settlementIds = [...new Set(rows.map(row => row.settlement_id as string))]
+  // "A Published club needs a source" is a rule of validateClub, so it is refused before any write.
+  checkLinks: async (db, value) => missingSourceIssues(db, value.sourceIds),
+  // The clubs row, its seasons and sources in one transaction (supabase/migrations/20261107000000_content_save.sql).
+  persist: async (db, id, value, { row, revision }) => {
+    const { data, error } = await db.rpc('content_club_save', {
+      p_id: id, p_revision: revision ?? null, p_row: row, p_seasons: value.seasons ?? [], p_source_ids: value.sourceIds ?? []
+    })
+    if (error) throw error
+    return (data as string | null) ?? null
+  },
+  // The settlement's name and the latest senior season, for the admin list.
+  async derive(db, values) {
+    const ids = values.map(value => value.id).filter((id): id is string => typeof id === 'string')
+    const settlementIds = [...new Set(values.map(value => value.settlementId).filter((id): id is string => typeof id === 'string'))]
     const settlementNames = new Map<string, string>()
     if (settlementIds.length) {
-      const { data: areas } = await db.from('areas').select('id,name').in('id', settlementIds)
+      const { data: areas, error } = await db.from('areas').select('id,name').in('id', settlementIds)
+      if (error) throw error
       for (const area of areas ?? []) settlementNames.set(area.id as string, area.name as string)
     }
     const seasonLabels = new Map<string, string>()
-    const { data: seasons, error } = await db.from('club_seasons').select('club_id,season,competition,team').in('club_id', ids).eq('team', 'seniori').order('season', { ascending: false })
-    if (error) throw error
-    for (const row of seasons ?? []) {
-      const key = row.club_id as string
-      if (seasonLabels.has(key)) continue
-      seasonLabels.set(key, `${formatSeasonLabel(row.season as string)} · ${row.competition as string}`)
+    if (ids.length) {
+      const { data: seasons, error } = await db.from('club_seasons').select('club_id,season,competition,team').in('club_id', ids).eq('team', 'seniori').order('season', { ascending: false })
+      if (error) throw error
+      for (const row of seasons ?? []) {
+        const key = row.club_id as string
+        if (seasonLabels.has(key)) continue
+        seasonLabels.set(key, `${formatSeasonLabel(row.season as string)} · ${row.competition as string}`)
+      }
     }
-    return rows.map(row => ({
-      ...row,
-      settlement_label: settlementNames.get(row.settlement_id as string) ?? null,
-      season_summary: seasonLabels.get(row.id as string) ?? null
+    return values.map(value => ({
+      ...value,
+      settlementLabel: settlementNames.get(value.settlementId as string) ?? null,
+      seasonSummary: seasonLabels.get(value.id as string) ?? null
     }))
-  },
-  toEntityExtra(row: Record<string, unknown>) {
-    return {
-      settlementLabel: (row.settlement_label as string | null | undefined) ?? null,
-      seasonSummary: (row.season_summary as string | null | undefined) ?? null
-    }
   }
 })

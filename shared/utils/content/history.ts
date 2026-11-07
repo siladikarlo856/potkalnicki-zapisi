@@ -104,8 +104,7 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
     isCurrent: { label: 'Trenutni izazov' }
   },
   word: {
-    entry: { label: 'Kartica riječi' },
-    areas: { label: 'Područja' }
+    entry: { label: 'Kartica riječi' }
   },
   heritage_category: {
     key: { label: 'Ključ' },

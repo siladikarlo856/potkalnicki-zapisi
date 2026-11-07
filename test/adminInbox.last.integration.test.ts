@@ -1,25 +1,17 @@
-import { execFileSync } from 'node:child_process'
 import { createHmac, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { fetch } from '@nuxt/test-utils/e2e'
 import type { InboxDetail, InboxList } from '../shared/types/inbox'
-import { setupNuxtServer } from './support/nuxtServer'
+import { integrationDb } from './support/integrationDb'
 
 // The corrections and proposals inbox end to end on a real Postgres: the public submission rules, the inbox API,
 // applying a correction and publishing a proposal's draft through the content API, withdrawal, and the spam
-// hardening. Run with `node scripts/test-challenges.mjs test/adminInbox.integration.test.ts`; skipped elsewhere.
-const url = process.env.TEST_CHALLENGE_API_URL
-const key = process.env.TEST_CHALLENGE_SERVICE_KEY ?? ''
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
+// hardening. Run with `node scripts/test-challenges.mjs test/adminInbox.last.integration.test.ts`; skipped elsewhere.
 const SECRET = 'inbox-review-secret-0123456789abcdef'
 const SESSION_PASSWORD = 'inbox-admin-session-password-0123456789'
 
-if (url) await setupNuxtServer({ NUXT_SUPABASE_URL: url, NUXT_SUPABASE_SERVICE_ROLE_KEY: key, NUXT_REVIEW_SECRET: SECRET, NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD })
+const db = await integrationDb({ server: { NUXT_REVIEW_SECRET: SECRET, NUXT_ADMIN_SESSION_PASSWORD: SESSION_PASSWORD } })
+const { sql, fetch } = db
 
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
 const unique = () => randomBytes(4).toString('hex')
 
 interface Reply<T> { status: number, body: T & { data?: { issues?: Array<Record<string, string>>, message?: string } } }
@@ -85,7 +77,7 @@ async function latestSubmissionId(type: string) {
   return sql(`select max(id) from public.heritage_submissions where type = '${type}';`)
 }
 
-describe.skipIf(!url)('corrections and proposals inbox over real Postgres', () => {
+describe.skipIf(!db.enabled)('corrections and proposals inbox over real Postgres', () => {
   it('guards the inbox like every other admin route', async () => {
     expect((await fetch('/api/admin/inbox')).status).toBe(401)
     expect((await fetch('/api/admin/inbox/summary')).status).toBe(401)
@@ -280,6 +272,72 @@ describe.skipIf(!url)('corrections and proposals inbox over real Postgres', () =
     expect((await admin(`/api/admin/inbox/${rejected}`, { method: 'PATCH', body: { status: 'rejected' } })).status).toBe(200)
     expect((await admin(`/api/admin/inbox/${rejected}/draft`, { method: 'POST', body: {} })).status).toBe(409)
     expect((await admin(`/api/admin/inbox/${rejected}`, { method: 'PATCH', body: { status: 'nonsense' } })).status).toBe(400)
+  })
+
+  it('validates a draft made from a proposal like an admin save: an invalid one is refused and writes nothing', async () => {
+    const w = world()
+    const categoryId = await makeCategory(w.id)
+    expect((await submit({ type: 'proposal', targetKind: 'heritage_item', payload: { name: `Kapela ${w.id}`, categoryId, municipalityId: w.municipality } })).status).toBe(201)
+    const id = await latestSubmissionId('proposal')
+    // A proposal stored before a rule existed (the intake is looser than the heritage item's own rules).
+    sql(`update public.heritage_submissions set payload = jsonb_set(payload, '{name}', to_jsonb(repeat('k', 250))) where id = ${id};`)
+    const revisions = sql('select count(*) from public.content_revisions;')
+
+    const draft = await admin(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(draft.status).toBe(400)
+    expect(draft.body.data?.issues).toContainEqual(expect.objectContaining({ path: 'name' }))
+    expect(sql(`select count(*) from public.heritage_items where source_submission_id = ${id};`)).toBe('0')
+    expect(sql('select count(*) from public.content_revisions;')).toBe(revisions)
+  })
+
+  it('makes a word draft from a proposal once, through the word\'s own save, and publishing it approves the proposal', async () => {
+    const headword = `bok${unique()}`
+    expect((await submit({ type: 'proposal', targetKind: 'word', payload: { headword, meaningHr: 'pozdrav', example: 'Bok, susjede!' } })).status).toBe(201)
+    const id = await latestSubmissionId('proposal')
+    const draft = await admin<{ kind: string, id: string, created: boolean }>(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(draft.status).toBe(201)
+    expect(draft.body).toMatchObject({ kind: 'word', created: true })
+    const again = await admin<{ id: string, created: boolean }>(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(again.status).toBe(200)
+    expect(again.body).toMatchObject({ id: draft.body.id, created: false })
+    expect((await inbox()).body.rows.find(entry => entry.id === Number(id))!.created).toMatchObject({ kind: 'word', id: draft.body.id, status: 'draft' })
+
+    const current = await admin<{ entity: { revision: number, status: string, submissionId: number, entry: Record<string, unknown> } }>(`/api/admin/content/word/${draft.body.id}`)
+    expect(current.body.entity).toMatchObject({ status: 'draft', submissionId: Number(id), entry: { headword, meaning: { hr: 'pozdrav' }, examples: [{ text: 'Bok, susjede!' }], sources: [{ kind: 'contribution' }] } })
+    const published = await admin(`/api/admin/content/word/${draft.body.id}`, {
+      method: 'PATCH', body: { status: 'published', revision: current.body.entity.revision, entry: { ...current.body.entity.entry, partOfSpeech: 'uzvik' } }
+    })
+    expect(published.status).toBe(200)
+    expect(sql(`select status from public.heritage_submissions where id = ${id};`)).toBe('approved')
+    expect(sql(`select active from public.heritage_words where id = '${draft.body.id}';`)).toBe('t')
+  })
+
+  it('validates a word draft made from a proposal like an admin save: an invalid one is refused and writes nothing', async () => {
+    expect((await submit({ type: 'proposal', targetKind: 'word', payload: { headword: `dugo${unique()}`, meaningHr: 'značenje' } })).status).toBe(201)
+    const id = await latestSubmissionId('proposal')
+    // A proposal stored before a rule existed (the intake is looser than the word's own rules).
+    sql(`update public.heritage_submissions set payload = jsonb_set(payload, '{meaningHr}', to_jsonb(repeat('z', 2500))) where id = ${id};`)
+
+    const draft = await admin(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(draft.status).toBe(400)
+    expect(draft.body.data?.issues).toContainEqual(expect.objectContaining({ path: 'meaning.hr' }))
+    expect(sql(`select count(*) from public.heritage_words where submission_id = ${id};`)).toBe('0')
+  })
+
+  it('makes a person draft from a proposal with its place, through the person\'s own save', async () => {
+    const w = world()
+    expect((await submit({ type: 'proposal', targetKind: 'person', payload: { name: `Ivana Horvat ${w.id}`, born: '1880.', died: '1950.', settlementId: w.settlement, significance: 'Učiteljica.', sourceUrl: 'https://example.org/ivana' } })).status).toBe(201)
+    const id = await latestSubmissionId('proposal')
+    const draft = await admin<{ kind: string, id: string, created: boolean }>(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(draft.status).toBe(201)
+    expect(draft.body).toMatchObject({ kind: 'person', created: true })
+    expect(JSON.parse(sql(`select jsonb_build_object('status', status, 'born_year', born_year, 'died_year', died_year, 'from', source_submission_id) from public.persons where id = '${draft.body.id}';`)))
+      .toEqual({ status: 'draft', born_year: 1880, died_year: 1950, from: Number(id) })
+    const person = await admin<{ entity: { areaLinks: unknown[] } }>(`/api/admin/content/person/${draft.body.id}`)
+    expect(person.body.entity.areaLinks).toEqual([{ areaId: w.settlement, role: 'djelovao' }])
+    // The draft's revision records its place, as every person save does.
+    expect(sql(`select data->'sidecars'->'areaLinks'->0->>'areaId' from public.content_revisions where entity_id = '${draft.body.id}' order by revision limit 1;`)).toBe(w.settlement)
+    expect((await admin<{ created: boolean }>(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })).body.created).toBe(false)
   })
 
   it('enforces who may submit what and whitelists the payload', async () => {

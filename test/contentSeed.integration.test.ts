@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import municipalities from './fixtures/atlas/municipalities.json'
@@ -8,6 +7,7 @@ import heritage from './fixtures/atlas/heritage.json'
 import wordAreas from './fixtures/heritage/areas.json'
 import dataset from './fixtures/atlas/dataset.json'
 import catalog from '../server/data/places/hr.json'
+import { integrationDb } from './support/integrationDb'
 
 // The atlas import (*_seed_content.sql) as applied to a real Postgres, checked field by field against the
 // content files it came from. Run with `node scripts/test-challenges.mjs`, which applies every migration to
@@ -27,13 +27,8 @@ const HERITAGE_CATEGORY_LABELS: Record<string, string> = {
   'historical-site': 'Povijesni lokalitet'
 }
 
-const url = process.env.TEST_CHALLENGE_API_URL
-const container = process.env.TEST_CHALLENGE_CONTAINER ?? ''
-
-function sql(input: string) {
-  if (!/^ksh-challenge-test-[a-f0-9]+$/.test(container)) throw new Error('Refusing non-isolated database')
-  return execFileSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-qAt'], { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-}
+const db = await integrationDb()
+const { sql } = db
 // A database row as JSON; key is the old id it was looked up by.
 type Row = Record<string, unknown> & { id: string, key: string }
 const rows = <T = Record<string, unknown>>(query: string): T[] => JSON.parse(sql(`select coalesce(json_agg(t), '[]') from (${query}) t;`))
@@ -60,7 +55,7 @@ const IMPORT_KEYS = [
 const IMPORTED = `select l.* from public.content_legacy_ids l
   join (values ${IMPORT_KEYS.map(([kind, key]) => `('${kind}', '${key}')`).join(', ')}) k(kind, key) on k.kind = l.kind and k.key = l.legacy_id`
 
-describe.skipIf(!url)('atlas content import on Postgres', () => {
+describe.skipIf(!db.enabled)('atlas content import on Postgres', () => {
   it('imports the country, county, region and the five towns and municipalities', () => {
     const areas = byKey(rows<Row>(`${AREAS} and l.legacy_id in (${list(['hr', 'hr-kkz', 'potkalnicko-prigorje', ...municipalities.map(m => m.id)])})`), a => a.key)
     expect(areas.size).toBe(8)

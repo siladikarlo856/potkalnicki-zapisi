@@ -1,9 +1,10 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
 import type { ContentErrorData, ContentIssue, ContentList, ContentLookupItem, ContentReferences, ContentStatus } from '../../../shared/utils/content/common'
 import {
   CONTENT_BODY_LIMIT, CONTENT_LOOKUP_LIMIT, CONTENT_PAGE_SIZES, CONTENT_SEARCH_MAX, CONTENT_STATUSES, contentFold, isUuid
 } from '../../../shared/utils/content/common'
-import type { AnyContentKindDefinition, ContentFilter } from './definition'
+import type { AnyContentKindDefinition, ContentFilter, ContentPersistOptions } from './definition'
 
 // Generic admin operations over one registry definition. The database owns the invariants:
 // `revision`, `updated_at` and `search_text` are set by the `content_before_write` trigger, every
@@ -28,7 +29,7 @@ export function invalid(issues: ContentIssue[], message = 'Provjeri označena po
   fail(400, 'Invalid content', { code: 'invalid', message, issues })
 }
 
-function columnsOf(def: AnyContentKindDefinition) {
+export function columnsOf(def: AnyContentKindDefinition) {
   return def.adapter?.columns ?? { ...COMMON_COLUMNS, ...def.fields }
 }
 
@@ -44,9 +45,7 @@ export function selectList(def: AnyContentKindDefinition) {
 
 export function toEntity(def: AnyContentKindDefinition, row: Row): ContentEntityRecord {
   if (def.adapter) return def.adapter.toEntity(row) as ContentEntityRecord
-  const entity = Object.fromEntries(Object.entries(columnsOf(def)).map(([field, column]) => [field, row[column] ?? null])) as ContentEntityRecord
-  if (def.toEntityExtra) Object.assign(entity, def.toEntityExtra(row))
-  return entity
+  return Object.fromEntries(Object.entries(columnsOf(def)).map(([field, column]) => [field, row[column] ?? null])) as ContentEntityRecord
 }
 
 export function toRow(def: AnyContentKindDefinition, value: Row) {
@@ -58,13 +57,32 @@ export function toRow(def: AnyContentKindDefinition, value: Row) {
 
 /** Only the editable fields and `status`: ids, revisions and timestamps are never taken from a client. */
 export function editable(def: AnyContentKindDefinition, source: Row) {
-  const keys = [...Object.keys(def.fields), ...(def.inputFields ?? []), 'status']
+  const keys = [...Object.keys(def.fields), ...(def.sidecars?.fields ?? []), 'status']
   return Object.fromEntries(keys.filter(key => key in source).map(key => [key, source[key]]))
 }
 
-/** The kind's validator, after its derived fields have been filled from the database. */
+/** Adds the kind's derived fields (`derive`) to API-shaped values. */
+async function derived<T extends Row>(def: AnyContentKindDefinition, values: T[]): Promise<T[]> {
+  if (!def.derive || !values.length) return values
+  return await def.derive(useDatabaseClient(), values) as T[]
+}
+
+/**
+ * Every rule of the kind, checked before anything is written: its validator (after derived fields have
+ * been filled from the database), then the rules on linked rows. A save with issues writes nothing.
+ */
 export async function validateInput(def: AnyContentKindDefinition, input: Row, id?: string) {
-  return def.validate(def.prepareInput ? await def.prepareInput(useDatabaseClient(), input) : input, id)
+  const db = useDatabaseClient()
+  const [prepared] = await derived(def, [input])
+  const validation = def.validate(prepared, id)
+  if (validation.issues.length || !def.checkLinks) return validation
+  let linkIssues: ContentIssue[]
+  try {
+    linkIssues = await def.checkLinks(db, validation.value)
+  } catch (error) {
+    contentDatabaseError(def, error as { code?: string, message: string })
+  }
+  return { ...validation, issues: linkIssues }
 }
 
 export function conflict(def: AnyContentKindDefinition, current: Row): never {
@@ -140,6 +158,28 @@ function searchPattern(value: string) {
   return `%${folded}%`
 }
 
+// The PostgREST filter methods `whereStatus` needs; every select builder has them.
+interface StatusFilterable<T> {
+  eq(column: string, value: unknown): T
+  is(column: string, value: null): T
+  not(column: string, operator: string, value: unknown): T
+}
+
+/**
+ * Narrows a query on the kind's table to one content status, in the kind's own terms: the `status` column, or
+ * the adapter's columns (a Published word is active and not archived). The one place that knows how each kind
+ * stores Published, Draft and Archived.
+ */
+export function whereStatus<T extends StatusFilterable<T>>(def: AnyContentKindDefinition, request: T, status: ContentStatus): T {
+  if (!def.adapter?.statusFilter) return request.eq('status', status)
+  def.adapter.statusFilter(status, (column, value) => {
+    if (value === 'not.null') request = request.not(column, 'is', null)
+    else if (value === null) request = request.is(column, null)
+    else request = request.eq(column, value)
+  })
+  return request
+}
+
 export async function listContent(event: H3Event, def: AnyContentKindDefinition): Promise<ContentList<ContentEntityRecord>> {
   const query = getQuery(event)
   const q = queryText(query.q, 'q').trim()
@@ -175,14 +215,7 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
       if (expanded) request = request.in(filter.column, [...expanded])
       else request = request.eq(filter.column, value)
     }
-    if (statusFilter) {
-      if (def.adapter?.statusFilter) def.adapter.statusFilter(statusFilter as ContentStatus, (column, value) => {
-        if (value === 'not.null') request = request.not(column, 'is', null)
-        else if (value === null) request = request.is(column, null)
-        else request = request.eq(column, value)
-      })
-      else request = request.eq('status', statusFilter)
-    }
+    if (statusFilter) request = whereStatus(def, request, statusFilter as ContentStatus)
     if (q) request = request.ilike('search_text', searchPattern(q))
     return request
   }
@@ -199,9 +232,8 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
     return { rows: [], total: counted.count ?? 0, page, size }
   }
   if (error) contentDatabaseError(def, error)
-  let rows = (data ?? []) as unknown as Row[]
-  if (def.enrichRows) rows = await def.enrichRows(useDatabaseClient(), rows) as Row[]
-  return { rows: rows.map(row => toEntity(def, row)), total: count ?? 0, page, size }
+  const rows = await derived(def, ((data ?? []) as unknown as Row[]).map(row => toEntity(def, row)))
+  return { rows, total: count ?? 0, page, size }
 }
 
 export async function getContent(def: AnyContentKindDefinition, id: string) {
@@ -210,9 +242,9 @@ export async function getContent(def: AnyContentKindDefinition, id: string) {
   const { data, error } = await db.from('content_legacy_ids')
     .select('legacy_id').eq('kind', def.kind).eq('entity_id', id).order('legacy_id')
   if (error) contentDatabaseError(def, error)
-  const entity = toEntity(def, row)
-  const extras = await def.loadEntity?.(db, entity) ?? {}
-  return { entity: { ...entity, ...extras }, legacyIds: (data ?? []).map(entry => entry.legacy_id as string) }
+  const sidecars = await def.sidecars?.load(db, id) ?? {}
+  const [entity] = await derived(def, [{ ...toEntity(def, row), ...sidecars }])
+  return { entity: entity!, legacyIds: (data ?? []).map(entry => entry.legacy_id as string) }
 }
 
 const APPLY_KINDS = new Set<string>(['word', 'heritage_item', 'area', 'source', 'person'])
@@ -236,10 +268,41 @@ async function readInput(event: H3Event, def: AnyContentKindDefinition) {
   return readJsonObject(event, def.bodyLimit ?? CONTENT_BODY_LIMIT)
 }
 
-/** Every write makes the public snapshot reload on the next request; the kind's own hook runs after that. */
-export async function contentAfterWrite(event: H3Event, def: AnyContentKindDefinition) {
+/**
+ * Every write makes the public snapshot reload on the next request. Everything read from content (the
+ * current Challenge template included) is derived from that snapshot, so this is all a write has to do.
+ */
+export function contentAfterWrite() {
   invalidatePublicContent()
-  await def.afterWrite?.(event)
+}
+
+/**
+ * The save of a kind stored in its main row alone: one insert or update, which is its own transaction.
+ * A kind with `sidecars` must define its own `persist`, or they would be lost.
+ */
+async function saveMainRow(def: AnyContentKindDefinition, db: SupabaseClient, id: string | null, { row, revision }: ContentPersistOptions) {
+  if (def.sidecars?.fields.length) throw new Error(`[content] ${def.kind} stores ${def.sidecars.fields.join(', ')} beside its row but defines no persist.`)
+  const request = id === null
+    ? db.from(def.table).insert(row).select('id')
+    : db.from(def.table).update(row).eq('id', id).eq('revision', revision!).select('id')
+  const { data, error } = await request
+  if (error) throw error
+  return (data?.[0]?.id as string | undefined) ?? null
+}
+
+/**
+ * Saves a validated value through the kind's one-transaction `persist` (or its main row): every create, update
+ * and history restore. A database error is mapped like any other write; `onForeignKey` may answer a 23503 itself.
+ */
+export async function persistValue(def: AnyContentKindDefinition, id: string | null, value: Row, options: ContentPersistOptions, onForeignKey?: () => never) {
+  const db = useDatabaseClient()
+  try {
+    return def.persist ? await def.persist(db, id, value, options) : await saveMainRow(def, db, id, options)
+  } catch (error) {
+    if (error instanceof Error && !('code' in error)) throw error
+    if (onForeignKey && (error as { code?: string }).code === '23503') onForeignKey()
+    contentDatabaseError(def, error as { code?: string, message: string })
+  }
 }
 
 export async function createContent(event: H3Event, def: AnyContentKindDefinition) {
@@ -248,13 +311,10 @@ export async function createContent(event: H3Event, def: AnyContentKindDefinitio
   if (issues.length) invalid(issues)
   const row = toRow(def, value)
   if (def.adapter?.createId) row.id = def.adapter.createId(value)
-  const { data, error } = await useDatabaseClient().from(def.table).insert(row).select(selectList(def)).single()
-  if (error) contentDatabaseError(def, error)
-  const saved = toEntity(def, data as unknown as Row)
-  await def.persistEntity?.(useDatabaseClient(), saved.id as string, value as Row)
-  await contentAfterWrite(event, def)
+  const id = await persistValue(def, null, value as Row, { row })
+  contentAfterWrite()
   setResponseStatus(event, 201)
-  return { entity: { ...saved, ...(await def.loadEntity?.(useDatabaseClient(), saved) ?? {}) } }
+  return { entity: (await getContent(def, id!)).entity }
 }
 
 /**
@@ -271,21 +331,15 @@ export async function updateContent(event: H3Event, def: AnyContentKindDefinitio
   const current = await requireRow(def, id)
   if (current.revision !== revision) conflict(def, current)
 
-  const { value, issues } = await validateInput(def, { ...editable(def, toEntity(def, current)), ...editable(def, body) }, id)
+  // The request is merged over the full stored entity, fields beside the row included.
+  const stored = (await getContent(def, id)).entity
+  const { value, issues } = await validateInput(def, { ...editable(def, stored), ...editable(def, body) }, id)
   if (issues.length) invalid(issues)
-  const { data, error } = await useDatabaseClient().from(def.table).update({ ...toRow(def, value), ...applyColumns(def, body) })
-    .eq('id', id).eq('revision', revision).select(selectList(def))
-  if (error) contentDatabaseError(def, error)
-  const saved = (data ?? []) as unknown as Row[]
-  if (!saved.length) {
-    // Someone saved between the read and the write.
-    conflict(def, await requireRow(def, id))
-  }
-  const entity = toEntity(def, saved[0]!)
-  await def.persistEntity?.(useDatabaseClient(), id, value as Row)
-  await contentAfterWrite(event, def)
-  const extras = await def.loadEntity?.(useDatabaseClient(), entity) ?? {}
-  return { entity: { ...entity, ...extras } }
+  const saved = await persistValue(def, id, value as Row, { row: { ...toRow(def, value), ...applyColumns(def, body) }, revision })
+  // Someone saved between the read and the write.
+  if (!saved) conflict(def, await requireRow(def, id))
+  contentAfterWrite()
+  return { entity: (await getContent(def, id)).entity }
 }
 
 export async function contentReferences(def: AnyContentKindDefinition, id: string): Promise<ContentReferences> {
@@ -310,7 +364,7 @@ async function archiveContent(event: H3Event, def: AnyContentKindDefinition, id:
   if (error) contentDatabaseError(def, error)
   const saved = (data ?? []) as unknown as Row[]
   if (!saved.length) fail(404, 'Not found', { message: 'Zapis nije pronađen.' })
-  await contentAfterWrite(event, def)
+  contentAfterWrite()
   return { mode: 'archive' as const, entity: toEntity(def, saved[0]!) }
 }
 
@@ -329,7 +383,7 @@ async function hardDeleteContent(event: H3Event, def: AnyContentKindDefinition, 
     contentDatabaseError(def, error)
   }
   if (!data?.length) fail(404, 'Not found', { message: 'Zapis nije pronađen.' })
-  await contentAfterWrite(event, def)
+  contentAfterWrite()
   return { mode: 'hard' as const, id }
 }
 
@@ -356,14 +410,7 @@ export async function lookupContent(event: H3Event, def: AnyContentKindDefinitio
   if (ids.length) {
     request = request.in('id', ids.map(id => id.toLowerCase()))
   } else {
-    if (def.adapter?.statusFilter) {
-      def.adapter.statusFilter('published', (column, value) => {
-        if (value === null) request = request.is(column, null)
-        else request = request.eq(column, value)
-      })
-    } else {
-      request = request.neq('status', 'archived')
-    }
+    request = def.adapter ? whereStatus(def, request, 'published') : request.neq('status', 'archived')
     if (q) request = request.ilike('search_text', searchPattern(q))
   }
   const { data, error } = await request.order(def.adapter ? 'search_text' : def.labelColumn).order('id').limit(ids.length || CONTENT_LOOKUP_LIMIT)
@@ -373,7 +420,7 @@ export async function lookupContent(event: H3Event, def: AnyContentKindDefinitio
       const entity = toEntity(def, row)
       return {
         id: entity.id as string,
-        label: def.lookupLabel?.(row) ?? def.adapter?.lookupLabel?.(row) ?? String(row[def.labelColumn] ?? ''),
+        label: def.lookupLabel?.(row) ?? String(row[def.labelColumn] ?? ''),
         status: entity.status as ContentStatus
       }
     })

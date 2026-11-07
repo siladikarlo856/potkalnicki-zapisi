@@ -4,13 +4,16 @@ import type { AdminWord, PublicWordEntry, WordInput } from '../../shared/utils/w
 import { validateWord } from '../../shared/utils/word'
 import type { WordPageRelated, WordPageResponse } from '../../shared/types/publicSpeech'
 import { wordArchivePagePath } from '../../shared/utils/speech'
+import type { Word } from '../../shared/utils/content/word'
+import { publishedWords as published } from './content/kinds/word'
+import { createDraft, createdFrom, readContent } from './content/records'
 import { loadAreaIndex, projectAreas, withProjectedAreas } from './wordAreas'
 
 const WORD_TABLE = 'heritage_words'
 const SLUG_HISTORY_TABLE = 'content_slug_history'
-// The columns a word draft is read back with; heritage_words.areas is never read (see wordAreas.ts).
-const ADMIN_COLUMNS = 'id,entry,active,submission_id,submission_place,created_at,updated_at'
 const PUBLIC_COLUMNS = 'id,entry,slug,updated_at'
+// Only the fields a word Draft is made from. Contact never enters the word store.
+const SUBMISSION_COLUMNS = 'id,text,type,intent,place,place_id,name,consent_publish,target_kind,payload'
 const AREAS_TABLE = 'areas'
 
 type ResolvedWord
@@ -21,13 +24,10 @@ type ResolvedWord
 interface WordRow {
   id: string
   entry: WordInput['entry']
-  active: boolean
   slug?: string | null
-  submission_id: number | null
-  submission_place: string | null
-  created_at: string
-  updated_at: string
 }
+
+type Row = Record<string, unknown>
 
 interface AreaRow {
   id: string
@@ -39,11 +39,11 @@ interface AreaRow {
   status: string
 }
 
-function adminWord(row: WordRow, areas: WordInput['areas']): AdminWord {
+function adminWord(word: Word, areas: WordInput['areas']): AdminWord {
   return {
-    entry: row.entry, areas, active: row.active,
-    submissionId: row.submission_id, submissionPlace: row.submission_place,
-    createdAt: row.created_at, updatedAt: row.updated_at
+    entry: word.entry, areas, active: word.status === 'published',
+    submissionId: word.submissionId, submissionPlace: word.submissionPlace,
+    createdAt: word.createdAt, updatedAt: word.updatedAt
   }
 }
 
@@ -95,18 +95,12 @@ export async function listAdminAreas() {
   }))
 }
 
-export async function promoteSubmission(id: number) {
-  const client = useDatabaseClient()
-  const existing = await client.from(WORD_TABLE).select(ADMIN_COLUMNS).eq('submission_id', id)
-  if (existing.error) databaseError(existing.error)
-  if (existing.data.length) return adminWord(existing.data[0] as unknown as WordRow, projectAreas(existing.data[0]!.entry, await loadAreaIndex(client)))
-
-  // Only the fields needed for a draft are read. Contact never enters the word store.
-  const { data, error } = await client.from('heritage_submissions')
-    .select('id,text,type,intent,place,place_id,name,consent_publish,target_kind,payload').eq('id', id)
-  if (error) databaseError(error)
-  const submission = data[0]
-  if (!submission) throw createError({ statusCode: 404, statusMessage: 'Submission not found' })
+/**
+ * A word Contribution as the value of its word Draft: a word Proposal's payload, or a plain word, expression or
+ * memory. Refuses what cannot become a new word. The first variant names the contributor's place as a usage; the
+ * place as they wrote it is kept as `submissionPlace`.
+ */
+async function wordDraftValue(submission: Row): Promise<{ value: Row, origin: Row }> {
   if (submission.type === 'correction') throw createError({ statusCode: 400, statusMessage: 'Not a word submission' })
   // A structured proposal for a new word carries its fields in the payload; a proposal for anything else is no word.
   const proposal = submission.type === 'proposal' && submission.target_kind === 'word'
@@ -116,45 +110,52 @@ export async function promoteSubmission(id: number) {
   // "Used in my village too" confirms an existing word; turning it into a draft would duplicate that word.
   if (submission.intent === 'usage') throw createError({ statusCode: 400, statusMessage: 'Usage confirmations are not new words' })
   if (!submission.consent_publish) throw createError({ statusCode: 400, statusMessage: 'Publication consent required' })
-  const wordId = randomUUID()
+  const text = String(submission.text ?? '')
   const isWord = !!proposal || submission.type === 'word' || submission.type === 'expression'
-  const headword = proposal ? (proposal.headword ?? '').slice(0, 200) : isWord ? submission.text.slice(0, 200) : ''
-  const placeId = proposal?.placeId ?? submission.place_id
+  // A long plain text keeps its start as the headword and the whole as an example; a Proposal's headword is its own.
+  const headword = proposal ? proposal.headword ?? '' : isWord ? text.slice(0, 200) : ''
+  const placeId = (proposal?.placeId ?? submission.place_id) as string | null | undefined
+  const place = submission.place as string | null
 
   // Map the place (geonames:NNNN) to an area UUID from the database; name match only when no place id was given.
-  let areaId: string | undefined
-  if (placeId) {
-    const area = await areaByGeonamesId(placeId)
-    if (area) areaId = area.id
-  } else if (submission.place) {
-    const area = await areaByName(submission.place)
-    if (area) areaId = area.id
+  const area = placeId ? await areaByGeonamesId(placeId) : place ? await areaByName(place) : null
+  return {
+    value: {
+      entry: {
+        id: randomUUID(),
+        headword, meaning: { hr: proposal?.meaningHr ?? '' }, partOfSpeech: '', status: 'community',
+        examples: proposal
+          ? (proposal.example ? [{ text: proposal.example }] : [])
+          : !isWord || text.length > 200 ? [{ text }] : [],
+        // Public source IDs deliberately do not encode the private submission ID.
+        sources: [{ id: randomUUID(), kind: 'contribution', ...(submission.name ? { credit: submission.name } : {}) }],
+        variants: [{ id: randomUUID(), form: headword, status: 'community', usages: area ? [{ areaId: area.id, confidence: 'reported' }] : [] }]
+      }
+    },
+    origin: { submissionPlace: place ?? null }
   }
+}
 
-  // The draft names its area in the first variant's usage; the areas themselves are read from the areas table.
-  const draft = validateWord({
-    active: false,
-    areas: [],
-    entry: {
-      headword, meaning: { hr: proposal?.meaningHr ?? '' }, partOfSpeech: '', status: 'community',
-      examples: proposal
-        ? (proposal.example ? [{ text: proposal.example }] : [])
-        : !isWord || submission.text.length > 200 ? [{ text: submission.text }] : [],
-      // Public source IDs deliberately do not encode the private submission ID.
-      sources: [{ id: randomUUID(), kind: 'contribution', ...(submission.name ? { credit: submission.name } : {}) }],
-      variants: [{ id: randomUUID(), form: headword, status: 'community', usages: areaId ? [{ areaId, confidence: 'reported' }] : [] }]
-    }
-  }, wordId).value
-  const inserted = await client.from(WORD_TABLE).insert({
-    id: wordId, entry: draft.entry, active: false,
-    submission_id: id, submission_place: submission.place
-  }).select(ADMIN_COLUMNS)
-  if (inserted.error) {
-    // Unique submission_id makes repeated/concurrent promotion safe and idempotent.
-    if (inserted.error.code === '23505') return promoteSubmission(id)
-    databaseError(inserted.error)
+/**
+ * The word Draft of a Contribution (a submission row), saved through the word's own validate → save like an admin
+ * create: a value that breaks a word rule is refused (400) and nothing is written. Idempotent per Contribution.
+ */
+export async function draftWord(submission: Row) {
+  const { value, origin } = await wordDraftValue(submission)
+  return createDraft('word', value, { submissionId: Number(submission.id), origin })
+}
+
+/** The reviewer API's promotion: the Contribution's word Draft (made once), as the admin word it is. */
+export async function promoteSubmission(id: number) {
+  let wordId = (await createdFrom('word', [id])).get(id)?.id
+  if (!wordId) {
+    const { data, error } = await useDatabaseClient().from('heritage_submissions').select(SUBMISSION_COLUMNS).eq('id', id).maybeSingle()
+    if (error) databaseError(error)
+    if (!data) throw createError({ statusCode: 404, statusMessage: 'Submission not found' })
+    wordId = (await draftWord(data as Row)).id
   }
-  return adminWord(inserted.data![0] as unknown as WordRow, projectAreas(draft.entry, await loadAreaIndex(client)))
+  const [word] = await readContent('word', [wordId]) as unknown as Word[]
+  return adminWord(word!, projectAreas(word!.entry, await loadAreaIndex(useDatabaseClient())))
 }
 
 export async function publicWords(limit?: number) {
@@ -164,14 +165,9 @@ export async function publicWords(limit?: number) {
   const areas = new Map<string, WordInput['areas'][number]>()
   let from = 0
   while (true) {
-    let query = client.from(WORD_TABLE).select('id,entry,slug').eq('active', true).order('id')
-    if (limit !== undefined) {
-      if (from > 0) break
-      query = query.limit(limit)
-    } else {
-      query = query.range(from, from + pageSize - 1)
-    }
-    const { data, error } = await query
+    const query = published(client.from(WORD_TABLE).select('id,entry,slug')).order('id')
+    if (limit !== undefined && from > 0) break
+    const { data, error } = await (limit !== undefined ? query.limit(limit) : query.range(from, from + pageSize - 1))
     if (error) databaseError(error)
     const rows = data ?? []
     for (const row of await withProjectedAreas(client, rows)) {
@@ -201,9 +197,7 @@ export async function publicWordSitemap(): Promise<WordSitemapEntry[]> {
   const entries: WordSitemapEntry[] = []
   let from = 0
   while (true) {
-    const { data, error } = await client.from(WORD_TABLE)
-      .select('slug,updated_at')
-      .eq('active', true)
+    const { data, error } = await published(client.from(WORD_TABLE).select('slug,updated_at'))
       .not('slug', 'is', null)
       .order('slug')
       .range(from, from + pageSize - 1)
@@ -253,7 +247,7 @@ export async function resolvePublicWord(slug: string): Promise<ResolvedWord> {
   if (!trimmed) return { status: 'not_found' }
 
   const client = useDatabaseClient()
-  const live = await client.from(WORD_TABLE).select(PUBLIC_COLUMNS).eq('active', true).eq('slug', trimmed).limit(1)
+  const live = await published(client.from(WORD_TABLE).select(PUBLIC_COLUMNS)).eq('slug', trimmed).limit(1)
   if (live.error) databaseError(live.error)
   const row = live.data?.[0] as WordRow | undefined
   if (row) {
@@ -281,7 +275,7 @@ export async function resolvePublicWord(slug: string): Promise<ResolvedWord> {
   const entityId = history.data?.[0]?.entity_id
   if (typeof entityId !== 'string' || !entityId) return { status: 'not_found' }
 
-  const current = await client.from(WORD_TABLE).select('slug').eq('id', entityId).eq('active', true).limit(1)
+  const current = await published(client.from(WORD_TABLE).select('slug')).eq('id', entityId).limit(1)
   if (current.error) databaseError(current.error)
   const currentSlug = current.data?.[0]?.slug
   if (typeof currentSlug !== 'string' || !currentSlug) return { status: 'not_found' }
