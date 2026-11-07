@@ -73,7 +73,7 @@ useSeoMeta({
 
     <div class="flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
       <div
-        class="sticky top-(--pz-header-h) z-10 -mx-4 flex flex-col gap-3 border-b border-default bg-default px-4 py-3 lg:top-22 lg:col-span-3 lg:mx-0 lg:gap-5 lg:rounded-(--pz-radius-lg) lg:border lg:bg-muted lg:p-4"
+        class="sticky top-0 z-10 -mx-4 flex flex-col gap-3 border-b border-default bg-default px-4 py-3 lg:top-22 lg:col-span-3 lg:mx-0 lg:gap-5 lg:rounded-(--pz-radius-lg) lg:border lg:bg-muted lg:p-4"
         role="group"
         :aria-label="t('pz.heritage.filtersLabel')"
         data-testid="heritage-filters"

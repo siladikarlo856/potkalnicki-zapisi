@@ -101,4 +101,13 @@ describe('PzHeader', () => {
     expect(header.find('[data-testid="pz-lang-desktop"]').text()).toContain('HR')
     expect(header.find('[data-testid="pz-lang-desktop"]').text()).toContain('EN')
   })
+
+  it('is pinned only from lg up, where there is no tab bar', async () => {
+    const header = await mountSuspended(PzHeader, { route: '/potkalnicko-prigorje' })
+    const classes = header.find('header').classes()
+    expect(classes).toContain('lg:sticky')
+    expect(classes).toContain('lg:top-0')
+    expect(classes).not.toContain('sticky')
+    expect(classes).not.toContain('top-0')
+  })
 })
