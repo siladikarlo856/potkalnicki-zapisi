@@ -56,7 +56,7 @@ async function quickChallenge() {
 
 <template>
   <div>
-    <UContainer class="max-w-3xl space-y-8 py-10 sm:py-16">
+    <UContainer class="max-w-3xl space-y-8 py-6 sm:py-10">
       <UButton
         :to="localePath(pzRoutes.home)"
         color="neutral"
@@ -66,16 +66,20 @@ async function quickChallenge() {
         {{ t('challenge.heritage') }}
       </UButton>
 
-      <header class="space-y-3">
-        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
+      <header class="relative flex flex-col gap-3 py-2">
+        <PzRidge class="absolute -top-2 right-0 h-28 w-3/4 opacity-80" />
+        <p class="pz-overline relative text-muted">
+          {{ t('pz.challenge.introOverline') }}
+        </p>
+        <h1 class="pz-display relative text-highlighted">
           {{ t('challenge.hubTitle') }}
         </h1>
-        <p class="text-lg text-muted">
+        <p class="pz-lead relative text-muted">
           {{ t('challenge.hubIntro') }}
         </p>
       </header>
 
-      <ol class="list-decimal space-y-2 pl-5 text-muted">
+      <ol class="pz-body list-decimal space-y-2 pl-5 text-muted">
         <li>{{ t('challenge.hubStep1') }}</li>
         <li>{{ t('challenge.hubStep2') }}</li>
         <li>{{ t('challenge.hubStep3') }}</li>

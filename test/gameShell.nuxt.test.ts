@@ -135,18 +135,25 @@ describe('GameShell', () => {
       await page.get(`[data-testid="game-option-${i === 1 ? wrongIndex(q) : q.correct}"]`).trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
-    expect(page.get('[data-testid="game-result-score"]').text()).toBe('2 od 3')
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('2 / 3')
+    expect(page.get('[data-testid="pz-squares"]').attributes('aria-label')).toBe('2 točno, 1 netočno')
     expect(page.findAll('[data-testid="game-miss"]')).toHaveLength(1)
     expect(page.get('[data-testid="game-miss"]').text()).toContain('Pitanje 1?')
     expect(page.get('[data-testid="game-miss"]').text()).toContain('Točan odgovor: B')
     expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!)).toMatchObject({ version: 1, best: { rijec: { score: 2, max: 3 } } })
     // Rijec has no creator round: it links to the challenge page instead of making one in place.
-    expect(page.get('[data-testid="game-make-challenge"]').text()).toBe('Napravi izazov s ovim')
-    expect(page.get('[data-testid="game-make-challenge"]').attributes('href')).toContain('/izazov')
+    // The primary action of the result is the challenge, ahead of the share and the replay buttons.
+    const primary = page.get('[data-testid="game-make-challenge"]')
+    expect(primary.text()).toBe('Izazovi prijatelje s ovom rundom')
+    expect(primary.attributes('href')).toContain('/izazov')
     expect(page.find('[data-testid="challenge-create"]').exists()).toBe(false)
-    expect(page.get('[data-testid="quiz-share-toggle"]').text()).toBe('Podijeli rezultat')
-    await page.get('[data-testid="quiz-share-toggle"]').trigger('click')
-    expect(page.get('[data-testid="quiz-share-text"]').text()).toContain('Kak se to veli? 2/3\n🟩🟥🟩')
+    const buttons = page.findAll('a[data-testid], button[data-testid]').map(button => button.attributes('data-testid'))
+    expect(buttons.indexOf('game-make-challenge')).toBeLessThan(buttons.indexOf('result-share-open'))
+    expect(buttons.indexOf('result-share-open')).toBeLessThan(buttons.indexOf('game-replay'))
+    expect(page.get('[data-testid="result-share-open"]').text()).toBe('Podijeli rezultat')
+    await page.get('[data-testid="result-share-open"]').trigger('click')
+    await vi.waitFor(() => expect(document.body.querySelector('[data-testid="pz-share-text"]')).not.toBeNull())
+    expect(document.body.querySelector('[data-testid="pz-share-text"]')!.textContent).toContain('Kak se to veli? · 2/3\n🟩🟥🟩\n')
   })
 
   it('keeps a better stored score and emits restart from "Igraj opet"', async () => {
@@ -176,8 +183,8 @@ describe('GameShell', () => {
       await page.get(`[data-testid="game-option-${texts.indexOf(['A', 'B', 'C'][questions[n]!.correct]!)}"]`).trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
-    expect(page.get('[data-testid="game-result-score"]').text()).toBe('3 od 3')
-    expect(page.find('[data-testid="quiz-share"]').exists()).toBe(false)
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('3 / 3')
+    expect(page.find('[data-testid="result-share-open"]').exists()).toBe(false)
     expect(page.find('[data-testid="game-make-challenge"]').exists()).toBe(false)
     // The 0/3 first round saved nothing, and the 3/3 practice round saves nothing either.
     expect(localStorage.getItem(GAME_SCORES_KEY)).toBeNull()

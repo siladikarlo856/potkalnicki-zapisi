@@ -22,21 +22,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section
-    class="relative flex flex-col gap-4 overflow-hidden rounded-(--pz-radius-xl) border border-inverted bg-inverted p-5 pb-24 text-inverted"
-    aria-labelledby="friend-challenge-title"
+  <PzChallengeCard
+    :overline="t('pz.home.challengeOverline')"
+    :title="t('pz.home.challengeTitle')"
     data-testid="friend-challenge"
   >
-    <PzRidge class="absolute -right-2.5 bottom-0 h-22 w-[70%] text-primary opacity-90" />
-    <p class="pz-overline relative text-inverted">
-      {{ t('pz.home.challengeOverline') }}
-    </p>
-    <h2
-      id="friend-challenge-title"
-      class="relative font-serif text-2xl/[30px] font-semibold text-inverted"
-    >
-      {{ t('pz.home.challengeTitle') }}
-    </h2>
     <template v-if="totalCount === 0">
       <p class="pz-body relative text-inverted">
         {{ t('pz.home.friendChallengeBlurb') }}
@@ -82,5 +72,5 @@ onMounted(async () => {
         />
       </div>
     </template>
-  </section>
+  </PzChallengeCard>
 </template>

@@ -3,9 +3,12 @@ import { GAME_CATALOGUE } from '~~/shared/utils/games/catalogue'
 import type { GameId, GameQuestion } from '~~/shared/utils/games/types'
 import type { QuizChallengeInput } from '~~/shared/utils/challenge'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
+import { resultShareMessage } from '~/utils/shareResult'
 
-// End screen of a round: the score, the misses (with a link to the record and a correction), replay,
-// "make a challenge from this" and a quiet share. Words and answers never go into the shared text.
+// End screen of a round (ScreenResult): the score as a numeral over a row of squares, a one-line verdict, then
+// "Izazovi prijatelje s ovom rundom" as the one primary action, "Podijeli rezultat" as a secondary that opens the
+// share sheet, the misses (each with a link to its record and a correction) and the replay buttons.
+// Words and answers never go into the shared text: only the headline, the squares and an invitation.
 const props = defineProps<{
   gameId: GameId
   title: string
@@ -26,70 +29,126 @@ const lang = computed(() => locale.value === 'en' ? 'en' : 'hr')
 const misses = computed(() => props.questions.filter((_, index) => props.results[index] === false))
 const entry = computed(() => GAME_CATALOGUE.find(game => game.id === props.gameId))
 const canChallenge = computed(() => !props.practice && Boolean(entry.value?.challengeable) && total.value > 0)
-// Before WP13 adds the create flow, other games link to the challenge page.
+const canShare = computed(() => !props.practice && total.value > 0)
+// With a creator round the primary opens the create form in place; otherwise it goes to the challenge page.
 const challengeHref = computed(() => localePath(pzRoutes.challenge))
-const headline = computed(() => `${props.title} ${correct.value}/${total.value}`)
-const heading = useTemplateRef<HTMLElement>('heading')
-defineExpose({ focus: () => heading.value?.focus() })
+const challengeOpen = ref(false)
+const shareOpen = ref(false)
+const origin = ref('')
+const verdict = computed(() => {
+  if (!total.value) return ''
+  const ratio = correct.value / total.value
+  return t(ratio >= 0.8 ? 'pz.play.verdictHigh' : ratio >= 0.5 ? 'pz.play.verdictMid' : 'pz.play.verdictLow')
+})
+const headline = computed(() => `${props.title} · ${correct.value}/${total.value}`)
+const shareUrl = computed(() => origin.value + localePath(entry.value?.path ?? pzRoutes.games))
+const shareMessage = computed(() => resultShareMessage({
+  headline: headline.value,
+  results: props.results,
+  invite: t('pz.share.invite'),
+  url: shareUrl.value
+}))
+const summary = useTemplateRef<{ focus: () => void }>('summary')
+defineExpose({ focus: () => summary.value?.focus() })
+onMounted(() => {
+  origin.value = window.location.origin
+})
 </script>
 
 <template>
   <div
-    class="flex flex-col items-center gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4 text-center sm:p-6"
+    class="flex flex-col gap-6"
     data-testid="game-result"
   >
-    <UIcon
-      :name="total ? 'i-lucide-trophy' : 'i-lucide-book-open'"
-      class="size-8 text-primary"
-    />
-    <h2
-      ref="heading"
-      tabindex="-1"
-      class="pz-h2 text-highlighted outline-offset-4"
+    <PzShareResult
+      ref="summary"
+      :caption="t('pz.play.resultCaption', { title })"
+      :results="results"
     >
-      {{ t('pz.play.done') }}
-    </h2>
-    <p
-      role="status"
-      class="pz-lead font-semibold text-highlighted tabular-nums"
-      data-testid="game-result-score"
-    >
-      {{ t('pz.play.resultOf', { correct, n: total }) }}
-    </p>
+      <p
+        v-if="verdict"
+        class="pz-lead"
+        data-testid="game-result-verdict"
+      >
+        {{ verdict }}
+      </p>
+    </PzShareResult>
+
+    <div class="flex flex-col gap-3">
+      <template v-if="canChallenge">
+        <UButton
+          v-if="quizPayload"
+          :label="t('pz.play.challengeFriends')"
+          icon="i-lucide-flag"
+          size="xl"
+          block
+          :aria-expanded="challengeOpen"
+          data-testid="game-make-challenge"
+          @click="challengeOpen = !challengeOpen"
+        />
+        <UButton
+          v-else
+          :to="challengeHref"
+          :label="t('pz.play.challengeFriends')"
+          icon="i-lucide-flag"
+          size="xl"
+          block
+          data-testid="game-make-challenge"
+        />
+        <HeritageChallengeShare
+          v-if="quizPayload && challengeOpen"
+          :quiz="quizPayload"
+          :score="correct"
+          :total="total"
+        />
+      </template>
+      <UButton
+        v-if="canShare"
+        :label="t('pz.share.resultTitle')"
+        icon="i-lucide-share-2"
+        color="neutral"
+        variant="outline"
+        size="lg"
+        block
+        class="print:hidden"
+        data-testid="result-share-open"
+        @click="shareOpen = true"
+      />
+    </div>
 
     <section
-      class="w-full min-w-0 border-t border-default pt-3 text-start"
+      class="flex min-w-0 flex-col gap-4"
       aria-labelledby="game-misses-title"
       data-testid="game-misses"
     >
-      <h3
+      <h2
         id="game-misses-title"
-        class="text-sm font-semibold text-highlighted"
+        class="pz-h2 text-highlighted"
       >
         {{ t('pz.play.missesTitle') }}
-      </h3>
+      </h2>
       <p
         v-if="!misses.length"
-        class="mt-1 text-sm text-muted"
+        class="pz-body text-muted"
       >
         {{ t('pz.play.noMisses') }}
       </p>
       <ul
         v-else
-        class="mt-1 flex flex-col gap-2"
+        class="m-0 flex list-none flex-col overflow-hidden rounded-(--pz-radius-lg) border border-default bg-default p-0"
       >
         <li
           v-for="question in misses"
           :key="question.id"
-          class="flex min-w-0 flex-col gap-1 rounded-(--pz-radius-md) border border-default bg-muted px-3 py-2 text-sm"
+          class="flex min-w-0 flex-col gap-1 border-t border-default px-4 py-3 first:border-t-0"
           data-testid="game-miss"
         >
           <span
-            class="font-semibold wrap-anywhere text-highlighted"
+            class="font-serif text-[17px]/[22px] font-semibold wrap-anywhere text-highlighted"
             lang="hr"
           >{{ question.prompt[lang] }}</span>
           <span
-            class="wrap-anywhere"
+            class="pz-body-sm wrap-anywhere text-muted"
             lang="hr"
           >{{ t('pz.play.correctAnswer', { answer: question.options[question.correct]![lang] }) }}</span>
           <span class="flex flex-wrap items-center gap-x-4 gap-y-0.5">
@@ -107,52 +166,40 @@ defineExpose({ focus: () => heading.value?.focus() })
           </span>
         </li>
       </ul>
+      <div class="grid gap-2 sm:grid-cols-2">
+        <UButton
+          v-if="misses.length"
+          :label="t('pz.play.replayMissed', { count: misses.length })"
+          icon="i-lucide-rotate-ccw"
+          color="neutral"
+          variant="outline"
+          size="lg"
+          block
+          data-testid="game-replay-missed"
+          @click="emit('replay-missed')"
+        />
+        <UButton
+          :label="t('pz.play.newRound')"
+          icon="i-lucide-shuffle"
+          :color="canChallenge ? 'neutral' : 'primary'"
+          :variant="canChallenge ? 'outline' : 'solid'"
+          size="lg"
+          block
+          data-testid="game-replay"
+          @click="emit('restart')"
+        />
+      </div>
     </section>
 
-    <div class="flex flex-wrap justify-center gap-2">
-      <UButton
-        v-if="misses.length"
-        :label="t('pz.play.replayMissed', { count: misses.length })"
-        icon="i-lucide-rotate-ccw"
-        size="lg"
-        data-testid="game-replay-missed"
-        @click="emit('replay-missed')"
-      />
-      <UButton
-        :label="t('pz.play.again')"
-        icon="i-lucide-shuffle"
-        :color="misses.length ? 'neutral' : 'primary'"
-        :variant="misses.length ? 'outline' : 'solid'"
-        size="lg"
-        data-testid="game-replay"
-        @click="emit('restart')"
-      />
-    </div>
-
-    <template v-if="canChallenge">
-      <HeritageChallengeShare
-        v-if="quizPayload"
-        :quiz="quizPayload"
-        :score="correct"
-        :total="total"
-      />
-      <UButton
-        v-else
-        :to="challengeHref"
-        :label="t('pz.play.makeChallenge')"
-        icon="i-lucide-swords"
-        color="neutral"
-        variant="outline"
-        size="lg"
-        data-testid="game-make-challenge"
-      />
-    </template>
-
-    <HeritageQuizShare
-      v-if="!practice && total"
-      :results="results"
-      :headline="headline"
-      :path="entry?.path ?? pzRoutes.games"
+    <PzShareSheet
+      v-if="canShare"
+      v-model:open="shareOpen"
+      :title="t('pz.share.resultTitle')"
+      :context="t('pz.share.resultContext')"
+      :message="shareMessage"
+      :url="shareUrl"
+      preview
+      prefix="result"
     />
   </div>
 </template>

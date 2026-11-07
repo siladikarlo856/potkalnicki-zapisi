@@ -70,6 +70,9 @@ describe('hr early challenge sharing', () => {
     expect(wrapper.get('[data-testid="challenge-whatsapp"]').attributes('href')).toContain('https://wa.me/?text=')
     expect(wrapper.get('[data-testid="challenge-viber"]').attributes('href')).toContain('viber://forward?text=')
     if (nextPhase === 'question') expect(wrapper.find('[data-testid="challenge-map"]').exists()).toBe(true)
+    // One primary action per screen: Igraj prvi before the round, none beside the answers (Dalje follows the feedback).
+    expect(wrapper.find('[data-testid="challenge-primary"]').exists()).toBe(nextPhase === 'ready')
+    if (nextPhase === 'ready') expect(wrapper.get('[data-testid="challenge-primary"]').text()).toBe('Igraj prvi')
   })
 })
 

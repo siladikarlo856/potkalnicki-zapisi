@@ -231,7 +231,7 @@ describe('limited active words', () => {
 })
 
 describe.each([
-  { lang: 'hr' as const, summary: 'Kaj to znači? 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 od 1', copied: 'Kopirano!', path: '/potkalnicko-prigorje/igre/kviz' }
+  { lang: 'hr' as const, summary: 'Kaj to znači? · 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 od 1', copied: 'Kopirano', path: '/potkalnicko-prigorje/igre/kviz' }
 ])('$lang quiz result', ({ summary, replay, noMisses, counter, copied, path }) => {
   async function answerCurrent(page: Page, correct: boolean) {
     const entry = askedWord(page)
@@ -250,7 +250,7 @@ describe.each([
     for (let i = 0; i < 3; i++) await answerCurrent(page, true)
 
     await expect.poll(() => page.find('[data-testid="game-misses"]').exists()).toBe(true)
-    expect(page.get('[data-testid="game-result-score"]').text()).toBe('3 od 4')
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('3 / 4')
     expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!)).toMatchObject({ version: 1, best: { znacenje: { score: 3, max: 4 } } })
     const rows = page.findAll('[data-testid="game-miss"]')
     expect(rows).toHaveLength(1)
@@ -258,21 +258,25 @@ describe.each([
     expect(rows[0]!.text()).toContain(`Točan odgovor: ${missedEntry.meaning.hr}`)
     expect(rows[0]!.find('[data-testid="game-suggest"]').exists()).toBe(true)
 
-    // The shared text shows the score and one square per question, never a word.
-    await page.get('[data-testid="quiz-share-toggle"]').trigger('click')
-    const shared = page.get('[data-testid="quiz-share-text"]').text()
-    expect(shared).toContain(summary)
-    expect(shared).toContain('🟥🟩🟩🟩')
-    for (const word of seeds) expect(shared).not.toContain(word.headword)
-    await page.get('[data-testid="quiz-copy"]').trigger('click')
-    await expect.poll(() => writeText.mock.calls.length).toBe(1)
-    const copiedText = writeText.mock.calls[0]![0] as string
-    expect(copiedText).toContain(`${summary}\n🟥🟩🟩🟩\n`)
-    expect(copiedText.endsWith(path)).toBe(true)
-    await expect.poll(() => page.get('[data-testid="quiz-copy"]').text()).toBe(copied)
+    // The creator round opens in place from the primary action, ahead of the share button.
+    expect(page.find('[data-testid="challenge-create"]').exists()).toBe(false)
+    await page.get('[data-testid="game-make-challenge"]').trigger('click')
     expect(page.find('[data-testid="challenge-create"]').exists()).toBe(true)
-    const resultHtml = page.html()
-    expect(resultHtml.indexOf('data-testid="challenge-create"')).toBeLessThan(resultHtml.indexOf('data-testid="quiz-share"'))
+
+    // The shared text shows the score and one square per question, never a word.
+    await page.get('[data-testid="result-share-open"]').trigger('click')
+    await vi.waitFor(() => expect(document.body.querySelector('[data-testid="pz-share-text"]')).not.toBeNull())
+    const shared = document.body.querySelector('[data-testid="pz-share-text"]')!.textContent!
+    expect(shared).toContain(`${summary}\n🟥🟩🟩🟩\n`)
+    for (const word of seeds) expect(shared).not.toContain(word.headword)
+    expect(shared.trimEnd().endsWith(path)).toBe(true)
+    // WhatsApp and Viber carry the message; Kopiraj puts the link on the clipboard and reads "Kopirano".
+    expect(document.body.querySelector('[data-testid="result-whatsapp"]')!.getAttribute('href')).toContain('https://wa.me/?text=')
+    expect(document.body.querySelector('[data-testid="result-viber"]')!.getAttribute('href')).toContain('viber://forward?text=')
+    document.body.querySelector<HTMLElement>('[data-testid="result-copy"]')!.click()
+    await expect.poll(() => writeText.mock.calls.length).toBe(1)
+    expect((writeText.mock.calls[0]![0] as string).endsWith(path)).toBe(true)
+    await expect.poll(() => document.body.querySelector('[data-testid="result-copy"]')!.textContent!.trim()).toBe(copied)
 
     // Replaying the misses asks only that word, and a practice round is not shared.
     const replayButton = page.get('[data-testid="game-replay-missed"]')
@@ -284,7 +288,7 @@ describe.each([
     await expect.poll(() => page.find('[data-testid="game-misses"]').exists()).toBe(true)
     expect(page.get('[data-testid="game-misses"]').text()).toContain(noMisses)
     expect(page.find('[data-testid="game-replay-missed"]').exists()).toBe(false)
-    expect(page.find('[data-testid="quiz-share"]').exists()).toBe(false)
+    expect(page.find('[data-testid="result-share-open"]').exists()).toBe(false)
     expect(page.find('[data-testid="challenge-create"]').exists()).toBe(false)
     // A practice round never touches the best score.
     expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!).best.znacenje).toMatchObject({ score: 3, max: 4 })
@@ -302,6 +306,8 @@ describe.each([
       await page.get(`[data-testid="game-option-${pickIndex(page, i !== 0)}"]`).trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
+    await expect.poll(() => page.find('[data-testid="game-make-challenge"]').exists()).toBe(true)
+    await page.get('[data-testid="game-make-challenge"]').trigger('click')
     await expect.poll(() => page.find('[data-testid="challenge-create"]').exists()).toBe(true)
     await page.get('[data-testid="challenge-create"] input[name="nickname"]').setValue('Ana')
     await page.get('[data-testid="challenge-create"] form').trigger('submit')
