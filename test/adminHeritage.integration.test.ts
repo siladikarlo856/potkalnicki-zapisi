@@ -58,4 +58,79 @@ describe.skipIf(!db.enabled)('heritage admin content over real Postgres', () => 
     sql(`delete from heritage_items where id = '${item.body.entity.id}'`)
     sql(`delete from heritage_categories where id = '${category.body.entity.id}'`)
   })
+
+  it('keeps a heritage item\'s sources when a save leaves sourceIds out', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const category = sql(`select id from heritage_categories limit 1`)
+    const municipality = sql(`select id from areas where kind = 'town' and slug = 'grad-krizevci' limit 1`)
+    const source = sql(`select id from sources limit 1`)
+    let saved = (await api<{ entity: HeritageItem }>('/api/admin/content/heritage_item', {
+      method: 'POST',
+      body: {
+        name: `kit-test Izostavljeno ${suffix}`, slug: `kit-test-izostavljeno-${suffix}`, categoryId: category,
+        municipalityId: municipality, verification: 'unverified', researchNotes: '', sourceIds: [source], status: 'draft'
+      }
+    })).body.entity
+    const id = saved.id
+
+    // A Draft keeps its sources; a Published item keeps the source it needs, so the save is not refused.
+    for (const change of [{ name: `kit-test Izostavljeno nova ${suffix}` }, { status: 'published' }, { period: '18. st.' }]) {
+      const response = await api<{ entity: HeritageItem }>(`/api/admin/content/heritage_item/${id}`, {
+        method: 'PATCH',
+        body: { revision: saved.revision, ...change }
+      })
+      expect(response.status, JSON.stringify(response.body)).toBe(200)
+      saved = response.body.entity
+      expect(saved).toMatchObject({ ...change, sourceIds: [source] })
+      expect(sql(`select string_agg(source_id::text, ',') from heritage_item_sources where item_id = '${id}'`)).toBe(source)
+    }
+
+    sql(`delete from heritage_items where id = '${id}'`)
+  })
+
+  it('saves a heritage item and its sources in one transaction: a failing source write leaves nothing written', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const category = sql(`select id from heritage_categories limit 1`)
+    const municipality = sql(`select id from areas where kind = 'town' and slug = 'grad-krizevci' limit 1`)
+    const source = sql(`select id from sources limit 1 offset 0`)
+    const otherSource = sql(`select id from sources limit 1 offset 1`)
+    const item = (name: string, slug: string) => ({
+      name, slug, categoryId: category, municipalityId: municipality, verification: 'unverified', researchNotes: '', sourceIds: [source], status: 'draft'
+    })
+    // Make the source write fail for this test's items only.
+    sql(`
+      create function public.kit_test_fail_item_source() returns trigger language plpgsql as $$
+      begin
+        if exists (select 1 from public.heritage_items where id = new.item_id and name like 'kit-test Neuspjeh%') then
+          raise exception 'Forced link failure';
+        end if;
+        return new;
+      end $$;
+      create trigger kit_test_fail_item_source before insert on public.heritage_item_sources
+        for each row execute function public.kit_test_fail_item_source();
+    `)
+    try {
+      const slug = `kit-test-neuspjeh-${suffix}`
+      const created = await api('/api/admin/content/heritage_item', { method: 'POST', body: item(`kit-test Neuspjeh ${suffix}`, slug) })
+      expect(created.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select count(*) from heritage_items where slug = '${slug}'`)).toBe('0')
+
+      const draft = await api<{ entity: HeritageItem }>('/api/admin/content/heritage_item', {
+        method: 'POST', body: item(`kit-test Uspjeh ${suffix}`, `kit-test-uspjeh-${suffix}`)
+      })
+      expect(draft.status, JSON.stringify(draft.body)).toBe(201)
+      const id = draft.body.entity.id
+      const before = sql(`select revision || ' ' || name from heritage_items where id = '${id}'`)
+      const updated = await api(`/api/admin/content/heritage_item/${id}`, {
+        method: 'PATCH',
+        body: { revision: draft.body.entity.revision, name: `kit-test Neuspjeh ${suffix}`, sourceIds: [otherSource] }
+      })
+      expect(updated.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select revision || ' ' || name from heritage_items where id = '${id}'`)).toBe(before)
+      expect(sql(`select string_agg(source_id::text, ',') from heritage_item_sources where item_id = '${id}'`)).toBe(source)
+      sql(`delete from heritage_items where id = '${id}'`)
+    } finally {
+      sql(`drop trigger kit_test_fail_item_source on public.heritage_item_sources; drop function public.kit_test_fail_item_source();`)
+    }
+  })
 })

@@ -62,7 +62,7 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   /** Request body cap in bytes; defaults to CONTENT_BODY_LIMIT. */
   bodyLimit?: number
   adapter?: ContentKindAdapter
-  /** Validated API fields that are not columns on the main table (synced in `persistEntity`). */
+  /** Validated API fields that are not columns on the main table (saved by `persist`; a history restore still uses `persistEntity`). */
   inputFields?: readonly string[]
   /** Loads API fields not stored on the main row (e.g. region membership). */
   loadEntity?(db: SupabaseClient, entity: Record<string, unknown> & { id: string }): Promise<Record<string, unknown>>
@@ -78,9 +78,10 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   persistEntity?(db: SupabaseClient, id: string, value: Record<string, unknown>): Promise<void>
   /**
    * Saves a validated value — the main row and everything stored beside it — in one database
-   * transaction (typically a per-kind Postgres function). When a kind has it, create and update use it
-   * instead of writing the main row and then calling `persistEntity`, and an update starts from the
-   * full stored entity (`loadEntity` included), so a field the request leaves out keeps its value.
+   * transaction (typically a per-kind Postgres function). Create and update always save through it; a
+   * kind stored in its main row alone may leave it out and gets the store's single-statement save, while a
+   * kind with `inputFields` must define it. An update starts from the full stored entity (`loadEntity`
+   * included), so a field the request leaves out keeps its value.
    * It only writes: every rule runs before it, in `validate` and `checkLinks`.
    * Resolves to the saved id, or null when the row is gone or no longer at `options.revision`.
    * Database errors are thrown as they come (PostgREST shape) for the store to map.

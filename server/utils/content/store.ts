@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
 import type { ContentErrorData, ContentIssue, ContentList, ContentLookupItem, ContentReferences, ContentStatus } from '../../../shared/utils/content/common'
 import {
@@ -254,11 +255,27 @@ export async function contentAfterWrite(event: H3Event, def: AnyContentKindDefin
   await def.afterWrite?.(event)
 }
 
-/** Saves through the kind's one-transaction `persist`, mapping a database error like any other write. */
+/**
+ * The save of a kind stored in its main row alone: one insert or update, which is its own transaction.
+ * A kind with fields beside the row (`inputFields`) must define its own `persist`, or they would be lost.
+ */
+async function saveMainRow(def: AnyContentKindDefinition, db: SupabaseClient, id: string | null, { row, revision }: ContentPersistOptions) {
+  if (def.inputFields?.length) throw new Error(`[content] ${def.kind} stores ${def.inputFields.join(', ')} beside its row but defines no persist.`)
+  const request = id === null
+    ? db.from(def.table).insert(row).select('id')
+    : db.from(def.table).update(row).eq('id', id).eq('revision', revision!).select('id')
+  const { data, error } = await request
+  if (error) throw error
+  return (data?.[0]?.id as string | undefined) ?? null
+}
+
+/** Saves through the kind's one-transaction `persist` (or its main row), mapping a database error like any other write. */
 async function persistValue(def: AnyContentKindDefinition, id: string | null, value: Row, options: ContentPersistOptions) {
+  const db = useDatabaseClient()
   try {
-    return await def.persist!(useDatabaseClient(), id, value, options)
+    return def.persist ? await def.persist(db, id, value, options) : await saveMainRow(def, db, id, options)
   } catch (error) {
+    if (error instanceof Error && !('code' in error)) throw error
     contentDatabaseError(def, error as { code?: string, message: string })
   }
 }
@@ -268,20 +285,11 @@ export async function createContent(event: H3Event, def: AnyContentKindDefinitio
   const { value, issues } = await validateInput(def, body)
   if (issues.length) invalid(issues)
   const row = toRow(def, value)
-  if (def.persist) {
-    const id = await persistValue(def, null, value as Row, { row })
-    await contentAfterWrite(event, def)
-    setResponseStatus(event, 201)
-    return { entity: (await getContent(def, id!)).entity }
-  }
   if (def.adapter?.createId) row.id = def.adapter.createId(value)
-  const { data, error } = await useDatabaseClient().from(def.table).insert(row).select(selectList(def)).single()
-  if (error) contentDatabaseError(def, error)
-  const saved = toEntity(def, data as unknown as Row)
-  await def.persistEntity?.(useDatabaseClient(), saved.id as string, value as Row)
+  const id = await persistValue(def, null, value as Row, { row })
   await contentAfterWrite(event, def)
   setResponseStatus(event, 201)
-  return { entity: { ...saved, ...(await def.loadEntity?.(useDatabaseClient(), saved) ?? {}) } }
+  return { entity: (await getContent(def, id!)).entity }
 }
 
 /**
@@ -298,30 +306,15 @@ export async function updateContent(event: H3Event, def: AnyContentKindDefinitio
   const current = await requireRow(def, id)
   if (current.revision !== revision) conflict(def, current)
 
-  // A kind that saves in one transaction merges over its full stored entity, links included.
-  const stored = def.persist ? (await getContent(def, id)).entity : toEntity(def, current)
+  // The request is merged over the full stored entity, fields beside the row included.
+  const stored = (await getContent(def, id)).entity
   const { value, issues } = await validateInput(def, { ...editable(def, stored), ...editable(def, body) }, id)
   if (issues.length) invalid(issues)
-  if (def.persist) {
-    const saved = await persistValue(def, id, value as Row, { row: { ...toRow(def, value), ...applyColumns(def, body) }, revision })
-    // Someone saved between the read and the write.
-    if (!saved) conflict(def, await requireRow(def, id))
-    await contentAfterWrite(event, def)
-    return { entity: (await getContent(def, id)).entity }
-  }
-  const { data, error } = await useDatabaseClient().from(def.table).update({ ...toRow(def, value), ...applyColumns(def, body) })
-    .eq('id', id).eq('revision', revision).select(selectList(def))
-  if (error) contentDatabaseError(def, error)
-  const saved = (data ?? []) as unknown as Row[]
-  if (!saved.length) {
-    // Someone saved between the read and the write.
-    conflict(def, await requireRow(def, id))
-  }
-  const entity = toEntity(def, saved[0]!)
-  await def.persistEntity?.(useDatabaseClient(), id, value as Row)
+  const saved = await persistValue(def, id, value as Row, { row: { ...toRow(def, value), ...applyColumns(def, body) }, revision })
+  // Someone saved between the read and the write.
+  if (!saved) conflict(def, await requireRow(def, id))
   await contentAfterWrite(event, def)
-  const extras = await def.loadEntity?.(useDatabaseClient(), entity) ?? {}
-  return { entity: { ...entity, ...extras } }
+  return { entity: (await getContent(def, id)).entity }
 }
 
 export async function contentReferences(def: AnyContentKindDefinition, id: string): Promise<ContentReferences> {
