@@ -178,4 +178,24 @@ describe('Potkalnički zapisi home (WP1)', () => {
     expect(page.text()).toContain('niz')
     expect(page.find('[data-option-id]').exists()).toBe(false)
   })
+
+  it('keeps every compact-row button in one wrapping, shrinkable group of the same size', async () => {
+    localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      days: { '2026-11-11': { wordId: 'hiza', guesses: ['c'], done: true, solved: true, tries: 1, maxTries: 3 } }
+    }))
+    const page = await mountSuspended(DailyWord, {
+      route: '/potkalnicko-prigorje',
+      props: { compactWhenPlayed: true }
+    })
+    await expect.poll(() => page.find('[data-testid="daily-compact-row"]').exists(), { timeout: 5000 }).toBe(true)
+    const row = page.find('[data-testid="daily-compact-row"]')
+    const copy = row.find('[data-testid="daily-compact-copy"]')
+    const buttons = Array.from(copy.element.parentElement!.children).filter(el => el.matches('a, button'))
+    expect(buttons.length).toBeGreaterThanOrEqual(4)
+    expect(buttons.at(-1)!.textContent).toContain('Prikaži')
+    expect(copy.element.parentElement!.className).toContain('flex-wrap')
+    expect(copy.element.parentElement!.parentElement!.className).not.toContain('shrink-0')
+    expect(new Set(buttons.map(el => el.className.match(/\b(?:text-(?:xs|sm)|px-\d|py-\d)\S*/g)?.join(' ')))).toHaveLength(1)
+  })
 })

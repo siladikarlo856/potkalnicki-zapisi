@@ -104,6 +104,8 @@ onMounted(() => {
       >
         {{ labels.viber }}
       </UButton>
+      <!-- Extra actions join the same wrapping row, so they wrap and size with the others. -->
+      <slot />
     </div>
     <p
       v-if="copied"
