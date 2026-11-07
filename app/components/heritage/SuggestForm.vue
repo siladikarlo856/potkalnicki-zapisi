@@ -327,7 +327,10 @@ defineExpose({
         role="alert"
       />
 
-      <div class="flex flex-wrap justify-end gap-2">
+      <div
+        class="flex flex-wrap justify-end gap-2"
+        :class="{ 'sticky bottom-0 bg-elevated pt-3': dialog }"
+      >
         <UButton
           v-if="dialog"
           :label="t('heritage.variantDialog.cancel')"

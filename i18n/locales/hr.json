@@ -1139,6 +1139,46 @@
       "menu": "Izbornik",
       "menuDescription": "Svi odjeljci, jezik i privatnost.",
       "privacy": "Privatnost"
+    },
+    "kit": {
+      "sheet": {
+        "close": "Zatvori",
+        "discard": "Zatvoriti i odbaciti ono što si upisao?"
+      },
+      "empty": {
+        "title": "U {place} još skupljamo zapise.",
+        "ask": "Znaš li kako se ovdje govori, što stoji na raskrižju ili tko je odavde potekao? Napiši nam.",
+        "known": "Što već znamo",
+        "municipality": "Općina",
+        "nearby": "Susjedna naselja"
+      },
+      "factPanel": {
+        "facts": "Podaci",
+        "trust": "Pouzdanost",
+        "sources": "Izvori",
+        "unknown": "nepoznato",
+        "play": "Igraj s ovim"
+      },
+      "cards": {
+        "forms": {
+          "one": "{n} oblik",
+          "few": "{n} oblika",
+          "other": "{n} oblika"
+        },
+        "villages": {
+          "one": "u {n} selu",
+          "few": "u {n} sela",
+          "other": "u {n} sela"
+        },
+        "here": "Ovdje: {form}",
+        "questions": {
+          "one": "{n} pitanje",
+          "few": "{n} pitanja",
+          "other": "{n} pitanja"
+        },
+        "minutes": "~{n} min",
+        "soon": "Uskoro"
+      }
     }
   },
   "daily": {

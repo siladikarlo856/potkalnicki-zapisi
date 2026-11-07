@@ -5,6 +5,7 @@ import { validateSubmission } from '~~/shared/utils/submission'
 import { VARIANT_REPORT_LIMITS, buildVariantReportText } from '~~/shared/utils/variantReport'
 
 // "Kod nas se kaže drugačije": report how one word is said locally. Used on the cards and in the quiz.
+// It opens in a PzBottomSheet (a bottom drawer on a phone, a modal on desktop).
 const props = defineProps<{
   /** The word the report is about. */
   entry?: WordEntry
@@ -24,6 +25,9 @@ const variantInput = useTemplateRef<{ inputRef: HTMLInputElement | null }>('vari
 const closeButton = useTemplateRef<{ $el: HTMLElement }>('closeButton')
 const sendState = ref<'idle' | 'sending' | 'sent' | 'error'>('idle')
 const sendError = ref('')
+
+// Typed text the sheet should not throw away without asking.
+const dirty = computed(() => sendState.value !== 'sent' && !!(state.variant.trim() || state.example.trim() || state.name.trim() || state.contact.trim()))
 
 // Every opening starts clean, so a report never carries over to the next word.
 watch(open, (value) => {
@@ -98,155 +102,153 @@ async function send() {
 </script>
 
 <template>
-  <UModal
+  <PzBottomSheet
     v-model:open="open"
     :title="t('heritage.variantDialog.title')"
-    :description="t('heritage.variantDialog.description')"
+    :context="t('heritage.variantDialog.description')"
     :content="content"
-    :ui="{ content: 'max-w-lg', body: 'pb-6' }"
+    :dirty="dirty"
   >
-    <template #body>
+    <div
+      v-if="entry"
+      class="flex flex-col gap-4"
+    >
       <div
-        v-if="entry"
-        class="flex flex-col gap-4"
+        class="rounded-lg bg-elevated px-3 py-2"
+        data-testid="variant-dialog-word"
       >
-        <div
-          class="rounded-lg bg-elevated px-3 py-2"
-          data-testid="variant-dialog-word"
+        <p class="text-xs text-muted">
+          {{ t('heritage.variantDialog.word') }}
+        </p>
+        <p
+          class="text-lg font-bold wrap-anywhere text-highlighted"
+          lang="hr"
         >
-          <p class="text-xs text-muted">
-            {{ t('heritage.variantDialog.word') }}
-          </p>
-          <p
-            class="text-lg font-bold wrap-anywhere text-highlighted"
-            lang="hr"
-          >
-            {{ entry.headword }}<span
-              v-if="entry.partOfSpeech"
-              class="ms-2 text-xs font-normal text-muted"
-            >{{ entry.partOfSpeech }}</span>
-          </p>
-          <p
-            class="text-sm wrap-anywhere"
-            lang="hr"
-          >
-            <span class="text-muted">{{ t('heritage.variantDialog.meaning') }}: </span>{{ entry.meaning.hr }}
-          </p>
-        </div>
+          {{ entry.headword }}<span
+            v-if="entry.partOfSpeech"
+            class="ms-2 text-xs font-normal text-muted"
+          >{{ entry.partOfSpeech }}</span>
+        </p>
+        <p
+          class="text-sm wrap-anywhere"
+          lang="hr"
+        >
+          <span class="text-muted">{{ t('heritage.variantDialog.meaning') }}: </span>{{ entry.meaning.hr }}
+        </p>
+      </div>
 
-        <div
-          v-if="sendState === 'sent'"
-          class="flex flex-col items-start gap-3"
+      <div
+        v-if="sendState === 'sent'"
+        class="flex flex-col items-start gap-3"
+      >
+        <UAlert
+          :title="t('heritage.form.successTitle')"
+          :description="t('heritage.form.successDescription')"
+          icon="i-lucide-circle-check"
+          color="success"
+          variant="subtle"
+          role="status"
+          class="w-full"
+        />
+        <UButton
+          ref="closeButton"
+          :label="t('heritage.form.close')"
+          color="neutral"
+          variant="subtle"
+          @click="open = false"
+        />
+      </div>
+
+      <UForm
+        v-else
+        ref="form"
+        :state="state"
+        :validate="validate"
+        novalidate
+        class="flex flex-col gap-4"
+        @submit="send"
+      >
+        <UFormField
+          name="variant"
+          :label="t('heritage.variantDialog.variant')"
+          :help="t('heritage.variantDialog.variantHelp')"
+          required
         >
-          <UAlert
-            :title="t('heritage.form.successTitle')"
-            :description="t('heritage.form.successDescription')"
-            icon="i-lucide-circle-check"
-            color="success"
-            variant="subtle"
-            role="status"
+          <UInput
+            ref="variantInput"
+            v-model="state.variant"
+            :maxlength="VARIANT_REPORT_LIMITS.variant.max"
+            autocapitalize="off"
+            spellcheck="false"
+            lang="hr"
             class="w-full"
           />
+        </UFormField>
+
+        <UFormField
+          name="place"
+          :label="t('heritage.variantDialog.place')"
+          :help="t('heritage.places.help')"
+          required
+        >
+          <HeritagePlacePicker
+            v-model="state.placeId"
+            v-model:query="placeQuery"
+            required
+            @selection="form?.clear('place')"
+          />
+        </UFormField>
+
+        <UFormField
+          name="example"
+          :label="t('heritage.variantDialog.example')"
+        >
+          <UTextarea
+            v-model="state.example"
+            :rows="2"
+            :maxrows="6"
+            autoresize
+            :maxlength="VARIANT_REPORT_LIMITS.example.max"
+            :placeholder="t('heritage.variantDialog.examplePlaceholder')"
+            lang="hr"
+            class="w-full"
+          />
+        </UFormField>
+
+        <HeritageSubmissionContributorFields
+          v-model:name="state.name"
+          v-model:contact="state.contact"
+          v-model:consent-publish="state.consentPublish"
+          v-model:website="state.website"
+          privacy-in-new-tab
+        />
+
+        <UAlert
+          v-if="sendState === 'error'"
+          :title="t('heritage.form.errorTitle')"
+          :description="sendError"
+          icon="i-lucide-circle-alert"
+          color="error"
+          variant="subtle"
+          role="alert"
+        />
+
+        <div class="sticky bottom-0 flex flex-wrap justify-end gap-2 bg-elevated pt-3">
           <UButton
-            ref="closeButton"
-            :label="t('heritage.form.close')"
+            :label="t('heritage.variantDialog.cancel')"
             color="neutral"
-            variant="subtle"
+            variant="ghost"
             @click="open = false"
           />
+          <UButton
+            type="submit"
+            :label="t('heritage.form.submit')"
+            trailing-icon="i-lucide-send"
+            :loading="sendState === 'sending'"
+            size="lg"
+          />
         </div>
-
-        <UForm
-          v-else
-          ref="form"
-          :state="state"
-          :validate="validate"
-          novalidate
-          class="flex flex-col gap-4"
-          @submit="send"
-        >
-          <UFormField
-            name="variant"
-            :label="t('heritage.variantDialog.variant')"
-            :help="t('heritage.variantDialog.variantHelp')"
-            required
-          >
-            <UInput
-              ref="variantInput"
-              v-model="state.variant"
-              :maxlength="VARIANT_REPORT_LIMITS.variant.max"
-              autocapitalize="off"
-              spellcheck="false"
-              lang="hr"
-              class="w-full"
-            />
-          </UFormField>
-
-          <UFormField
-            name="place"
-            :label="t('heritage.variantDialog.place')"
-            :help="t('heritage.places.help')"
-            required
-          >
-            <HeritagePlacePicker
-              v-model="state.placeId"
-              v-model:query="placeQuery"
-              required
-              @selection="form?.clear('place')"
-            />
-          </UFormField>
-
-          <UFormField
-            name="example"
-            :label="t('heritage.variantDialog.example')"
-          >
-            <UTextarea
-              v-model="state.example"
-              :rows="2"
-              :maxrows="6"
-              autoresize
-              :maxlength="VARIANT_REPORT_LIMITS.example.max"
-              :placeholder="t('heritage.variantDialog.examplePlaceholder')"
-              lang="hr"
-              class="w-full"
-            />
-          </UFormField>
-
-          <HeritageSubmissionContributorFields
-            v-model:name="state.name"
-            v-model:contact="state.contact"
-            v-model:consent-publish="state.consentPublish"
-            v-model:website="state.website"
-            privacy-in-new-tab
-          />
-
-          <UAlert
-            v-if="sendState === 'error'"
-            :title="t('heritage.form.errorTitle')"
-            :description="sendError"
-            icon="i-lucide-circle-alert"
-            color="error"
-            variant="subtle"
-            role="alert"
-          />
-
-          <div class="flex flex-wrap justify-end gap-2">
-            <UButton
-              :label="t('heritage.variantDialog.cancel')"
-              color="neutral"
-              variant="ghost"
-              @click="open = false"
-            />
-            <UButton
-              type="submit"
-              :label="t('heritage.form.submit')"
-              trailing-icon="i-lucide-send"
-              :loading="sendState === 'sending'"
-              size="lg"
-            />
-          </div>
-        </UForm>
-      </div>
-    </template>
-  </UModal>
+      </UForm>
+    </div>
+  </PzBottomSheet>
 </template>
