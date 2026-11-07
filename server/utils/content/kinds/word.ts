@@ -5,6 +5,7 @@ import {
   projectWordRow, validateAdminWord, wordStatusToActive, WORD_BODY_LIMIT
 } from '../../../../shared/utils/content/word'
 import { defineContentKind } from '../definition'
+import { whereStatus } from '../store'
 import { loadAreaIndex, projectAreas } from '../../wordAreas'
 
 const EXAMPLES = 5
@@ -107,6 +108,7 @@ export const wordKind = defineContentKind<{ entry: WordEntry, status: ContentSta
   labelColumn: 'search_text',
   title: row => String((row.entry as WordEntry | undefined)?.headword ?? ''),
   createdFrom: 'submission_id',
+  createdFromFields: { submissionPlace: 'submission_place' },
   validate: validateAdminWord,
   sorts: { headword: 'search_text', slug: 'slug' },
   defaultSort: '-updatedAt',
@@ -116,6 +118,21 @@ export const wordKind = defineContentKind<{ entry: WordEntry, status: ContentSta
   adapter,
   uniqueConstraints: { heritage_words_slug_key: 'slug' }
 })
+
+interface WordQuery {
+  eq(column: string, value: unknown): WordQuery
+  is(column: string, value: null): WordQuery
+  not(column: string, operator: string, value: unknown): WordQuery
+}
+
+/**
+ * Narrows a query on heritage_words to Published words, in the word kind's terms (`whereStatus`), for the public
+ * word reads that select their own columns. Typed loosely: a typed supabase-js builder is too deep for
+ * `whereStatus`' structural check (TS2589).
+ */
+export function publishedWords<T>(request: T): T {
+  return whereStatus(wordKind, request as unknown as WordQuery, 'published') as unknown as T
+}
 
 export function wordListLabel(row: WordRow) {
   return row.entry.headword || '(bez naslovne riječi)'

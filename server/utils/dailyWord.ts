@@ -4,6 +4,7 @@ import { DAILY_CATEGORIES, DAILY_WORD_EPOCH, addDays, dailyReadiness, dayDiff, z
 import type { DailyClue, DailyText, DailyWordPayload } from '../../shared/utils/dailyWord'
 import { pickDistractors, seededRandom, shuffled } from '../../shared/utils/multipleChoice'
 import { validateWord } from '../../shared/utils/word'
+import { publishedWords } from './content/kinds/word'
 import { loadAreaIndex, projectAreas } from './wordAreas'
 import type { AreaIndex } from './wordAreas'
 
@@ -97,13 +98,13 @@ function candidate(row: { id: string, entry: unknown }, index: AreaIndex): Candi
 /** Every active, valid word. Not capped at the 100 rows the public word list returns. */
 export async function activeCandidates(client: SupabaseClient) {
   const rows = await pages<{ id: string, entry: unknown }>((from, to) =>
-    client.from(WORDS).select('id,entry').eq('active', true).order('id').range(from, to))
+    publishedWords(client.from(WORDS).select('id,entry')).order('id').range(from, to))
   const index = await loadAreaIndex(client)
   return rows.map(row => candidate(row, index)).filter((word): word is Candidate => !!word)
 }
 
 async function activeCandidate(client: SupabaseClient, id: string) {
-  const { data, error } = await client.from(WORDS).select('id,entry').eq('id', id).eq('active', true)
+  const { data, error } = await publishedWords(client.from(WORDS).select('id,entry')).eq('id', id)
   if (error) fail(error)
   return data[0] ? candidate(data[0], await loadAreaIndex(client)) : null
 }
