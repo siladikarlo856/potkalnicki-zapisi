@@ -67,9 +67,10 @@ describe('GamesMapView', () => {
     expect(page.findAll('[data-testid^="map-numbered-"]')).toHaveLength(4)
   })
 
-  describe('default zoom and centring at 390px', () => {
-    const VW = 390
-    const VH = 335
+  describe.each([
+    { name: '390px', vw: 390, vh: 335 },
+    { name: '1280px', vw: 1280, vh: 1098 }
+  ])('view at $name', ({ vw: VW, vh: VH }) => {
     const original = {
       w: Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth'),
       h: Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
@@ -83,52 +84,115 @@ describe('GamesMapView', () => {
       if (original.h) Object.defineProperty(HTMLElement.prototype, 'clientHeight', original.h)
     })
 
-    const view = (page: Awaited<ReturnType<typeof mountSuspended>>) =>
-      page.vm as unknown as { scale: number, translate: { x: number, y: number } }
+    type View = { scale: number, translate: { x: number, y: number } }
+    const view = (page: Awaited<ReturnType<typeof mountSuspended>>) => page.vm as unknown as View
+    const visible = (v: View, point: { x: number, y: number }) => {
+      const x = point.x * v.scale + v.translate.x
+      const y = point.y * v.scale + v.translate.y
+      return x >= 0 && x <= VW && y >= 0 && y <= VH
+    }
+    const fit = Math.min(VW / 1600, VH / 1373)
 
-    it('opens modestly zoomed out and never zooms out further', async () => {
+    it('opens on the whole area and never zooms out further', async () => {
       const page = await mountSuspended(MapView, {
         props: { places: [sopron], municipalities, difficulty: 'tesko', mode: 'find' }
       })
-      expect(view(page).scale).toBe(0.75)
+      const v = view(page)
+      expect(v.scale).toBeCloseTo(fit, 5)
+      // all four corners of the frame are on screen
+      for (const corner of [{ x: 0, y: 0 }, { x: 1600, y: 0 }, { x: 0, y: 1373 }, { x: 1600, y: 1373 }]) {
+        expect(visible(v, corner)).toBe(true)
+      }
       await page.get('[data-testid="map-zoom-out"]').trigger('click')
-      expect(view(page).scale).toBe(0.75)
+      expect(view(page).scale).toBeCloseTo(fit, 5)
+      await page.get('[data-testid="map-zoom-in"]').trigger('click')
+      expect(view(page).scale).toBeGreaterThan(fit)
     })
 
-    it('centres the marked dot, within the map bounds', async () => {
+    it('stays on the whole area when a question marks a dot', async () => {
       const page = await mountSuspended(MapView, {
         props: { places: [sopron], municipalities, difficulty: 'srednje', mode: 'target', singleTarget: true, highlightId: sopron.id }
       })
-      const { scale, translate } = view(page)
-      const dot = project(sopron.lat, sopron.lng)
-      expect(translate.x).toBeLessThanOrEqual(0)
-      expect(translate.x).toBeGreaterThanOrEqual(VW - 1600 * scale - 0.5)
-      expect(translate.y).toBeLessThanOrEqual(0)
-      expect(translate.y).toBeGreaterThanOrEqual(VH - 1373 * scale - 0.5)
-      const atEdgeX = translate.x === 0 || Math.abs(translate.x - (VW - 1600 * scale)) < 0.5
-      const atEdgeY = translate.y === 0 || Math.abs(translate.y - (VH - 1373 * scale)) < 0.5
-      if (!atEdgeX) expect(dot.x * scale + translate.x).toBeCloseTo(VW / 2, 0)
-      if (!atEdgeY) expect(dot.y * scale + translate.y).toBeCloseTo(VH / 2, 0)
+      const v = view(page)
+      expect(v.scale).toBeCloseTo(fit, 5)
+      expect(visible(v, project(sopron.lat, sopron.lng))).toBe(true)
     })
 
-    it('re-centres when the challenge target changes', async () => {
+    it('returns to the whole area when the challenge target changes', async () => {
       const page = await mountSuspended(MapView, {
         props: { places: [], municipalities, difficulty: 'srednje', mode: 'target', layerLocked: 'karta', targetPoint: { lat: 46.0, lng: 16.4 } }
       })
-      const first = { ...view(page).translate }
+      await page.get('[data-testid="map-zoom-in"]').trigger('click')
+      expect(view(page).scale).toBeGreaterThan(fit)
       await page.setProps({ targetPoint: { lat: 46.1, lng: 16.6 } })
       await page.vm.$nextTick()
-      const second = view(page).translate
-      expect(second.x !== first.x || second.y !== first.y).toBe(true)
+      expect(view(page).scale).toBeCloseTo(fit, 5)
     })
 
-    it('keeps a neutral view without a marked dot', async () => {
+    it('shows the pick, the right place and the line after an answer, then resets', async () => {
       const page = await mountSuspended(MapView, {
-        props: { places: [sopron], municipalities, difficulty: 'tesko', mode: 'find' }
+        props: { places: [sopron], municipalities, difficulty: 'srednje', mode: 'find' }
       })
-      const { scale, translate } = view(page)
-      expect(scale).toBe(0.75)
-      expect(translate.x).toBeCloseTo(0, 5)
+      const tap = project(46.1, 16.45)
+      const target = project(sopron.lat, sopron.lng)
+      await page.setProps({ feedback: { tap, target, km: 1.2 }, disabled: true })
+      await page.vm.$nextTick()
+      const v = view(page)
+      expect(v.scale).toBeGreaterThan(fit)
+      expect(visible(v, tap)).toBe(true)
+      expect(visible(v, target)).toBe(true)
+      expect(page.find('[data-testid="map-feedback-line"]').exists()).toBe(true)
+
+      await page.setProps({ feedback: null, disabled: false })
+      await page.vm.$nextTick()
+      expect(view(page).scale).toBeCloseTo(fit, 5)
+    })
+
+    it('keeps surroundings when the pick is far away or almost on the answer', async () => {
+      const page = await mountSuspended(MapView, {
+        props: { places: [sopron], municipalities, difficulty: 'srednje', mode: 'find' }
+      })
+      const target = project(sopron.lat, sopron.lng)
+      const tap = { x: target.x + 6, y: target.y + 4 }
+      await page.setProps({ feedback: { tap, target }, disabled: true })
+      await page.vm.$nextTick()
+      const v = view(page)
+      // at least ~400 frame px of map stay on screen, so the answer is not shown in a void
+      expect(VW / v.scale).toBeGreaterThanOrEqual(400 - 0.5)
+      expect(visible(v, tap)).toBe(true)
+      expect(visible(v, target)).toBe(true)
+    })
+  })
+
+  describe('municipality boundaries', () => {
+    const five = ['grad-krizevci', 'opcina-gornja-rijeka', 'opcina-kalnik', 'opcina-sveti-ivan-zabno', 'opcina-sveti-petar-orehovec']
+    const units: PoolMunicipality[] = five.map(slug => ({ ...municipalities[0]!, id: `id-${slug}`, slug }))
+    const place = { ...sopron, municipalityId: 'id-opcina-kalnik' }
+
+    it('draws one decorative path per municipality on every layer', async () => {
+      const page = await mountSuspended(MapView, {
+        props: { places: [place], municipalities: units, difficulty: 'srednje', mode: 'find' }
+      })
+      for (const layer of ['karta', 'reljef']) {
+        await page.get(`[data-testid="map-layer-${layer}"]`).trigger('click')
+        const group = page.get('[data-testid="map-boundaries"]')
+        expect(group.attributes('aria-hidden')).toBe('true')
+        expect(group.classes()).toContain('pointer-events-none')
+        const paths = group.findAll('path')
+        expect(paths).toHaveLength(5)
+        expect(paths.map(p => p.attributes('data-municipality')).sort()).toEqual(five)
+        for (const path of paths) expect(path.attributes('d')).toMatch(/^M[-\d. L]+Z$/)
+        expect(group.find('[data-highlighted]').exists()).toBe(false)
+      }
+    })
+
+    it('highlights the municipality a question narrows to', async () => {
+      const page = await mountSuspended(MapView, {
+        props: { places: [place], municipalities: units, difficulty: 'srednje', mode: 'target', singleTarget: true, highlightId: place.id }
+      })
+      const highlighted = page.findAll('[data-highlighted]')
+      expect(highlighted).toHaveLength(1)
+      expect(highlighted[0]!.attributes('data-municipality')).toBe('opcina-kalnik')
     })
   })
 })

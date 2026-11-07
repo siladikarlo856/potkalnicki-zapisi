@@ -24,12 +24,50 @@
       bounds: [[frame.west, frame.south], [frame.east, frame.north]],
       fitBoundsOptions: { padding: 0, animate: false },
       preserveDrawingBuffer: true,
+      attributionControl: false,
       pixelRatio: 1
     })
+    // ?layer=karta|reljef renders that layer alone, without the page chrome, so a headless browser can
+    // screenshot it (see README). Without it, use the download buttons.
+    const params = new URLSearchParams(location.search)
+    const only = params.get('layer')
+    if (only) {
+      document.body.style.margin = '0'
+      document.querySelectorAll('p, button').forEach(el => el.remove())
+    }
     function stripLabels() {
       const style = map.getStyle()
       style.layers = style.layers.filter(l => l.type !== 'symbol')
       map.setStyle(style)
+    }
+    // Reljef: the Positron base turned down to a pale paper tone, then Terrarium hillshade on top.
+    function addRelief() {
+      map.setPaintProperty('background', 'background-color', '#ece6d6')
+      for (const layer of map.getStyle().layers) {
+        if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-opacity', 0.35)
+        if (layer.type === 'line') map.setPaintProperty(layer.id, 'line-opacity', 0.55)
+      }
+      map.addSource('terrain', {
+        type: 'raster-dem',
+        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        encoding: 'terrarium',
+        tileSize: 256,
+        maxzoom: 15
+      })
+      // Under the roads and borders, above the land cover.
+      const firstLine = map.getStyle().layers.find(l => l.type === 'line')
+      map.addLayer({
+        id: 'hillshade',
+        type: 'hillshade',
+        source: 'terrain',
+        paint: {
+          'hillshade-exaggeration': 0.9,
+          'hillshade-shadow-color': '#3b3326',
+          'hillshade-highlight-color': '#ffffff',
+          'hillshade-accent-color': '#6b5d44',
+          'hillshade-illumination-direction': 315
+        }
+      }, firstLine && firstLine.id)
     }
     function download(name) {
       const canvas = map.getCanvas()
@@ -41,9 +79,17 @@
     map.on('load', () => {
       stripLabels()
       map.once('idle', () => {
+        if (only === 'reljef') addRelief()
+        const done = () => { document.title = 'ready' }
+        if (only) {
+          // wait for the terrain tiles, then flag the page for the headless run
+          map.once('idle', () => setTimeout(done, 1500))
+          map.triggerRepaint()
+          return
+        }
         document.getElementById('dl-karta').onclick = () => download('karta.png')
         document.getElementById('dl-reljef').onclick = () => {
-          map.setPaintProperty('background', 'background-color', '#e8e4d9')
+          addRelief()
           map.once('idle', () => download('reljef.png'))
         }
       })
