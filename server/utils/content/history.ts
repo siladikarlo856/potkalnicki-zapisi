@@ -20,7 +20,7 @@ import {
 // A restore writes the stored version back through the same validate → persist path as an edit, so the
 // main row and its sidecars are saved in one transaction, the database bumps `revision`, the audit trigger
 // records it as a new revision, and nothing is ever rewritten. A save through `persist` records the kind's
-// sidecars on its revision (`data.sidecars`, 20261107020000_content_restore.sql); writes that leave them
+// sidecars on its revision (`data.sidecars`, 20261107000000_content_save.sql); writes that leave them
 // alone (an archive, a delete, a seed) record none, so the sidecars of a version are those of the newest
 // revision up to it that has them.
 

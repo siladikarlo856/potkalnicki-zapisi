@@ -49,7 +49,7 @@ export const heritageItemKind = defineContentKind({
     load: async (db, id) => ({ sourceIds: await loadSourceIds(db, id) })
   },
   checkLinks: async (db, value) => missingSourceIssues(db, value.sourceIds),
-  // The heritage_items row and its sources in one transaction (supabase/migrations/20261107010000_content_save.sql).
+  // The heritage_items row and its sources in one transaction (supabase/migrations/20261107000000_content_save.sql).
   persist: async (db, id, value, { row, revision }) => {
     const { data, error } = await db.rpc('content_heritage_item_save', {
       p_id: id, p_revision: revision ?? null, p_row: row, p_source_ids: value.sourceIds ?? []
