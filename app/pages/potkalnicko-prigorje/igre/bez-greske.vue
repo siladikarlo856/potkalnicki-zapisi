@@ -43,6 +43,14 @@ function restart() {
   drawQuestion()
 }
 
+const isCorrect = computed(() => Boolean(question.value) && selected.value === question.value!.correct)
+const heading = useTemplateRef<HTMLElement>('heading')
+const feedback = useTemplateRef<{ focus: () => void }>('feedback')
+
+// The streak ends on the first miss, but nothing moves on by itself: the answer, the feedback and an explicit
+// Dalje ("Pogledaj rezultat" after a miss) come first.
+useHidePzTabBar(() => Boolean(question.value) && !finished.value, 'game')
+
 async function pick(option: number) {
   const current = question.value
   if (!current || answered.value || finished.value) return
@@ -53,22 +61,29 @@ async function pick(option: number) {
   if (right) {
     used.value = new Set([...used.value, current.card])
     streak.value += 1
-    await nextTick()
-    selected.value = null
-    answered.value = false
-    drawQuestion()
-    if (!question.value) finished.value = true
-    return
+  } else {
+    recordBest('bez-greske', streak.value, BEZ_GRESKE_SCORE_MAX)
   }
-  finished.value = true
-  recordBest('bez-greske', streak.value, BEZ_GRESKE_SCORE_MAX)
+  await nextTick()
+  feedback.value?.focus()
 }
 
-const announcement = computed(() => {
-  const current = question.value
-  if (!current || !answered.value || !finished.value) return ''
-  return t('pz.play.wrong')
-})
+async function next() {
+  if (!answered.value) return
+  if (!isCorrect.value) {
+    finished.value = true
+    return
+  }
+  selected.value = null
+  answered.value = false
+  drawQuestion()
+  if (!question.value) {
+    finished.value = true
+    return
+  }
+  await nextTick()
+  heading.value?.focus()
+}
 
 useSeoMeta({
   title: () => t('pz.play.bezTitle'),
@@ -83,14 +98,6 @@ useSeoMeta({
       class="mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3"
       data-testid="bez-greske"
     >
-      <p
-        role="status"
-        aria-live="polite"
-        class="sr-only"
-      >
-        {{ announcement }}
-      </p>
-
       <header>
         <p class="mb-1 text-xs font-semibold text-primary">
           {{ t('pz.play.bezTitle') }}
@@ -128,13 +135,15 @@ useSeoMeta({
 
       <template v-else-if="question && !finished">
         <section
-          class="min-w-0 rounded-xl bg-default p-3 shadow-sm ring ring-default sm:p-5"
+          class="min-w-0 rounded-(--pz-radius-lg) border border-default bg-default p-4"
           aria-labelledby="bez-question"
         >
           <h2
             id="bez-question"
+            ref="heading"
+            tabindex="-1"
             :lang="lang"
-            class="mb-3 text-center text-2xl font-bold wrap-anywhere text-highlighted sm:text-3xl"
+            class="pz-h2 mb-4 wrap-anywhere text-highlighted outline-offset-4"
             data-testid="bez-prompt"
           >
             {{ question.prompt[lang] }}
@@ -142,11 +151,24 @@ useSeoMeta({
           <GamesOptions
             :question="question"
             :selected="selected"
-            :answered="answered"
             labelledby="bez-question"
             @select="pick"
           />
         </section>
+        <GamesFeedback
+          v-if="answered"
+          ref="feedback"
+          :correct="isCorrect"
+          :answer="question.options[question.correct]![lang]"
+          :explanation="question.explanation[lang]"
+          :lang="lang"
+          :sr-extra="t('pz.play.bezStreak', { n: streak })"
+        />
+        <GamesDalje
+          v-if="answered"
+          :last="!isCorrect"
+          @next="next"
+        />
       </template>
 
       <section

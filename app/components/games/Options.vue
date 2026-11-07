@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { GameQuestion } from '~~/shared/utils/games/types'
 
-// The multiple-choice renderer: 2–4 option buttons, keys 1–4 select. After an answer the buttons are
-// disabled and marked with an icon and text, never colour alone.
+// AnswerOption: the multiple-choice renderer. A list of full-width buttons (not a radio group), at least
+// --pz-option-min tall, with a key square (1–4) that also answers on a keyboard. One tap answers. Afterwards every
+// option locks (aria-disabled), the right one is revealed and the player's wrong pick stays marked, each with an
+// icon, a word and a border change, never colour alone.
 const props = defineProps<{
   question: GameQuestion
   /** Index of the option the player picked, or null before answering. */
@@ -13,6 +15,18 @@ const emit = defineEmits<{ select: [index: number] }>()
 const { t, locale } = useI18n()
 
 const answered = computed(() => props.selected !== null)
+
+type OptionState = 'default' | 'correct' | 'wrong' | 'locked'
+function stateOf(index: number): OptionState {
+  if (!answered.value) return 'default'
+  if (index === props.question.correct) return 'correct'
+  if (index === props.selected) return 'wrong'
+  return 'locked'
+}
+
+function choose(index: number) {
+  if (!answered.value) emit('select', index)
+}
 const lang = computed(() => locale.value === 'en' ? 'en' : 'hr')
 
 function onKey(event: KeyboardEvent) {
@@ -31,49 +45,57 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <template>
-  <div
-    role="group"
+  <ul
     :aria-labelledby="labelledby"
-    class="grid grid-cols-1 gap-2 sm:grid-cols-2"
+    class="m-0 flex list-none flex-col gap-2 p-0"
     data-testid="game-options"
   >
-    <UButton
+    <li
       v-for="(option, index) in question.options"
       :key="`${question.id}-${index}`"
-      :data-testid="`game-option-${index}`"
-      :disabled="answered"
-      :color="answered && index === question.correct ? 'success' : answered && index === selected ? 'error' : 'neutral'"
-      :variant="answered && (index === question.correct || index === selected) ? 'subtle' : 'outline'"
-      size="lg"
-      class="min-h-11 min-w-0 justify-start text-start whitespace-normal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-100"
-      @click="emit('select', index)"
     >
-      <span
-        class="shrink-0 text-xs opacity-60"
-        aria-hidden="true"
-      >{{ index + 1 }}.</span>
-      <span
-        class="min-w-0 wrap-anywhere"
-        :lang="lang"
-      >{{ option[lang] }}</span>
-      <UIcon
-        v-if="answered && index === question.correct"
-        name="i-lucide-circle-check"
-        class="size-4 shrink-0"
-      />
-      <UIcon
-        v-else-if="answered && index === selected"
-        name="i-lucide-circle-x"
-        class="size-4 shrink-0"
-      />
-      <span
-        v-if="answered && index === question.correct"
-        class="sr-only"
-      >{{ t('pz.play.correctOption') }}</span>
-      <span
-        v-if="answered && index === selected && index !== question.correct"
-        class="sr-only"
-      >{{ t('pz.play.yourAnswer') }}</span>
-    </UButton>
-  </div>
+      <button
+        type="button"
+        :data-testid="`game-option-${index}`"
+        :data-state="stateOf(index)"
+        :aria-pressed="answered ? undefined : 'false'"
+        :aria-disabled="answered ? 'true' : undefined"
+        class="grid min-h-(--pz-option-min) w-full grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 rounded-(--pz-radius-md) text-start text-base transition-colors duration-150 motion-reduce:transition-none"
+        :class="{
+          'border border-accented bg-default px-4 py-3 text-default': stateOf(index) === 'default',
+          'cursor-pointer hover:bg-muted': !answered,
+          'cursor-default border border-default bg-muted px-4 py-3 text-muted': stateOf(index) === 'locked',
+          'border-2 border-success bg-(--pz-success-soft) px-[15px] py-[11px] text-default': stateOf(index) === 'correct',
+          'border-2 border-error bg-(--pz-error-soft) px-[15px] py-[11px] text-default': stateOf(index) === 'wrong'
+        }"
+        @click="choose(index)"
+      >
+        <span
+          class="grid size-7 place-items-center rounded-(--pz-radius-sm) border text-[13px] leading-none font-semibold"
+          :class="{
+            'border-default text-dimmed': stateOf(index) === 'default' || stateOf(index) === 'locked',
+            'border-success bg-success text-inverted': stateOf(index) === 'correct',
+            'border-error bg-error text-inverted': stateOf(index) === 'wrong'
+          }"
+          aria-hidden="true"
+        >{{ index + 1 }}</span>
+        <span
+          class="min-w-0 wrap-anywhere"
+          :lang="lang"
+        >{{ option[lang] }}</span>
+        <span
+          v-if="stateOf(index) === 'correct' || stateOf(index) === 'wrong'"
+          class="inline-flex items-center gap-1 text-[13px] leading-[18px] font-semibold whitespace-nowrap"
+          :class="stateOf(index) === 'correct' ? 'text-success' : 'text-error'"
+          data-testid="game-answer-tag"
+        >
+          <UIcon
+            :name="stateOf(index) === 'correct' ? 'i-lucide-check' : 'i-lucide-x'"
+            class="size-4 shrink-0"
+          />
+          {{ t(stateOf(index) === 'wrong' ? 'pz.play.tagYourAnswer' : selected === index ? 'pz.play.tagCorrect' : 'pz.play.tagCorrectAnswer') }}
+        </span>
+      </button>
+    </li>
+  </ul>
 </template>

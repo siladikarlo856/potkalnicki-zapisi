@@ -351,6 +351,31 @@
       "sendAnother": "Send another",
       "aboutYou": "About you",
       "tileSoon": "Soon"
+    },
+    "play": {
+      "exitGame": "Leave the game",
+      "progressText": "{done} of {total} answered",
+      "progressSummary": "{ok} right, {no} wrong",
+      "seeResult": "See the result",
+      "correctAnswerLabel": "Correct answer:",
+      "tagCorrect": "Correct",
+      "tagCorrectAnswer": "Correct answer",
+      "tagYourAnswer": "Your answer",
+      "readMore": "Read more",
+      "matchIdle": "Pick a word or a meaning, then its pair.",
+      "matchSelected": "Picked: {name}. Now pick its pair.",
+      "matchRight": "Right pair: {name}.",
+      "matchWrong": "Not a pair. Try again.",
+      "matchPairs": "{n} of {total} pairs",
+      "matchLocked": "Paired",
+      "matchWrongTag": "Not a pair",
+      "chooseFromList": "Choose from a list",
+      "mapHit": "Right place",
+      "mapYours": "Your pick",
+      "flipHint": "Tap the card",
+      "matchFirstTry": "Matched on the first try: {n}.",
+      "matchDone": "All paired.",
+      "scoreLabel": "Score"
     }
   }
 }
