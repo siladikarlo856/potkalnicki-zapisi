@@ -38,6 +38,8 @@ const question = computed(() => state.value?.question)
 const feedback = computed(() => state.value?.feedback)
 const details = computed(() => state.value ?? overview.value)
 const closed = computed(() => state.value?.closed && !participant.value?.completedAt)
+// After "Kreni" the sticky action bar replaces the tab bar; the finished result and the intro keep it.
+useHidePzTabBar(() => Boolean(participant.value) && participant.value?.phase !== 'finished' && !closed.value, 'challenge')
 const readyRound = computed(() => {
   let remaining = participant.value?.index ?? 0
   for (const [index, round] of (state.value?.rounds ?? []).entries()) {

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// Below 1024px the fixed tab bar sits over the bottom, so the page reserves its height plus the
+// safe-area inset. A hidden bar frees the space for the sticky action bar.
+const { hidden: tabBarHidden } = usePzTabBar()
 const baseUrl = useRuntimeConfig().public.i18n.baseUrl
 
 useThemeColor('#FDF9F0', '#14140F')
@@ -25,7 +28,9 @@ useSeoMeta({
 </script>
 
 <template>
-  <div>
+  <div
+    :class="tabBarHidden ? undefined : 'pb-[calc(var(--pz-tabbar-h)+env(safe-area-inset-bottom))] lg:pb-0 print:pb-0'"
+  >
     <PzHeader />
     <UMain
       id="main-content"
@@ -35,5 +40,6 @@ useSeoMeta({
       <slot />
     </UMain>
     <PzFooter />
+    <PzBottomNav />
   </div>
 </template>
