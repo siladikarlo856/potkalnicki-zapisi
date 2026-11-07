@@ -93,7 +93,7 @@ const sessionHref = (query: Record<string, string>) => {
 
 <template>
   <div
-    class="space-y-4"
+    class="flex flex-col gap-4"
     data-testid="learn-home-panel"
   >
     <template v-if="!ready">
@@ -103,21 +103,22 @@ const sessionHref = (query: Record<string, string>) => {
     <template v-else>
       <div
         v-if="showTopA"
-        class="space-y-3 rounded-lg bg-elevated p-4 ring ring-default"
+        class="flex flex-col items-start gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4"
         data-testid="learn-home-state-a"
       >
-        <p class="text-xs font-semibold tracking-wide text-primary uppercase">
+        <p class="pz-overline text-default">
           {{ t('pz.learn.continueEyebrow') }}
         </p>
-        <p class="text-sm text-muted">
+        <p class="pz-body-sm text-muted">
           {{ continueLine }}
         </p>
         <UProgress
           :model-value="continueProgress"
           :max="current!.n"
           size="sm"
+          class="w-full"
         />
-        <p class="text-xs text-muted">
+        <p class="pz-caption text-muted">
           {{ startedLabel }}
         </p>
         <UButton
@@ -130,13 +131,13 @@ const sessionHref = (query: Record<string, string>) => {
 
       <div
         v-else-if="showTopB"
-        class="space-y-3 rounded-lg bg-elevated p-4 ring ring-default"
+        class="flex flex-col items-start gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4"
         data-testid="learn-home-state-b"
       >
-        <p class="text-xs font-semibold tracking-wide text-primary uppercase">
+        <p class="pz-overline text-default">
           {{ t('pz.learn.reviewEyebrow') }}
         </p>
-        <p class="text-sm text-muted">
+        <p class="pz-body-sm text-muted">
           {{ t('pz.learn.reviewWaiting', { due }) }}
         </p>
         <UButton
@@ -149,13 +150,13 @@ const sessionHref = (query: Record<string, string>) => {
 
       <div
         v-else-if="showTopC"
-        class="space-y-3 rounded-lg bg-elevated p-4 ring ring-default"
+        class="flex flex-col items-start gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4"
         data-testid="learn-home-state-c"
       >
-        <p class="text-xs font-semibold tracking-wide text-primary uppercase">
+        <p class="pz-overline text-default">
           {{ t('pz.learn.firstEyebrow') }}
         </p>
-        <p class="text-sm text-muted">
+        <p class="pz-body-sm text-muted">
           {{ t('pz.learn.firstBlurb') }}
         </p>
         <UButton
@@ -168,36 +169,43 @@ const sessionHref = (query: Record<string, string>) => {
 
       <p
         v-if="showTopBlock"
-        class="text-center text-xs text-muted uppercase"
+        class="pz-overline text-center text-muted"
       >
         {{ t('pz.learn.orDivider') }}
       </p>
 
       <div
-        class="space-y-3 rounded-lg p-4 ring ring-default"
+        class="flex flex-col items-start gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4"
         data-testid="learn-home-new-block"
       >
-        <p class="text-xs font-semibold tracking-wide text-muted uppercase">
+        <p class="pz-overline text-muted">
           {{ t('pz.learn.newLessonEyebrow') }}
         </p>
-        <div class="flex flex-wrap gap-2">
-          <UButton
+        <div
+          class="flex flex-wrap gap-2"
+          role="group"
+          :aria-label="t('pz.learn.topicsGroup')"
+        >
+          <LearnChip
             v-for="topic in topLevelTopics"
             :key="topic.id"
             :label="`${topic.label} (${topic.count})`"
-            :color="selectedTopics.includes(topic.id) ? 'primary' : 'neutral'"
-            :variant="selectedTopics.includes(topic.id) ? 'solid' : 'outline'"
-            size="sm"
+            :selected="selectedTopics.includes(topic.id)"
             @click="toggleTopic(topic.id, topic.status === 'live')"
           />
         </div>
-        <p class="text-sm text-muted">
+        <p class="pz-body-sm text-muted">
           {{ t('pz.learn.newLessonMeta') }}
           <ULink
             :to="localePath('/potkalnicko-prigorje/uci')"
-            class="font-medium text-primary"
+            class="inline-flex min-h-(--pz-tap-min) items-center gap-1 font-semibold text-primary"
           >
             {{ t('pz.learn.moreSettings') }}
+            <UIcon
+              name="i-lucide-arrow-right"
+              class="size-4"
+              aria-hidden="true"
+            />
           </ULink>
         </p>
         <UButton
@@ -210,7 +218,7 @@ const sessionHref = (query: Record<string, string>) => {
         />
         <p
           v-if="current"
-          class="text-xs text-muted"
+          class="pz-caption text-muted"
         >
           {{ t('pz.learn.replaceWarning') }}
         </p>

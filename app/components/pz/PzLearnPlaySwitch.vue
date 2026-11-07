@@ -9,16 +9,27 @@ const { tab } = usePzHome()
 const { pool } = useCardPool()
 
 const items: TabsItem[] = [
-  { label: t('pz.home.switch.learnTab'), value: 'uci', slot: 'uci' as const },
-  { label: t('pz.home.switch.playTab'), value: 'igraj', slot: 'igraj' as const }
+  { label: t('pz.home.switch.learnTab'), icon: 'i-lucide-graduation-cap', value: 'uci', slot: 'uci' as const },
+  { label: t('pz.home.switch.playTab'), icon: 'i-lucide-gamepad-2', value: 'igraj', slot: 'igraj' as const }
 ]
 
-const playTiles = computed(() => [
-  { title: t('pz.home.switch.tileDaily'), icon: 'i-lucide-sparkles', to: '#rijec-dana', minutes: 2 },
+// Three games, not a wall of tiles: the quiz, a friend challenge and the flip cards. "Riječ dana" has its own plate
+// higher up the page.
+const playGames = computed(() => [
   { title: t('pz.home.switch.tileQuiz'), icon: 'i-lucide-help-circle', to: localePath(pzRoutes.quiz), minutes: 2 },
   { title: t('pz.home.switch.tileChallenge'), icon: 'i-lucide-swords', to: localePath(pzRoutes.challenge), minutes: 2 },
   { title: t('pz.home.switch.tileCards'), icon: 'i-lucide-layers', to: localePath(pzRoutes.learn), minutes: 10 }
 ])
+
+// A full-width pill switch, 48px tall: the active segment is paper with an accented edge on a muted track. It only
+// swaps the panel under it; it is not page navigation.
+const ui = {
+  root: 'gap-0',
+  list: 'rounded-full border border-accented bg-muted p-1',
+  indicator: 'rounded-full border border-accented bg-default shadow-none',
+  trigger: 'pz-label min-h-10 rounded-full px-4 text-muted data-[state=active]:text-default',
+  leadingIcon: 'size-[18px]'
+}
 </script>
 
 <template>
@@ -30,7 +41,9 @@ const playTiles = computed(() => [
       v-model="tab"
       :items="items"
       value-key="value"
+      variant="pill"
       :unmount-on-hide="false"
+      :ui="ui"
       class="w-full"
     >
       <template #uci>
@@ -44,33 +57,24 @@ const playTiles = computed(() => [
 
       <template #igraj>
         <div
-          class="space-y-4 pt-4"
+          class="flex flex-col gap-3 pt-4"
           data-testid="learn-play-panel-igraj"
         >
-          <div class="grid grid-cols-2 gap-3">
-            <ULink
-              v-for="tile in playTiles"
-              :key="tile.title"
-              :to="tile.to"
-              class="flex flex-col gap-2 rounded-lg bg-elevated p-3 ring ring-default transition hover:ring-primary/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              <UIcon
-                :name="tile.icon"
-                class="size-5 text-primary"
-              />
-              <span class="font-medium text-highlighted">{{ tile.title }}</span>
-              <span class="text-xs text-muted">{{ t('pz.home.switch.minutes', { n: tile.minutes }) }}</span>
-            </ULink>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <PzGameCard
+              v-for="game in playGames"
+              :key="game.title"
+              :title="game.title"
+              :to="game.to"
+              :icon="game.icon"
+              :minutes="game.minutes"
+            />
           </div>
           <ULink
             :to="localePath(pzRoutes.games)"
-            class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            class="pz-label inline-flex min-h-(--pz-tap-min) items-center gap-1 self-start text-primary hover:underline"
           >
             {{ t('pz.home.switch.allGames') }}
-            <UIcon
-              name="i-lucide-arrow-right"
-              class="size-4"
-            />
           </ULink>
         </div>
       </template>
