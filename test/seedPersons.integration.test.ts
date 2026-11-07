@@ -18,7 +18,7 @@ describe.skipIf(!db.enabled)('persons seed on Postgres', () => {
     const seed = readFileSync(new URL('../supabase/migrations/20261104050000_seed_persons.sql', import.meta.url), 'utf8')
     sql(seed)
     sql(seed)
-    expect(Number(sql('select count(*) from public.persons where status = \'published\';'))).toBe(6)
+    expect(Number(sql(`select count(*) from public.persons where status = 'published' and slug in (${SEED_SLUGS.map(slug => `'${slug}'`).join(', ')});`))).toBe(6)
     for (const slug of SEED_SLUGS) {
       expect(Number(sql(`select count(*) from public.persons where slug = '${slug}';`))).toBe(1)
       expect(Number(sql(`
