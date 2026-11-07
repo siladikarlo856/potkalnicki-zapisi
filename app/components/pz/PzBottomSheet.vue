@@ -16,6 +16,9 @@ const open = defineModel<boolean>('open', { default: false })
 const { t } = useI18n()
 const desktop = usePzDesktop()
 
+// An open sheet owns the bottom of the screen, so the tab bar steps aside.
+useHidePzTabBar(open, 'sheet')
+
 // Only dismissals from the sheet itself ask. The consumer closing it (Cancel, after a send) just closes.
 function onUpdateOpen(value: boolean) {
   if (!value && props.dirty && !window.confirm(t('pz.kit.sheet.discard'))) return

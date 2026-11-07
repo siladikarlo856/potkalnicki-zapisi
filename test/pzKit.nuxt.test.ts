@@ -87,6 +87,16 @@ describe('PzBottomSheet', () => {
   })
 })
 
+describe('PzBottomSheet and the tab bar', () => {
+  it('holds the tab bar down while open and releases it on close', async () => {
+    const { hidden } = usePzTabBar()
+    const page = await openSheet(390)
+    expect(hidden.value).toBe(true)
+    await page.setProps({ open: false })
+    await vi.waitFor(() => expect(hidden.value).toBe(false))
+  })
+})
+
 describe('PzEmptyState', () => {
   it('names the place and renders its contribution actions as links', async () => {
     wrapper = await mountSuspended(PzEmptyState, {

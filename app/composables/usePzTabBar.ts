@@ -6,8 +6,8 @@ import type { MaybeRefOrGetter } from 'vue'
  *
  * - `game`: a game round is in play (set by `games/Shell.vue`).
  * - `challenge`: the challenge flow after "Kreni" (set by `heritage/ChallengeExperience.vue`).
- * - `sheet`: a bottom sheet is open. The sheet component (WP4) calls
- *   `useHidePzTabBar(open, 'sheet')` with its open state; nothing sets it yet.
+ * - `sheet`: a bottom sheet is open. `PzBottomSheet` calls
+ *   `useHidePzTabBar(open, 'sheet')` with its open state.
  * - `keyboard`: the on-screen keyboard is up (set by `PzBottomNav`).
  */
 export type PzTabBarHold = 'game' | 'challenge' | 'sheet' | 'keyboard'
