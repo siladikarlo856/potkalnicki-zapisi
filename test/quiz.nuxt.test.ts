@@ -90,7 +90,7 @@ async function mountQuiz(lang: 'hr' = 'hr') {
 
 const OPTION = '[data-testid^="game-option-"]'
 type Page = Awaited<ReturnType<typeof mountQuiz>>
-const optionText = (option: { text: () => string }) => option.text().replace(/^\d+\.\s*/, '').replace(/(Točan odgovor\.|Tvoj odgovor\.)/g, '').trim()
+const optionText = (option: { text: () => string }) => option.text().replace(/^\d+\.?\s*/, '').replace(/(Točan odgovor|Tvoj odgovor|Točno)/g, '').trim()
 const askedWord = (page: Page) => {
   const headword = page.get('[data-testid="game-prompt"]').text().match(/„(.*)”/)![1]!
   return seeds.find(word => word.headword === headword)!
@@ -128,8 +128,8 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, pr
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 1')
     expect(page.get('[data-testid="game-feedback"]').text()).toContain(`Točan odgovor: ${entry.meaning.hr}`)
     // Focus moves to the feedback after an answer, and the options are locked.
-    expect(focus.mock.contexts.some(element => (element as HTMLElement).dataset.testid === 'game-feedback')).toBe(true)
-    expect(page.findAll(OPTION).every(option => option.attributes('disabled') !== undefined)).toBe(true)
+    expect(focus.mock.contexts.some(element => (element as HTMLElement).dataset.testid === 'game-feedback-heading')).toBe(true)
+    expect(page.findAll(OPTION).every(option => option.attributes('aria-disabled') === 'true')).toBe(true)
     await page.get('[data-testid="game-next"]').trigger('click')
     expect(askedWord(page).id).not.toBe(entry.id)
     expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 2 od 4')

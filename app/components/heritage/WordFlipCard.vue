@@ -21,6 +21,16 @@ const gloss = computed(() => props.english ? props.entry.meaning.en : undefined)
 
 // Like the flip hint, the back-face labels are card chrome, not the word, so /en visitors read them in English.
 const labelLang = computed(() => props.english ? 'en' : undefined)
+// FlipCard: the front is one button with aria-expanded. The turn takes 400ms; under reduced motion it becomes a
+// 120ms crossfade (see the style block). The back's content is in the DOM and reachable once it is revealed.
+function onBackClick(event: MouseEvent) {
+  if (event.target instanceof Element && event.target.closest('a, button')) return
+  flipped.value = false
+}
+
+const frontLabel = computed(() => props.english
+  ? `${props.entry.headword}. Tap the card to see the meaning`
+  : `${props.entry.headword}. Dodirni karticu da vidiš značenje`)
 const labels = computed(() => props.english
   ? { meaning: 'Meaning', example: 'Example: ', alsoHeard: 'Also heard: ', variants: 'Variants by place' }
   : { meaning: 'Značenje', example: 'Primjer: ', alsoHeard: 'Čuje se i: ', variants: 'Inačice po mjestima' })
@@ -28,10 +38,10 @@ const labels = computed(() => props.english
 
 <template>
   <div
-    class="cursor-pointer perspective-distant"
+    class="perspective-distant"
     :class="compact ? 'h-64' : 'h-[clamp(15rem,46svh,24rem)] lg:h-[clamp(17rem,52svh,26rem)]'"
+    :data-flipped="flipped"
     lang="hr"
-    @click="flipped = !flipped"
   >
     <!-- The faces swap visually, so screen readers hear the meaning through this live region. -->
     <p
@@ -49,16 +59,26 @@ const labels = computed(() => props.english
          mirrored on top. Print shows only the face that is up, unrotated.
          Both faces scroll: with wider text spacing the compact front's hint no longer fits in h-64. -->
     <div
-      class="relative size-full transition-transform duration-500 transform-3d motion-reduce:transition-none print:transform-none"
-      :class="{ 'rotate-y-180': flipped }"
+      class="relative size-full"
+      data-flip-inner
     >
       <div
-        class="absolute inset-0 flex flex-col overflow-y-auto rounded-xl bg-default p-4 shadow-sm ring ring-default backface-hidden sm:p-5 print:aria-hidden:hidden"
+        data-flip-face="front"
+        class="absolute inset-0 flex flex-col overflow-y-auto rounded-(--pz-radius-lg) border border-accented bg-(--pz-wheat) p-4 text-default sm:p-5 print:aria-hidden:hidden"
         :aria-hidden="flipped"
         :inert="flipped"
       >
+        <!-- The whole card is one button; the face's text is its content. -->
+        <button
+          type="button"
+          class="absolute inset-0 z-10 cursor-pointer rounded-(--pz-radius-lg)"
+          :aria-expanded="flipped"
+          :aria-label="frontLabel"
+          data-testid="word-flip-front"
+          @click="flipped = !flipped"
+        />
         <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-semibold tracking-wide text-primary uppercase">Kaj to znači?</span>
+          <span class="pz-overline text-default">Kaj to znači?</span>
           <HeritageSampleBadge
             v-if="sample"
             :english="english"
@@ -66,8 +86,8 @@ const labels = computed(() => props.english
         </div>
         <div class="flex flex-1 flex-col items-center justify-center gap-2 text-center">
           <p
-            class="font-bold tracking-tight text-highlighted"
-            :class="compact ? 'text-4xl' : 'text-4xl sm:text-5xl'"
+            class="wrap-anywhere text-highlighted"
+            :class="compact ? 'pz-display' : 'pz-headword'"
           >
             {{ entry.headword }}
           </p>
@@ -100,7 +120,7 @@ const labels = computed(() => props.english
              The hint is an instruction, not part of the word, so /en visitors get it in English.
              It wraps on the 240px homepage card, so the icon sits inline and the two lines are balanced and centred. -->
         <p
-          class="text-center text-xs text-balance text-muted pointer-fine:hidden"
+          class="pz-body-sm text-center text-balance text-default pointer-fine:hidden"
           :lang="english ? 'en' : undefined"
         >
           <UIcon
@@ -109,7 +129,7 @@ const labels = computed(() => props.english
           />{{ english ? 'Tap the card to see the meaning' : 'Dodirni karticu da vidiš značenje' }}
         </p>
         <p
-          class="hidden text-center text-xs text-balance text-muted pointer-fine:block"
+          class="pz-body-sm hidden text-center text-balance text-default pointer-fine:block"
           :lang="english ? 'en' : undefined"
         >
           <UIcon
@@ -120,18 +140,31 @@ const labels = computed(() => props.english
       </div>
 
       <div
-        class="absolute inset-0 flex rotate-y-180 flex-col gap-2 overflow-y-auto rounded-xl bg-default p-4 shadow-sm ring-2 ring-primary/40 backface-hidden sm:p-5 print:transform-none print:aria-hidden:hidden"
+        data-flip-face="back"
+        class="absolute inset-0 flex flex-col gap-2 overflow-y-auto rounded-(--pz-radius-lg) border border-accented bg-default p-4 sm:p-5 print:aria-hidden:hidden"
         :aria-hidden="!flipped"
         :inert="!flipped"
+        @click="onBackClick"
       >
         <div class="flex items-center justify-between gap-2">
-          <p class="text-sm text-muted">
+          <!-- Turns the card back for keyboard users; a click on the card's blank areas does the same. -->
+          <button
+            type="button"
+            class="flex min-h-(--pz-tap-min) cursor-pointer items-center gap-1.5 text-start text-sm text-muted"
+            aria-expanded="true"
+            data-testid="word-flip-back"
+            @click="flipped = false"
+          >
+            <UIcon
+              name="i-lucide-rotate-ccw"
+              class="size-4 shrink-0"
+            />
             <span class="font-semibold text-default">{{ entry.headword }}</span>
             <!-- Croatian only: the front already gave the English, and the badge shares this line. -->
             <template v-if="entry.partOfSpeech">
               · {{ entry.partOfSpeech }}
             </template>
-          </p>
+          </button>
           <HeritageSampleBadge
             v-if="sample"
             :english="english"
@@ -144,7 +177,7 @@ const labels = computed(() => props.english
           >
             {{ labels.meaning }}
           </p>
-          <p class="text-3xl font-bold text-highlighted">
+          <p class="pz-lead font-semibold text-highlighted">
             {{ entry.meaning.hr }}
           </p>
           <p
@@ -210,3 +243,53 @@ const labels = computed(() => props.english
     </div>
   </div>
 </template>
+
+<style scoped>
+/* A 400ms turn about the Y axis. */
+[data-flip-inner] {
+  transition: transform 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-style: preserve-3d;
+}
+[data-flipped="true"] > [data-flip-inner] {
+  transform: rotateY(180deg);
+}
+[data-flip-face] {
+  backface-visibility: hidden;
+}
+[data-flip-face="back"] {
+  transform: rotateY(180deg);
+}
+
+/* Reduced motion: no turn, a 120ms crossfade between the faces. */
+@media (prefers-reduced-motion: reduce) {
+  [data-flip-inner] {
+    transition: none;
+  }
+  [data-flipped="true"] > [data-flip-inner] {
+    transform: none;
+  }
+  [data-flip-face] {
+    backface-visibility: visible;
+    transition: opacity 120ms linear;
+  }
+  [data-flip-face="back"] {
+    transform: none;
+    opacity: 0;
+  }
+  [data-flipped="true"] [data-flip-face="back"] {
+    opacity: 1;
+  }
+  [data-flipped="true"] [data-flip-face="front"] {
+    opacity: 0;
+  }
+}
+
+/* Print shows only the face that is up, unrotated. */
+@media print {
+  [data-flip-inner],
+  [data-flipped="true"] > [data-flip-inner],
+  [data-flip-face="back"] {
+    transform: none;
+  }
+}
+</style>

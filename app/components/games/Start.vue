@@ -25,19 +25,19 @@ function onKey(event: KeyboardEvent, current: number) {
 
 <template>
   <div
-    class="flex flex-col gap-3 rounded-xl bg-default p-4 ring ring-default sm:p-5"
+    class="flex flex-col gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4"
     data-testid="game-start"
   >
     <p
       id="game-difficulty-label"
-      class="text-sm font-semibold text-highlighted"
+      class="pz-label text-highlighted"
     >
       {{ t('pz.play.difficulty') }}
     </p>
     <div
       role="radiogroup"
       aria-labelledby="game-difficulty-label"
-      class="grid grid-cols-3 gap-1 rounded-lg bg-elevated p-1"
+      class="grid grid-cols-3 gap-1 rounded-full border border-accented bg-muted p-1"
     >
       <button
         v-for="(level, i) in levels"
@@ -48,8 +48,8 @@ function onKey(event: KeyboardEvent, current: number) {
         :tabindex="difficulty === level.id ? 0 : -1"
         :data-level="level.id"
         :data-testid="`game-level-${level.id}`"
-        class="min-h-11 rounded-md px-2 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        :class="difficulty === level.id ? 'bg-primary text-inverted shadow-sm' : 'text-muted hover:text-highlighted'"
+        class="min-h-(--pz-tap-min) rounded-full px-2 text-[15px] font-semibold transition-colors motion-reduce:transition-none"
+        :class="difficulty === level.id ? 'bg-default text-default ring-1 ring-(--ui-border-accented)' : 'text-muted hover:text-highlighted'"
         @click="difficulty = level.id"
         @keydown="onKey($event, i)"
       >

@@ -83,7 +83,7 @@ describe('GameShell', () => {
     expect(page.find('[data-testid="game-next"]').exists()).toBe(false)
   })
 
-  it('answers, moves focus to the feedback, marks options with text and records word progress', async () => {
+  it('answers, moves focus to the feedback heading, marks options with text and records word progress', async () => {
     const focus = vi.spyOn(HTMLElement.prototype, 'focus')
     const page = await mountShell()
     await page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).trigger('click')
@@ -92,11 +92,11 @@ describe('GameShell', () => {
     expect(feedback.text()).toContain('Nije točno.')
     expect(feedback.text()).toContain('Točan odgovor: A')
     expect(feedback.text()).toContain('Objašnjenje 0.')
-    expect(focus.mock.contexts.some(element => (element as HTMLElement).dataset.testid === 'game-feedback')).toBe(true)
+    expect(focus.mock.contexts.some(element => (element as HTMLElement).dataset.testid === 'game-feedback-heading')).toBe(true)
     // ✓ and ✗ are text for assistive tech as well as icons.
-    expect(page.get('[data-testid="game-option-0"]').text()).toContain('Točan odgovor.')
-    expect(page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).text()).toContain('Tvoj odgovor.')
-    expect(page.findAll(OPTION).every(option => option.attributes('disabled') !== undefined)).toBe(true)
+    expect(page.get('[data-testid="game-option-0"]').text()).toContain('Točan odgovor')
+    expect(page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).text()).toContain('Tvoj odgovor')
+    expect(page.findAll(OPTION).every(option => option.attributes('aria-disabled') === 'true')).toBe(true)
     expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).cards['word:w0'].missed).toBe(1)
     // A second click on a locked option changes nothing.
     await page.get('[data-testid="game-option-0"]').trigger('click')
@@ -172,7 +172,7 @@ describe('GameShell', () => {
     for (let i = 0; i < 3; i++) {
       // Options are reshuffled, so find the correct one from the prompt's question.
       const n = Number(page.get('[data-testid="game-prompt"]').text().match(/\d/)![0])
-      const texts = page.findAll(OPTION).map(option => option.text().replace(/^\d+\.\s*/, ''))
+      const texts = page.findAll(OPTION).map(option => option.text().replace(/^\d+\.?\s*/, ''))
       await page.get(`[data-testid="game-option-${texts.indexOf(['A', 'B', 'C'][questions[n]!.correct]!)}"]`).trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
@@ -189,6 +189,86 @@ describe('GameShell', () => {
     await page.setProps({ questions: [question(2), question(1)] })
     expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 2')
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 0')
+  })
+})
+
+describe('GameShell game kit', () => {
+  it('lists the options as buttons with aria-pressed before the answer', async () => {
+    const page = await mountShell()
+    const options = page.findAll(OPTION)
+    expect(options.every(option => option.element.tagName === 'BUTTON')).toBe(true)
+    expect(options.every(option => option.attributes('aria-pressed') === 'false')).toBe(true)
+    expect(page.find('[role="radiogroup"], [role="radio"]').exists()).toBe(false)
+    expect(page.find('[data-testid="game-answer-tag"]').exists()).toBe(false)
+  })
+
+  it('marks the right and the wrong option with an icon and a word after a wrong answer', async () => {
+    const page = await mountShell()
+    const wrong = wrongIndex(questions[0]!)
+    await page.get(`[data-testid="game-option-${wrong}"]`).trigger('click')
+    const right = page.get(`[data-testid="game-option-${questions[0]!.correct}"]`)
+    const picked = page.get(`[data-testid="game-option-${wrong}"]`)
+    expect(right.get('[data-testid="game-answer-tag"]').text()).toBe('Točan odgovor')
+    expect(right.find('[class*="lucide:check"]').exists()).toBe(true)
+    expect(picked.get('[data-testid="game-answer-tag"]').text()).toBe('Tvoj odgovor')
+    expect(picked.find('[class*="lucide:x"]').exists()).toBe(true)
+    expect(right.attributes('data-state')).toBe('correct')
+    expect(picked.attributes('data-state')).toBe('wrong')
+    // Options lose aria-pressed once they are locked.
+    expect(page.findAll(OPTION).every(option => option.attributes('aria-pressed') === undefined)).toBe(true)
+  })
+
+  it('says "Točno" on the option the player got right', async () => {
+    const page = await mountShell()
+    await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+    expect(page.get('[data-testid="game-answer-tag"]').text()).toBe('Točno')
+  })
+
+  it('shows feedback as a status region: verdict, the right answer, why, then the links', async () => {
+    const page = await mountShell()
+    await page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).trigger('click')
+    const feedback = page.get('[data-testid="game-feedback"]')
+    expect(feedback.attributes('role')).toBe('status')
+    expect(feedback.attributes('aria-live')).toBe('polite')
+    expect(feedback.get('h3').text()).toBe('Nije točno.')
+    expect(feedback.text()).toMatch(/Nije točno\.\s*Točan odgovor: A\.\s*Objašnjenje 0\./)
+    const html = feedback.html()
+    expect(html.indexOf('Objašnjenje 0.')).toBeLessThan(html.indexOf('data-testid="game-open-record"'))
+  })
+
+  it('names the progress with a text label next to the bar', async () => {
+    const page = await mountShell()
+    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')
+    expect(page.get('[role="progressbar"]').exists()).toBe(true)
+  })
+
+  it('never advances by itself: Dalje is the only way on', async () => {
+    vi.useFakeTimers()
+    try {
+      const page = await mountShell()
+      await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')
+      expect(page.find('[data-testid="game-feedback"]').exists()).toBe(true)
+      await page.get('[data-testid="game-next"]').trigger('click')
+      expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 2 od 3')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('puts Dalje in the sticky action bar, and reads "Pogledaj rezultat" on the last question', async () => {
+    const page = await mountShell()
+    expect(page.find('[data-testid="pz-sticky-action-bar"]').exists()).toBe(false)
+    await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+    const bar = page.get('[data-testid="pz-sticky-action-bar"]')
+    expect(bar.get('[data-testid="game-next"]').text()).toBe('Dalje')
+    await page.get('[data-testid="game-next"]').trigger('click')
+    await page.get(`[data-testid="game-option-${questions[1]!.correct}"]`).trigger('click')
+    await page.get('[data-testid="game-next"]').trigger('click')
+    await page.get(`[data-testid="game-option-${questions[2]!.correct}"]`).trigger('click')
+    expect(page.get('[data-testid="game-next"]').text()).toBe('Pogledaj rezultat')
+    expect(page.get('[data-testid="game-next-desktop"]').text()).toBe('Pogledaj rezultat')
   })
 })
 

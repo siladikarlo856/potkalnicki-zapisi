@@ -35,23 +35,23 @@ defineExpose({ focus: () => heading.value?.focus() })
 
 <template>
   <div
-    class="flex flex-col items-center gap-3 rounded-xl bg-default p-4 text-center ring ring-default sm:p-6"
+    class="flex flex-col items-center gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4 text-center sm:p-6"
     data-testid="game-result"
   >
     <UIcon
-      :name="total ? 'i-lucide-party-popper' : 'i-lucide-book-open'"
+      :name="total ? 'i-lucide-trophy' : 'i-lucide-book-open'"
       class="size-8 text-primary"
     />
     <h2
       ref="heading"
       tabindex="-1"
-      class="text-xl font-bold text-highlighted outline-offset-4 focus-visible:outline-2 focus-visible:outline-primary"
+      class="pz-h2 text-highlighted outline-offset-4"
     >
       {{ t('pz.play.done') }}
     </h2>
     <p
       role="status"
-      class="text-lg font-semibold text-highlighted"
+      class="pz-lead font-semibold text-highlighted tabular-nums"
       data-testid="game-result-score"
     >
       {{ t('pz.play.resultOf', { correct, n: total }) }}
@@ -81,7 +81,7 @@ defineExpose({ focus: () => heading.value?.focus() })
         <li
           v-for="question in misses"
           :key="question.id"
-          class="flex min-w-0 flex-col gap-1 rounded-lg bg-elevated px-2.5 py-2 text-sm"
+          class="flex min-w-0 flex-col gap-1 rounded-(--pz-radius-md) border border-default bg-muted px-3 py-2 text-sm"
           data-testid="game-miss"
         >
           <span
