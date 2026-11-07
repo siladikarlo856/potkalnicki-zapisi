@@ -125,6 +125,9 @@ useSeoMeta({
 
       <template #bastina>
         <div class="mt-4 flex flex-col gap-4">
+          <h2 class="sr-only">
+            {{ t('pz.explore.tabHeritage') }}
+          </h2>
           <ul
             v-if="heritageItems.length"
             class="grid gap-3 lg:grid-cols-2"
@@ -163,6 +166,7 @@ useSeoMeta({
       :blurb="t('pz.explore.playSettlementsBlurb')"
       :to="localePath(pzRoutes.selaOpcine)"
       icon="i-lucide-map-pin"
+      :level="2"
       class="lg:max-w-(--pz-measure)"
     />
 
@@ -185,7 +189,7 @@ useSeoMeta({
         icon="i-lucide-plus"
         color="neutral"
         variant="outline"
-        class="self-start ring-(--ui-border-accented)"
+        class="min-h-(--pz-tap-min) max-w-full justify-start self-start text-start whitespace-normal ring-(--ui-border-accented)"
         aria-haspopup="dialog"
         data-testid="municipality-suggest-item"
         @click="proposalOpen = true"

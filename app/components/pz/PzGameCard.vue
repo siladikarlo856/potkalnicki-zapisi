@@ -14,6 +14,8 @@ const props = defineProps<{
   sample?: boolean
   /** Lucide icon for the topic tile. */
   icon?: string
+  /** Heading level of the title: h3 inside a section, h2 when the card stands directly under the page title. */
+  level?: 2 | 3
 }>()
 
 const { t } = useI18n()
@@ -47,13 +49,14 @@ const meta = computed(() => {
         class="size-5"
       />
     </span>
-    <h3
+    <component
+      :is="level === 2 ? 'h2' : 'h3'"
       :id="titleId"
       class="pz-h3 wrap-anywhere"
       :class="soon ? 'text-muted' : 'text-highlighted'"
     >
       {{ title }}
-    </h3>
+    </component>
     <p
       v-if="blurb"
       class="pz-body-sm text-muted"

@@ -266,6 +266,12 @@ watch(() => status.value, (s) => {
 <template>
   <UContainer class="py-4 lg:py-6">
     <div class="mx-auto flex w-full max-w-(--pz-game-col) flex-col gap-4">
+      <h1
+        v-if="!finished || reviewShown"
+        class="sr-only"
+      >
+        {{ t('pz.learn.title') }}
+      </h1>
       <PzBackPill :to="localePath('/potkalnicko-prigorje/uci')">
         {{ t('pz.learn.title') }}
       </PzBackPill>
