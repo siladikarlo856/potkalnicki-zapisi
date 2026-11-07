@@ -72,7 +72,7 @@ const municipalities = computed(() => (overview.value?.municipalities ?? []).map
 
     <section
       id="opcine"
-      class="flex scroll-mt-(--pz-header-h) flex-col gap-4"
+      class="flex flex-col gap-4 lg:scroll-mt-(--pz-header-h)"
     >
       <h2 class="pz-h2 text-highlighted">
         {{ t('pz.explore.municipalitiesTitle') }}

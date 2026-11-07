@@ -96,7 +96,7 @@ const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []
 
     <section
       id="doprinos"
-      class="flex scroll-mt-(--pz-header-h) flex-col gap-3 rounded-(--pz-radius-lg) border border-accented bg-muted p-5 lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-6"
+      class="flex flex-col gap-3 lg:scroll-mt-(--pz-header-h) rounded-(--pz-radius-lg) border border-accented bg-muted p-5 lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-6"
       aria-labelledby="doprinos-title"
       data-testid="doprinos"
     >

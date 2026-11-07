@@ -31,7 +31,7 @@ const iconButton = 'size-(--pz-tap-min) justify-center rounded-md text-default'
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 border-b border-default bg-default print:static">
+  <header class="z-50 border-b border-default bg-default lg:sticky lg:top-0 print:static">
     <UContainer class="flex h-(--pz-header-h) items-center gap-3 pr-2 lg:h-16 lg:gap-6 lg:pr-6">
       <NuxtLink
         :to="localePath(pzRoutes.home)"
