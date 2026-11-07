@@ -1,18 +1,26 @@
--- History restore through the per-kind save functions, and sidecars in the change history.
+-- Save a person, an area, a club and a heritage item together with their sidecar tables in one transaction,
+-- and record those sidecars in the change history. The admin API used to write the main row and then replace
+-- each sidecar table with separate requests, so a failing sidecar write left a half-saved row, a history
+-- restore was not atomic, and a revision held only the main row: a Published person or club (which needs a
+-- source) could not be restored, because its sources were not in the stored version. Additive: new functions,
+-- and content_audit keeps its signature and grants.
 --
--- A history restore used to write the main row and then replace each sidecar table with separate requests,
--- so it was not atomic, and a revision held only the main row: a Published person or club (which needs a
--- source) could not be restored, because its sources were not in the stored version. Now:
---
--- * content_person_save, content_area_save, content_club_save and content_heritage_item_save (same
---   signatures, grants kept) record the sidecars they write on the revision of that write, under
---   data->'sidecars' in the API's shape. They hand them to content_audit through the transaction setting
---   app.revision_sidecars, as content_apply_submission hands over app.submission_id, so content_revisions
---   stays append-only. Writes that do not touch the sidecars (an archive, a delete, a seed) record none.
--- * On a create, p_row may carry id, revision and created_at: a restore recreates a deleted row under its
---   old id and creation time, continuing its revision count. The API never takes these from a client.
---
--- Additive: older revisions simply have no 'sidecars' key, and the previous app ignores it.
+-- content_person_save, content_area_save, content_club_save and content_heritage_item_save:
+-- * p_id null creates the row; otherwise it is updated only while it is still at p_revision. Each returns the
+--   saved id, or null when the row is gone or no longer at p_revision.
+-- * p_row holds the main-table columns (as the API maps them, plus the transient apply_submission_id and
+--   apply_credit that content_apply_submission reads). Sidecars are JSON arrays in the API's shape, saved in
+--   their given order.
+-- * On a create, p_row may also carry id, revision and created_at (a restore recreates a deleted row under
+--   its old id and creation time, continuing its revision count) and source_submission_id (a Draft made from
+--   a Proposal links the Proposal that publishing the Draft applies). An update leaves those columns as they
+--   are. The API never takes them from a client.
+-- * Each records the sidecars it writes on the revision of that write, under data->'sidecars' in the API's
+--   shape. It hands them to content_audit through the transaction setting app.revision_sidecars, as
+--   content_apply_submission hands over app.submission_id, so content_revisions stays append-only. Writes
+--   that do not go through these functions (an archive, a delete, a seed) record none; older revisions
+--   simply have no 'sidecars' key.
+-- Every rule is checked by the API before these run; the constraints and triggers still guard the data.
 
 create or replace function public.content_audit() returns trigger language plpgsql set search_path = '' as $$
 declare
@@ -39,7 +47,7 @@ begin
 end;
 $$;
 
-create or replace function public.content_person_save(
+create function public.content_person_save(
   p_id uuid, p_revision integer, p_row jsonb, p_area_links jsonb, p_item_links jsonb, p_source_ids jsonb
 ) returns uuid
 language plpgsql set search_path = '' as $$
@@ -54,11 +62,11 @@ begin
     insert into public.persons (
       id, revision, created_at,
       name, slug, role, clue, bio, born, born_year, born_place, died, died_year, died_place,
-      open_questions, research_notes, verification, noindex, status, apply_submission_id, apply_credit
+      open_questions, research_notes, verification, noindex, status, apply_submission_id, apply_credit, source_submission_id
     ) values (
       saved, coalesce(r.revision, 1), coalesce(r.created_at, now()),
       r.name, r.slug, r.role, r.clue, r.bio, r.born, r.born_year, r.born_place, r.died, r.died_year, r.died_place,
-      r.open_questions, r.research_notes, r.verification, r.noindex, r.status, r.apply_submission_id, r.apply_credit
+      r.open_questions, r.research_notes, r.verification, r.noindex, r.status, r.apply_submission_id, r.apply_credit, r.source_submission_id
     );
   else
     update public.persons set
@@ -92,7 +100,7 @@ begin
 end;
 $$;
 
-create or replace function public.content_area_save(p_id uuid, p_revision integer, p_row jsonb, p_region_ids jsonb) returns uuid
+create function public.content_area_save(p_id uuid, p_revision integer, p_row jsonb, p_region_ids jsonb) returns uuid
 language plpgsql set search_path = '' as $$
 declare
   r public.areas := jsonb_populate_record(null::public.areas, p_row);
@@ -105,11 +113,11 @@ begin
     insert into public.areas (
       id, revision, created_at,
       kind, parent_id, name, slug, official_code, geonames_id, latitude, longitude, description, status,
-      apply_submission_id, apply_credit
+      apply_submission_id, apply_credit, source_submission_id
     ) values (
       saved, coalesce(r.revision, 1), coalesce(r.created_at, now()),
       r.kind, r.parent_id, r.name, r.slug, r.official_code, r.geonames_id, r.latitude, r.longitude, r.description, r.status,
-      r.apply_submission_id, r.apply_credit
+      r.apply_submission_id, r.apply_credit, r.source_submission_id
     );
   else
     update public.areas set
@@ -132,7 +140,7 @@ begin
 end;
 $$;
 
-create or replace function public.content_club_save(
+create function public.content_club_save(
   p_id uuid, p_revision integer, p_row jsonb, p_seasons jsonb, p_source_ids jsonb
 ) returns uuid
 language plpgsql set search_path = '' as $$
@@ -147,11 +155,11 @@ begin
     insert into public.clubs (
       id, revision, created_at,
       name, slug, full_name, sport, settlement_id, founded_year, home_ground, research_notes, verification, noindex,
-      status, apply_submission_id, apply_credit
+      status, apply_submission_id, apply_credit, source_submission_id
     ) values (
       saved, coalesce(r.revision, 1), coalesce(r.created_at, now()),
       r.name, r.slug, r.full_name, r.sport, r.settlement_id, r.founded_year, r.home_ground, r.research_notes,
-      r.verification, r.noindex, r.status, r.apply_submission_id, r.apply_credit
+      r.verification, r.noindex, r.status, r.apply_submission_id, r.apply_credit, r.source_submission_id
     );
   else
     update public.clubs set
@@ -180,7 +188,7 @@ begin
 end;
 $$;
 
-create or replace function public.content_heritage_item_save(p_id uuid, p_revision integer, p_row jsonb, p_source_ids jsonb) returns uuid
+create function public.content_heritage_item_save(p_id uuid, p_revision integer, p_row jsonb, p_source_ids jsonb) returns uuid
 language plpgsql set search_path = '' as $$
 declare
   r public.heritage_items := jsonb_populate_record(null::public.heritage_items, p_row);
@@ -194,12 +202,12 @@ begin
       id, revision, created_at,
       name, slug, category_id, municipality_id, settlement_id, locality, verification, heritage_status,
       registry_number, period, description, research_notes, latitude, longitude, noindex, status,
-      apply_submission_id, apply_credit
+      apply_submission_id, apply_credit, source_submission_id
     ) values (
       saved, coalesce(r.revision, 1), coalesce(r.created_at, now()),
       r.name, r.slug, r.category_id, r.municipality_id, r.settlement_id, r.locality, r.verification, r.heritage_status,
       r.registry_number, r.period, r.description, r.research_notes, r.latitude, r.longitude, r.noindex, r.status,
-      r.apply_submission_id, r.apply_credit
+      r.apply_submission_id, r.apply_credit, r.source_submission_id
     );
   else
     update public.heritage_items set
@@ -223,3 +231,12 @@ begin
   return saved;
 end;
 $$;
+
+revoke all on function public.content_person_save(uuid, integer, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.content_person_save(uuid, integer, jsonb, jsonb, jsonb, jsonb) to service_role;
+revoke all on function public.content_area_save(uuid, integer, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.content_area_save(uuid, integer, jsonb, jsonb) to service_role;
+revoke all on function public.content_club_save(uuid, integer, jsonb, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.content_club_save(uuid, integer, jsonb, jsonb, jsonb) to service_role;
+revoke all on function public.content_heritage_item_save(uuid, integer, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.content_heritage_item_save(uuid, integer, jsonb, jsonb) to service_role;

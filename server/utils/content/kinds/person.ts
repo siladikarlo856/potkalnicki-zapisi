@@ -78,7 +78,7 @@ export const personKind = defineContentKind({
     ...await missingLinkIssues(db, 'heritage_items', value.itemLinks.map((link, index) => [`itemLinks.${index}.itemId`, link.itemId] as const), 'Taj zapis baštine ne postoji.'),
     ...await missingSourceIssues(db, value.sourceIds)
   ],
-  // The persons row and its link tables in one transaction (supabase/migrations/20261107000000_person_save.sql).
+  // The persons row and its link tables in one transaction (supabase/migrations/20261107000000_content_save.sql).
   persist: async (db, id, value, { row, revision }) => {
     const { data, error } = await db.rpc('content_person_save', {
       p_id: id,
