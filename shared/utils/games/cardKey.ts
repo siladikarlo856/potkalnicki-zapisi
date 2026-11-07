@@ -11,7 +11,7 @@ export interface CardKeyParts {
   suffix?: string
 }
 
-const CARD_KEY_PARTS = /^(word|place|item|person|club):([A-Za-z0-9-]+)(?::([A-Za-z0-9-]+))?$/
+const CARD_KEY_PARTS = /^(word|place|item|person|club):([^:\s]+)(?::([^:\s]+))?$/
 
 export function encodeCardKey({ kind, id, suffix }: CardKeyParts): CardKey {
   return (suffix ? `${kind}:${id}:${suffix}` : `${kind}:${id}`) as CardKey
