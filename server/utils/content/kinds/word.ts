@@ -105,6 +105,8 @@ export const wordKind = defineContentKind<{ entry: WordEntry, status: ContentSta
   },
   lookupLabel: row => wordLookupLabel(row as unknown as Pick<WordRow, 'entry' | 'id'>),
   labelColumn: 'search_text',
+  title: row => String((row.entry as WordEntry | undefined)?.headword ?? ''),
+  createdFrom: 'submission_id',
   validate: validateAdminWord,
   sorts: { headword: 'search_text', slug: 'slug' },
   defaultSort: '-updatedAt',

@@ -1,14 +1,13 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import type { H3Event } from 'h3'
 import type { ContributionKind, ContributionPayload } from '../../shared/utils/contribution'
-import { CONTRIBUTION_LINK_LIMIT, totalLinks, UUID_PATTERN } from '../../shared/utils/contribution'
+import { CONTRIBUTION_LINK_LIMIT, totalLinks } from '../../shared/utils/contribution'
 import type { SubmissionInput } from '../../shared/utils/submission'
+import { findPublished } from './content/records'
 
 // The public side of corrections and proposals: resolving what a correction is about, and the spam
 // hardening that sits on top of the existing honeypot, per-IP limit and 16 KB cap (README, "Corrections
 // and proposals"): per-target throttle, duplicate fingerprint, link cap, minimum fill time, pending cap.
-
-const LEGACY_KINDS: Partial<Record<ContributionKind, string>> = { heritage_item: 'heritage_item', area: 'area', source: 'source', person: 'person', club: 'club' }
 
 export interface ContributionTarget {
   id: string
@@ -16,41 +15,12 @@ export interface ContributionTarget {
 }
 
 /**
- * The published row a correction is about, by UUID or (for heritage items, settlements and sources) an old
- * id. Words are matched by their UUID text id. Returns null for anything unknown, unpublished, archived or,
- * for areas, not a settlement: only published content takes a correction.
+ * The Published row a Correction is about, by UUID or (for kinds that had one) an old id. Returns null for
+ * anything unknown or not Published and, for areas, not a settlement: only Published content takes a Correction.
  */
 export async function resolveContributionTarget(kind: ContributionKind, value: string): Promise<ContributionTarget | null> {
-  const db = useDatabaseClient()
-  let id = value.toLowerCase()
-  if (!UUID_PATTERN.test(id)) {
-    const legacyKind = LEGACY_KINDS[kind]
-    if (!legacyKind) return null
-    const { data, error } = await db.from('content_legacy_ids').select('entity_id').eq('kind', legacyKind).eq('legacy_id', id).maybeSingle()
-    if (error) databaseError(error)
-    if (!data) return null
-    id = String(data.entity_id)
-  }
-  const table = { word: 'heritage_words', heritage_item: 'heritage_items', area: 'areas', source: 'sources', person: 'persons', club: 'clubs' }[kind]
-  if (!table) return null
-  let request = db.from(table).select('id,revision').eq('id', id)
-  if (kind === 'word') request = request.eq('active', true)
-  else request = request.eq('status', 'published')
-  if (kind === 'area') request = request.eq('kind', 'settlement')
-  const { data, error } = await request.limit(1)
-  if (error) databaseError(error)
-  const row = data?.[0] as { id: string, revision: number } | undefined
-  return row ? { id: row.id, revision: Number(row.revision) } : null
-}
-
-/** Settlements and categories a proposal names must exist and be public, so a draft can be built from it. */
-export async function assertPublishedRows(table: 'areas' | 'heritage_categories', ids: string[], kinds?: string[]) {
-  if (!ids.length) return true
-  let request = useDatabaseClient().from(table).select('id').in('id', ids).eq('status', 'published')
-  if (kinds) request = request.in('kind', kinds)
-  const { data, error } = await request
-  if (error) databaseError(error)
-  return (data?.length ?? 0) === new Set(ids).size
+  const target = await findPublished(kind, kind === 'area' ? { id: value, kind: 'settlement' } : value)
+  return target ? { id: target.id, revision: Number(target.revision) } : null
 }
 
 // ---- Minimum fill time: a signed render-time token --------------------------------------------------------

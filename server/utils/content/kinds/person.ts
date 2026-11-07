@@ -49,6 +49,7 @@ export const personKind = defineContentKind({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   labelColumn: 'name',
+  createdFrom: 'source_submission_id',
   validate: validatePerson,
   sorts: { name: 'name', verification: 'verification', diedYear: 'died_year' },
   defaultSort: 'name',

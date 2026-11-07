@@ -274,6 +274,38 @@ describe.skipIf(!db.enabled)('corrections and proposals inbox over real Postgres
     expect((await admin(`/api/admin/inbox/${rejected}`, { method: 'PATCH', body: { status: 'nonsense' } })).status).toBe(400)
   })
 
+  it('validates a draft made from a proposal like an admin save: an invalid one is refused and writes nothing', async () => {
+    const w = world()
+    const categoryId = await makeCategory(w.id)
+    expect((await submit({ type: 'proposal', targetKind: 'heritage_item', payload: { name: `Kapela ${w.id}`, categoryId, municipalityId: w.municipality } })).status).toBe(201)
+    const id = await latestSubmissionId('proposal')
+    // A proposal stored before a rule existed (the intake is looser than the heritage item's own rules).
+    sql(`update public.heritage_submissions set payload = jsonb_set(payload, '{name}', to_jsonb(repeat('k', 250))) where id = ${id};`)
+    const revisions = sql('select count(*) from public.content_revisions;')
+
+    const draft = await admin(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(draft.status).toBe(400)
+    expect(draft.body.data?.issues).toContainEqual(expect.objectContaining({ path: 'name' }))
+    expect(sql(`select count(*) from public.heritage_items where source_submission_id = ${id};`)).toBe('0')
+    expect(sql('select count(*) from public.content_revisions;')).toBe(revisions)
+  })
+
+  it('makes a person draft from a proposal with its place, through the person\'s own save', async () => {
+    const w = world()
+    expect((await submit({ type: 'proposal', targetKind: 'person', payload: { name: `Ivana Horvat ${w.id}`, born: '1880.', died: '1950.', settlementId: w.settlement, significance: 'Učiteljica.', sourceUrl: 'https://example.org/ivana' } })).status).toBe(201)
+    const id = await latestSubmissionId('proposal')
+    const draft = await admin<{ kind: string, id: string, created: boolean }>(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(draft.status).toBe(201)
+    expect(draft.body).toMatchObject({ kind: 'person', created: true })
+    expect(JSON.parse(sql(`select jsonb_build_object('status', status, 'born_year', born_year, 'died_year', died_year, 'from', source_submission_id) from public.persons where id = '${draft.body.id}';`)))
+      .toEqual({ status: 'draft', born_year: 1880, died_year: 1950, from: Number(id) })
+    const person = await admin<{ entity: { areaLinks: unknown[] } }>(`/api/admin/content/person/${draft.body.id}`)
+    expect(person.body.entity.areaLinks).toEqual([{ areaId: w.settlement, role: 'djelovao' }])
+    // The draft's revision records its place, as every person save does.
+    expect(sql(`select data->'sidecars'->'areaLinks'->0->>'areaId' from public.content_revisions where entity_id = '${draft.body.id}' order by revision limit 1;`)).toBe(w.settlement)
+    expect((await admin<{ created: boolean }>(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })).body.created).toBe(false)
+  })
+
   it('enforces who may submit what and whitelists the payload', async () => {
     const w = world()
     const categoryId = await makeCategory(w.id)
