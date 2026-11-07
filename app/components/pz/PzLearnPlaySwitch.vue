@@ -23,7 +23,7 @@ const playTiles = computed(() => [
 
 <template>
   <section
-    class="mx-auto w-full max-w-2xl px-4 py-6"
+    class="w-full"
     data-testid="learn-play-switch"
   >
     <UTabs

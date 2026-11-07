@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { AtlasHeritageItemResponse } from '~~/shared/types/publicAtlas'
+import { pzRoutes } from '~~/shared/utils/appRoutes'
+import { trustVerificationState } from '~~/shared/utils/heritageVerification'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -7,6 +9,7 @@ defineI18nRoute({ locales: ['hr'] })
 const route = useRoute()
 const { t } = useI18n()
 const localePath = useLocalePath()
+const { settlementPath, municipalityPath } = useAtlas()
 
 const settlementSlug = computed(() => String(route.params.naselje))
 const itemSlug = computed(() => String(route.params.slug))
@@ -42,154 +45,233 @@ function locationLine() {
   if (!heritageItem.value) return ''
   return [heritageItem.value.settlement?.name, heritageItem.value.locality].filter(Boolean).join(' · ')
 }
+
+// Protection comes only from the record's own registry status; a missing or other status shows no tag.
+const protectedItem = computed(() => heritageItem.value?.heritageStatus === 'protected')
+
+const facts = computed(() => heritageItem.value
+  ? [
+      {
+        label: t('pz.heritage.fieldLocation'),
+        value: locationLine() || null,
+        to: heritageItem.value.settlement ? settlementPath(heritageItem.value.settlement.slug) : undefined
+      },
+      { label: t('pz.heritage.fieldMunicipality'), value: heritageItem.value.municipality.label, to: municipalityPath(heritageItem.value.municipality.slug) },
+      { label: t('pz.heritage.fieldPeriod'), value: heritageItem.value.period }
+    ]
+  : [])
+
+const sources = computed(() => (heritageItem.value?.sources ?? []).map(source => ({
+  label: source.title,
+  href: source.url ?? undefined
+})))
+
+const playTo = computed(() => ['church', 'cathedral', 'chapel', 'chapel-shrine', 'monastery'].includes(heritageItem.value?.category.key ?? '')
+  ? localePath(pzRoutes.churchWhere)
+  : undefined)
+
+const verificationHelp = computed(() => ({
+  verified: t('pz.trust.help.verified'),
+  needs_update: t('pz.trust.help.needsUpdate'),
+  unverified: t('pz.trust.help.unverified')
+}[trustVerificationState(heritageItem.value?.verification)]))
 </script>
 
 <template>
   <div
     v-if="heritageItem"
+    class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-8 px-4 py-6 lg:px-12 lg:py-12"
     data-testid="heritage-item-page"
   >
-    <UPageHero
-      :title="heritageItem.name"
-      :ui="{ container: 'py-12 sm:py-16' }"
-    >
-      <template #description>
-        <div class="mt-4 flex flex-wrap items-center gap-2">
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_var(--pz-side-panel)] lg:gap-x-12">
+      <header class="flex max-w-(--pz-measure) flex-col gap-3">
+        <PzBackPill
+          v-if="heritageItem.settlement"
+          :to="settlementPath(heritageItem.settlement.slug)"
+        >
+          {{ heritageItem.settlement.name }}
+        </PzBackPill>
+        <p class="pz-overline text-muted">
+          {{ heritageItem.category.label }}
+        </p>
+        <h1 class="pz-h1 wrap-anywhere text-highlighted lg:pz-display">
+          {{ heritageItem.name }}
+        </h1>
+        <div
+          class="flex flex-wrap items-center gap-2 lg:hidden"
+          data-testid="heritage-trust-row"
+        >
           <PzVerificationBadge :verification="heritageItem.verification" />
+          <PzProtectionTag
+            v-if="protectedItem"
+            status="protected"
+            :register="heritageItem.registryNumber ?? undefined"
+          />
           <UBadge
-            variant="subtle"
             :label="heritageItem.category.label"
+            color="neutral"
+            variant="subtle"
+            class="rounded-(--pz-radius-sm)"
           />
         </div>
-      </template>
-    </UPageHero>
+      </header>
 
-    <UPageSection :ui="{ root: 'border-t border-default' }">
-      <dl class="grid gap-4 text-sm sm:grid-cols-2">
-        <div>
-          <dt class="text-muted">
-            {{ t('pz.heritage.fieldLocation') }}
-          </dt>
-          <dd class="font-medium text-highlighted">
-            {{ locationLine() }}
-          </dd>
-        </div>
-        <div>
-          <dt class="text-muted">
-            {{ t('pz.heritage.fieldMunicipality') }}
-          </dt>
-          <dd class="font-medium text-highlighted">
-            <ULink
-              :to="localePath(`/potkalnicko-prigorje/istrazi/${heritageItem.municipality.slug}`)"
-              class="text-primary"
-            >
-              {{ heritageItem.municipality.label }}
-            </ULink>
-          </dd>
-        </div>
-      </dl>
-    </UPageSection>
-
-    <UPageSection
-      :title="t('pz.heritage.researchTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <p class="text-sm leading-relaxed text-default">
-        {{ heritageItem.researchNotes }}
-      </p>
-    </UPageSection>
-
-    <UPageSection
-      :title="t('pz.heritage.sourcesTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <ul class="list-disc space-y-2 pl-5 text-sm text-default">
-        <li
-          v-for="source in heritageItem.sources"
-          :key="source.id"
-        >
-          <ULink
-            v-if="source.url"
-            :to="source.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-primary"
+      <PzFactPanel
+        class="max-lg:[&_[data-testid=pz-fact-panel-actions]]:hidden max-lg:[&_[data-testid=pz-fact-panel-trust]]:hidden lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start"
+        :facts="facts"
+        :sources="sources"
+        :play="playTo ? { to: playTo, description: t('pz.heritage.playBlurb') } : undefined"
+      >
+        <template #trust>
+          <div class="flex flex-col gap-1">
+            <div>
+              <PzVerificationBadge :verification="heritageItem.verification" />
+            </div>
+            <p class="pz-caption font-normal text-muted">
+              {{ verificationHelp }}
+            </p>
+          </div>
+          <div
+            v-if="protectedItem"
+            class="flex flex-col gap-1"
           >
-            {{ source.title }}
-          </ULink>
-          <span v-else>{{ source.title }}</span>
-        </li>
-      </ul>
-    </UPageSection>
+            <div>
+              <PzProtectionTag
+                status="protected"
+                :register="heritageItem.registryNumber ?? undefined"
+              />
+            </div>
+            <p class="pz-caption font-normal text-muted">
+              {{ t('pz.trust.help.protection') }}
+            </p>
+          </div>
+        </template>
+        <template #actions>
+          <UButton
+            :label="t('pz.heritage.suggestCorrection')"
+            icon="i-lucide-pencil"
+            size="lg"
+            block
+            aria-haspopup="dialog"
+            data-testid="heritage-suggest-correction"
+            @click="correctionOpen = true"
+          />
+          <UButton
+            :label="t('pz.heritage.addSource')"
+            icon="i-lucide-book-plus"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            block
+            class="ring-(--ui-border-accented)"
+            aria-haspopup="dialog"
+            data-testid="heritage-suggest-source"
+            @click="sourceOpen = true"
+          />
+        </template>
+      </PzFactPanel>
 
-    <UPageSection
-      v-if="heritageItem.persons.length"
-      :title="t('pz.persons.related')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <PersonsList
-        :persons="heritageItem.persons"
-        testid="heritage-persons"
-      />
-    </UPageSection>
+      <div class="flex min-w-0 max-w-(--pz-measure) flex-col gap-8">
+        <UAlert
+          v-if="heritageItem.researchNotes"
+          color="warning"
+          variant="subtle"
+          icon="i-lucide-search"
+          :title="t('pz.heritage.researchTitle')"
+          :description="heritageItem.researchNotes"
+          data-testid="heritage-research-note"
+        />
 
-    <UPageSection :ui="{ root: 'border-t border-default' }">
-      <p class="text-sm text-muted">
-        {{ t('pz.heritage.noDescriptionYet') }}
-      </p>
-      <div class="mt-4 flex flex-wrap gap-3">
-        <UButton
-          :label="t('pz.heritage.suggestCorrection')"
-          icon="i-lucide-pencil"
-          color="neutral"
-          variant="outline"
-          aria-haspopup="dialog"
-          data-testid="heritage-suggest-correction"
-          @click="correctionOpen = true"
-        />
-        <UButton
-          :label="t('pz.heritage.addSource')"
-          icon="i-lucide-book-plus"
-          color="neutral"
-          variant="outline"
-          aria-haspopup="dialog"
-          data-testid="heritage-suggest-source"
-          @click="sourceOpen = true"
-        />
+        <section class="flex flex-col gap-2">
+          <h2 class="pz-h2 text-highlighted">
+            {{ t('pz.heritage.descriptionTitle') }}
+          </h2>
+          <p
+            v-if="heritageItem.description"
+            class="pz-body text-default"
+            lang="hr"
+          >
+            {{ heritageItem.description }}
+          </p>
+          <p
+            v-else
+            class="pz-body text-muted"
+          >
+            {{ t('pz.heritage.noDescriptionYet') }}
+            <button
+              type="button"
+              class="text-primary underline underline-offset-2"
+              aria-haspopup="dialog"
+              @click="correctionOpen = true"
+            >
+              {{ t('pz.heritage.knowSomething') }}
+            </button>
+          </p>
+        </section>
+
+        <section
+          v-if="heritageItem.persons.length"
+          class="flex flex-col gap-4"
+        >
+          <h2 class="pz-h2 text-highlighted">
+            {{ t('pz.persons.related') }}
+          </h2>
+          <PersonsList
+            :persons="heritageItem.persons"
+            testid="heritage-persons"
+          />
+        </section>
+
+        <div class="flex flex-col gap-1">
+          <p
+            v-if="heritageItem.credits.length"
+            class="pz-body-sm text-muted"
+            data-testid="heritage-credits"
+          >
+            {{ t('pz.heritage.credits', { names: heritageItem.credits.map(credit => credit.name).join(', ') }) }}
+          </p>
+          <p
+            class="pz-caption text-dimmed"
+            data-testid="heritage-updated"
+          >
+            {{ t('pz.heritage.updatedAt', { date: formatDate(heritageItem.updatedAt) }) }}
+          </p>
+        </div>
       </div>
-      <p
-        v-if="heritageItem.credits.length"
-        class="mt-4 text-sm text-muted"
-        data-testid="heritage-credits"
-      >
-        {{ t('pz.heritage.credits', { names: heritageItem.credits.map(credit => credit.name).join(', ') }) }}
-      </p>
-      <p
-        class="mt-2 text-xs text-muted"
-        data-testid="heritage-updated"
-      >
-        {{ t('pz.heritage.updatedAt', { date: formatDate(heritageItem.updatedAt) }) }}
-      </p>
-      <HeritageSuggestDialog
-        v-model:open="correctionOpen"
-        kind="heritage_item"
-        mode="correction"
-        :target="{ id: heritageItem.ref, label: heritageItem.name }"
-        :current="correctionCurrent"
+    </div>
+
+    <PzStickyActionBar>
+      <UButton
+        :label="t('pz.heritage.addSource')"
+        color="neutral"
+        variant="outline"
+        size="lg"
+        class="ring-(--ui-border-accented)"
+        aria-haspopup="dialog"
+        data-testid="heritage-suggest-source-mobile"
+        @click="sourceOpen = true"
       />
-      <HeritageSuggestDialog
-        v-model:open="sourceOpen"
-        kind="source"
-        mode="proposal"
-        :prefill="{ note: t('pz.heritage.sourceFor', { name: heritageItem.name }) }"
+      <UButton
+        :label="t('pz.heritage.suggestCorrection')"
+        size="lg"
+        aria-haspopup="dialog"
+        data-testid="heritage-suggest-correction-mobile"
+        @click="correctionOpen = true"
       />
-      <ULink
-        v-if="heritageItem.settlement"
-        class="mt-4 inline-flex text-sm text-primary"
-        :to="localePath(`/potkalnicko-prigorje/naselja/${heritageItem.settlement.slug}`)"
-      >
-        {{ t('pz.heritage.backToSettlement', { name: heritageItem.settlement.name }) }}
-      </ULink>
-    </UPageSection>
+    </PzStickyActionBar>
+
+    <HeritageSuggestDialog
+      v-model:open="correctionOpen"
+      kind="heritage_item"
+      mode="correction"
+      :target="{ id: heritageItem.ref, label: heritageItem.name }"
+      :current="correctionCurrent"
+    />
+    <HeritageSuggestDialog
+      v-model:open="sourceOpen"
+      kind="source"
+      mode="proposal"
+      :prefill="{ note: t('pz.heritage.sourceFor', { name: heritageItem.name }) }"
+    />
   </div>
 </template>

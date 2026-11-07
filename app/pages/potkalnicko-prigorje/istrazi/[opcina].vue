@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { AtlasMunicipalityResponse } from '~~/shared/types/publicAtlas'
+import type { TabsItem } from '@nuxt/ui'
+import type { AtlasHeritageListResponse, AtlasMunicipalityResponse } from '~~/shared/types/publicAtlas'
+import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -24,7 +26,20 @@ const settlements = computed(() => (page.value?.settlements ?? []).map(s => ({
   to: settlementPath(s.slug)
 })).sort((a, b) => a.name.localeCompare(b.name, 'hr')))
 
-const categoryBreakdown = computed(() => page.value?.categories ?? [])
+// "Baština" tab: the municipality's items, from the same list API the heritage list uses.
+const { data: heritage } = useLazyFetch<AtlasHeritageListResponse>('/api/atlas/heritage', {
+  query: computed(() => ({ municipality: municipalitySlug.value })),
+  key: computed(() => `pz-municipality-heritage-${municipalitySlug.value}`)
+})
+const heritageItems = computed(() => heritage.value?.items ?? [])
+
+const tabs = computed<TabsItem[]>(() => [
+  { label: t('pz.explore.tabSettlements'), value: 'naselja', slot: 'naselja' as const },
+  { label: t('pz.explore.tabHeritage'), value: 'bastina', slot: 'bastina' as const }
+])
+const tab = ref('naselja')
+
+const contributeTypes = usePzContributeTypes(() => ({ municipality: municipalitySlug.value }))
 
 useSeoMeta({
   title: () => municipality.value ? `${municipality.value.label} · Potkalnički zapisi` : '',
@@ -35,74 +50,142 @@ useSeoMeta({
 </script>
 
 <template>
-  <div v-if="municipality && stats">
-    <UPageHero
-      :title="municipality.label"
-      :description="t('pz.explore.municipalityDescription', { settlements: stats.settlements, items: stats.items })"
-      :links="[{ label: t('pz.explore.allRegions'), to: localePath('/potkalnicko-prigorje/istrazi'), color: 'neutral', variant: 'ghost' }]"
-      :ui="{ container: 'py-12 sm:py-16' }"
+  <div
+    v-if="municipality && stats"
+    class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-8 px-4 py-6 lg:px-12 lg:py-12"
+    data-testid="municipality-page"
+  >
+    <header class="flex max-w-(--pz-measure) flex-col gap-3">
+      <PzBackPill :to="localePath(pzRoutes.explore)">
+        {{ t('pz.explore.allRegions') }}
+      </PzBackPill>
+      <p class="pz-overline text-muted">
+        {{ t('pz.explore.municipalityOverline') }}
+      </p>
+      <h1 class="pz-h1 wrap-anywhere text-highlighted lg:pz-display">
+        {{ municipality.label }}
+      </h1>
+      <p class="pz-body text-muted">
+        {{ t('pz.explore.municipalityDescription', { settlements: stats.settlements, items: stats.items }) }}
+      </p>
+      <dl
+        class="flex gap-8"
+        data-testid="municipality-stats"
+      >
+        <div>
+          <dt class="pz-caption text-muted">
+            {{ t('pz.explore.statSettlements') }}
+          </dt>
+          <dd class="pz-numeral m-0 text-highlighted">
+            {{ stats.settlements }}
+          </dd>
+        </div>
+        <div>
+          <dt class="pz-caption text-muted">
+            {{ t('pz.explore.statItems') }}
+          </dt>
+          <dd class="pz-numeral m-0 text-highlighted">
+            {{ stats.items }}
+          </dd>
+        </div>
+      </dl>
+    </header>
+
+    <UTabs
+      v-model="tab"
+      :items="tabs"
+      value-key="value"
+      variant="pill"
+      class="w-full"
+    >
+      <template #naselja>
+        <ul
+          class="mt-4 divide-y divide-default overflow-hidden rounded-(--pz-radius-lg) border border-default bg-default lg:max-w-(--pz-measure)"
+          data-testid="settlement-list"
+        >
+          <li
+            v-for="settlement in settlements"
+            :key="settlement.id"
+          >
+            <NuxtLink
+              :to="settlement.to"
+              class="flex min-h-(--pz-tap-min) items-center justify-between gap-3 px-4 py-3 no-underline hover:bg-muted"
+            >
+              <span class="font-serif text-[17px]/[22px] font-semibold wrap-anywhere text-highlighted">{{ settlement.name }}</span>
+              <span
+                class="pz-caption shrink-0 font-normal tabular-nums"
+                :class="settlement.itemCount ? 'text-muted' : 'text-dimmed'"
+              >
+                {{ settlement.itemCount ? t('pz.explore.settlementItemCount', { count: settlement.itemCount }) : t('pz.explore.settlementNoRecords') }}
+              </span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </template>
+
+      <template #bastina>
+        <div class="mt-4 flex flex-col gap-4">
+          <ul
+            v-if="heritageItems.length"
+            class="grid gap-3 lg:grid-cols-2"
+            data-testid="municipality-heritage-list"
+          >
+            <li
+              v-for="item in heritageItems"
+              :key="item.id"
+              class="flex"
+            >
+              <PzHeritageCard
+                class="w-full"
+                :title="item.name"
+                :to="item.path ? localePath(item.path) : localePath(pzRoutes.heritage)"
+                :settlement="item.settlement?.name"
+                :category="item.category.label"
+                :icon="pzHeritageIcon(item.category.key)"
+              >
+                <template #trust>
+                  <PzVerificationBadge :verification="item.verification" />
+                </template>
+              </PzHeritageCard>
+            </li>
+          </ul>
+          <PzEmptyState
+            v-else-if="heritage"
+            :title="t('pz.explore.emptyHeritageTitle', { name: municipality.label })"
+            :contribute-types="contributeTypes"
+          />
+        </div>
+      </template>
+    </UTabs>
+
+    <PzGameCard
+      :title="t('pz.explore.playSettlements')"
+      :blurb="t('pz.explore.playSettlementsBlurb')"
+      :to="localePath(pzRoutes.selaOpcine)"
+      icon="i-lucide-map-pin"
+      class="lg:max-w-(--pz-measure)"
     />
 
-    <UPageSection
-      v-if="categoryBreakdown.length"
-      :title="t('pz.explore.categoriesTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <ul class="flex flex-wrap gap-2">
-        <li
-          v-for="row in categoryBreakdown"
-          :key="row.key"
-        >
-          <UBadge
-            variant="subtle"
-            :label="`${row.label} · ${row.count}`"
-          />
-        </li>
-      </ul>
-    </UPageSection>
-
-    <UPageSection
-      :title="t('pz.explore.settlementsTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <ul
-        class="divide-y divide-default rounded-lg ring ring-default"
-        data-testid="settlement-list"
-      >
-        <li
-          v-for="settlement in settlements"
-          :key="settlement.id"
-        >
-          <ULink
-            :to="settlement.to"
-            class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
-          >
-            <span class="font-medium text-highlighted">{{ settlement.name }}</span>
-            <span class="text-muted tabular-nums">
-              {{ t('pz.explore.settlementItemCount', { count: settlement.itemCount }) }}
-            </span>
-          </ULink>
-        </li>
-      </ul>
-    </UPageSection>
-
-    <UPageSection
+    <section
       v-if="persons.length"
-      :title="t('pz.persons.fromThisPlace')"
-      :ui="{ root: 'border-t border-default' }"
+      class="flex flex-col gap-4"
     >
+      <h2 class="pz-h2 text-highlighted">
+        {{ t('pz.persons.fromThisPlace') }}
+      </h2>
       <PersonsList
         :persons="persons"
         testid="municipality-persons"
       />
-    </UPageSection>
+    </section>
 
-    <UPageSection :ui="{ root: 'border-t border-default' }">
+    <div class="flex flex-col gap-3">
       <UButton
         :label="t('pz.heritage.missingItem')"
         icon="i-lucide-plus"
         color="neutral"
         variant="outline"
+        class="self-start ring-(--ui-border-accented)"
         aria-haspopup="dialog"
         data-testid="municipality-suggest-item"
         @click="proposalOpen = true"
@@ -113,6 +196,6 @@ useSeoMeta({
         mode="proposal"
         :prefill="{ municipalityId: municipality.id }"
       />
-    </UPageSection>
+    </div>
   </div>
 </template>

@@ -27,72 +27,60 @@ const entries = computed(() => [
 ])
 
 const municipalities = computed(() => (overview.value?.municipalities ?? []).map(m => ({
-  ...m,
+  id: m.id,
   label: m.label,
-  stats: m.stats,
-  to: municipalityPath(m.slug)
+  to: municipalityPath(m.slug),
+  settlements: m.stats.settlements,
+  items: m.stats.items
 })))
 </script>
 
 <template>
-  <div>
-    <UPageHero
-      :title="t('pz.explore.hubTitle')"
-      :description="t('pz.explore.hubIntro', { municipalities: overview?.totals.municipalities ?? 5, settlements: overview?.totals.settlements ?? 0 })"
-      :ui="{ container: 'py-8 sm:py-12', title: 'pz-display', description: 'pz-body' }"
-    />
+  <div class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-8 px-4 py-6 lg:gap-12 lg:px-12 lg:py-12">
+    <header class="flex max-w-(--pz-measure) flex-col gap-3">
+      <h1 class="pz-display text-highlighted lg:pz-display-lg">
+        {{ t('pz.explore.hubTitle') }}
+      </h1>
+      <p class="pz-lead text-muted">
+        {{ t('pz.explore.hubIntro', { municipalities: overview?.totals.municipalities ?? 5, settlements: overview?.totals.settlements ?? 0 }) }}
+      </p>
+    </header>
 
-    <UPageSection
-      :ui="{ container: 'py-0 sm:py-0 lg:py-0' }"
+    <section
+      class="grid grid-cols-3 gap-2 lg:gap-4"
+      :aria-label="t('pz.explore.entriesLabel')"
+      data-testid="explore-entries"
     >
-      <div
-        class="grid grid-cols-3 gap-2 lg:gap-4"
-        data-testid="explore-entries"
+      <NuxtLink
+        v-for="entry in entries"
+        :key="entry.key"
+        :to="entry.to"
+        :data-entry="entry.key"
+        class="flex min-h-28 flex-col items-center gap-1 rounded-(--pz-radius-lg) border border-default bg-default p-3 text-center no-underline hover:border-accented hover:bg-muted"
       >
-        <NuxtLink
-          v-for="entry in entries"
-          :key="entry.key"
-          :to="entry.to"
-          :data-entry="entry.key"
-          class="flex min-h-28 flex-col items-center gap-1 rounded-(--pz-radius-lg) border border-default bg-default p-3 text-center hover:bg-muted"
-        >
-          <span class="grid size-10 place-items-center rounded-(--pz-radius-md) bg-accented text-primary">
-            <UIcon
-              :name="entry.icon"
-              class="size-5"
-              aria-hidden="true"
-            />
-          </span>
-          <b class="pz-label text-default">{{ entry.label }}</b>
-          <span class="pz-caption min-h-[18px] text-muted tabular-nums">{{ entry.count ?? '' }}</span>
-        </NuxtLink>
-      </div>
-    </UPageSection>
+        <span class="grid size-10 place-items-center rounded-(--pz-radius-md) bg-accented text-primary">
+          <UIcon
+            :name="entry.icon"
+            class="size-5"
+            aria-hidden="true"
+          />
+        </span>
+        <b class="pz-label text-default">{{ entry.label }}</b>
+        <span class="pz-caption min-h-[18px] font-normal text-muted tabular-nums">{{ entry.count ?? '' }}</span>
+      </NuxtLink>
+    </section>
 
-    <UPageSection
+    <section
       id="opcine"
-      :title="t('pz.explore.municipalitiesTitle')"
-      :ui="{ root: 'scroll-mt-(--pz-header-h)', title: 'pz-h2 text-left' }"
+      class="flex scroll-mt-(--pz-header-h) flex-col gap-4"
     >
-      <ul
-        class="divide-y divide-default rounded-lg ring ring-default"
-        data-testid="municipality-list"
-      >
-        <li
-          v-for="municipality in municipalities"
-          :key="municipality.id"
-        >
-          <ULink
-            :to="municipality.to"
-            class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-4 text-sm hover:bg-elevated/40"
-          >
-            <span class="font-medium text-highlighted">{{ municipality.label }}</span>
-            <span class="text-muted tabular-nums">
-              {{ t('pz.home.scopeCounts', { settlements: municipality.stats.settlements, items: municipality.stats.items }) }}
-            </span>
-          </ULink>
-        </li>
-      </ul>
-    </UPageSection>
+      <h2 class="pz-h2 text-highlighted">
+        {{ t('pz.explore.municipalitiesTitle') }}
+      </h2>
+      <PzMunicipalityList
+        :rows="municipalities"
+        class="lg:max-w-(--pz-measure)"
+      />
+    </section>
   </div>
 </template>
