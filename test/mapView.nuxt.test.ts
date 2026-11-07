@@ -142,6 +142,8 @@ describe('GamesMapView', () => {
       expect(visible(v, tap)).toBe(true)
       expect(visible(v, target)).toBe(true)
       expect(page.find('[data-testid="map-feedback-line"]').exists()).toBe(true)
+      expect(page.text()).toContain('Točno mjesto')
+      expect(page.text()).not.toContain('pz.')
 
       await page.setProps({ feedback: null, disabled: false })
       await page.vm.$nextTick()

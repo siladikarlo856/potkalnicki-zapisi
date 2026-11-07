@@ -201,6 +201,15 @@
     }
   },
   "pz": {
+    "map": {
+      "layers": "Map layer",
+      "karta": "Map",
+      "reljef": "Relief",
+      "satelit": "Satellite",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "hardNeedsMap": "This level needs the map"
+    },
     "trust": {
       "verification": {
         "unverified": "Being checked",

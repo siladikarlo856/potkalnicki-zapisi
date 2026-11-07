@@ -544,7 +544,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               :stroke-width="px(4)"
               paint-order="stroke fill"
             >
-              ✓ {{ t('pz.map.mapHit') }}
+              ✓ {{ t('pz.play.mapHit') }}
             </text>
           </g>
           <g
