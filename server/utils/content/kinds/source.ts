@@ -28,6 +28,7 @@ export const sourceKind = defineContentKind({
   table: 'sources',
   fields: { title: 'title', type: 'type', url: 'url', note: 'note' },
   labelColumn: 'title',
+  createdFrom: 'source_submission_id',
   validate: validateSource,
   sorts: { title: 'title', type: 'type' },
   defaultSort: 'title',

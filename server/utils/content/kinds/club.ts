@@ -39,6 +39,7 @@ export const clubKind = defineContentKind({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   labelColumn: 'name',
+  createdFrom: 'source_submission_id',
   validate: validateClub,
   sorts: { name: 'name', sport: 'sport', verification: 'verification' },
   defaultSort: 'name',

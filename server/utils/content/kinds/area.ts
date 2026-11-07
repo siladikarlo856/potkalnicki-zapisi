@@ -92,6 +92,7 @@ export const areaKind = defineContentKind<AreaFields & { status: ContentStatus }
     description: 'description'
   },
   labelColumn: 'name',
+  createdFrom: 'source_submission_id',
   validate: (input, id) => validateArea(input, id),
   sorts: { name: 'name', kind: 'kind' },
   defaultSort: 'name',

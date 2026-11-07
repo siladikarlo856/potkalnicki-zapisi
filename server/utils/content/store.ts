@@ -29,7 +29,7 @@ export function invalid(issues: ContentIssue[], message = 'Provjeri označena po
   fail(400, 'Invalid content', { code: 'invalid', message, issues })
 }
 
-function columnsOf(def: AnyContentKindDefinition) {
+export function columnsOf(def: AnyContentKindDefinition) {
   return def.adapter?.columns ?? { ...COMMON_COLUMNS, ...def.fields }
 }
 
@@ -158,6 +158,28 @@ function searchPattern(value: string) {
   return `%${folded}%`
 }
 
+// The PostgREST filter methods `whereStatus` needs; every select builder has them.
+interface StatusFilterable<T> {
+  eq(column: string, value: unknown): T
+  is(column: string, value: null): T
+  not(column: string, operator: string, value: unknown): T
+}
+
+/**
+ * Narrows a query on the kind's table to one content status, in the kind's own terms: the `status` column, or
+ * the adapter's columns (a Published word is active and not archived). The one place that knows how each kind
+ * stores Published, Draft and Archived.
+ */
+export function whereStatus<T extends StatusFilterable<T>>(def: AnyContentKindDefinition, request: T, status: ContentStatus): T {
+  if (!def.adapter?.statusFilter) return request.eq('status', status)
+  def.adapter.statusFilter(status, (column, value) => {
+    if (value === 'not.null') request = request.not(column, 'is', null)
+    else if (value === null) request = request.is(column, null)
+    else request = request.eq(column, value)
+  })
+  return request
+}
+
 export async function listContent(event: H3Event, def: AnyContentKindDefinition): Promise<ContentList<ContentEntityRecord>> {
   const query = getQuery(event)
   const q = queryText(query.q, 'q').trim()
@@ -193,14 +215,7 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
       if (expanded) request = request.in(filter.column, [...expanded])
       else request = request.eq(filter.column, value)
     }
-    if (statusFilter) {
-      if (def.adapter?.statusFilter) def.adapter.statusFilter(statusFilter as ContentStatus, (column, value) => {
-        if (value === 'not.null') request = request.not(column, 'is', null)
-        else if (value === null) request = request.is(column, null)
-        else request = request.eq(column, value)
-      })
-      else request = request.eq('status', statusFilter)
-    }
+    if (statusFilter) request = whereStatus(def, request, statusFilter as ContentStatus)
     if (q) request = request.ilike('search_text', searchPattern(q))
     return request
   }
@@ -395,14 +410,7 @@ export async function lookupContent(event: H3Event, def: AnyContentKindDefinitio
   if (ids.length) {
     request = request.in('id', ids.map(id => id.toLowerCase()))
   } else {
-    if (def.adapter?.statusFilter) {
-      def.adapter.statusFilter('published', (column, value) => {
-        if (value === null) request = request.is(column, null)
-        else request = request.eq(column, value)
-      })
-    } else {
-      request = request.neq('status', 'archived')
-    }
+    request = def.adapter ? whereStatus(def, request, 'published') : request.neq('status', 'archived')
     if (q) request = request.ilike('search_text', searchPattern(q))
   }
   const { data, error } = await request.order(def.adapter ? 'search_text' : def.labelColumn).order('id').limit(ids.length || CONTENT_LOOKUP_LIMIT)

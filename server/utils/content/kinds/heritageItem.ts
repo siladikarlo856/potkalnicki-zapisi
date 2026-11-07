@@ -33,6 +33,7 @@ export const heritageItemKind = defineContentKind({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   labelColumn: 'name',
+  createdFrom: 'source_submission_id',
   validate: validateHeritageItem,
   sorts: { name: 'name', verification: 'verification' },
   defaultSort: 'name',

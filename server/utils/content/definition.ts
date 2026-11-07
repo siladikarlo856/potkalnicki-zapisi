@@ -41,6 +41,14 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   references?(db: SupabaseClient, id: string): Promise<ContentReferenceGroup[]>
   /** Optional label formatter for lookup menus and the history log (defaults to `labelColumn`). */
   lookupLabel?(row: Record<string, unknown>): string
+  /** The row's plain name in the Contributions inbox (a word's headword), when `labelColumn` holds something else. */
+  title?(row: Record<string, unknown>): string
+  /**
+   * The column naming the Contribution a row was made from (a Proposal's Draft): `createDraft` sets it, and the
+   * inbox reads it to show what a Proposal became. For every kind but words, publishing the Draft applies that
+   * Proposal (content_apply_submission). A kind without it takes no Draft from a Proposal.
+   */
+  createdFrom?: string
   /**
    * Editable fields a history restore leaves at their current value, because they select the row
    * rather than describe it (e.g. `isCurrent` of a challenge template).
