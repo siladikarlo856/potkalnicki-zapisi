@@ -38,24 +38,25 @@ const subtitle = computed(() => `${questionLine.value} · ${closeLine.value}`)
 </script>
 
 <template>
-  <UCard
-    variant="outline"
+  <div
+    class="relative flex flex-col gap-3"
     data-testid="challenge-resume-card"
   >
-    <div class="space-y-3">
-      <h2 class="text-lg font-semibold text-highlighted">
-        {{ t('challenge.resumeTitle') }}
-      </h2>
-      <p class="text-sm text-muted">
-        {{ subtitle }}
-      </p>
-      <UButton
-        :to="challengeTo"
-        :label="t('challenge.resumeContinue')"
-        trailing-icon="i-lucide-arrow-right"
-        size="lg"
-        data-testid="challenge-resume-continue"
-      />
-    </div>
-  </UCard>
+    <h3 class="pz-label text-inverted">
+      {{ t('challenge.resumeTitle') }}
+    </h3>
+    <p class="pz-body-sm text-inverted">
+      {{ subtitle }}
+    </p>
+    <UButton
+      :to="challengeTo"
+      :label="t('challenge.resumeContinue')"
+      trailing-icon="i-lucide-arrow-right"
+      size="lg"
+      color="neutral"
+      block
+      class="bg-(--pz-wheat) text-default hover:bg-(--pz-wheat) hover:brightness-95"
+      data-testid="challenge-resume-continue"
+    />
+  </div>
 </template>

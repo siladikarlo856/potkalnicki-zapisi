@@ -211,6 +211,12 @@
         "protected": "Protected cultural property",
         "preventive": "Preventively protected",
         "unknown": "Protection: unknown"
+      },
+      "help": {
+        "verified": "We have confirmed these facts in sources.",
+        "unverified": "We are still checking these facts in sources.",
+        "needsUpdate": "Some facts are out of date and wait to be checked.",
+        "protection": "Status according to the register of cultural property."
       }
     },
     "nav": {
@@ -230,7 +236,31 @@
       "entryPlaces": "Places",
       "entryHeritage": "Heritage",
       "entrySpeech": "Our speech",
-      "municipalitiesTitle": "Municipalities"
+      "municipalitiesTitle": "Municipalities",
+      "entriesLabel": "Ways into the atlas",
+      "municipalityOverline": "Municipality",
+      "statSettlements": "Settlements",
+      "statItems": "Records",
+      "tabSettlements": "Settlements",
+      "tabHeritage": "Heritage",
+      "settlementNoRecords": "no records yet",
+      "emptyHeritageTitle": "We are still collecting heritage records.",
+      "contributeWord": "Word",
+      "contributeMemory": "Memory",
+      "contributeHeritage": "Heritage",
+      "playSettlements": "Play: Villages and municipalities",
+      "playSettlementsBlurb": "Guess which municipality each village belongs to.",
+      "settlementOverline": "Settlement",
+      "factMunicipality": "Municipality",
+      "factRecords": "Heritage records",
+      "playWords": "Play: words from this village",
+      "playWordsBlurb": "Cards with the words said here.",
+      "wordsFromHere": "Words from this village",
+      "heritageHere": "Heritage here",
+      "nearbyTitle": "Nearby",
+      "correctShort": "Suggest a correction",
+      "addRecord": "Add a record",
+      "thinTitle": "We are still collecting records for {name}."
     },
     "kit": {
       "sheet": {
@@ -271,6 +301,56 @@
         "minutes": "~{n} min",
         "soon": "Soon"
       }
+    },
+    "home": {
+      "exploreCta": "Explore the atlas",
+      "aboutCta": "How the atlas is made",
+      "challengeOverline": "Challenge a friend",
+      "challengeTitle": "Who knows our region better?",
+      "friendChallengeBlurb": "The same questions for everyone. Send the link and compare results.",
+      "scopeTitle": "Five municipalities",
+      "scopeDescription": "The working scope of the project, not the official border of the region.",
+      "scopeCounts": "{settlements} settlements · {items} records"
+    },
+    "heritage": {
+      "filtersLabel": "Filters",
+      "noResultsTitle": "No records match these filters.",
+      "noResultsAsk": "Try another municipality or category, or suggest the record that is missing.",
+      "clearFilters": "Clear filters",
+      "fieldPeriod": "Period",
+      "descriptionTitle": "Description",
+      "knowSomething": "Do you know something about this record?",
+      "playBlurb": "Where is this church? · 5 questions",
+      "resultCount": {
+        "one": "{n} record",
+        "few": "{n} records",
+        "other": "{n} records"
+      }
+    },
+    "speech": {
+      "baseForm": "Base form",
+      "villageUnknown": "Villages not yet listed",
+      "showAllVillages": "Show {n} more villages",
+      "factType": "Word type",
+      "factForms": "Forms",
+      "factVillages": "Villages",
+      "differentHere": "We say it differently here",
+      "villageCount": {
+        "one": "{n} village",
+        "few": "{n} villages",
+        "other": "{n} villages"
+      }
+    },
+    "contribute": {
+      "successTitle": "Thank you!",
+      "successDescription": "We will review your suggestion before it is published.",
+      "nextTitle": "What happens next",
+      "nextBody": "An editor reads every suggestion and checks it against sources. Only then does it appear in the atlas.",
+      "linkExplore": "Explore the atlas",
+      "linkPlay": "Play",
+      "sendAnother": "Send another",
+      "aboutYou": "About you",
+      "tileSoon": "Soon"
     }
   }
 }
