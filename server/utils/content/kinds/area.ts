@@ -120,6 +120,16 @@ export const areaKind = defineContentKind<AreaFields & { status: ContentStatus }
   checkLinks: async (db, value) => missingLinkIssues(
     db, 'areas', (value as unknown as AreaValue).regionIds.map((regionId, index) => [`regionIds.${index}`, regionId] as const), 'Ta regija ne postoji.', { column: 'kind', value: 'region' }
   ),
+  // The areas row and its region membership in one transaction (supabase/migrations/20261107010000_content_save.sql).
+  // validateArea already empties regionIds for a kind that cannot join a region.
+  persist: async (db, id, value, { row, revision }) => {
+    const { data, error } = await db.rpc('content_area_save', {
+      p_id: id, p_revision: revision ?? null, p_row: row, p_region_ids: (value as unknown as AreaValue).regionIds
+    })
+    if (error) throw error
+    return (data as string | null) ?? null
+  },
+  // Still used by a history restore; it moves to `persist` with the restore.
   persistEntity: async (db, id, value) => syncRegionIds(db, id, value as unknown as AreaValue),
   lookupLabel: (row: Record<string, unknown>) => areaAdminLabel(row.kind as AreaKind, String(row.name ?? '')),
   inputFields: ['regionIds']

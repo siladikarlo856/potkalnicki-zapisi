@@ -54,6 +54,15 @@ export const heritageItemKind = defineContentKind({
   inputFields: ['sourceIds'],
   loadEntity: async (db, entity) => ({ sourceIds: await loadSourceIds(db, entity.id) }),
   checkLinks: async (db, value) => missingSourceIssues(db, value.sourceIds),
+  // The heritage_items row and its sources in one transaction (supabase/migrations/20261107010000_content_save.sql).
+  persist: async (db, id, value, { row, revision }) => {
+    const { data, error } = await db.rpc('content_heritage_item_save', {
+      p_id: id, p_revision: revision ?? null, p_row: row, p_source_ids: value.sourceIds ?? []
+    })
+    if (error) throw error
+    return (data as string | null) ?? null
+  },
+  // Still used by a history restore; it moves to `persist` with the restore.
   persistEntity: async (db, id, value) => saveSourceIds(db, id, (value.sourceIds as string[]) ?? []),
   async enrichRows(db, rows) {
     if (!rows.length) return rows

@@ -83,6 +83,15 @@ export const clubKind = defineContentKind({
   }),
   // "A Published club needs a source" is a rule of validateClub, so it is refused before any write.
   checkLinks: async (db, value) => missingSourceIssues(db, value.sourceIds),
+  // The clubs row, its seasons and sources in one transaction (supabase/migrations/20261107010000_content_save.sql).
+  persist: async (db, id, value, { row, revision }) => {
+    const { data, error } = await db.rpc('content_club_save', {
+      p_id: id, p_revision: revision ?? null, p_row: row, p_seasons: value.seasons ?? [], p_source_ids: value.sourceIds ?? []
+    })
+    if (error) throw error
+    return (data as string | null) ?? null
+  },
+  // Still used by a history restore; it moves to `persist` with the restore.
   persistEntity: async (db, id, value) => {
     await saveSeasons(db, id, (value.seasons as ClubSeasonValue[]) ?? [])
     await saveSourceIds(db, id, (value.sourceIds as string[]) ?? [])

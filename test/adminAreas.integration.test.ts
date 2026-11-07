@@ -86,4 +86,71 @@ describe.skipIf(!db.enabled)('admin areas API over real Postgres', () => {
     const loaded = await api<{ entity: Area, legacyIds: string[] }>(`${BASE}/${created.body.entity.id}`)
     expect(loaded.body.entity.regionIds).toEqual([region])
   })
+
+  it('keeps an area\'s region membership when a save leaves regionIds out', async () => {
+    const region = kitTestRegion()
+    const town = sql(`select id from areas where kind = 'town' and slug = 'grad-krizevci' limit 1`)
+    const suffix = crypto.randomUUID().slice(0, 8)
+    let saved = (await api<{ entity: Area }>(BASE, {
+      method: 'POST',
+      body: { kind: 'settlement', name: `kit-test Izostavljeno ${suffix}`, parentId: town, slug: `kit-test-izostavljeno-${suffix}`, status: 'draft', regionIds: [region] }
+    })).body.entity
+    const id = saved.id
+
+    for (const change of [{ name: `kit-test Izostavljeno nova ${suffix}` }, { description: 'kit-test opis' }]) {
+      const response = await api<{ entity: Area }>(`${BASE}/${id}`, { method: 'PATCH', body: { revision: saved.revision, ...change } })
+      expect(response.status, JSON.stringify(response.body)).toBe(200)
+      saved = response.body.entity
+      expect(saved).toMatchObject({ ...change, regionIds: [region] })
+      expect(sql(`select string_agg(region_id::text, ',') from area_regions where area_id = '${id}'`)).toBe(region)
+    }
+
+    sql(`delete from areas where id = '${id}'`)
+  })
+
+  it('saves an area and its region membership in one transaction: a failing membership write leaves nothing written', async () => {
+    const region = kitTestRegion()
+    const otherRegion = kitTestRegion()
+    const town = sql(`select id from areas where kind = 'town' and slug = 'grad-krizevci' limit 1`)
+    const suffix = crypto.randomUUID().slice(0, 8)
+    // Make the membership write fail for this test's areas only.
+    sql(`
+      create function public.kit_test_fail_area_region() returns trigger language plpgsql as $$
+      begin
+        if exists (select 1 from public.areas where id = new.area_id and name like 'kit-test Neuspjeh%') then
+          raise exception 'Forced link failure';
+        end if;
+        return new;
+      end $$;
+      create trigger kit_test_fail_area_region before insert on public.area_regions
+        for each row execute function public.kit_test_fail_area_region();
+    `)
+    try {
+      const slug = `kit-test-neuspjeh-${suffix}`
+      const created = await api(BASE, {
+        method: 'POST',
+        body: { kind: 'settlement', name: `kit-test Neuspjeh ${suffix}`, parentId: town, slug, status: 'draft', regionIds: [region] }
+      })
+      expect(created.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select count(*) from areas where slug = '${slug}'`)).toBe('0')
+
+      const draft = await api<{ entity: Area }>(BASE, {
+        method: 'POST',
+        body: { kind: 'settlement', name: `kit-test Uspjeh ${suffix}`, parentId: town, slug: `kit-test-uspjeh-${suffix}`, status: 'draft', regionIds: [region] }
+      })
+      expect(draft.status, JSON.stringify(draft.body)).toBe(201)
+      const id = draft.body.entity.id
+      const before = sql(`select revision || ' ' || name from areas where id = '${id}'`)
+      const updated = await api(`${BASE}/${id}`, {
+        method: 'PATCH',
+        body: { revision: draft.body.entity.revision, name: `kit-test Neuspjeh ${suffix}`, regionIds: [otherRegion] }
+      })
+      expect(updated.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select revision || ' ' || name from areas where id = '${id}'`)).toBe(before)
+      expect(sql(`select string_agg(region_id::text, ',') from area_regions where area_id = '${id}'`)).toBe(region)
+      sql(`delete from areas where id = '${id}'`)
+    } finally {
+      sql(`drop trigger kit_test_fail_area_region on public.area_regions; drop function public.kit_test_fail_area_region();`)
+    }
+  })
 })
