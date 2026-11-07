@@ -290,6 +290,40 @@ describe.skipIf(!db.enabled)('corrections and proposals inbox over real Postgres
     expect(sql('select count(*) from public.content_revisions;')).toBe(revisions)
   })
 
+  it('makes a word draft from a proposal once, through the word\'s own save, and publishing it approves the proposal', async () => {
+    const headword = `bok${unique()}`
+    expect((await submit({ type: 'proposal', targetKind: 'word', payload: { headword, meaningHr: 'pozdrav', example: 'Bok, susjede!' } })).status).toBe(201)
+    const id = await latestSubmissionId('proposal')
+    const draft = await admin<{ kind: string, id: string, created: boolean }>(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(draft.status).toBe(201)
+    expect(draft.body).toMatchObject({ kind: 'word', created: true })
+    const again = await admin<{ id: string, created: boolean }>(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(again.status).toBe(200)
+    expect(again.body).toMatchObject({ id: draft.body.id, created: false })
+    expect((await inbox()).body.rows.find(entry => entry.id === Number(id))!.created).toMatchObject({ kind: 'word', id: draft.body.id, status: 'draft' })
+
+    const current = await admin<{ entity: { revision: number, status: string, submissionId: number, entry: Record<string, unknown> } }>(`/api/admin/content/word/${draft.body.id}`)
+    expect(current.body.entity).toMatchObject({ status: 'draft', submissionId: Number(id), entry: { headword, meaning: { hr: 'pozdrav' }, examples: [{ text: 'Bok, susjede!' }], sources: [{ kind: 'contribution' }] } })
+    const published = await admin(`/api/admin/content/word/${draft.body.id}`, {
+      method: 'PATCH', body: { status: 'published', revision: current.body.entity.revision, entry: { ...current.body.entity.entry, partOfSpeech: 'uzvik' } }
+    })
+    expect(published.status).toBe(200)
+    expect(sql(`select status from public.heritage_submissions where id = ${id};`)).toBe('approved')
+    expect(sql(`select active from public.heritage_words where id = '${draft.body.id}';`)).toBe('t')
+  })
+
+  it('validates a word draft made from a proposal like an admin save: an invalid one is refused and writes nothing', async () => {
+    expect((await submit({ type: 'proposal', targetKind: 'word', payload: { headword: `dugo${unique()}`, meaningHr: 'značenje' } })).status).toBe(201)
+    const id = await latestSubmissionId('proposal')
+    // A proposal stored before a rule existed (the intake is looser than the word's own rules).
+    sql(`update public.heritage_submissions set payload = jsonb_set(payload, '{meaningHr}', to_jsonb(repeat('z', 2500))) where id = ${id};`)
+
+    const draft = await admin(`/api/admin/inbox/${id}/draft`, { method: 'POST', body: {} })
+    expect(draft.status).toBe(400)
+    expect(draft.body.data?.issues).toContainEqual(expect.objectContaining({ path: 'meaning.hr' }))
+    expect(sql(`select count(*) from public.heritage_words where submission_id = ${id};`)).toBe('0')
+  })
+
   it('makes a person draft from a proposal with its place, through the person\'s own save', async () => {
     const w = world()
     expect((await submit({ type: 'proposal', targetKind: 'person', payload: { name: `Ivana Horvat ${w.id}`, born: '1880.', died: '1950.', settlementId: w.settlement, significance: 'Učiteljica.', sourceUrl: 'https://example.org/ivana' } })).status).toBe(201)

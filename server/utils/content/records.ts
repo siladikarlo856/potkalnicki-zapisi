@@ -112,18 +112,24 @@ export function suggestSlug(kind: ContentKind, base: string, scopeId: string | n
  * Saves `value` (API fields) as a new Draft made from the Contribution `submissionId`, through the kind's own
  * validate → persist, exactly like an admin create: a value that breaks a rule is refused (400 with issues) and
  * nothing is written. Idempotent per Contribution: when a row was already made from it, that row is returned
- * with `created: false`, also when a concurrent call made it first.
+ * with `created: false`, also when a concurrent call made it first. `origin` fills the kind's `createdFromFields`.
  */
-export async function createDraft(kind: ContentKind, value: Row, { submissionId }: { submissionId: number }) {
+export async function createDraft(kind: ContentKind, value: Row, { submissionId, origin = {} }: { submissionId: number, origin?: Row }) {
   const def = contentKind(kind)
   if (!def.createdFrom) throw new Error(`[content] ${kind} takes no Draft from a Proposal.`)
+  const originRow: Row = {}
+  for (const [field, fieldValue] of Object.entries(origin)) {
+    const column = def.createdFromFields?.[field]
+    if (!column) throw new Error(`[content] ${kind} records no ${field} from a Contribution.`)
+    originRow[column] = fieldValue
+  }
   const existing = async () => (await createdFrom(kind, [submissionId])).get(submissionId)?.id ?? null
   const prior = await existing()
   if (prior) return { id: prior, created: false }
 
   const { value: valid, issues } = await validateInput(def, editable(def, { ...value, status: 'draft' }))
   if (issues.length) invalid(issues)
-  const row = { ...toRow(def, valid), [def.createdFrom]: submissionId }
+  const row = { ...toRow(def, valid), ...originRow, [def.createdFrom]: submissionId }
   if (def.adapter?.createId) row.id = def.adapter.createId(valid)
   let id: string | null
   try {

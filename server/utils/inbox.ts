@@ -11,6 +11,7 @@ import type { ContentEntityRecord } from './content/store'
 import { placeById } from './places'
 import type { SubmissionRow } from './submissions'
 import { linkedHeadwords, toSubmission } from './submissions'
+import { draftWord } from './words'
 
 // The admin side of corrections and proposals: the unified inbox (/admin/prijedlozi), the detail an admin applies
 // a correction from, drafts made from proposals, and withdrawal. Applying itself is an ordinary update of the
@@ -313,9 +314,9 @@ async function existing(kind: 'area' | 'heritage_category', id: string | undefin
 
 /**
  * The Draft a Proposal turns into: its payload mapped to the kind's fields and saved through the kind's own
- * validation and save (`createDraft`), as an admin create is. Idempotent like `promoteSubmission`: a repeated or
- * concurrent call returns the first Draft. Publishing the Draft applies the Proposal. Words keep their own flow
- * (`promoteSubmission`), which reads the Proposal's payload.
+ * validation and save (`createDraft`), as an admin create is. Idempotent: a repeated or concurrent call returns
+ * the first Draft. Publishing the Draft applies the Proposal. A plain word, expression or memory becomes a word
+ * Draft the same way (`draftWord`).
  */
 export async function draftFromProposal(id: number): Promise<InboxDraftResult> {
   const row = await readSubmissionRow(id)
@@ -324,15 +325,12 @@ export async function draftFromProposal(id: number): Promise<InboxDraftResult> {
   if (row.type === 'correction' || (!plain && !isContributionKind(kind))) fail(400, 'Not a proposal', { message: 'Samo se prijedlozi pretvaraju u skice.' })
   if (row.status === 'rejected') fail(409, 'Rejected', { message: 'Odbijeni prijedlog se ne može pretvoriti u skicu.' })
 
-  if (plain || kind === 'word') {
-    const word = await promoteSubmission(id)
-    return { kind: 'word', id: word.entry.id, created: true }
-  }
-  const proposalKind = kind as Exclude<ContributionKind, 'word'>
-  const prior = (await createdFrom(proposalKind, [id])).get(id)
-  if (prior) return { kind: proposalKind, id: prior.id, created: false }
-  const draft = await createDraft(proposalKind, await draftValue(proposalKind, (row.payload ?? {}) as ContributionPayload), { submissionId: id })
-  return { kind: proposalKind, ...draft }
+  const draftKind = plain ? 'word' : kind as ContributionKind
+  const prior = (await createdFrom(draftKind, [id])).get(id)
+  if (prior) return { kind: draftKind, id: prior.id, created: false }
+  if (draftKind === 'word') return { kind: 'word', ...await draftWord(row) }
+  const draft = await createDraft(draftKind, await draftValue(draftKind, (row.payload ?? {}) as ContributionPayload), { submissionId: id })
+  return { kind: draftKind, ...draft }
 }
 
 /** A Proposal's payload as the API fields of its kind. */

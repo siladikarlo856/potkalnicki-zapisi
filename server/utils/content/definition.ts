@@ -50,6 +50,11 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
    */
   createdFrom?: string
   /**
+   * Further columns a Draft records about the Contribution it was made from, by name → column (a word keeps the
+   * place as the contributor wrote it in `submission_place`). Only `createDraft` sets them; they are not editable.
+   */
+  createdFromFields?: Readonly<Record<string, string>>
+  /**
    * Editable fields a history restore leaves at their current value, because they select the row
    * rather than describe it (e.g. `isCurrent` of a challenge template).
    */
