@@ -160,24 +160,31 @@ watch(finished, () => {
           countdown: compactCountdown
         }) }}
       </p>
-      <div class="flex shrink-0 flex-wrap gap-2 print:hidden">
-        <HeritageShareButtons
-          v-if="shareText"
-          prefix="daily-compact"
-          :copy-text="shareText"
-          :share-data="{ title: t('daily.share.shareTitle'), text: shareText }"
-          :message-text="shareText"
-          :labels="shareLabels"
-          emphasis="share"
-        />
+      <HeritageShareButtons
+        v-if="shareText"
+        class="max-w-full print:hidden"
+        prefix="daily-compact"
+        :copy-text="shareText"
+        :share-data="{ title: t('daily.share.shareTitle'), text: shareText }"
+        :message-text="shareText"
+        :labels="shareLabels"
+        emphasis="share"
+      >
         <UButton
           :label="t('daily.compactShow')"
           color="neutral"
           variant="outline"
-          size="sm"
           @click="expanded = true"
         />
-      </div>
+      </HeritageShareButtons>
+      <UButton
+        v-else
+        class="print:hidden"
+        :label="t('daily.compactShow')"
+        color="neutral"
+        variant="outline"
+        @click="expanded = true"
+      />
     </div>
 
     <div
