@@ -151,6 +151,14 @@ html[data-site="pz"] .bg-inverted :is(a[href], button, input, select, textarea, 
 }
 
 /*
+ * Target size: every button, tab, field and button-shaped link is at least --pz-tap-min (44px) tall, whatever the
+ * Nuxt UI size says. Links inside running text are inline, so min-height does not touch them.
+ */
+html[data-site="pz"] :is(button, [role="tab"], select, input:not([type="checkbox"], [type="radio"], [type="hidden"]), textarea, a[class*="inline-flex"]) {
+  min-height: var(--pz-tap-min);
+}
+
+/*
  * A sticky action bar must never cover the focused element: while PzStickyActionBar is on the page it
  * publishes its height, and the page keeps that much scroll padding at the bottom.
  */
@@ -182,6 +190,13 @@ html[data-site="pz"] {
   html[data-site="pz"] :is([data-vaul-drawer], [data-vaul-overlay], [role="dialog"], [data-slot="overlay"]) {
     animation-duration: 0s !important;
     transition-duration: 0s !important;
+  }
+}
+
+/* Skeleton pulses are off under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-site="pz"] :is(.animate-pulse, [data-slot="base"].animate-pulse) {
+    animation: none;
   }
 }
 

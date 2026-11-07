@@ -264,7 +264,7 @@ watch(finished, () => {
                 @click="pick(option.id)"
               >
                 <span
-                  class="shrink-0 text-xs opacity-60"
+                  class="shrink-0 text-xs text-muted"
                   aria-hidden="true"
                 >{{ index + 1 }}.</span>
                 <span class="min-w-0 wrap-anywhere">{{ optionText(option.text).text }}</span>

@@ -14,14 +14,14 @@ const footerLinks = computed(() => pzFooterNavItems(site.privacyEmail))
           Potkalnički zapisi · Priče, ljudi i baština našega kraja.
         </p>
         <nav
-          class="flex flex-wrap gap-x-4 gap-y-1 text-sm"
+          class="flex flex-wrap gap-x-4 text-sm"
           aria-label="Potkalnički zapisi"
         >
           <ULink
             v-for="link in footerLinks"
             :key="link.label"
             :to="link.to.startsWith('mailto:') ? link.to : localePath(link.to)"
-            class="text-muted hover:text-default"
+            class="inline-flex min-h-(--pz-tap-min) items-center text-muted hover:text-default"
           >
             {{ link.label }}
           </ULink>

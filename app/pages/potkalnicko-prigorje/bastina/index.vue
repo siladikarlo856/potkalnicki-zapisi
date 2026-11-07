@@ -119,6 +119,9 @@ useSeoMeta({
       </div>
 
       <div class="flex min-w-0 flex-col gap-4 lg:col-span-9">
+        <h2 class="sr-only">
+          {{ t('pz.heritage.listHeading') }}
+        </h2>
         <p
           class="pz-body-sm text-muted"
           role="status"
@@ -173,7 +176,7 @@ useSeoMeta({
             icon="i-lucide-plus"
             color="neutral"
             variant="outline"
-            class="ring-(--ui-border-accented)"
+            class="min-h-(--pz-tap-min) max-w-full justify-start text-start whitespace-normal ring-(--ui-border-accented)"
             aria-haspopup="dialog"
             data-testid="heritage-list-suggest-item"
             @click="proposalOpen = true"

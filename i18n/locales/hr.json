@@ -932,6 +932,7 @@
       "suggestItemIn": "Predloži novi zapis baštine u {name}",
       "missingItem": "Nedostaje crkva, kapela ili križ? Predloži novi zapis",
       "filtersLabel": "Filtri",
+      "listHeading": "Zapisi",
       "noResultsTitle": "Nema zapisa za ove filtere.",
       "noResultsAsk": "Probaj drugu općinu ili kategoriju ili nam predloži zapis koji nedostaje.",
       "clearFilters": "Očisti filtre",

@@ -35,7 +35,7 @@ const iconButton = 'size-(--pz-tap-min) justify-center rounded-md text-default'
     <UContainer class="flex h-(--pz-header-h) items-center gap-3 pr-2 lg:h-16 lg:gap-6 lg:pr-6">
       <NuxtLink
         :to="localePath(pzRoutes.home)"
-        class="rounded-md"
+        class="inline-flex min-h-(--pz-tap-min) items-center rounded-md"
         data-testid="pz-logo-link"
       >
         <PzLogo />

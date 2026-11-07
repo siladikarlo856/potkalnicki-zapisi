@@ -314,6 +314,7 @@
     },
     "heritage": {
       "filtersLabel": "Filters",
+      "listHeading": "Records",
       "noResultsTitle": "No records match these filters.",
       "noResultsAsk": "Try another municipality or category, or suggest the record that is missing.",
       "clearFilters": "Clear filters",

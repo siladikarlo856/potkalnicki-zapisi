@@ -328,7 +328,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
           type="button"
           role="radio"
           :aria-checked="layerId === layer.id"
-          class="min-h-10 rounded-full px-3 text-sm font-semibold transition-colors motion-reduce:transition-none"
+          class="min-h-(--pz-tap-min) rounded-full px-3 text-sm font-semibold transition-colors motion-reduce:transition-none"
           :class="layerId === layer.id ? 'bg-default text-default ring-1 ring-(--ui-border-accented)' : 'text-muted hover:text-highlighted'"
           :data-testid="`map-layer-${layer.id}`"
           @click="layerId = layer.id"
