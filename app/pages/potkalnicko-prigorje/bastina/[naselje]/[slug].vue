@@ -55,7 +55,7 @@ function locationLine() {
     >
       <template #description>
         <div class="mt-4 flex flex-wrap items-center gap-2">
-          <PzHeritageStatusBadge :verification="heritageItem.verification" />
+          <PzVerificationBadge :verification="heritageItem.verification" />
           <UBadge
             variant="subtle"
             :label="heritageItem.category.label"

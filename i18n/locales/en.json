@@ -199,5 +199,19 @@
       "quiz": "Play a quiz",
       "challenge": "Challenge a friend"
     }
+  },
+  "pz": {
+    "trust": {
+      "verification": {
+        "unverified": "Being checked",
+        "verified": "Verified",
+        "needsUpdate": "Needs update"
+      },
+      "protection": {
+        "protected": "Protected cultural property",
+        "preventive": "Preventively protected",
+        "unknown": "Protection: unknown"
+      }
+    }
   }
 }

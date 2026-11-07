@@ -104,7 +104,7 @@ useSeoMeta({
                   {{ item.category.label }} · {{ locationLabel(item) }} · {{ item.municipality.label }}
                 </p>
               </div>
-              <PzHeritageStatusBadge :verification="item.verification" />
+              <PzVerificationBadge :verification="item.verification" />
             </div>
           </ULink>
           <div
@@ -120,7 +120,7 @@ useSeoMeta({
                   {{ item.category.label }} · {{ locationLabel(item) }} · {{ item.municipality.label }}
                 </p>
               </div>
-              <PzHeritageStatusBadge :verification="item.verification" />
+              <PzVerificationBadge :verification="item.verification" />
             </div>
           </div>
         </li>

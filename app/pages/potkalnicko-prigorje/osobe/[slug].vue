@@ -78,7 +78,7 @@ useHead(() => ({
           {{ person.role }}
         </p>
         <div class="mt-4 flex flex-wrap items-center gap-2">
-          <PzHeritageStatusBadge :verification="person.verification" />
+          <PzVerificationBadge :verification="person.verification" />
           <span class="text-sm text-muted tabular-nums">{{ person.years }}</span>
         </div>
       </template>

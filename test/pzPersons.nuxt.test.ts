@@ -32,7 +32,7 @@ describe('Potkalnički zapisi person pages', () => {
     })
     await vi.waitFor(() => expect(page.find('[data-testid="person-page"]').exists()).toBe(true))
     expect(page.get('[data-testid="person-eyebrow"]').text()).toBe('Osoba · Kalnik')
-    expect(page.find('[data-testid="heritage-status-unverified"]').exists()).toBe(true)
+    expect(page.find('[data-testid="verification-badge-unverified"]').exists()).toBe(true)
     expect(page.get('[data-testid="person-life"]').text()).toContain('14. 1. 1813., Edde (HU)')
     expect(page.get('[data-testid="person-bio"]').text()).toBe('Kratka biografija.')
     const places = page.get('[data-testid="person-places"]')
