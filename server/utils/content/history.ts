@@ -9,15 +9,20 @@ import {
 import type { AnyContentKindDefinition } from './definition'
 import { findContentKind } from './registry'
 import {
-  conflict, contentAfterWrite, contentDatabaseError, editable, fail, invalid, queryInteger, queryText, readRow, toEntity, toRow, validateInput
+  conflict, contentAfterWrite, contentDatabaseError, editable, fail, getContent, invalid, persistValue, queryInteger, queryText, readRow, toEntity,
+  toRow, validateInput
 } from './store'
 
 // Change history over `content_revisions`, which the database fills: `content_audit` copies the full
 // row on every insert, update and delete (docs/database.md). Reading is generic over every kind that
 // is in the audit table; the per-row drawer and restore need the kind's registry definition.
 //
-// A restore writes the stored version back through the same path as an edit, so the database
-// bumps `revision`, the audit trigger records it as a new revision, and nothing is ever rewritten.
+// A restore writes the stored version back through the same validate → persist path as an edit, so the
+// main row and its sidecars are saved in one transaction, the database bumps `revision`, the audit trigger
+// records it as a new revision, and nothing is ever rewritten. A save through `persist` records the kind's
+// sidecars on its revision (`data.sidecars`, 20261107020000_content_restore.sql); writes that leave them
+// alone (an archive, a delete, a seed) record none, so the sidecars of a version are those of the newest
+// revision up to it that has them.
 
 type Row = Record<string, unknown>
 
@@ -37,14 +42,19 @@ const MAX_PAGE = 10_000
 /** Keys that name a row in a snapshot, for kinds without a registry definition. */
 const LABEL_KEYS = ['name', 'title', 'label_hr', 'key']
 
-/** The editable API fields of a kind, in its field order, with `status`. */
-function historyFields(def: AnyContentKindDefinition) {
-  return [...Object.keys(def.fields).filter(field => !def.derivedFields?.includes(field)), ...(def.inputFields ?? []), 'status']
+/** The editable API fields of a kind, in its field order, with `status`; sidecars only when both sides recorded them. */
+function historyFields(def: AnyContentKindDefinition, withSidecars = true) {
+  return [...Object.keys(def.fields), ...(withSidecars ? def.sidecars?.fields ?? [] : []), 'status']
 }
 
-/** A stored snapshot (database columns) as the editable API fields. */
+function recordedSidecars(data: Row) {
+  const sidecars = data.sidecars
+  return sidecars && typeof sidecars === 'object' && !Array.isArray(sidecars) ? sidecars as Row : undefined
+}
+
+/** A stored snapshot (database columns, and the sidecars if the revision recorded them) as the editable API fields. */
 function projected(def: AnyContentKindDefinition, data: Row) {
-  return editable(def, toEntity(def, data))
+  return editable(def, { ...toEntity(def, data), ...recordedSidecars(data) })
 }
 
 function labelOf(def: AnyContentKindDefinition | undefined, data: Row, entityId: string) {
@@ -53,7 +63,7 @@ function labelOf(def: AnyContentKindDefinition | undefined, data: Row, entityId:
     const value = data[key]
     if (typeof value === 'string' && value.trim()) return value
   }
-  if (def?.adapter?.lookupLabel) return def.adapter.lookupLabel(data)
+  if (def?.lookupLabel) return def.lookupLabel(data)
   // Kinds without a registry definition keep their title inside JSON (e.g. words before registration).
   const entry = data.entry
   if (typeof entry === 'object' && entry !== null) {
@@ -64,13 +74,14 @@ function labelOf(def: AnyContentKindDefinition | undefined, data: Row, entityId:
 }
 
 function revisionView(def: AnyContentKindDefinition, row: RevisionRow, previous: RevisionRow | undefined): HistoryRevision {
-  const fields = historyFields(def)
   const after = projected(def, row.data)
+  const recorded = !!recordedSidecars(row.data)
   const changes = row.action === 'insert'
-    ? diffSnapshots(null, after, fields)
+    ? diffSnapshots(null, after, historyFields(def, recorded))
     : row.action === 'delete'
-      ? diffSnapshots(after, null, fields)
-      : diffSnapshots(previous ? projected(def, previous.data) : null, after, fields)
+      ? diffSnapshots(after, null, historyFields(def, false))
+      : diffSnapshots(previous ? projected(def, previous.data) : null, after,
+          historyFields(def, recorded && !!previous && !!recordedSidecars(previous.data)))
   return {
     id: row.id,
     revision: row.revision,
@@ -132,68 +143,68 @@ function referenceFailure(): never {
 }
 
 /**
- * Writes a stored version back: the editable fields and status of `revisionId` become the row's
- * new state (a new revision, attributed to the admin). Needs `revision`, the revision the screen
- * saw, so a stale screen gets the usual 409. A deleted row is recreated under its old id and
- * creation time; a row that is already in that state is left alone.
+ * The sidecars of a stored version: those recorded on it, else on the newest revision before it that has them
+ * (an archive or a delete leaves them as they were). Rows saved before sidecars were recorded fall back to `now`.
+ */
+async function sidecarsAt(def: AnyContentKindDefinition, id: string, target: RevisionRow, now: Row): Promise<Row> {
+  if (!def.sidecars) return {}
+  const own = recordedSidecars(target.data)
+  if (own) return own
+  const { data, error } = await useDatabaseClient().from('content_revisions').select('data->sidecars')
+    .eq('entity_kind', def.kind).eq('entity_id', id).lt('id', target.id)
+    .not('data->sidecars', 'is', null).order('id', { ascending: false }).limit(1)
+  if (error) contentDatabaseError(def, error)
+  const earlier = ((data ?? []) as unknown as Array<{ sidecars: unknown }>)[0]?.sidecars
+  return (earlier && typeof earlier === 'object' ? earlier as Row : undefined)
+    ?? Object.fromEntries(def.sidecars.fields.filter(field => field in now).map(field => [field, now[field]]))
+}
+
+/**
+ * Writes a stored version back: the editable fields, sidecars and status of `revisionId` become the row's new
+ * state (a new revision, attributed to the admin), validated and saved like an edit, in one transaction. Needs
+ * `revision`, the revision the screen saw, so a stale screen gets the usual 409. A deleted row is recreated
+ * under its old id and creation time; a row that is already in that state is left alone.
  */
 export async function restoreRevision(event: H3Event, def: AnyContentKindDefinition, id: string): Promise<HistoryRestoreResult> {
   const body = await readJsonObject(event, 1024)
   const revisionId = positiveInteger(body.revisionId)
   if (!revisionId) invalid([{ path: 'revisionId', message: 'Nedostaje verzija koju treba vratiti.' }], 'Nedostaje verzija koju treba vratiti.')
 
-  const db = useDatabaseClient()
-  const { data, error } = await db.from('content_revisions').select(REVISION_COLUMNS)
+  const { data, error } = await useDatabaseClient().from('content_revisions').select(REVISION_COLUMNS)
     .eq('id', revisionId).eq('entity_kind', def.kind).eq('entity_id', id).maybeSingle()
   if (error) contentDatabaseError(def, error)
   const target = data as unknown as RevisionRow | null
   if (!target) fail(404, 'Not found', { message: 'Verzija nije pronađena.' })
 
   const current = await readRow(def, id)
+  const now = current ? editable(def, (await getContent(def, id)).entity) : {}
   // Fields the kind keeps on a restore (e.g. which challenge template is current) stay as they are now.
-  const now = current ? projected(def, current) : {}
   const kept = Object.fromEntries((def.restoreKeeps ?? []).filter(field => field in now).map(field => [field, now[field]]))
+  const stored = { ...projected(def, target.data), ...editable(def, await sidecarsAt(def, id, target, now)) }
   // The stored version must still satisfy today's rules; the validator also normalizes it.
-  const { value, issues } = await validateInput(def, { ...projected(def, target.data), ...kept })
+  const { value, issues } = await validateInput(def, { ...stored, ...kept })
   if (issues.length) invalid(issues, 'Ta se verzija ne može vratiti jer više ne zadovoljava pravila uređivanja.')
 
   if (current) {
     const expected = positiveInteger(body.revision)
     if (!expected) invalid([{ path: '', message: 'Nedostaje revizija zapisa; učitaj ga ponovno.' }], 'Nedostaje revizija zapisa.')
     if (current.revision !== expected) conflict(def, current)
-    if (!diffSnapshots(projected(def, current), value, historyFields(def)).length) {
+    if (!diffSnapshots(now, value, historyFields(def)).length) {
       return { unchanged: true, recreated: false, entity: toEntity(def, current) }
     }
-    const { data: saved, error: updateError } = await db.from(def.table).update(toRow(def, value))
-      .eq('id', id).eq('revision', expected).select('*')
-    if (updateError) {
-      if (updateError.code === '23503') referenceFailure()
-      contentDatabaseError(def, updateError)
-    }
-    const rows = (saved ?? []) as Row[]
+    const saved = await persistValue(def, id, value, { row: toRow(def, value), revision: expected }, referenceFailure)
     // Someone saved between the read and the write.
-    if (!rows.length) conflict(def, (await readRow(def, id)) ?? fail(404, 'Not found', { message: 'Zapis nije pronađen.' }))
-    await def.persistEntity?.(db, id, value as Row)
-    await contentAfterWrite(event, def)
-    const entity = toEntity(def, rows[0]!)
-    const extras = await def.loadEntity?.(db, entity) ?? {}
-    return { unchanged: false, recreated: false, entity: { ...entity, ...extras } }
+    if (!saved) conflict(def, (await readRow(def, id)) ?? fail(404, 'Not found', { message: 'Zapis nije pronađen.' }))
+    contentAfterWrite()
+    return { unchanged: false, recreated: false, entity: (await getContent(def, id)).entity }
   }
 
   // The row is gone: bring it back under its old id, continuing the revision count and keeping its creation time.
   const newest = await newestRevision(def, id)
-  const { data: created, error: insertError } = await db.from(def.table)
-    .insert({ ...toRow(def, value), id, revision: (newest?.revision ?? target.revision) + 1, created_at: target.data.created_at })
-    .select('*').single()
-  if (insertError) {
-    if (insertError.code === '23503') referenceFailure()
-    contentDatabaseError(def, insertError)
-  }
-  await def.persistEntity?.(db, id, value as Row)
-  await contentAfterWrite(event, def)
-  const entity = toEntity(def, created as Row)
-  const extras = await def.loadEntity?.(db, entity) ?? {}
-  return { unchanged: false, recreated: true, entity: { ...entity, ...extras } }
+  const row = { ...toRow(def, value), id, revision: (newest?.revision ?? target.revision) + 1, created_at: target.data.created_at }
+  await persistValue(def, null, value, { row }, referenceFailure)
+  contentAfterWrite()
+  return { unchanged: false, recreated: true, entity: (await getContent(def, id)).entity }
 }
 
 function logError(error: { code?: string, message: string }): never {

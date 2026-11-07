@@ -1,7 +1,7 @@
 import type { ChallengeContent, ChallengeMeta, ChallengeSetPublic } from '../../shared/utils/challenge'
 import type { ChallengeTemplateContent } from '../../shared/utils/content/challengeTemplate'
 import { isRecord, isUuid } from '../../shared/utils/content/common'
-import { derive, getPublicContent, invalidatePublicContent } from '../utils/publicContent'
+import { derive, getPublicContent } from '../utils/publicContent'
 import { challengeSetPublic, templateChallengeContent } from './content'
 import { currentTemplateRow, publishedTemplateRows, templateRow } from './database'
 
@@ -31,14 +31,6 @@ const current = derive({ get: getPublicContent }, loadCurrent)
 
 export function currentChallengeContent(): Promise<ChallengeContent> {
   return current.get()
-}
-
-/**
- * Kept for the challenge_template kind's afterWrite; contentAfterWrite already invalidates the snapshot
- * before that hook runs, so this only repeats it.
- */
-export function invalidateCurrentChallengeContent() {
-  invalidatePublicContent()
 }
 
 export async function publishedChallengeSets(): Promise<ChallengeSetPublic[]> {

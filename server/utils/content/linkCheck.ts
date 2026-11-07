@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentIssue } from '../../../shared/utils/content/common'
 
 // Rules on linked rows (a source, place or heritage item that must exist) need the database, so the
-// shared validators cannot check them. Kinds check them in `checkLinks`, before any write, instead of
-// letting a sidecar insert in `persistEntity` fail after the main row is already saved.
+// shared validators cannot check them. Kinds check them in `checkLinks`, before any write, so a save is
+// refused with an issue on the right field rather than by a foreign key inside `persist`.
 
 /**
  * Issues for linked ids that do not name a row of `table` (optionally narrowed by `column = value`).

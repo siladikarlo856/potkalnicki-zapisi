@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { H3Event } from 'h3'
 import type { ContentIssue, ContentKind, ContentReferenceGroup, ContentStatus, ContentValidation } from '../../../shared/utils/content/common'
 
 // The shape of one entry in the content registry (registry.ts).
@@ -19,7 +18,6 @@ export interface ContentKindAdapter {
   archivePatch(): Record<string, unknown>
   /** Push filter conditions for the list query; `status` is the API filter value. */
   statusFilter?(status: ContentStatus, apply: (column: string, value: unknown) => void): void
-  lookupLabel?(row: Record<string, unknown>): string
   createId?(value: Record<string, unknown>): string
 }
 
@@ -41,18 +39,7 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   uniqueConstraints?: Record<string, string>
   /** Rows that refer to this one; blocking groups prevent a hard delete. */
   references?(db: SupabaseClient, id: string): Promise<ContentReferenceGroup[]>
-  /** Runs after every successful write, e.g. to invalidate a public content cache. */
-  afterWrite?(event: H3Event): void | Promise<void>
-  /**
-   * API fields that are not stored with the row but derived from other data (for example the areas a word's
-   * entry points at). They are validated like any field, but are left out of the change history and not restored.
-   */
-  derivedFields?: readonly string[]
-  /** Fills derived fields from the database before validation; a client cannot dictate them. */
-  prepareInput?(db: SupabaseClient, input: Record<string, unknown>): Promise<Record<string, unknown>>
-  enrichRows?(db: SupabaseClient, rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]>
-  toEntityExtra?(row: Record<string, unknown>): Record<string, unknown>
-  /** Optional label formatter for lookup menus (defaults to `labelColumn`). */
+  /** Optional label formatter for lookup menus and the history log (defaults to `labelColumn`). */
   lookupLabel?(row: Record<string, unknown>): string
   /**
    * Editable fields a history restore leaves at their current value, because they select the row
@@ -62,26 +49,31 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   /** Request body cap in bytes; defaults to CONTENT_BODY_LIMIT. */
   bodyLimit?: number
   adapter?: ContentKindAdapter
-  /** Validated API fields that are not columns on the main table (saved by `persist`; a history restore still uses `persistEntity`). */
-  inputFields?: readonly string[]
-  /** Loads API fields not stored on the main row (e.g. region membership). */
-  loadEntity?(db: SupabaseClient, entity: Record<string, unknown> & { id: string }): Promise<Record<string, unknown>>
+  /**
+   * Editable API fields stored beside the main row (e.g. a person's sources and links). They are validated with
+   * the row, saved with it by `persist`, recorded on its revision and restored with it; `load` reads them for one row.
+   */
+  sidecars?: {
+    fields: readonly string[]
+    load(db: SupabaseClient, id: string): Promise<Record<string, unknown>>
+  }
+  /**
+   * Read-only API fields computed from other data and never stored (e.g. a word's areas, a person's places
+   * label). They are added to every listed and loaded entity, and to the input before validation, so a client
+   * cannot dictate them. Receives and returns API-shaped values, in order.
+   */
+  derive?(db: SupabaseClient, values: Record<string, unknown>[]): Promise<Record<string, unknown>[]>
   /**
    * Rules on a validated value that need the database (e.g. every linked source exists). Runs with
    * `validate`, before any write; a non-empty result refuses the save like any validation issue.
    */
   checkLinks?(db: SupabaseClient, value: V & Record<string, unknown>): Promise<ContentIssue[]>
   /**
-   * Persists API fields not stored on the main row after a successful save or restore. It only
-   * writes: every rule belongs in `validate` or `checkLinks`, which run before the main row is saved.
-   */
-  persistEntity?(db: SupabaseClient, id: string, value: Record<string, unknown>): Promise<void>
-  /**
-   * Saves a validated value — the main row and everything stored beside it — in one database
-   * transaction (typically a per-kind Postgres function). Create and update always save through it; a
-   * kind stored in its main row alone may leave it out and gets the store's single-statement save, while a
-   * kind with `inputFields` must define it. An update starts from the full stored entity (`loadEntity`
-   * included), so a field the request leaves out keeps its value.
+   * Saves a validated value — the main row and its sidecars — in one database transaction (typically a
+   * per-kind Postgres function). Create, update and history restore always save through it; a kind stored
+   * in its main row alone may leave it out and gets the store's single-statement save, while a kind with
+   * `sidecars` must define it. An update starts from the full stored entity (sidecars included), so a
+   * field the request leaves out keeps its value.
    * It only writes: every rule runs before it, in `validate` and `checkLinks`.
    * Resolves to the saved id, or null when the row is gone or no longer at `options.revision`.
    * Database errors are thrown as they come (PostgREST shape) for the store to map.
@@ -90,7 +82,11 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
 }
 
 export interface ContentPersistOptions {
-  /** The main-table columns for the value (the store's field → column mapping), plus transient columns such as apply_submission_id. */
+  /**
+   * The main-table columns for the value (the store's field → column mapping), plus transient columns such as
+   * apply_submission_id. On a create by a history restore it also carries `id`, `revision` and `created_at`, so a
+   * deleted row comes back under its old id and creation time; these never come from a client.
+   */
   row: Record<string, unknown>
   /** On an update: the revision the save is based on. The write happens only while the row is still at it. */
   revision?: number

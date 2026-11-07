@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ContentList } from '../shared/utils/content/common'
 import type { HistoryLog, HistoryRestoreResult, HistoryRevisions } from '../shared/utils/content/history'
+import type { Club } from '../shared/utils/content/club'
+import type { Person } from '../shared/utils/content/person'
 import type { Source } from '../shared/utils/content/source'
 import { integrationDb } from './support/integrationDb'
 
@@ -35,7 +37,7 @@ const edit = async (id: string, body: Record<string, unknown>) => {
   return response.body.entity
 }
 const history = (id: string, query = '') => api<HistoryRevisions>(`${BASE}/${id}/revisions${query}`)
-const restore = (id: string, body: Record<string, unknown>) => api<HistoryRestoreResult>(`${BASE}/${id}/restore`, { method: 'POST', body })
+const restore = (id: string, body: Record<string, unknown>, base = BASE) => api<HistoryRestoreResult>(`${base}/${id}/restore`, { method: 'POST', body })
 
 describe.skipIf(!db.enabled)('change history over real Postgres', () => {
   it('is closed without the session or secret', async () => {
@@ -232,5 +234,134 @@ describe.skipIf(!db.enabled)('change history over real Postgres', () => {
     expect(log.body.rows[0]).toMatchObject({ kind: 'source', action: 'delete', label: 'history-test Dnevnik brisanja', revision: 2 })
     const list = await api<ContentList<Source>>(`${BASE}?q=history-test+Dnevnik+brisanja`)
     expect(list.body.total).toBe(0)
+  })
+})
+
+// A person's links and a club's seasons and sources are stored beside the main row. A save records them on
+// its revision, and a restore writes the main row and all of them back through the kind's one-transaction save.
+describe.skipIf(!db.enabled)('restoring a kind with sidecars', () => {
+  const PERSON = '/api/admin/content/person'
+  const CLUB = '/api/admin/content/club'
+  async function save<T>(path: string, method: 'POST' | 'PATCH', body: Record<string, unknown>) {
+    const response = await api<{ entity: T }>(path, { method, body })
+    expect(response.status, JSON.stringify(response.body)).toBe(method === 'POST' ? 201 : 200)
+    return response.body.entity
+  }
+  const revisionsOf = async (base: string, id: string) => (await api<HistoryRevisions>(`${base}/${id}/revisions`)).body.revisions
+  const personLinks = (id: string) => sql(`select
+      coalesce((select string_agg(source_id::text, ',' order by position) from person_sources where person_id = '${id}'), '') || ' | ' ||
+      coalesce((select string_agg(area_id || ':' || role, ',' order by position) from person_areas where person_id = '${id}'), '') || ' | ' ||
+      coalesce((select string_agg(item_id || ':' || relation, ',' order by position) from person_heritage_items where person_id = '${id}'), '-')`)
+  const clubSidecars = (id: string) => sql(`select
+      coalesce((select string_agg(source_id::text, ',' order by position) from club_sources where club_id = '${id}'), '') || ' | ' ||
+      coalesce((select string_agg(season || ':' || competition, ',' order by season) from club_seasons where club_id = '${id}'), '')`)
+
+  async function publishedPerson(name: string) {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
+    const item = sql(`select id from heritage_items limit 1`)
+    const [sourceA, sourceB] = sql(`select string_agg(id::text, ',' order by id) from (select id from sources order by id limit 2) s`).split(',')
+    const person = await save<Person>(PERSON, 'POST', {
+      name: `${name} ${suffix}`, slug: `history-test-osoba-${suffix}`, died: '1900.', diedYear: 1900, verification: 'unverified',
+      status: 'published', sourceIds: [sourceA], areaLinks: [{ areaId: settlement, role: 'rodjen' }],
+      itemLinks: [{ itemId: item, relation: 'povezana kapela' }]
+    })
+    const edited = await save<Person>(`${PERSON}/${person.id}`, 'PATCH', {
+      revision: person.revision, clue: 'druga verzija', sourceIds: [sourceB, sourceA], areaLinks: [{ areaId: settlement, role: 'umro' }], itemLinks: []
+    })
+    return { person, edited, settlement: settlement!, item: item!, sourceA: sourceA!, sourceB: sourceB! }
+  }
+
+  it('records the links on each revision of a person and lists their changes', async () => {
+    const { person, sourceA, sourceB } = await publishedPerson('history-test Zapis veza')
+    const [update] = await revisionsOf(PERSON, person.id)
+    expect(update!.changes).toEqual(expect.arrayContaining([
+      { field: 'sourceIds', before: [sourceA], after: [sourceB, sourceA] },
+      { field: 'itemLinks', before: [expect.objectContaining({ relation: 'povezana kapela' })], after: [] }
+    ]))
+  })
+
+  it('restores a Published person with its sources and links as they were at that revision', async () => {
+    const { person, edited, settlement, item, sourceA } = await publishedPerson('history-test Vraćanje osobe')
+    const first = (await revisionsOf(PERSON, person.id)).find(revision => revision.revision === 1)!
+
+    const result = await restore(person.id, { revisionId: first.id, revision: edited.revision }, PERSON)
+    expect(result.status, JSON.stringify(result.body)).toBe(200)
+    expect(result.body).toMatchObject({
+      unchanged: false, recreated: false,
+      entity: { id: person.id, status: 'published', clue: '', revision: 3, sourceIds: [sourceA], areaLinks: [{ areaId: settlement, role: 'rodjen' }] }
+    })
+    expect(personLinks(person.id)).toBe(`${sourceA} | ${settlement}:rodjen | ${item}:povezana kapela`)
+  })
+
+  it('recreates a hard-deleted Published person with its sources and links', async () => {
+    const { person, edited, settlement, sourceA, sourceB } = await publishedPerson('history-test Obrisana osoba')
+    expect((await api(`${PERSON}/${person.id}?mode=hard`, { method: 'DELETE' })).status).toBe(200)
+    const [deleted] = await revisionsOf(PERSON, person.id)
+    expect(deleted!.action).toBe('delete')
+
+    // The delete revision holds the row as it was; its links are those of the save before it.
+    const result = await restore(person.id, { revisionId: deleted!.id }, PERSON)
+    expect(result.status, JSON.stringify(result.body)).toBe(200)
+    expect(result.body).toMatchObject({ unchanged: false, recreated: true, entity: { id: person.id, status: 'published', clue: 'druga verzija', revision: edited.revision + 2 } })
+    expect(personLinks(person.id)).toBe(`${sourceB},${sourceA} | ${settlement}:umro | -`)
+    expect(sql(`select created_at = (select created_at from content_revisions where entity_id = '${person.id}' and revision = 1) from persons where id = '${person.id}'`)).toBe('t')
+  })
+
+  it('restores a Published club with its seasons and sources, and recreates it after a hard delete', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const settlement = sql(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
+    const [sourceA, sourceB] = sql(`select string_agg(id::text, ',' order by id) from (select id from sources order by id limit 2) s`).split(',')
+    const club = await save<Club>(CLUB, 'POST', {
+      name: `history-test Klub ${suffix}`, slug: `history-test-klub-${suffix}`, sport: 'nogomet', settlementId: settlement,
+      researchNotes: '', verification: 'unverified', noindex: false, status: 'published', sourceIds: [sourceA],
+      seasons: [{ season: '2026/27', competition: 'III ŽNL-a', team: 'seniori', sourceUrl: null, checkedAt: '2026-11-04' }]
+    })
+    const edited = await save<Club>(`${CLUB}/${club.id}`, 'PATCH', {
+      revision: club.revision, homeGround: 'Novo igralište', sourceIds: [sourceB],
+      seasons: [{ season: '2025/26', competition: 'II ŽNL-a', team: 'seniori', sourceUrl: null, checkedAt: '2026-11-04' }]
+    })
+    const first = (await revisionsOf(CLUB, club.id)).find(revision => revision.revision === 1)!
+
+    const restored = await restore(club.id, { revisionId: first.id, revision: edited.revision }, CLUB)
+    expect(restored.status, JSON.stringify(restored.body)).toBe(200)
+    expect(restored.body).toMatchObject({ recreated: false, entity: { status: 'published', homeGround: null, sourceIds: [sourceA] } })
+    expect(clubSidecars(club.id)).toBe(`${sourceA} | 2026/27:III ŽNL-a`)
+
+    expect((await api(`${CLUB}/${club.id}?mode=hard`, { method: 'DELETE' })).status).toBe(200)
+    const second = (await revisionsOf(CLUB, club.id)).find(revision => revision.revision === 2)!
+    const recreated = await restore(club.id, { revisionId: second.id }, CLUB)
+    expect(recreated.status, JSON.stringify(recreated.body)).toBe(200)
+    expect(recreated.body).toMatchObject({ recreated: true, entity: { id: club.id, status: 'published', homeGround: 'Novo igralište', revision: 5 } })
+    expect(clubSidecars(club.id)).toBe(`${sourceB} | 2025/26:II ŽNL-a`)
+  })
+
+  it('writes nothing when a sidecar write fails during a restore', async () => {
+    const { person, edited, sourceA, sourceB, settlement } = await publishedPerson('history-test Neuspjelo vraćanje')
+    const first = (await revisionsOf(PERSON, person.id)).find(revision => revision.revision === 1)!
+    // Source links are written last; make that write fail for this person only.
+    sql(`
+      create function public.kit_test_fail_restore_source() returns trigger language plpgsql as $$
+      begin
+        if new.person_id = '${person.id}' then raise exception 'Forced link failure'; end if;
+        return new;
+      end $$;
+      create trigger kit_test_fail_restore_source before insert on public.person_sources
+        for each row execute function public.kit_test_fail_restore_source();
+    `)
+    try {
+      const result = await restore(person.id, { revisionId: first.id, revision: edited.revision }, PERSON)
+      expect(result.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select revision || ' ' || clue from persons where id = '${person.id}'`)).toBe(`${edited.revision} druga verzija`)
+      expect(personLinks(person.id)).toBe(`${sourceB},${sourceA} | ${settlement}:umro | -`)
+
+      expect((await api(`${PERSON}/${person.id}?mode=hard`, { method: 'DELETE' })).status).toBe(200)
+      const recreate = await restore(person.id, { revisionId: first.id }, PERSON)
+      expect(recreate.status).toBeGreaterThanOrEqual(400)
+      expect(sql(`select count(*) from persons where id = '${person.id}'`)).toBe('0')
+      expect(sql(`select count(*) from person_areas where person_id = '${person.id}'`)).toBe('0')
+    } finally {
+      sql(`drop trigger kit_test_fail_restore_source on public.person_sources; drop function public.kit_test_fail_restore_source();`)
+    }
   })
 })

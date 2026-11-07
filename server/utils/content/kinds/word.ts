@@ -12,7 +12,7 @@ const EXAMPLES = 5
 type WordRow = {
   id: string
   entry: WordEntry
-  /** Not a column: the areas of the entry, read from the areas table (enrichRows, loadEntity). */
+  /** Not a column: the areas of the entry, read from the areas table (derive). */
   areas?: Area[]
   active: boolean
   archived_at: string | null
@@ -71,9 +71,6 @@ const adapter = {
       push('archived_at', 'not.null')
     }
   },
-  lookupLabel(row: Record<string, unknown>) {
-    return wordLookupLabel(row as unknown as Pick<WordRow, 'entry' | 'id'>)
-  },
   createId(value: Record<string, unknown>) {
     const entry = value.entry as WordEntry
     return entry.id
@@ -97,22 +94,16 @@ async function wordReferences(db: SupabaseClient, id: string): Promise<ContentRe
   }]
 }
 
-export const wordKind = defineContentKind({
+export const wordKind = defineContentKind<{ entry: WordEntry, status: ContentStatus }>({
   kind: 'word',
   table: 'heritage_words',
-  // `areas` is derived: the areas the entry points at, from the areas table. It is validated, never stored.
-  fields: { entry: 'entry', areas: 'areas' },
-  derivedFields: ['areas'],
-  async prepareInput(db, input) {
-    return { ...input, areas: projectAreas(input.entry, await loadAreaIndex(db)) }
-  },
-  async enrichRows(db, rows) {
+  fields: { entry: 'entry' },
+  // `areas`: the areas the entry points at, from the areas table. It is validated, never stored.
+  async derive(db, values) {
     const index = await loadAreaIndex(db)
-    return rows.map(row => ({ ...row, areas: projectAreas(row.entry, index) }))
+    return values.map(value => ({ ...value, areas: projectAreas(value.entry, index) }))
   },
-  async loadEntity(db, entity) {
-    return { areas: projectAreas(entity.entry, await loadAreaIndex(db)) }
-  },
+  lookupLabel: row => wordLookupLabel(row as unknown as Pick<WordRow, 'entry' | 'id'>),
   labelColumn: 'search_text',
   validate: validateAdminWord,
   sorts: { headword: 'search_text', slug: 'slug' },
