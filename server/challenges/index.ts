@@ -20,8 +20,6 @@ import { challengeContentFromSet, currentChallengeContent, publishedChallengeSet
 // content.ts is the one home of the content shape. A Participant is known by an httpOnly cookie
 // holding a random token; the database only ever sees its hash.
 
-export { invalidateCurrentChallengeContent } from './templates'
-
 const BODY_LIMIT = 8192
 
 function challengeCode(event: H3Event) {

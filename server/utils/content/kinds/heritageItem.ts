@@ -10,14 +10,6 @@ async function loadSourceIds(db: SupabaseClient, itemId: string) {
   return (data ?? []).map(row => row.source_id as string)
 }
 
-async function saveSourceIds(db: SupabaseClient, itemId: string, sourceIds: string[]) {
-  const { error: deleteError } = await db.from('heritage_item_sources').delete().eq('item_id', itemId)
-  if (deleteError) throw deleteError
-  if (!sourceIds.length) return
-  const { error } = await db.from('heritage_item_sources').insert(sourceIds.map((source_id, position) => ({ item_id: itemId, source_id, position })))
-  if (error) throw error
-}
-
 export const heritageItemKind = defineContentKind({
   kind: 'heritage_item',
   table: 'heritage_items',
@@ -51,8 +43,10 @@ export const heritageItemKind = defineContentKind({
   },
   uniqueConstraints: { heritage_items_settlement_slug: 'slug' },
   references: async () => [],
-  inputFields: ['sourceIds'],
-  loadEntity: async (db, entity) => ({ sourceIds: await loadSourceIds(db, entity.id) }),
+  sidecars: {
+    fields: ['sourceIds'],
+    load: async (db, id) => ({ sourceIds: await loadSourceIds(db, id) })
+  },
   checkLinks: async (db, value) => missingSourceIssues(db, value.sourceIds),
   // The heritage_items row and its sources in one transaction (supabase/migrations/20261107010000_content_save.sql).
   persist: async (db, id, value, { row, revision }) => {
@@ -62,32 +56,26 @@ export const heritageItemKind = defineContentKind({
     if (error) throw error
     return (data as string | null) ?? null
   },
-  // Still used by a history restore; it moves to `persist` with the restore.
-  persistEntity: async (db, id, value) => saveSourceIds(db, id, (value.sourceIds as string[]) ?? []),
-  async enrichRows(db, rows) {
-    if (!rows.length) return rows
-    const settlementIds = [...new Set(rows.map(row => row.settlement_id).filter(Boolean) as string[])]
-    const categoryIds = [...new Set(rows.map(row => row.category_id).filter(Boolean) as string[])]
+  // The settlement's slug and the category's label, for the admin list.
+  async derive(db, values) {
+    const settlementIds = [...new Set(values.map(value => value.settlementId).filter((id): id is string => typeof id === 'string'))]
+    const categoryIds = [...new Set(values.map(value => value.categoryId).filter((id): id is string => typeof id === 'string'))]
     const settlements = new Map<string, string>()
     const categories = new Map<string, string>()
     if (settlementIds.length) {
-      const { data } = await db.from('areas').select('id,slug').in('id', settlementIds)
+      const { data, error } = await db.from('areas').select('id,slug').in('id', settlementIds)
+      if (error) throw error
       for (const row of data ?? []) settlements.set(row.id as string, row.slug as string)
     }
     if (categoryIds.length) {
-      const { data } = await db.from('heritage_categories').select('id,label_hr').in('id', categoryIds)
+      const { data, error } = await db.from('heritage_categories').select('id,label_hr').in('id', categoryIds)
+      if (error) throw error
       for (const row of data ?? []) categories.set(row.id as string, row.label_hr as string)
     }
-    return rows.map(row => ({
-      ...row,
-      settlement_slug: row.settlement_id ? settlements.get(row.settlement_id as string) ?? null : null,
-      category_label: categories.get(row.category_id as string) ?? null
+    return values.map(value => ({
+      ...value,
+      settlementSlug: settlements.get(value.settlementId as string) ?? null,
+      categoryLabel: categories.get(value.categoryId as string) ?? null
     }))
-  },
-  toEntityExtra(row: Record<string, unknown>) {
-    return {
-      settlementSlug: (row.settlement_slug as string | null | undefined) ?? null,
-      categoryLabel: (row.category_label as string | null | undefined) ?? null
-    }
   }
 })
