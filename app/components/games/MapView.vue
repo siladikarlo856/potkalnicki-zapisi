@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { MAP_FRAME, MAP_LAYERS, project, unproject, type MapLayerId } from '~~/shared/utils/games/mapFrame'
-import { municipalityColor, sortedMunicipalities } from '~~/shared/utils/games/mapUnits'
-import type { Difficulty } from '~~/shared/utils/games/types'
-import type { PoolMunicipality, PoolPlace } from '~~/shared/utils/learn/types'
+import { MAP_FRAME, MAP_LAYERS, project, unproject, type MapLayerId } from '#shared/utils/games/mapFrame'
+import { MUNICIPALITY_BOUNDARIES } from '#shared/utils/games/mapBoundaries'
+import { municipalityColor, sortedMunicipalities } from '#shared/utils/games/mapUnits'
+import type { Difficulty } from '#shared/utils/games/types'
+import type { PoolMunicipality, PoolPlace } from '#shared/utils/learn/types'
 
 const props = withDefaults(defineProps<{
   places: PoolPlace[]
@@ -48,10 +49,23 @@ watch(() => props.layerLocked, (locked) => {
 }, { immediate: true })
 
 const viewport = useTemplateRef<HTMLElement>('viewport')
-/** Default and minimum zoom: opens a little zoomed out so more of the surroundings show. */
-const MIN_SCALE = 0.75
-const scale = ref(MIN_SCALE)
+/** Zoom is CSS pixels per frame pixel. Until the viewport is measured, assume a phone-sized one. */
+const FALLBACK_SCALE = 0.25
+const MAX_ZOOM_IN = 4
+const scale = ref(FALLBACK_SCALE)
 const translate = ref({ x: 0, y: 0 })
+/** True while the view moves by itself (reset, fit after an answer), so it glides instead of jumping. */
+const gliding = ref(false)
+/** Once the player zooms or pans, a resize keeps their view instead of re-fitting the whole area. */
+let touched = false
+
+/** The scale at which the whole frame (all five municipalities) fits the viewport: default and minimum zoom. */
+function fitScale() {
+  const el = viewport.value
+  if (!el || !el.clientWidth || !el.clientHeight) return FALLBACK_SCALE
+  return Math.min(el.clientWidth / MAP_FRAME.width, el.clientHeight / MAP_FRAME.height)
+}
+const maxScale = () => Math.max(2, fitScale() * MAX_ZOOM_IN)
 
 const dark = computed(() => colorMode.value === 'dark')
 
@@ -93,6 +107,31 @@ const showSeatLabels = computed(() =>
   && !props.targetPoint)
 const showSettlementNames = computed(() => props.mode === 'learn')
 
+/** The five municipalities' outlines; the one a question already narrows to is highlighted. */
+const highlightedSlug = computed(() => {
+  if (props.mode === 'learn' || !(props.singleTarget || props.mode === 'target') || !props.highlightId) return undefined
+  const place = props.places.find(p => p.id === props.highlightId)
+  return props.municipalities.find(m => m.id === place?.municipalityId)?.slug
+})
+const boundaries = computed(() =>
+  Object.entries(MUNICIPALITY_BOUNDARIES).map(([slug, { d }]) => ({ slug, d, highlighted: slug === highlightedSlug.value })))
+// Draw the highlighted outline last so it sits on top of its neighbours' edges.
+const orderedBoundaries = computed(() => [...boundaries.value].sort((a, b) => Number(a.highlighted) - Number(b.highlighted)))
+
+/**
+ * Both basemaps are pale, in dark mode too, so the outlines have to be dark in both: the accented border
+ * colour, pulled towards the text colour (light mode) or towards black (dark mode, where that colour is light).
+ */
+const mapColours = computed(() => dark.value
+  ? {
+      '--map-boundary': 'color-mix(in oklab, var(--ui-border-accented) 25%, #000)',
+      '--map-highlight': 'color-mix(in oklab, var(--ui-primary) 40%, #000)'
+    }
+  : {
+      '--map-boundary': 'color-mix(in oklab, var(--ui-border-accented) 35%, var(--ui-text-muted))',
+      '--map-highlight': 'var(--ui-primary)'
+    })
+
 const legendUnits = computed(() => sortedMunicipalities(props.municipalities))
 
 function dotStyle(place: PoolPlace) {
@@ -126,7 +165,7 @@ function clampTransform() {
 function setScale(next: number, anchor?: { x: number, y: number }) {
   const el = viewport.value
   if (!el) return
-  const clamped = Math.min(4, Math.max(MIN_SCALE, next))
+  const clamped = Math.min(maxScale(), Math.max(fitScale(), next))
   if (anchor) {
     const ratio = clamped / scale.value
     translate.value = {
@@ -138,21 +177,48 @@ function setScale(next: number, anchor?: { x: number, y: number }) {
   clampTransform()
 }
 
-function zoomBy(delta: number) {
+function zoomBy(factor: number) {
   const el = viewport.value
   if (!el) return
-  setScale(scale.value + delta, { x: el.clientWidth / 2, y: el.clientHeight / 2 })
+  touched = true
+  gliding.value = false
+  setScale(scale.value * factor, { x: el.clientWidth / 2, y: el.clientHeight / 2 })
 }
 
-/** Centre a frame-space point in the viewport at the current zoom (clamped to the map bounds). */
-function centreOn(point: { x: number, y: number }) {
+/** Back to the default view: the whole area. */
+function resetView() {
+  scale.value = fitScale()
+  translate.value = { x: 0, y: 0 }
+  clampTransform()
+}
+
+/** Zoom so every given frame-space point is visible with padding, never closer than a settlement's surroundings. */
+function fitPoints(points: { x: number, y: number }[]) {
   const el = viewport.value
-  if (!el) return
+  if (!el || !points.length) return
+  const minX = Math.min(...points.map(p => p.x))
+  const maxX = Math.max(...points.map(p => p.x))
+  const minY = Math.min(...points.map(p => p.y))
+  const maxY = Math.max(...points.map(p => p.y))
+  const vw = el.clientWidth || MAP_FRAME.width * FALLBACK_SCALE
+  const vh = el.clientHeight || MAP_FRAME.height * FALLBACK_SCALE
+  const pad = 0.2
+  const width = Math.max((maxX - minX) * (1 + pad * 2), MIN_FIT_SPAN)
+  const height = Math.max((maxY - minY) * (1 + pad * 2), MIN_FIT_SPAN * vh / vw)
+  const next = Math.min(maxScale(), Math.max(fitScale(), Math.min(vw / width, vh / height)))
+  scale.value = next
   translate.value = {
-    x: el.clientWidth / 2 - point.x * scale.value,
-    y: el.clientHeight / 2 - point.y * scale.value
+    x: vw / 2 - (minX + maxX) / 2 * next,
+    y: vh / 2 - (minY + maxY) / 2 * next
   }
   clampTransform()
+}
+/** Smallest stretch of map (frame pixels, about 3 km) a post-answer view shows, so two close points still sit in context. */
+const MIN_FIT_SPAN = 420
+
+function glideTo(move: () => void) {
+  gliding.value = true
+  move()
 }
 
 /** The one dot a question marks (null when it marks none, e.g. tap-anywhere or learn mode). */
@@ -167,12 +233,24 @@ const focusPoint = computed(() => {
   return null
 })
 
-watch(focusPoint, (point) => {
-  if (point) centreOn(point)
+/** A new question starts from the default view again. */
+watch(() => focusPoint.value && `${focusPoint.value.x},${focusPoint.value.y}`, () => {
+  touched = false
+  resetView()
+}, { flush: 'post' })
+
+/** The player's answer: show the pick, the right place and the line between them. */
+watch(() => props.feedback, (feedback) => {
+  if (feedback) glideTo(() => fitPoints([feedback.tap, feedback.target]))
   else {
-    translate.value = { x: 0, y: 0 }
-    clampTransform()
+    touched = false
+    resetView()
   }
+}, { flush: 'post' })
+
+/** Answered without a pick on the map (list or option answer): show the whole area again. */
+watch(() => props.disabled, (disabled) => {
+  if (disabled && !props.feedback) glideTo(resetView)
 }, { flush: 'post' })
 
 function screenToImage(clientX: number, clientY: number) {
@@ -185,23 +263,33 @@ function screenToImage(clientX: number, clientY: number) {
 }
 
 function pickPlaceAt(imageX: number, imageY: number): PoolPlace | undefined {
+  let best: PoolPlace | undefined
+  let bestDistance = hitRadius.value
   for (const place of visibleDots.value) {
     const { x, y } = project(place.lat, place.lng)
-    if (Math.hypot(imageX - x, imageY - y) <= HIT_RADIUS) return place
+    const distance = Math.hypot(imageX - x, imageY - y)
+    if (distance <= bestDistance) {
+      best = place
+      bestDistance = distance
+    }
   }
-  return undefined
+  return best
 }
 
 function pickNumberedAt(imageX: number, imageY: number): number | undefined {
   for (const marker of challengeMarkers.value) {
     if (marker.index === undefined) continue
-    if (Math.hypot(imageX - marker.x, imageY - marker.y) <= HIT_RADIUS) return marker.index
+    if (Math.hypot(imageX - marker.x, imageY - marker.y) <= hitRadius.value) return marker.index
   }
   return undefined
 }
 
-/** A dot is 6px wide inside an invisible hit circle of 44px (in frame units, before the viewport's zoom). */
-const HIT_RADIUS = 22
+/**
+ * Sizes are drawn in screen pixels whatever the zoom: a dot is 6px wide inside an invisible hit circle of
+ * 44px, so `px(n)` turns n screen pixels into frame units.
+ */
+const px = (n: number) => n / scale.value
+const hitRadius = computed(() => px(22))
 
 /** Dots in reading order (top to bottom, then left to right) for the arrow keys. */
 function readingOrder(places: PoolPlace[]) {
@@ -233,6 +321,8 @@ function onPointerDown(event: PointerEvent) {
   const el = viewport.value
   if (!el) return
   el.setPointerCapture(event.pointerId)
+  touched = true
+  gliding.value = false
   pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
   if (pointers.size === 1) {
     panStart = { x: event.clientX, y: event.clientY, tx: translate.value.x, ty: translate.value.y }
@@ -287,7 +377,7 @@ function onPointerUp(event: PointerEvent) {
 function onWheel(event: WheelEvent) {
   if (!event.ctrlKey && Math.abs(event.deltaY) < 20) return
   event.preventDefault()
-  zoomBy(event.deltaY < 0 ? 0.25 : -0.25)
+  zoomBy(event.deltaY < 0 ? 1.25 : 0.8)
 }
 
 function pickFromList(placeId: string) {
@@ -298,11 +388,15 @@ function pickFromList(placeId: string) {
 }
 
 onMounted(() => {
-  clampTransform()
-  if (focusPoint.value) centreOn(focusPoint.value)
+  resetView()
   const el = viewport.value
   if (!el) return
-  const observer = new ResizeObserver(() => clampTransform())
+  const observer = new ResizeObserver(() => {
+    if (touched) {
+      scale.value = Math.min(maxScale(), Math.max(fitScale(), scale.value))
+      clampTransform()
+    } else resetView()
+  })
   observer.observe(el)
   onUnmounted(() => observer.disconnect())
 })
@@ -345,7 +439,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
           variant="outline"
           class="size-(--pz-tap-min) justify-center"
           data-testid="map-zoom-in"
-          @click="zoomBy(0.5)"
+          @click="zoomBy(1.5)"
         />
         <UButton
           :aria-label="t('pz.map.zoomOut')"
@@ -355,7 +449,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
           variant="outline"
           class="size-(--pz-tap-min) justify-center"
           data-testid="map-zoom-out"
-          @click="zoomBy(-0.5)"
+          @click="zoomBy(1 / 1.5)"
         />
       </div>
     </div>
@@ -372,7 +466,10 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
     >
       <div
         class="absolute left-0 top-0 origin-top-left will-change-transform"
+        :class="gliding ? 'transition-transform duration-500 ease-out motion-reduce:transition-none' : ''"
+        data-testid="map-surface"
         :style="{ width: `${MAP_FRAME.width}px`, height: `${MAP_FRAME.height}px`, transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})` }"
+        @transitionend="gliding = false"
       >
         <img
           :src="activeLayer.src"
@@ -387,7 +484,28 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
           :viewBox="`0 0 ${MAP_FRAME.width} ${MAP_FRAME.height}`"
           role="group"
           :aria-label="t('pz.map.layers')"
+          :style="mapColours"
         >
+          <!-- Municipality boundaries: decorative context, never in the way of a tap. -->
+          <g
+            aria-hidden="true"
+            class="pointer-events-none"
+            data-testid="map-boundaries"
+          >
+            <path
+              v-for="boundary in orderedBoundaries"
+              :key="boundary.slug"
+              :d="boundary.d"
+              :data-municipality="boundary.slug"
+              :data-highlighted="boundary.highlighted ? 'true' : undefined"
+              stroke-linejoin="round"
+              :fill="boundary.highlighted ? 'var(--map-highlight)' : 'none'"
+              :fill-opacity="boundary.highlighted ? 0.14 : undefined"
+              :stroke="boundary.highlighted ? 'var(--map-highlight)' : 'var(--map-boundary)'"
+              :stroke-width="px(boundary.highlighted ? 3 : 1.75)"
+              :stroke-dasharray="boundary.highlighted ? undefined : `${px(7)} ${px(4)}`"
+            />
+          </g>
           <g v-if="feedback">
             <!-- A miss: the right place in teal with a check, the pick in brick, a dashed line between them. -->
             <line
@@ -396,35 +514,37 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               :x2="feedback.target.x"
               :y2="feedback.target.y"
               stroke="var(--ui-error)"
-              stroke-width="2"
-              stroke-dasharray="4 4"
+              :stroke-width="px(2)"
+              :stroke-dasharray="`${px(4)} ${px(4)}`"
+              data-testid="map-feedback-line"
             />
             <circle
               :cx="feedback.tap.x"
               :cy="feedback.tap.y"
-              r="7"
+              :r="px(7)"
               fill="var(--ui-error)"
               stroke="var(--ui-bg)"
-              stroke-width="2"
+              :stroke-width="px(2)"
             />
             <circle
               :cx="feedback.target.x"
               :cy="feedback.target.y"
-              r="14"
+              :r="px(14)"
               fill="none"
               stroke="var(--ui-success)"
-              stroke-width="3"
+              :stroke-width="px(3)"
             />
             <text
               :x="feedback.target.x"
-              :y="feedback.target.y - 20"
+              :y="feedback.target.y - px(20)"
               text-anchor="middle"
-              class="fill-current text-[12px] font-semibold text-highlighted"
+              class="fill-current font-semibold text-highlighted"
+              :style="{ fontSize: `${px(12)}px` }"
               stroke="var(--ui-bg)"
-              stroke-width="4"
+              :stroke-width="px(4)"
               paint-order="stroke fill"
             >
-              ✓ {{ t('pz.map.mapHit') }}
+              ✓ {{ t('pz.play.mapHit') }}
             </text>
           </g>
           <g
@@ -434,7 +554,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="dotStyle(place).cx"
               :cy="dotStyle(place).cy"
-              :r="HIT_RADIUS"
+              :r="hitRadius"
               fill="transparent"
               class="pointer-events-auto cursor-pointer outline-none focus-visible:stroke-(--focus-ring) focus-visible:stroke-[3px]"
               role="button"
@@ -448,20 +568,21 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="dotStyle(place).cx"
               :cy="dotStyle(place).cy"
-              r="4"
+              :r="px(3.5)"
               :fill="dotStyle(place).fill"
               :stroke="dotStyle(place).stroke"
-              stroke-width="1.5"
+              :stroke-width="px(1.5)"
               class="pointer-events-none"
             />
             <text
               v-if="showSettlementNames"
               :x="dotStyle(place).cx"
-              :y="dotStyle(place).cy - 10"
+              :y="dotStyle(place).cy - px(10)"
               text-anchor="middle"
-              class="pointer-events-none fill-current text-highlighted text-[11px] font-semibold"
+              class="pointer-events-none fill-current text-highlighted font-semibold"
+              :style="{ fontSize: `${px(11)}px` }"
               stroke="var(--ui-bg)"
-              stroke-width="3"
+              :stroke-width="px(3)"
               paint-order="stroke fill"
             >
               {{ place.name }}
@@ -474,7 +595,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="marker.x"
               :cy="marker.y"
-              r="22"
+              :r="hitRadius"
               fill="transparent"
               class="pointer-events-auto cursor-pointer"
               :data-testid="marker.index === undefined ? 'map-challenge-target' : `map-numbered-${marker.index + 1}`"
@@ -482,18 +603,19 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="marker.x"
               :cy="marker.y"
-              r="5"
+              :r="px(5)"
               fill="var(--ui-primary)"
               stroke="var(--ui-bg)"
-              stroke-width="1.5"
+              :stroke-width="px(1.5)"
               class="pointer-events-none"
             />
             <text
               v-if="marker.label"
               :x="marker.x"
-              :y="marker.y + 4"
+              :y="marker.y + px(4)"
               text-anchor="middle"
-              class="pointer-events-none fill-inverted text-[10px] font-bold"
+              class="pointer-events-none fill-inverted font-bold"
+              :style="{ fontSize: `${px(10)}px` }"
             >
               {{ marker.label }}
             </text>
@@ -503,11 +625,12 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               v-for="seat in legendUnits.map(seatLabel)"
               :key="seat.label"
               :x="seat.x"
-              :y="seat.y - 12"
+              :y="seat.y - px(12)"
               text-anchor="middle"
-              class="fill-current text-highlighted text-xs font-bold"
+              class="fill-current text-highlighted font-bold"
+              :style="{ fontSize: `${px(12)}px` }"
               stroke="var(--ui-bg)"
-              stroke-width="3"
+              :stroke-width="px(3)"
               paint-order="stroke fill"
             >
               {{ seat.label }}

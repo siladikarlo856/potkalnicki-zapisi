@@ -4,15 +4,17 @@ One-off local tool to export **Karta**, **Reljef** and **Satelit** WebP images f
 
 ## Files
 
-- `render.html` — open in a browser (file:// or local static server). Uses MapLibre GL from a pinned CDN build, `preserveDrawingBuffer: true`, container 1600×1373 CSS px at `devicePixelRatio` 1.
-- After the map is `idle`, use the on-page buttons to download PNGs, then convert to WebP (~quality 75) with `cwebp` or `pnpm dlx sharp-cli` (do not add sharp to `package.json`).
+- `render.html` — open in a browser (file:// or local static server). Uses MapLibre GL from a pinned CDN build, `preserveDrawingBuffer: true`, container 1600×1373 CSS px at `devicePixelRatio` 1. `?layer=karta|reljef` renders that layer alone and sets the page title to `ready` when the tiles have loaded.
+- `capture.mjs` — drives headless Chrome through `render.html` (no dependencies, Node 22): `node scripts/map/capture.mjs reljef /tmp/reljef.png`.
+- Then convert the PNG to WebP at quality 75: `cwebp -q 75 -m 6 /tmp/reljef.png -o public/potkalnicko-prigorje/karta/reljef.webp` (or `pnpm dlx sharp-cli`; do not add sharp to `package.json`).
+- `fetch-boundaries.mjs` — fetches the five municipalities' OpenStreetMap administrative boundaries from Overpass, projects and simplifies them into `MAP_FRAME` pixels and writes `shared/utils/games/mapBoundaries.ts` (`node scripts/map/fetch-boundaries.mjs`). Run it only when the boundaries change.
 
 ## Layers
 
 | Layer | Source |
 | --- | --- |
 | Karta | OpenFreeMap Positron — remove every `symbol` layer so no labels appear |
-| Reljef | Same base at reduced opacity + Terrarium hillshade (`raster-dem`) |
+| Reljef | Same base turned down to a pale paper tone + Terrarium hillshade (`raster-dem`, AWS open Terrain-Tiles) under the roads |
 | Satelit | DGU orthophoto 2023 WMS — **registered account required** for a watermark-free image |
 
 Commit outputs to `public/potkalnicko-prigorje/karta/*.webp`. Until a clean Satelit export exists, keep `MAP_LAYERS` entry `available: false`.
