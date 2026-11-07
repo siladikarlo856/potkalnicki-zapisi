@@ -23,6 +23,8 @@ const boardIndex = ref(0)
 const started = ref(false)
 const finished = ref(false)
 const roundScores = ref<number[]>([])
+// The round has its own Dalje bar, so the tab bar steps aside until the result.
+useHidePzTabBar(() => started.value && !finished.value, 'game')
 const loading = computed(() => !error.value && (status.value === 'idle' || status.value === 'pending'))
 
 const maxScore = computed(() => boards.value.length * HERITAGE_MATCH_PAIRS)

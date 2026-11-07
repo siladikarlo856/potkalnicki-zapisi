@@ -197,32 +197,14 @@ useSeoMeta({
         </div>
       </section>
 
-      <UCard
+      <PzChallengeCard
+        :overline="t('challenge.friendTitle')"
+        :title="t('pz.games.friendHeroTitle')"
+        :text="t('pz.games.friendHeroDescription')"
+        :cta="t('pz.games.friendHeroCta')"
+        :to="localePath(pzRoutes.challenge)"
         data-testid="friend-challenge-card"
-        variant="soft"
-      >
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="space-y-2">
-            <UBadge
-              :label="t('challenge.friendTitle')"
-              icon="i-lucide-swords"
-              variant="subtle"
-            />
-            <h2 class="text-2xl font-semibold text-highlighted">
-              {{ t('pz.games.friendHeroTitle') }}
-            </h2>
-            <p class="max-w-xl text-muted">
-              {{ t('pz.games.friendHeroDescription') }}
-            </p>
-          </div>
-          <UButton
-            :to="localePath(pzRoutes.challenge)"
-            :label="t('pz.games.friendHeroCta')"
-            trailing-icon="i-lucide-arrow-right"
-            size="lg"
-          />
-        </div>
-      </UCard>
+      />
 
       <section
         v-if="soonEntries.length"

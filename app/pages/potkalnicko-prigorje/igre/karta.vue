@@ -26,6 +26,8 @@ const index = ref(0)
 const totalScore = ref(0)
 const roundPlaces = shallowRef<PoolPlace[]>([])
 const answered = ref(false)
+const results = ref<boolean[]>([])
+const feedbackPanel = useTemplateRef<{ focus: () => void }>('feedbackPanel')
 const feedback = ref<{ tap: { x: number, y: number }, target: { x: number, y: number }, km?: number, correct: boolean, points: number } | null>(null)
 
 const places = computed(() => pool.value.cards.filter((c): c is PoolPlace => c.kind === 'place'))
@@ -33,6 +35,9 @@ const municipalities = computed(() => pool.value.municipalities)
 const loading = computed(() => !error.value && (status.value === 'idle' || status.value === 'pending'))
 const target = computed(() => roundPlaces.value[index.value])
 const finished = computed(() => started.value && index.value >= roundPlaces.value.length)
+
+// Dalje owns the bottom of the screen while a round is in play, so the tab bar steps aside.
+useHidePzTabBar(() => started.value && !finished.value, 'game')
 
 function buildRound() {
   const rng = mulberry32(seed.value)
@@ -53,6 +58,7 @@ function start() {
   roundPlaces.value = buildRound()
   index.value = 0
   totalScore.value = 0
+  results.value = []
   answered.value = false
   feedback.value = null
   started.value = roundPlaces.value.length > 0
@@ -63,7 +69,7 @@ function restart() {
   start()
 }
 
-function onPick(payload: { placeId?: string, lat: number, lng: number, imageX: number, imageY: number }) {
+async function onPick(payload: { placeId?: string, lat: number, lng: number, imageX: number, imageY: number }) {
   const current = target.value
   if (!current || answered.value) return
   const targetPt = project(current.lat, current.lng)
@@ -87,6 +93,9 @@ function onPick(payload: { placeId?: string, lat: number, lng: number, imageX: n
     correct,
     points
   }
+  results.value = [...results.value, correct]
+  await nextTick()
+  feedbackPanel.value?.focus()
 }
 
 function nextQuestion() {
@@ -142,12 +151,14 @@ useSeoMeta({
       />
 
       <template v-else-if="!finished && target">
-        <div class="flex items-center justify-between text-xs text-muted">
-          <span>{{ t('pz.play.questionOf', { i: index + 1, n: roundPlaces.length }) }}</span>
-          <span>{{ t('pz.play.score', { score: totalScore }) }}</span>
-        </div>
+        <GamesProgress
+          :current="index + 1"
+          :total="roundPlaces.length"
+          :results="results"
+          :score="totalScore"
+        />
         <h2
-          class="text-center text-xl font-bold text-highlighted"
+          class="pz-h2 text-highlighted"
           data-testid="map-find-prompt"
         >
           {{ t('pz.map.whereIs', { name: target.name }) }}
@@ -162,39 +173,32 @@ useSeoMeta({
           data-testid="map-find-view"
           @pick="onPick"
         />
-        <div
-          v-if="answered && feedback"
-          class="rounded-xl bg-default p-3 ring ring-default"
-          data-testid="map-find-feedback"
-        >
-          <p
-            v-if="feedback.correct"
-            class="font-semibold text-success"
+        <template v-if="answered && feedback">
+          <GamesFeedback
+            ref="feedbackPanel"
+            :correct="feedback.correct"
+            :answer="target.name"
+            :explanation="feedback.km !== undefined ? t('pz.map.kmFromTarget', { km: feedback.km.toLocaleString('hr-HR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) : undefined"
+            lang="hr"
+            data-testid="map-find-feedback"
           >
-            {{ t('pz.map.hit') }}
-          </p>
-          <p
-            v-if="feedback.km !== undefined"
-            class="text-sm text-highlighted"
-          >
-            {{ t('pz.map.kmFromTarget', { km: feedback.km.toLocaleString('hr-HR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) }}
-          </p>
-          <UButton
-            :to="localePath(`${pzRoutes.home}/naselja/${target.slug}`)"
-            :label="t('pz.play.openRecord')"
-            trailing-icon="i-lucide-arrow-right"
-            variant="link"
-            class="px-0"
+            <template #links>
+              <UButton
+                :to="localePath(`${pzRoutes.home}/naselja/${target.slug}`)"
+                :label="t('pz.play.openRecord')"
+                icon="i-lucide-map-pin"
+                color="neutral"
+                variant="link"
+                class="min-h-(--pz-tap-min) px-0 font-semibold"
+              />
+            </template>
+          </GamesFeedback>
+          <GamesDalje
+            testid="map-find-next"
+            :last="index + 1 >= roundPlaces.length"
+            @next="nextQuestion"
           />
-          <UButton
-            class="mt-2"
-            block
-            size="lg"
-            :label="t('pz.play.next')"
-            data-testid="map-find-next"
-            @click="nextQuestion"
-          />
-        </div>
+        </template>
       </template>
 
       <div

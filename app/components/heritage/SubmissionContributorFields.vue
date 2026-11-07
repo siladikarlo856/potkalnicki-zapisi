@@ -19,7 +19,10 @@ const localePath = useLocalePath()
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="grid gap-4 sm:grid-cols-2">
+    <fieldset class="grid min-w-0 gap-4 rounded-(--pz-radius-lg) border border-default p-4 sm:grid-cols-2">
+      <legend class="pz-label px-1 text-default">
+        {{ t('pz.contribute.aboutYou') }}
+      </legend>
       <UFormField
         name="name"
         :label="t('heritage.form.name')"
@@ -50,7 +53,7 @@ const localePath = useLocalePath()
           class="w-full"
         />
       </UFormField>
-    </div>
+    </fieldset>
 
     <div
       class="sr-only"

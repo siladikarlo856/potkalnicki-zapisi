@@ -5,7 +5,7 @@ import { integrationDb } from './support/integrationDb'
 
 // The corrections and proposals inbox end to end on a real Postgres: the public submission rules, the inbox API,
 // applying a correction and publishing a proposal's draft through the content API, withdrawal, and the spam
-// hardening. Run with `node scripts/test-challenges.mjs test/adminInbox.serial.integration.test.ts`; skipped elsewhere.
+// hardening. Run with `node scripts/test-challenges.mjs test/adminInbox.last.integration.test.ts`; skipped elsewhere.
 const SECRET = 'inbox-review-secret-0123456789abcdef'
 const SESSION_PASSWORD = 'inbox-admin-session-password-0123456789'
 

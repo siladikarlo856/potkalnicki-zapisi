@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AtlasItemStatus } from '~~/shared/types/atlas'
 import type { WordPageResponse } from '~~/shared/types/publicSpeech'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
@@ -16,15 +17,27 @@ const word = computed(() => payload.value?.word)
 const related = computed(() => payload.value?.related ?? [])
 
 const correctionOpen = ref(false)
+const variantOpen = ref(false)
 
-const statusLabel = computed(() => {
-  if (!word.value) return ''
-  return word.value.status === 'verified' ? t('pz.speech.statusVerified') : t('pz.speech.statusCommunity')
-})
+const verification = computed<AtlasItemStatus>(() => word.value?.status === 'verified' ? 'verified' : 'unverified')
 
 const learnLink = computed(() => word.value
   ? localePath(`${pzRoutes.learn}/sesija?kartice=${encodeURIComponent(`word:${word.value.id}`)}`)
   : undefined)
+
+const areaNames = computed(() => new Map((payload.value?.areas ?? []).map(area => [area.id, area.name])))
+const exampleSettlement = (areaId?: string) => areaId ? areaNames.value.get(areaId) : undefined
+
+const villageTotal = computed(() => new Set((word.value?.variants ?? []).flatMap(variant => variant.usages.map(usage => usage.areaId))).size)
+const facts = computed(() => word.value
+  ? [
+      { label: t('pz.speech.factType'), value: word.value.partOfSpeech ?? null },
+      { label: t('pz.speech.factForms'), value: String(word.value.variants.length) },
+      { label: t('pz.speech.factVillages'), value: villageTotal.value ? String(villageTotal.value) : null }
+    ]
+  : [])
+const sources = computed(() => (word.value?.sources ?? []).map(source => ({ label: source.credit || t('pz.speech.anonymousSource') })))
+const verificationHelp = computed(() => t(word.value?.status === 'verified' ? 'pz.trust.help.verified' : 'pz.trust.help.unverified'))
 
 useSeoMeta({
   title: () => word.value ? `${word.value.headword} · ${t('pz.speech.seoTitle')} · Potkalnički zapisi` : '',
@@ -35,131 +48,202 @@ useSeoMeta({
 <template>
   <div
     v-if="word"
+    class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-8 px-4 py-6 lg:px-12 lg:py-12"
     data-testid="speech-word-page"
   >
-    <UPageHero
-      :title="word.headword"
-      :ui="{ container: 'py-12 sm:py-16' }"
-    >
-      <template #headline>
-        <span>{{ t('pz.speech.title') }}</span>
-      </template>
-      <template #description>
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_var(--pz-side-panel)] lg:gap-x-12">
+      <header class="flex max-w-(--pz-measure) flex-col gap-3">
+        <PzBackPill :to="localePath(`${pzRoutes.home}/govor`)">
+          {{ t('pz.speech.title') }}
+        </PzBackPill>
+        <p class="pz-overline text-muted">
+          {{ [t('pz.speech.title'), word.partOfSpeech].filter(Boolean).join(' · ') }}
+        </p>
+        <h1
+          class="pz-headword wrap-anywhere text-highlighted"
+          lang="hr"
+        >
+          {{ word.headword }}
+        </h1>
         <div class="flex flex-wrap items-center gap-2">
-          <PzHeritageStatusBadge :label="statusLabel" />
-          <span
-            v-if="word.partOfSpeech"
-            class="text-sm text-muted"
-          >{{ word.partOfSpeech }}</span>
+          <PzVerificationBadge :verification="verification" />
+          <HeritageSampleBadge v-if="word.status === 'placeholder'" />
         </div>
-      </template>
-    </UPageHero>
+      </header>
 
-    <UPageSection
-      :title="t('pz.speech.meaningTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <p
-        class="text-lg font-medium text-highlighted"
-        data-testid="speech-meaning"
+      <PzFactPanel
+        class="max-lg:[&_[data-testid=pz-fact-panel-actions]]:hidden max-lg:[&_[data-testid=pz-fact-panel-trust]]:hidden lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start"
+        :facts="facts"
+        :sources="sources"
       >
-        {{ word.meaning.hr }}
-      </p>
-      <p
-        v-if="word.meaning.en"
-        class="mt-2 text-sm text-muted"
-        lang="en"
-      >
-        {{ word.meaning.en }}
-      </p>
-      <p
-        v-if="word.note?.hr"
-        class="mt-4 text-sm text-default"
-      >
-        {{ word.note.hr }}
-      </p>
-    </UPageSection>
+        <template #trust>
+          <div class="flex flex-col gap-1">
+            <div>
+              <PzVerificationBadge :verification="verification" />
+            </div>
+            <p class="pz-caption font-normal text-muted">
+              {{ verificationHelp }}
+            </p>
+          </div>
+        </template>
+        <template #actions>
+          <UButton
+            v-if="learnLink"
+            :to="learnLink"
+            :label="t('pz.speech.learnWord')"
+            icon="i-lucide-graduation-cap"
+            size="lg"
+            block
+            data-testid="speech-learn-word"
+          />
+          <UButton
+            :label="t('pz.speech.differentHere')"
+            icon="i-lucide-message-circle"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            block
+            class="ring-(--ui-border-accented)"
+            aria-haspopup="dialog"
+            data-testid="speech-different-here"
+            @click="variantOpen = true"
+          />
+          <HeritageWordCorrection
+            v-model:open="correctionOpen"
+            :entry="word"
+          />
+        </template>
+      </PzFactPanel>
 
-    <UPageSection
-      :title="t('pz.speech.variantsTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <HeritageVariantList
-        :entry="word"
-        data-testid="speech-variants"
-      />
-    </UPageSection>
-
-    <UPageSection
-      v-if="word.examples?.length"
-      :title="t('pz.speech.examplesTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <ul class="flex flex-col gap-2 text-sm">
-        <li
-          v-for="(example, index) in word.examples"
-          :key="index"
-        >
-          <span class="font-medium text-highlighted">{{ example.text }}</span>
-          <span
-            v-if="example.translation"
-            class="text-muted"
-          > · {{ example.translation }}</span>
-        </li>
-      </ul>
-    </UPageSection>
-
-    <UPageSection
-      v-if="word.sources.length"
-      :title="t('pz.speech.sourcesTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <ul class="flex flex-col gap-1 text-sm text-default">
-        <li
-          v-for="source in word.sources"
-          :key="source.id"
-        >
-          {{ source.credit || t('pz.speech.anonymousSource') }}
-        </li>
-      </ul>
-    </UPageSection>
-
-    <UPageSection
-      v-if="related.length"
-      :title="t('pz.speech.relatedTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <ul class="divide-y divide-default rounded-lg ring ring-default">
-        <li
-          v-for="item in related"
-          :key="item.slug"
-        >
-          <ULink
-            :to="localePath(item.path)"
-            class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
+      <div class="flex min-w-0 max-w-(--pz-measure) flex-col gap-8">
+        <section class="flex flex-col gap-2">
+          <h2 class="pz-overline text-muted">
+            {{ t('pz.speech.meaningTitle') }}
+          </h2>
+          <p
+            class="font-sans text-[22px]/[30px] font-semibold text-highlighted"
+            data-testid="speech-meaning"
           >
-            <span class="font-medium text-highlighted">{{ item.headword }}</span>
-            <span class="text-muted">{{ item.meaning }}</span>
-          </ULink>
-        </li>
-      </ul>
-    </UPageSection>
+            {{ word.meaning.hr }}
+          </p>
+          <p
+            v-if="word.meaning.en"
+            class="pz-body-sm text-muted"
+            lang="en"
+          >
+            {{ word.meaning.en }}
+          </p>
+          <p
+            v-if="word.note?.hr"
+            class="pz-body text-default"
+          >
+            {{ word.note.hr }}
+          </p>
+          <ul
+            v-if="word.examples?.length"
+            class="mt-2 flex flex-col gap-3"
+            data-testid="speech-examples"
+          >
+            <li
+              v-for="(example, index) in word.examples"
+              :key="index"
+              class="border-s-2 border-accented ps-4"
+            >
+              <p
+                class="pz-body italic"
+                lang="hr"
+              >
+                „{{ example.text }}“
+              </p>
+              <p
+                v-if="example.translation"
+                class="pz-body-sm text-muted"
+              >
+                {{ example.translation }}
+              </p>
+              <p
+                v-if="exampleSettlement(example.areaId)"
+                class="pz-caption font-normal text-muted"
+              >
+                {{ exampleSettlement(example.areaId) }}
+              </p>
+            </li>
+          </ul>
+        </section>
 
-    <UPageSection :ui="{ root: 'border-t border-default' }">
-      <div class="flex flex-wrap gap-3">
+        <section class="flex flex-col gap-4">
+          <h2 class="pz-h2 text-highlighted">
+            {{ t('pz.speech.variantsTitle') }}
+          </h2>
+          <div data-testid="speech-variants">
+            <PzVariantList
+              :entry="word"
+              :areas="payload?.areas ?? []"
+            />
+          </div>
+          <UButton
+            :label="t('pz.speech.differentHere')"
+            icon="i-lucide-message-circle"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            block
+            class="ring-(--ui-border-accented) lg:hidden"
+            aria-haspopup="dialog"
+            data-testid="speech-different-here-mobile"
+            @click="variantOpen = true"
+          />
+        </section>
+
+        <section
+          v-if="related.length"
+          class="flex flex-col gap-2"
+        >
+          <h2 class="pz-h2 text-highlighted">
+            {{ t('pz.speech.relatedTitle') }}
+          </h2>
+          <ul class="flex flex-wrap gap-2">
+            <li
+              v-for="item in related"
+              :key="item.slug"
+            >
+              <NuxtLink
+                :to="localePath(item.path)"
+                class="pz-caption inline-flex min-h-8 items-center rounded-full border border-accented bg-default px-3 text-default no-underline hover:bg-muted"
+                :title="item.meaning"
+              >
+                <span lang="hr">{{ item.headword }}</span>
+              </NuxtLink>
+            </li>
+          </ul>
+        </section>
+
         <UButton
-          v-if="learnLink"
-          :to="learnLink"
-          :label="t('pz.speech.learnWord')"
-          icon="i-lucide-graduation-cap"
-          color="primary"
-          data-testid="speech-learn-word"
-        />
-        <HeritageWordCorrection
-          v-model:open="correctionOpen"
-          :entry="word"
+          :label="t('heritage.suggest.wordCorrection')"
+          icon="i-lucide-pencil"
+          color="neutral"
+          variant="ghost"
+          class="self-start lg:hidden"
+          aria-haspopup="dialog"
+          data-testid="word-suggest-correction-mobile"
+          @click="correctionOpen = true"
         />
       </div>
-    </UPageSection>
+    </div>
+
+    <PzStickyActionBar v-if="learnLink">
+      <UButton
+        :to="learnLink"
+        :label="t('pz.speech.learnWord')"
+        icon="i-lucide-graduation-cap"
+        size="lg"
+        data-testid="speech-learn-word-mobile"
+      />
+    </PzStickyActionBar>
+
+    <HeritageVariantDialog
+      v-model:open="variantOpen"
+      :entry="word"
+    />
   </div>
 </template>

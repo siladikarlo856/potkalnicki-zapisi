@@ -4,6 +4,8 @@ import { challengeInviteShareText } from '~/utils/shareResult'
 
 const props = defineProps<{
   code?: string
+  /** The challenge title, shown on the link preview. */
+  title?: string
   quiz?: QuizChallengeInput
   score?: number
   total?: number
@@ -40,15 +42,14 @@ const shareText = computed(() => {
   }
   return `${t('challenge.shareMessage')} ${link.value}`
 })
-const shareLabels = computed(() => ({
-  copy: t('challenge.copy'),
-  copied: t('challenge.copied'),
-  nativeShare: t('challenge.nativeShare'),
-  copyError: t('challenge.copyError'),
-  shareError: t('challenge.shareError'),
-  whatsapp: t('challenge.whatsapp'),
-  viber: t('challenge.viber')
-}))
+const date = computed(() => props.invite?.closesAt
+  ? new Intl.DateTimeFormat(locale.value === 'en' ? 'en-GB' : 'hr-HR', { dateStyle: 'long' }).format(new Date(props.invite.closesAt))
+  : '')
+const previewTitle = computed(() => {
+  const title = props.title ?? t('challenge.title')
+  return props.invite?.nickname ? t('pz.share.previewTitle', { nickname: props.invite.nickname, title }) : t('pz.share.previewTitleOpen', { title })
+})
+const host = computed(() => origin.value ? new URL(origin.value).host : '')
 
 async function create() {
   const name = challengeNickname(nickname.value)
@@ -89,7 +90,7 @@ onMounted(() => {
       @submit.prevent="create"
     >
       <div>
-        <h2 class="text-xl font-semibold">
+        <h2 class="pz-h2 text-highlighted">
           {{ t('challenge.friendTitle') }}
         </h2>
         <p class="mt-2 text-sm text-muted">
@@ -129,34 +130,37 @@ onMounted(() => {
       </p>
     </form>
   </UCard>
-  <UCard
+  <section
     v-else-if="createdCode"
+    class="flex min-w-0 flex-col gap-4"
+    aria-labelledby="challenge-share-title"
     data-testid="challenge-share"
   >
-    <div class="space-y-4">
-      <h2 class="text-xl font-semibold">
-        {{ t('challenge.share') }}
-      </h2>
-      <p class="text-sm text-muted">
-        {{ t('challenge.shareHelp') }}
+    <div class="flex flex-col gap-2">
+      <p class="pz-overline text-muted">
+        {{ t('pz.challenge.inviteOverline') }}
       </p>
-      <UFormField :label="t('challenge.link')">
-        <UInput
-          :model-value="link"
-          readonly
-          class="w-full"
-          data-testid="challenge-share-link"
-          @focus="($event.target as HTMLInputElement).select()"
-        />
-      </UFormField>
-      <HeritageShareButtons
-        prefix="challenge"
-        :disabled="!origin"
-        :copy-text="link"
-        :share-data="{ title: t('challenge.title'), url: link }"
-        :message-text="shareText"
-        :labels="shareLabels"
-      />
+      <h2
+        id="challenge-share-title"
+        class="pz-h1 text-highlighted"
+      >
+        {{ t('pz.share.challengeTitle') }}
+      </h2>
+      <p class="pz-body text-muted">
+        {{ date ? t('pz.share.challengeContext', { date }) : t('pz.share.challengeContextPlain') }}
+      </p>
     </div>
-  </UCard>
+    <PzLinkPreview
+      :title="previewTitle"
+      :caption="`${title ?? t('challenge.title')} · ${t('pz.share.brand')}`"
+      :host="host"
+    />
+    <PzShareActions
+      prefix="challenge"
+      :disabled="!origin"
+      :message="shareText"
+      :url="link"
+      :share-data="{ title: t('challenge.title'), url: link }"
+    />
+  </section>
 </template>

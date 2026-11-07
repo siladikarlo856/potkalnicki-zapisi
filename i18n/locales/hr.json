@@ -198,7 +198,7 @@
       "noSignIn": "Bez registracije",
       "text": "Tvoja riječ, izraz ili sjećanje",
       "textPlaceholder": "npr. riječ koju su govorili baka i djed — što znači i kako se izgovara",
-      "type": "Što šalješ? (neobavezno)",
+      "type": "Što šalješ? (nije obavezno)",
       "types": {
         "word": "Riječ",
         "expression": "Izraz",
@@ -206,11 +206,11 @@
         "other": "Nešto drugo",
         "correction": "Ispravak zapisa"
       },
-      "place": "Gdje se tako govori? (neobavezno)",
+      "place": "Gdje se tako govori? (nije obavezno)",
       "placePlaceholder": "Pretraži sela i gradove u Hrvatskoj",
-      "name": "Tvoje ime (neobavezno)",
+      "name": "Tvoje ime (nije obavezno)",
       "nameHelp": "Ako želiš da te spomenemo kao izvor",
-      "contact": "Kontakt (neobavezno)",
+      "contact": "Kontakt (nije obavezno)",
       "contactHelp": "Samo ako ti se smijemo javiti s dodatnim pitanjem",
       "consent": "Ime i kontakt nisu obavezni. Ako upišeš ime, navest ćemo ga uz prilog. Što prikupljamo i kako se brinemo o podacima, pročitaj u {privacy}.",
       "submit": "Pošalji",
@@ -254,7 +254,7 @@
         "empty": "Nema pronađenog naselja. Provjeri naziv i pokušaj ponovno.",
         "clear": "Obriši odabrano mjesto"
       },
-      "example": "Primjer rečenice (neobavezno)",
+      "example": "Primjer rečenice (nije obavezno)",
       "examplePlaceholder": "npr. rečenica u kojoj se ta riječ koristi",
       "exampleLine": "Primjer:",
       "cancel": "Odustani",
@@ -303,8 +303,8 @@
       "correctionHelp": "Promijeni samo ono što nije točno; polja koja ne dirneš ne šaljemo.",
       "choose": "Odaberi…",
       "search": "Traži…",
-      "note": "Napomena",
-      "noteHelp": "Zašto je to točno ili odakle znaš (neobavezno).",
+      "note": "Napomena (nije obavezno)",
+      "noteHelp": "Zašto je to točno ili odakle znaš.",
       "wordCorrection": "Predloži ispravak",
       "successDescription": "Hvala! Pregledat ćemo prijedlog; ništa se ne mijenja dok ga ne potvrdimo.",
       "pickerLabel": "Što treba ispraviti?",
@@ -668,7 +668,7 @@
     "closedAt": "Zatvoren {date}",
     "inProgress": "U tijeku",
     "completed": "Završeno",
-    "incomplete": "Nedovršeno",
+    "incomplete": "Nije dovršeno",
     "hubTitle": "Izazovi prijatelje",
     "hubIntro": "Stvori poveznicu s istim pitanjima za ekipu — svatko igra svojim tempom, a bodovi se uspoređuju na ljestvici.",
     "hubStep1": "Odaberi teme, igru, težinu i broj pitanja.",
@@ -731,7 +731,7 @@
       "heroEyebrow": "Digitalni zavičajni atlas Potkalničkog prigorja",
       "heroTitle": "Otkrij priče koje čine Potkalničko prigorje.",
       "heroDescription": "Istraži mjesta, upoznaj ljude, nauči lokalne riječi i otkrij baštinu kraja pod Kalnikom.",
-      "friendChallengeBlurb": "Ista pitanja za sve — podijeli poveznicu i usporedite rezultate.",
+      "friendChallengeBlurb": "Ista pitanja za sve. Pošalji poveznicu i usporedite rezultate.",
       "friendChallengeCta": "Izazovi prijatelje",
       "switch": {
         "learnTab": "Uči",
@@ -746,7 +746,6 @@
         "tileChallenge": "Izazovi prijatelje",
         "tileCards": "Kartice"
       },
-      "discoveryTitle": "Što ovdje pronalaziš",
       "dailyWord": "Riječ dana",
       "soon": "uskoro",
       "dailyWordHint": "Dnevna riječ i niz ovisi o odluci o objavi — trenutačno ne igra.",
@@ -768,12 +767,16 @@
           "description": "Sačuvaj ono što se prenosi generacijama."
         }
       },
-      "scopeTitle": "Obuhvat projekta",
-      "scopeDescription": "Općine koje projekt zasad pokriva: radna, a ne službena granica prigorja.",
+      "scopeTitle": "Pet općina",
+      "scopeDescription": "Radni obuhvat projekta, ne službena granica prigorja.",
       "scopeCounts": "{settlements} naselja · {items} zapisa",
       "contributeTitle": "Znaš riječ, priču ili staru fotografiju?",
       "contributeDescription": "Pošalji je — prije objave sve pregledamo.",
-      "contributeCta": "Doprinesi"
+      "contributeCta": "Doprinesi",
+      "exploreCta": "Istraži atlas",
+      "aboutCta": "Kako nastaje atlas",
+      "challengeOverline": "Izazov prijatelju",
+      "challengeTitle": "Tko bolje zna naš kraj?"
     },
     "learn": {
       "title": "Uči",
@@ -788,25 +791,18 @@
         "other": "Započni {n} kartica"
       },
       "counter": "Kartica {i} od {n}",
-      "flip": "Okreni",
       "known": "Znam",
       "unknown": "Ne znam",
       "openRecord": "Otvori zapis",
       "openSettlement": "Otvori stranicu naselja",
-      "suggestCorrection": "✎ Predloži ispravak",
+      "suggestCorrection": "Predloži ispravak",
       "placePrompt": "Kojoj općini ili gradu pripada?",
       "itemPrompt": "Gdje se nalazi?",
       "personPrompt": "Tko je to?",
       "personEyebrow": "Osoba",
       "placeItemCount": "{count} zapisa baštine",
-      "summaryTitle": "Gotovo! Znaš {known} od {n}.",
-      "learnedLabel": "naučeno",
-      "reviewHeading": "Za ponavljanje ({k})",
-      "more": {
-        "one": "Još {n}",
-        "few": "Još {n}",
-        "other": "Još {n}"
-      },
+      "summaryTitle": "Znaš {known} od {n}.",
+      "reviewHeading": "Za ponoviti",
       "repeatMissed": {
         "one": "Ponovi {k} koje ne znaš",
         "few": "Ponovi {k} koje ne znaš",
@@ -830,7 +826,7 @@
       "orDivider": "ili",
       "newLessonEyebrow": "Nova lekcija",
       "newLessonMeta": "10 kartica · ",
-      "moreSettings": "Više postavki →",
+      "moreSettings": "Više postavki",
       "newLessonButton": "Započni novu lekciju",
       "replaceWarning": "Započeta lekcija bit će zamijenjena.",
       "loadError": "Lekcija trenutačno nije dostupna.",
@@ -839,7 +835,30 @@
       "changePlace": "Promijeni",
       "wordsNoPlaceData": "Riječi još nemaju podatke po selima",
       "localUsage": "I kod nas se tako kaže",
-      "reviewPrompt": "Odaberi točan odgovor"
+      "reviewPrompt": "Odaberi točan odgovor",
+      "counterShort": "{i} od {n}",
+      "progressLabel": "Napredak sesije",
+      "progressSummary": "{ok} znam, {no} za ponoviti",
+      "kindWord": "Riječ",
+      "kindPlace": "Mjesto",
+      "kindItem": "Baština",
+      "kindPerson": "Osoba",
+      "flipHint": "Dodirni karticu",
+      "flipHintFine": "Klikni na karticu",
+      "flipLabel": "Okreni karticu: {name}",
+      "flipBack": "Okreni natrag",
+      "meaningLabel": "Značenje",
+      "variantsLabel": "Inačice po mjestima",
+      "summaryOverline": "Sesija gotova",
+      "summaryGreat": "Odlično, {known} od {n} znaš.",
+      "statKnown": "znam",
+      "statReview": "ponoviti",
+      "reviewNote": "Ove kartice vratit ćemo ti u ponavljanju.",
+      "newSession": "Nova sesija",
+      "streak": "Niz: {n}",
+      "setupOverline": "Nova lekcija",
+      "topicsGroup": "Teme",
+      "lengthGroup": "Duljina lekcije"
     },
     "explore": {
       "seoTitle": "Istraži kraj",
@@ -850,7 +869,37 @@
       "categoriesTitle": "Kategorije u zapisima",
       "settlementsTitle": "Naselja",
       "settlementItemCount": "{count} zapisa",
-      "settlementPageDescription": "{name} ({municipality}) · {count} zapisa u inventaru"
+      "settlementPageDescription": "{name} ({municipality}) · {count} zapisa u inventaru",
+      "hubTitle": "Istraži",
+      "hubIntro": "{municipalities} općina, {settlements} naselja i sve što smo o njima zapisali.",
+      "entryPlaces": "Mjesta",
+      "entryHeritage": "Baština",
+      "entrySpeech": "Naš govor",
+      "municipalitiesTitle": "Općine",
+      "entriesLabel": "Ulazi u atlas",
+      "municipalityOverline": "Općina",
+      "statSettlements": "Naselja",
+      "statItems": "Zapisa",
+      "tabSettlements": "Naselja",
+      "tabHeritage": "Baština",
+      "settlementNoRecords": "još bez zapisa",
+      "emptyHeritageTitle": "Zapise baštine još skupljamo.",
+      "contributeWord": "Riječ",
+      "contributeMemory": "Sjećanje",
+      "contributeHeritage": "Baština",
+      "playSettlements": "Igraj: Sela i općine",
+      "playSettlementsBlurb": "Pogodi kojoj općini pripada koje selo.",
+      "settlementOverline": "Naselje",
+      "factMunicipality": "Općina",
+      "factRecords": "Zapisa baštine",
+      "playWords": "Igraj: riječi iz ovog sela",
+      "playWordsBlurb": "Kartice s riječima koje se ovdje govore.",
+      "wordsFromHere": "Riječi iz ovog sela",
+      "heritageHere": "Baština ovdje",
+      "nearbyTitle": "U blizini",
+      "correctShort": "Predloži ispravak",
+      "addRecord": "Dodaj zapis",
+      "thinTitle": "Za naselje {name} još skupljamo zapise."
     },
     "heritage": {
       "listTitle": "Sakralna baština",
@@ -858,10 +907,6 @@
       "filterMunicipality": "Općina",
       "filterCategory": "Kategorija",
       "filterAll": "Sve",
-      "statusUnverified": "U provjeri",
-      "statusInReview": "U pregledu",
-      "statusVerified": "Provjereno",
-      "statusNeedsUpdate": "Treba ažurirati",
       "fieldLocation": "Naselje",
       "fieldMunicipality": "Općina",
       "researchTitle": "Što još provjeravamo",
@@ -870,7 +915,6 @@
       "suggestCorrection": "Predloži ispravak",
       "backToSettlement": "← Natrag na {name}",
       "settlementItemsTitle": "Zapisi baštine",
-      "emptySettlement": "Za ovo naselje još nema zapisa povezanih s officialnom kartom.",
       "locationPending": "Lokacija se još povezuje s naseljem",
       "addSource": "Dodaj izvor",
       "credits": "Zahvaljujemo: {names}",
@@ -878,7 +922,21 @@
       "sourceFor": "Uz zapis: {name}",
       "suggestSettlementCorrection": "Predloži ispravak naselja",
       "suggestItemIn": "Predloži novi zapis baštine u {name}",
-      "missingItem": "Nedostaje crkva, kapela ili križ? Predloži novi zapis"
+      "missingItem": "Nedostaje crkva, kapela ili križ? Predloži novi zapis",
+      "filtersLabel": "Filtri",
+      "listHeading": "Zapisi",
+      "noResultsTitle": "Nema zapisa za ove filtere.",
+      "noResultsAsk": "Probaj drugu općinu ili kategoriju ili nam predloži zapis koji nedostaje.",
+      "clearFilters": "Očisti filtre",
+      "fieldPeriod": "Razdoblje",
+      "descriptionTitle": "Opis",
+      "knowSomething": "Znaš nešto o ovom zapisu?",
+      "playBlurb": "Gdje je ova crkva? · 5 pitanja",
+      "resultCount": {
+        "one": "{n} zapis",
+        "few": "{n} zapisa",
+        "other": "{n} zapisa"
+      }
     },
     "persons": {
       "title": "Osobe",
@@ -923,10 +981,20 @@
       "sourcesTitle": "Izvori",
       "learnWord": "Uči ovu riječ",
       "relatedTitle": "Slične riječi",
-      "statusVerified": "Provjereno",
-      "statusCommunity": "Od zajednice",
       "empty": "Nema riječi koje odgovaraju pretrazi.",
-      "anonymousSource": "Anonimno"
+      "anonymousSource": "Anonimno",
+      "baseForm": "Osnovni oblik",
+      "villageUnknown": "Sela još nisu navedena",
+      "showAllVillages": "Prikaži još {n} sela",
+      "factType": "Vrsta riječi",
+      "factForms": "Oblika",
+      "factVillages": "Sela",
+      "differentHere": "Kod nas se kaže drugačije",
+      "villageCount": {
+        "one": "{n} selo",
+        "few": "{n} sela",
+        "other": "{n} sela"
+      }
     },
     "games": {
       "hubTitle": "Igre i kvizovi",
@@ -962,7 +1030,7 @@
       "answeredProgress": "Odgovoreno {count} od {total} pitanja",
       "done": "Gotovo!",
       "resultOf": "{correct} od {n}",
-      "missesTitle": "Za ponavljanje",
+      "missesTitle": "Promašaji",
       "noMisses": "Bez pogreške — svi odgovori su točni.",
       "replayMissed": "Ponovi pogrešne ({count})",
       "again": "Igraj opet",
@@ -1024,7 +1092,37 @@
       "matchBoardOf": "Runda {i} od {n}",
       "whoEyebrow": "Osobe",
       "whoTitle": "Tko je to?",
-      "whoDescription": "Pročitaj natuknicu i odaberi pravo ime."
+      "whoDescription": "Pročitaj natuknicu i odaberi pravo ime.",
+      "exitGame": "Izađi iz igre",
+      "progressText": "{done} od {total} odgovoreno",
+      "progressSummary": "{ok} točno, {no} netočno",
+      "seeResult": "Pogledaj rezultat",
+      "correctAnswerLabel": "Točan odgovor:",
+      "tagCorrect": "Točno",
+      "tagCorrectAnswer": "Točan odgovor",
+      "tagYourAnswer": "Tvoj odgovor",
+      "readMore": "Pročitaj više",
+      "matchIdle": "Odaberi riječ ili značenje, pa njegov par.",
+      "matchSelected": "Odabrano: {name}. Sad odaberi par.",
+      "matchRight": "Par je točan: {name}.",
+      "matchWrong": "To nije par. Pokušaj ponovno.",
+      "matchPairs": "{n} od {total} para",
+      "matchLocked": "Spojeno",
+      "matchWrongTag": "Nije par",
+      "chooseFromList": "Odaberi s popisa",
+      "mapHit": "Točno mjesto",
+      "mapYours": "Tvoj odabir",
+      "flipHint": "Dodirni karticu",
+      "matchFirstTry": "Iz prvog pokušaja pogođeno: {n}.",
+      "matchDone": "Sve je spojeno.",
+      "scoreLabel": "Bodovi",
+      "challengeFriends": "Izazovi prijatelje s ovom rundom",
+      "resultCaption": "{title} · gotovo",
+      "verdictHigh": "Dobro poznaješ naš kraj.",
+      "verdictMid": "Dobar početak, ima još toga za otkriti.",
+      "verdictLow": "Još ima toga za otkriti. Pogledaj promašaje.",
+      "newRound": "Nova runda",
+      "scoreOf": "{correct} / {n}"
     },
     "map": {
       "layers": "Sloj karte",
@@ -1049,7 +1147,7 @@
     },
     "contribute": {
       "title": "Doprinesi",
-      "intro": "Sve što pošalješ prvo pregledamo. Ime je neobavezno, prijava nije potrebna.",
+      "intro": "Sve što pošalješ prvo pregledamo. Ime nije obavezno, prijava nije potrebna.",
       "back": "Doprinesi",
       "correctionMissingTarget": "Ovaj ispravak ili prijedlog ne možemo otvoriti. Odaberi što želiš poslati na popisu doprinosa.",
       "picker": {
@@ -1066,7 +1164,16 @@
           "description": "Stare fotografije s imenima mjesta i ljudi.",
           "badge": "faza 6"
         }
-      }
+      },
+      "successTitle": "Hvala!",
+      "successDescription": "Pregledat ćemo prijedlog prije objave.",
+      "nextTitle": "Što se događa dalje",
+      "nextBody": "Urednik pročita svaki prijedlog i provjeri ga u izvorima. Tek tada se pojavi u atlasu.",
+      "linkExplore": "Istraži atlas",
+      "linkPlay": "Igraj",
+      "sendAnother": "Pošalji još jedan",
+      "aboutYou": "O tebi",
+      "tileSoon": "Uskoro"
     },
     "about": {
       "title": "O projektu",
@@ -1108,6 +1215,135 @@
           ]
         }
       }
+    },
+    "trust": {
+      "verification": {
+        "unverified": "U provjeri",
+        "verified": "Provjereno",
+        "needsUpdate": "Treba ažurirati"
+      },
+      "protection": {
+        "protected": "Zaštićeno kulturno dobro",
+        "preventive": "Preventivno zaštićeno",
+        "unknown": "Zaštita: nepoznato"
+      },
+      "help": {
+        "verified": "Podatke smo potvrdili u izvorima.",
+        "unverified": "Ove podatke još provjeravamo u izvorima.",
+        "needsUpdate": "Neki su podaci zastarjeli i čekaju provjeru.",
+        "protection": "Status prema registru kulturnih dobara."
+      }
+    },
+    "nav": {
+      "main": "Glavna navigacija",
+      "sections": "Odjeljci",
+      "home": "Početna",
+      "games": "Igre",
+      "explore": "Istraži",
+      "contribute": "Doprinesi",
+      "menu": "Izbornik",
+      "menuDescription": "Svi odjeljci, jezik i privatnost.",
+      "privacy": "Privatnost"
+    },
+    "kit": {
+      "sheet": {
+        "close": "Zatvori",
+        "discard": "Zatvoriti i odbaciti ono što si upisao?"
+      },
+      "empty": {
+        "title": "U {place} još skupljamo zapise.",
+        "ask": "Znaš li kako se ovdje govori, što stoji na raskrižju ili tko je odavde potekao? Napiši nam.",
+        "known": "Što već znamo",
+        "municipality": "Općina",
+        "nearby": "Susjedna naselja"
+      },
+      "factPanel": {
+        "facts": "Podaci",
+        "trust": "Pouzdanost",
+        "sources": "Izvori",
+        "unknown": "nepoznato",
+        "play": "Igraj s ovim"
+      },
+      "cards": {
+        "forms": {
+          "one": "{n} oblik",
+          "few": "{n} oblika",
+          "other": "{n} oblika"
+        },
+        "villages": {
+          "one": "u {n} selu",
+          "few": "u {n} sela",
+          "other": "u {n} sela"
+        },
+        "here": "Ovdje: {form}",
+        "questions": {
+          "one": "{n} pitanje",
+          "few": "{n} pitanja",
+          "other": "{n} pitanja"
+        },
+        "minutes": "~{n} min",
+        "soon": "Uskoro"
+      }
+    },
+    "share": {
+      "resultTitle": "Podijeli rezultat",
+      "resultContext": "Šalje se samo rezultat i kvadratići, bez odgovora.",
+      "invite": "Možeš li bolje? Igraj i ti:",
+      "challengeTitle": "Pozovi prijatelje",
+      "challengeContext": "Svatko igra ista pitanja, otvoreno do {date}.",
+      "challengeContextPlain": "Svatko igra ista pitanja, svojim tempom.",
+      "whatsapp": "WhatsApp",
+      "viber": "Viber",
+      "more": "Više mogućnosti",
+      "link": "Poveznica",
+      "copy": "Kopiraj",
+      "copied": "Kopirano",
+      "copyError": "Kopiranje nije uspjelo. Označi i kopiraj poveznicu iz polja.",
+      "shareError": "Dijeljenje nije uspjelo. Kopiraj poveznicu i pošalji je ekipi.",
+      "brand": "Potkalnički zapisi",
+      "previewTitle": "{nickname} te izaziva: {title}",
+      "previewTitleOpen": "Izazov: {title}",
+      "ogSuffix": "{title} · Potkalnički zapisi"
+    },
+    "board": {
+      "caption": "Ljestvica izazova",
+      "rank": "#",
+      "player": "Igrač",
+      "total": "Ukupno",
+      "you": "ti",
+      "tied": "dijeli mjesto"
+    },
+    "challenge": {
+      "introOverline": "Izazov prijatelju",
+      "samePool": "Svi igraju ista pitanja, svatko svojim tempom.",
+      "inviteOverline": "Izazov je spreman",
+      "inviteTitle": "Pozovi prijatelje",
+      "inviteLead": "Prvo ti odigraj, ili ih pozovi odmah.",
+      "roundOverline": "Runda {number} od {count} · {topic}",
+      "roundTotal": "Runda {number}",
+      "roundPending": "Runda {number}",
+      "totalLine": "Ukupno {points} bodova",
+      "finalOverline": "Izazov završen",
+      "yourRank": "Tvoje mjesto: {rank}.",
+      "sharedRank": "Dijeliš {rank}. mjesto.",
+      "fullBoard": "Cijela ljestvica",
+      "shareResult": "Podijeli rezultat",
+      "shareResultText": "{title} · {points} bodova",
+      "invitePlayers": "Pozovi još prijatelja",
+      "newChallenge": "Napravi novi izazov",
+      "closedOn": "Izazov je zatvoren {date}.",
+      "closedRead": "Rezultati ostaju vidljivi. Za novu igru napravi novi izazov.",
+      "closesChip": "Zatvara se {date}",
+      "boardOverline": "Ljestvica izazova",
+      "boardTitle": "Ljestvica",
+      "notFoundTitle": "Ovaj izazov ne postoji.",
+      "notFoundText": "Možda je poveznica nepotpuna.",
+      "points": "{points} bodova",
+      "background": "Pozadina",
+      "playRound": "Igraj prvu rundu",
+      "resume": "Nastavi izazov · runda {round} od {rounds}",
+      "waiting": "Čekamo {n} prijatelja",
+      "boardPreview": "Pogledaj ljestvicu"
     }
   },
   "daily": {

@@ -10,19 +10,20 @@ defineI18nRoute({ locales: ['hr'] })
 const { t } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
+const NuxtLink = resolveComponent('NuxtLink')
 const { words } = useHeritage()
 
 type PickerKind = 'word' | 'memory' | 'heritage_item' | 'area' | 'source' | 'correction' | 'photo'
 
 // Word and memory keep the free-text form; the other cards open the structured corrections and proposals.
-const pickerCards: { kind: PickerKind, soon?: boolean }[] = [
-  { kind: 'word' },
-  { kind: 'memory' },
-  { kind: 'heritage_item' },
-  { kind: 'area' },
-  { kind: 'source' },
-  { kind: 'correction' },
-  { kind: 'photo', soon: true }
+const pickerCards: { kind: PickerKind, icon: string, soon?: boolean }[] = [
+  { kind: 'word', icon: 'i-lucide-book-open' },
+  { kind: 'memory', icon: 'i-lucide-message-circle' },
+  { kind: 'heritage_item', icon: 'i-lucide-church' },
+  { kind: 'area', icon: 'i-lucide-map-pin' },
+  { kind: 'source', icon: 'i-lucide-book-plus' },
+  { kind: 'correction', icon: 'i-lucide-pencil' },
+  { kind: 'photo', icon: 'i-lucide-camera', soon: true }
 ]
 
 const suggest = computed(() => parseSuggestQuery(route.query))
@@ -148,64 +149,65 @@ useSeoMeta({
 </script>
 
 <template>
-  <UContainer class="py-12 sm:py-16">
-    <div class="mx-auto flex max-w-2xl flex-col gap-8">
-      <header v-if="showPicker">
-        <h1 class="text-3xl font-bold tracking-tight text-highlighted sm:text-4xl">
+  <div class="mx-auto w-full max-w-(--pz-page-max) px-4 py-6 lg:px-12 lg:py-12">
+    <div class="flex max-w-(--pz-measure) flex-col gap-8">
+      <header
+        v-if="showPicker"
+        class="flex flex-col gap-3"
+      >
+        <h1 class="pz-h1 text-highlighted lg:pz-display">
           {{ t('pz.contribute.title') }}
         </h1>
-        <p class="mt-4 text-muted">
+        <p class="pz-body text-muted">
           {{ t('pz.contribute.intro') }}
         </p>
       </header>
 
-      <div
+      <ul
         v-if="showPicker"
-        class="grid gap-4"
+        class="grid grid-cols-2 gap-3"
         data-testid="contribute-type-picker"
       >
-        <UCard
+        <li
           v-for="card in pickerCards"
           :key="card.kind"
-          variant="outline"
-          :class="card.soon ? 'opacity-90' : undefined"
+          class="flex"
         >
-          <NuxtLink
-            v-if="cardTo(card.kind)"
-            :to="cardTo(card.kind)!"
-            class="block"
+          <component
+            :is="cardTo(card.kind) ? NuxtLink : 'div'"
+            :to="cardTo(card.kind)"
+            class="flex w-full flex-col gap-2 rounded-(--pz-radius-lg) border p-4 text-default no-underline"
+            :class="card.soon
+              ? 'border-dashed border-accented bg-muted text-muted'
+              : 'border-default bg-default hover:border-accented hover:bg-muted'"
+            :aria-disabled="card.soon ? 'true' : undefined"
             :data-testid="`contribute-card-${card.kind}`"
           >
-            <div class="space-y-1">
-              <h2 class="text-lg font-semibold text-highlighted">
-                {{ pickerTitle(card.kind) }}
-              </h2>
-              <p class="text-sm text-muted">
-                {{ pickerDescription(card.kind) }}
-              </p>
-            </div>
-          </NuxtLink>
-          <div
-            v-else
-            class="flex items-start justify-between gap-3"
-          >
-            <div class="space-y-1">
-              <h2 class="text-lg font-semibold text-highlighted">
-                {{ pickerTitle(card.kind) }}
-              </h2>
-              <p class="text-sm text-muted">
-                {{ pickerDescription(card.kind) }}
-              </p>
-            </div>
+            <span
+              class="grid size-10 place-items-center rounded-(--pz-radius-md) bg-accented text-primary"
+              aria-hidden="true"
+            >
+              <UIcon
+                :name="card.icon"
+                class="size-5"
+              />
+            </span>
+            <h2 class="pz-h3 text-highlighted">
+              {{ pickerTitle(card.kind) }}
+            </h2>
+            <p class="pz-body-sm text-muted">
+              {{ pickerDescription(card.kind) }}
+            </p>
             <UBadge
               v-if="card.soon"
-              :label="t('pz.contribute.picker.photo.badge')"
+              :label="t('pz.contribute.tileSoon')"
               color="neutral"
               variant="subtle"
+              class="self-start rounded-(--pz-radius-sm)"
             />
-          </div>
-        </UCard>
-      </div>
+          </component>
+        </li>
+      </ul>
 
       <UAlert
         v-else-if="suggestError || correctionMissing"
@@ -237,7 +239,7 @@ useSeoMeta({
           variant="link"
           class="self-start px-0"
         />
-        <h2 class="text-2xl font-semibold text-highlighted">
+        <h2 class="pz-h2 text-highlighted">
           {{ heading }}
         </h2>
         <HeritageSuggestPicker
@@ -264,8 +266,9 @@ useSeoMeta({
           :word="prefillWord"
           :fixed-type="fixedType"
           hide-type-picker
+          sticky-bar
         />
       </div>
     </div>
-  </UContainer>
+  </div>
 </template>

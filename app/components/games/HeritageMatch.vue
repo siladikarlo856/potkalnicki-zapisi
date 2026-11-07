@@ -2,6 +2,10 @@
 import type { HeritageMatchBoard } from '~~/shared/utils/games/heritageMatch'
 import { HERITAGE_MATCH_PAIRS } from '~~/shared/utils/games/heritageMatch'
 
+// MatchGroup (pairing): tap to pick, tap to place, no dragging. A correct pair locks in with a check and a word.
+// A wrong pair shows a cross and "Nije par" for 600ms and then resets, with no animation under reduced motion
+// either. A status line always says what is picked and what to do next. When the board is complete the usual
+// feedback summary ("4 od 4 para") appears with an explicit Dalje; the board never moves on by itself.
 const props = defineProps<{
   board: HeritageMatchBoard
   boardIndex: number
@@ -14,8 +18,13 @@ const locked = ref(new Set<number>())
 const tainted = ref(new Set<number>())
 const selectedLeft = ref<number | null>(null)
 const selectedRight = ref<number | null>(null)
-const shake = ref(false)
-const wrongFlash = ref(false)
+const wrongLeft = ref<number | null>(null)
+const wrongRight = ref<number | null>(null)
+const status = ref<'idle' | 'right' | 'wrong'>('idle')
+const lastPair = ref('')
+let resetTimer: ReturnType<typeof setTimeout> | undefined
+
+const FLASH_MS = 600
 
 const score = computed(() => {
   let n = 0
@@ -24,60 +33,90 @@ const score = computed(() => {
   }
   return n
 })
+const done = computed(() => locked.value.size >= HERITAGE_MATCH_PAIRS)
+const flashing = computed(() => wrongLeft.value !== null)
+const last = computed(() => props.boardIndex + 1 >= props.boardCount)
+const feedback = useTemplateRef<{ focus: () => void }>('feedback')
+
+const picked = computed(() => {
+  const left = props.board.left.find(tile => tile.pairIndex === selectedLeft.value)
+  const right = props.board.right.find(tile => tile.pairIndex === selectedRight.value)
+  return (left ?? right)?.label ?? ''
+})
+const statusText = computed(() => {
+  if (done.value) return ''
+  if (status.value === 'wrong') return t('pz.play.matchWrong')
+  if (status.value === 'right') return t('pz.play.matchRight', { name: lastPair.value })
+  if (picked.value) return t('pz.play.matchSelected', { name: picked.value })
+  return t('pz.play.matchIdle')
+})
+
+function clearTimer() {
+  if (resetTimer) clearTimeout(resetTimer)
+  resetTimer = undefined
+}
 
 watch(() => props.board, () => {
+  clearTimer()
   locked.value = new Set()
   tainted.value = new Set()
   selectedLeft.value = null
   selectedRight.value = null
-  shake.value = false
-  wrongFlash.value = false
+  wrongLeft.value = null
+  wrongRight.value = null
+  status.value = 'idle'
+})
+onBeforeUnmount(clearTimer)
+
+type TileState = 'default' | 'selected' | 'paired' | 'wrong'
+function stateOf(pairIndex: number, selected: number | null, wrong: number | null): TileState {
+  if (locked.value.has(pairIndex)) return 'paired'
+  if (wrong === pairIndex) return 'wrong'
+  if (selected === pairIndex) return 'selected'
+  return 'default'
+}
+
+const tileClass = (state: TileState) => ({
+  'border border-accented bg-default px-3 py-1.5 text-default hover:bg-muted': state === 'default',
+  'border-2 border-primary bg-accented px-[11px] py-[5px] text-default': state === 'selected',
+  'border border-success bg-(--pz-success-soft) px-3 py-1.5 text-default': state === 'paired',
+  'border-2 border-error bg-(--pz-error-soft) px-[11px] py-[5px] text-default': state === 'wrong'
 })
 
-function tileClass(pairIndex: number, selected: boolean) {
-  const base = 'min-h-12 w-full rounded-lg px-2 py-2 text-left text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
-  if (locked.value.has(pairIndex)) {
-    return `${base} bg-success/15 text-success ring-1 ring-success/40`
-  }
-  if (selected) {
-    return `${base} bg-primary/15 text-highlighted ring-2 ring-primary`
-  }
-  return `${base} bg-elevated text-highlighted hover:bg-accented/40`
-}
-
-function selectLeft(pairIndex: number) {
-  if (locked.value.has(pairIndex)) return
-  selectedLeft.value = selectedLeft.value === pairIndex ? null : pairIndex
+function select(side: 'left' | 'right', pairIndex: number) {
+  if (flashing.value || done.value || locked.value.has(pairIndex)) return
+  const current = side === 'left' ? selectedLeft : selectedRight
+  current.value = current.value === pairIndex ? null : pairIndex
+  status.value = 'idle'
   tryMatch()
 }
 
-function selectRight(pairIndex: number) {
-  if (locked.value.has(pairIndex)) return
-  selectedRight.value = selectedRight.value === pairIndex ? null : pairIndex
-  tryMatch()
-}
-
-async function tryMatch() {
-  if (selectedLeft.value === null || selectedRight.value === null) return
+function tryMatch() {
   const left = selectedLeft.value
   const right = selectedRight.value
+  if (left === null || right === null) return
   if (left === right) {
+    lastPair.value = props.board.left.find(tile => tile.pairIndex === left)?.label ?? ''
     locked.value = new Set([...locked.value, left])
     selectedLeft.value = null
     selectedRight.value = null
-    if (locked.value.size >= HERITAGE_MATCH_PAIRS) {
-      emit('complete', score.value)
-    }
+    status.value = 'right'
+    if (done.value) nextTick(() => feedback.value?.focus())
     return
   }
   tainted.value = new Set([...tainted.value, left, right])
-  shake.value = true
-  wrongFlash.value = true
+  wrongLeft.value = left
+  wrongRight.value = right
+  status.value = 'wrong'
   selectedLeft.value = null
   selectedRight.value = null
-  await new Promise(resolve => setTimeout(resolve, 450))
-  shake.value = false
-  wrongFlash.value = false
+  clearTimer()
+  resetTimer = setTimeout(() => {
+    wrongLeft.value = null
+    wrongRight.value = null
+    status.value = 'idle'
+    resetTimer = undefined
+  }, FLASH_MS)
 }
 
 defineExpose({ score })
@@ -86,76 +125,85 @@ defineExpose({ score })
 <template>
   <div
     class="flex flex-col gap-3"
-    :data-shake="shake ? 'true' : undefined"
     data-testid="heritage-match-board"
   >
-    <p class="text-xs text-muted">
-      {{ t('pz.play.matchBoardOf', { i: boardIndex + 1, n: boardCount }) }}
-    </p>
+    <div class="flex items-center justify-between gap-2">
+      <p
+        class="pz-label text-default"
+        data-testid="heritage-match-round"
+      >
+        {{ t('pz.play.matchBoardOf', { i: boardIndex + 1, n: boardCount }) }}
+      </p>
+      <p class="text-sm text-muted tabular-nums">
+        {{ t('pz.play.matchPairs', { n: locked.size, total: HERITAGE_MATCH_PAIRS }) }}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+      <ul
+        v-for="side in (['left', 'right'] as const)"
+        :key="side"
+        class="m-0 flex list-none flex-col gap-2 p-0"
+        :data-testid="`heritage-match-${side}`"
+      >
+        <li
+          v-for="tile in board[side]"
+          :key="tile.id"
+        >
+          <button
+            type="button"
+            class="flex min-h-(--pz-tap-min) w-full flex-col items-start justify-center gap-0.5 rounded-(--pz-radius-md) text-start text-[15px] leading-5 font-medium transition-colors duration-150 motion-reduce:transition-none"
+            :class="tileClass(stateOf(tile.pairIndex, side === 'left' ? selectedLeft : selectedRight, side === 'left' ? wrongLeft : wrongRight))"
+            :aria-pressed="locked.has(tile.pairIndex) ? undefined : (side === 'left' ? selectedLeft : selectedRight) === tile.pairIndex"
+            :disabled="locked.has(tile.pairIndex)"
+            :data-state="stateOf(tile.pairIndex, side === 'left' ? selectedLeft : selectedRight, side === 'left' ? wrongLeft : wrongRight)"
+            :data-testid="`heritage-match-${side}-${tile.pairIndex}`"
+            @click="select(side, tile.pairIndex)"
+          >
+            <span class="wrap-anywhere">{{ tile.label }}</span>
+            <span
+              v-if="locked.has(tile.pairIndex)"
+              class="inline-flex items-center gap-1 text-[13px] font-semibold text-success"
+            >
+              <UIcon
+                name="i-lucide-check"
+                class="size-4 shrink-0"
+              />{{ t('pz.play.matchLocked') }}
+            </span>
+            <span
+              v-else-if="stateOf(tile.pairIndex, side === 'left' ? selectedLeft : selectedRight, side === 'left' ? wrongLeft : wrongRight) === 'wrong'"
+              class="inline-flex items-center gap-1 text-[13px] font-semibold text-error"
+            >
+              <UIcon
+                name="i-lucide-x"
+                class="size-4 shrink-0"
+              />{{ t('pz.play.matchWrongTag') }}
+            </span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
     <p
-      v-if="wrongFlash"
+      v-if="!done"
       role="status"
-      class="text-center text-sm font-semibold text-error"
+      class="text-sm text-muted"
       data-testid="heritage-match-wrong"
     >
-      ✗
+      {{ statusText }}
     </p>
-    <div class="grid grid-cols-2 gap-3">
-      <div
-        class="flex flex-col gap-2"
-        data-testid="heritage-match-left"
-      >
-        <button
-          v-for="tile in board.left"
-          :key="tile.id"
-          type="button"
-          :class="tileClass(tile.pairIndex, selectedLeft === tile.pairIndex)"
-          :disabled="locked.has(tile.pairIndex)"
-          :data-testid="`heritage-match-left-${tile.pairIndex}`"
-          @click="selectLeft(tile.pairIndex)"
-        >
-          <span class="flex items-start gap-2">
-            <span
-              v-if="locked.has(tile.pairIndex)"
-              aria-hidden="true"
-            >✓</span>
-            <span class="wrap-anywhere">{{ tile.label }}</span>
-          </span>
-        </button>
-      </div>
-      <div
-        class="flex flex-col gap-2"
-        data-testid="heritage-match-right"
-      >
-        <button
-          v-for="tile in board.right"
-          :key="tile.id"
-          type="button"
-          :class="tileClass(tile.pairIndex, selectedRight === tile.pairIndex)"
-          :disabled="locked.has(tile.pairIndex)"
-          :data-testid="`heritage-match-right-${tile.pairIndex}`"
-          @click="selectRight(tile.pairIndex)"
-        >
-          <span class="flex items-start gap-2">
-            <span
-              v-if="locked.has(tile.pairIndex)"
-              aria-hidden="true"
-            >✓</span>
-            <span class="wrap-anywhere">{{ tile.label }}</span>
-          </span>
-        </button>
-      </div>
-    </div>
+
+    <GamesFeedback
+      v-else
+      ref="feedback"
+      correct
+      :title="t('pz.play.matchDone')"
+      :explanation="`${t('pz.play.matchPairs', { n: HERITAGE_MATCH_PAIRS, total: HERITAGE_MATCH_PAIRS })}. ${t('pz.play.matchFirstTry', { n: score })}`"
+    />
+    <GamesDalje
+      v-if="done"
+      :last="last"
+      @next="emit('complete', score)"
+    />
   </div>
 </template>
-
-<style scoped>
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-4px); }
-  40%, 80% { transform: translateX(4px); }
-}
-[data-shake='true'] {
-  animation: shake 0.35s ease-in-out;
-}
-</style>

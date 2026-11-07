@@ -151,6 +151,56 @@ html[data-site="pz"] .bg-inverted :is(a[href], button, input, select, textarea, 
 }
 
 /*
+ * Target size: every button, tab, field and button-shaped link is at least --pz-tap-min (44px) tall, whatever the
+ * Nuxt UI size says. Links inside running text are inline, so min-height does not touch them.
+ */
+html[data-site="pz"] :is(button, [role="tab"], select, input:not([type="checkbox"], [type="radio"], [type="hidden"]), textarea, a[class*="inline-flex"]) {
+  min-height: var(--pz-tap-min);
+}
+
+/*
+ * A sticky action bar must never cover the focused element: while PzStickyActionBar is on the page it
+ * publishes its height, and the page keeps that much scroll padding at the bottom.
+ */
+html[data-site="pz"] {
+  scroll-padding-bottom: var(--pz-actionbar-h, 0px);
+}
+
+/*
+ * Answer feedback fades in over 150ms. Nothing else moves: no sound, no shake, no confetti, and no fade under
+ * reduced motion.
+ */
+@keyframes pz-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@utility pz-fade-in {
+  animation: pz-fade-in 150ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * Sheets (PzBottomSheet) slide in; under reduced motion they appear instantly.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html[data-site="pz"] :is([data-vaul-drawer], [data-vaul-overlay], [role="dialog"], [data-slot="overlay"]) {
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
+  }
+}
+
+/* Skeleton pulses are off under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-site="pz"] :is(.animate-pulse, [data-slot="base"].animate-pulse) {
+    animation: none;
+  }
+}
+
+/*
  * The 13 Potkalnički zapisi type styles. Serif is for names (titles, headwords),
  * Inter for interface and reading copy. The classes are opt-in, so adding them
  * changes nothing until a pz component uses one.

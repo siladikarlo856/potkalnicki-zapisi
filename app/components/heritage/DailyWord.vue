@@ -4,7 +4,8 @@ import { dailyWordShareText, guessDailyWord, startDailyGame } from '~~/shared/ut
 import type { DailyGame, DailyText } from '~~/shared/utils/dailyWord'
 import { describeClue, pluralForm } from '~/utils/dailyClues'
 
-const props = withDefaults(defineProps<{ compactWhenPlayed?: boolean }>(), { compactWhenPlayed: false })
+// `bare` drops the section's own width and padding, for a page that lays the card out itself (the home grid).
+const props = withDefaults(defineProps<{ compactWhenPlayed?: boolean, bare?: boolean }>(), { compactWhenPlayed: false, bare: false })
 
 const { locale, t } = useI18n()
 const { payload, status, error, unavailable, refresh } = useDailyWord()
@@ -116,7 +117,8 @@ watch(finished, () => {
     id="rijec-dana"
     :aria-labelledby="ready || error ? 'daily-title' : undefined"
     :aria-busy="ready || !!error ? undefined : 'true'"
-    class="mx-auto w-full max-w-xl px-4 py-6 sm:py-8"
+    class="w-full"
+    :class="bare ? undefined : 'mx-auto max-w-xl px-4 py-6 sm:py-8'"
     data-testid="daily-word"
   >
     <div
@@ -180,7 +182,7 @@ watch(finished, () => {
 
     <div
       v-else-if="game"
-      class="min-w-0 rounded-xl bg-default p-4 shadow-sm ring ring-default sm:p-5"
+      class="min-w-0 overflow-hidden rounded-(--pz-radius-lg) border border-accented bg-default"
     >
       <p
         role="status"
@@ -190,22 +192,25 @@ watch(finished, () => {
       >
         {{ announcement }}
       </p>
-      <header class="mb-3 text-center">
-        <p class="text-xs font-semibold text-primary">
-          <span id="daily-title">{{ t('daily.title') }}</span> · {{ t('daily.number', { n: payload.number }) }}
+      <header class="flex flex-col items-center gap-1 bg-(--pz-wheat) p-4 text-center sm:p-5">
+        <p class="pz-overline text-default">
+          <span id="daily-title">{{ t('daily.number', { n: payload.number }) }}</span>
         </p>
         <template v-if="!replaced">
           <h2
             lang="hr"
-            class="mt-1 text-3xl font-bold wrap-anywhere text-highlighted sm:text-4xl"
+            class="pz-headword wrap-anywhere text-highlighted"
           >
             {{ payload.entry.headword }}
           </h2>
-          <p class="mt-1 flex flex-wrap items-center justify-center gap-2 text-xs text-muted">
+          <p class="pz-body-sm flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-default">
             <span
               v-if="payload.entry.partOfSpeech"
               lang="hr"
+              class="font-serif italic"
             >{{ payload.entry.partOfSpeech }}</span>
+            <span v-if="payload.entry.partOfSpeech && place">·</span>
+            <span v-if="place">{{ t('daily.village', { place }) }}</span>
             <UBadge
               v-if="payload.sample"
               :label="t('daily.sample')"
@@ -214,122 +219,119 @@ watch(finished, () => {
               size="sm"
             />
           </p>
-          <p
-            v-if="place"
-            class="mt-1 text-sm text-muted"
-          >
-            {{ t('daily.village', { place }) }}
-          </p>
         </template>
+        <PzStitch class="mx-auto mt-2" />
       </header>
 
-      <p
-        v-if="progress.storageUnavailable.value"
-        class="mb-3 text-xs text-muted"
-        data-testid="daily-storage-note"
-      >
-        {{ t('daily.storageUnavailable') }}
-      </p>
-
-      <div
-        v-if="replaced && stored"
-        class="flex flex-col gap-2"
-        data-testid="daily-replaced"
-      >
-        <p>{{ t('daily.replaced') }}</p>
-        <p class="text-sm text-muted">
-          {{ t('daily.usedTries', { tries: stored.solved ? stored.tries : 'X', max: stored.maxTries }) }}
-        </p>
-      </div>
-
-      <template v-else>
-        <fieldset
-          v-if="!game.done"
-          class="min-w-0"
+      <div class="p-4 sm:p-5">
+        <p
+          v-if="progress.storageUnavailable.value"
+          class="mb-3 text-xs text-muted"
+          data-testid="daily-storage-note"
         >
-          <legend class="mb-2 text-xs font-medium text-muted">
-            {{ t('daily.prompt') }}
-          </legend>
-          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <UButton
-              v-for="(option, index) in visibleOptions"
-              :key="option.id"
-              :data-option-id="option.id"
-              :lang="optionText(option.text).lang"
-              color="neutral"
-              variant="outline"
-              size="lg"
-              class="min-h-11 min-w-0 justify-start text-start whitespace-normal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              @click="pick(option.id)"
-            >
-              <span
-                class="shrink-0 text-xs opacity-60"
-                aria-hidden="true"
-              >{{ index + 1 }}.</span>
-              <span class="min-w-0 wrap-anywhere">{{ optionText(option.text).text }}</span>
-            </UButton>
-          </div>
-          <p class="mt-2 text-xs text-muted">
-            {{ t(`daily.triesLeft.${pluralForm(locale, maxTries - game.guesses.length)}`, { n: maxTries - game.guesses.length }) }}
+          {{ t('daily.storageUnavailable') }}
+        </p>
+
+        <div
+          v-if="replaced && stored"
+          class="flex flex-col gap-2"
+          data-testid="daily-replaced"
+        >
+          <p>{{ t('daily.replaced') }}</p>
+          <p class="text-sm text-muted">
+            {{ t('daily.usedTries', { tries: stored.solved ? stored.tries : 'X', max: stored.maxTries }) }}
           </p>
-        </fieldset>
+        </div>
 
-        <HeritageDailyClues
-          v-if="shownClues.length"
-          ref="clueList"
-          class="mt-3"
-          :clues="shownClues"
-          :areas="payload.areas"
-        />
+        <template v-else>
+          <fieldset
+            v-if="!game.done"
+            class="min-w-0"
+          >
+            <legend class="mb-2 text-xs font-medium text-muted">
+              {{ t('daily.prompt') }}
+            </legend>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <UButton
+                v-for="(option, index) in visibleOptions"
+                :key="option.id"
+                :data-option-id="option.id"
+                :lang="optionText(option.text).lang"
+                color="neutral"
+                variant="outline"
+                size="lg"
+                class="min-h-11 min-w-0 justify-start text-start whitespace-normal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                @click="pick(option.id)"
+              >
+                <span
+                  class="shrink-0 text-xs text-muted"
+                  aria-hidden="true"
+                >{{ index + 1 }}.</span>
+                <span class="min-w-0 wrap-anywhere">{{ optionText(option.text).text }}</span>
+              </UButton>
+            </div>
+            <p class="mt-2 text-xs text-muted">
+              {{ t(`daily.triesLeft.${pluralForm(locale, maxTries - game.guesses.length)}`, { n: maxTries - game.guesses.length }) }}
+            </p>
+          </fieldset>
 
-        <HeritageDailyReveal
-          v-if="game.done"
-          ref="reveal"
-          class="mt-3"
-          :payload="payload"
-          :solved="game.solved"
-          :tries="game.guesses.length"
-          :max-tries="maxTries"
-        />
-      </template>
+          <HeritageDailyClues
+            v-if="shownClues.length"
+            ref="clueList"
+            class="mt-3"
+            :clues="shownClues"
+            :areas="payload.areas"
+          />
 
-      <HeritageDailyContribute
-        v-if="game.done && !replaced"
-        class="mt-4 border-t border-default pt-3"
-        :word-id="payload.entry.id"
-        :headword="payload.entry.headword"
-      />
+          <HeritageDailyReveal
+            v-if="game.done"
+            ref="reveal"
+            class="mt-3"
+            :payload="payload"
+            :solved="game.solved"
+            :tries="game.guesses.length"
+            :max-tries="maxTries"
+          />
+        </template>
 
-      <template v-if="finished && stats">
-        <HeritageDailyShare
+        <HeritageDailyContribute
+          v-if="game.done && !replaced"
           class="mt-4 border-t border-default pt-3"
-          :number="payload.number"
-          :result="finished"
+          :word-id="payload.entry.id"
+          :headword="payload.entry.headword"
         />
-        <HeritageDailyStats
+
+        <template v-if="finished && stats">
+          <HeritageDailyShare
+            class="mt-4 border-t border-default pt-3"
+            :number="payload.number"
+            :result="finished"
+          />
+          <HeritageDailyStats
+            class="mt-4 border-t border-default pt-3"
+            :stats="stats"
+            :today="todayKey"
+          />
+        </template>
+
+        <HeritageDailyCountdown
+          v-if="game.done || replaced"
           class="mt-4 border-t border-default pt-3"
-          :stats="stats"
-          :today="todayKey"
+          :next-at="payload.nextAt"
         />
-      </template>
+        <p
+          v-if="game.done || replaced"
+          class="mt-1 text-xs text-muted"
+        >
+          {{ t('daily.savedOnDevice') }}
+        </p>
 
-      <HeritageDailyCountdown
-        v-if="game.done || replaced"
-        class="mt-4 border-t border-default pt-3"
-        :next-at="payload.nextAt"
-      />
-      <p
-        v-if="game.done || replaced"
-        class="mt-1 text-xs text-muted"
-      >
-        {{ t('daily.savedOnDevice') }}
-      </p>
-
-      <HeritageDailyNextSteps
-        v-if="game.done || replaced"
-        class="mt-4 border-t border-default pt-3"
-        :category="payload.entry.category"
-      />
+        <HeritageDailyNextSteps
+          v-if="game.done || replaced"
+          class="mt-4 border-t border-default pt-3"
+          :category="payload.entry.category"
+        />
+      </div>
     </div>
   </section>
 </template>

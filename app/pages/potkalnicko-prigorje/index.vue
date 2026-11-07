@@ -18,117 +18,109 @@ useSeoMeta({
 
 const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
 
-const discoveryCards = computed(() => [
-  { key: 'speech' as const, icon: 'i-lucide-message-circle', soon: false, to: localePath(`${pzRoutes.home}/govor`) },
-  { key: 'heritage' as const, icon: 'i-lucide-landmark', soon: false, to: localePath(pzRoutes.heritage) },
-  { key: 'places' as const, icon: 'i-lucide-users', soon: false, to: localePath(pzRoutes.explore) },
-  { key: 'stories' as const, icon: 'i-lucide-book-heart', soon: true, to: undefined }
-])
-
 const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []).map(m => ({
   id: m.id,
-  slug: m.slug,
-  ...m.stats,
+  label: m.label,
   to: municipalityPath(m.slug),
-  label: m.label
+  settlements: m.stats.settlements,
+  items: m.stats.items
 })))
 </script>
 
 <template>
-  <div>
-    <header class="mx-auto max-w-2xl px-4 pb-2 pt-10 sm:pt-14">
-      <p class="text-sm font-medium text-muted">
-        {{ t('pz.home.heroEyebrow') }}
-      </p>
-      <h1 class="mt-2 text-3xl font-bold text-balance text-highlighted sm:text-4xl">
-        {{ t('pz.home.heroTitle') }}
-      </h1>
-      <p class="mt-3 max-w-2xl text-muted">
-        {{ t('pz.home.heroDescription') }}
-      </p>
-    </header>
+  <div class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-8 px-4 py-6 lg:gap-12 lg:px-12 lg:py-12">
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start lg:gap-12">
+      <section
+        class="relative flex flex-col gap-3 pt-2 lg:col-span-7 lg:pt-12"
+        data-testid="home-hero"
+      >
+        <p class="pz-overline pz-caption text-muted">
+          {{ t('pz.home.heroEyebrow') }}
+        </p>
+        <h1 class="pz-display text-balance text-highlighted lg:pz-display-lg">
+          {{ t('pz.home.heroTitle') }}
+        </h1>
+        <p class="pz-lead max-w-(--pz-measure) text-muted">
+          {{ t('pz.home.heroDescription') }}
+        </p>
+        <div class="mt-2 hidden flex-wrap items-center gap-3 lg:flex">
+          <UButton
+            :to="localePath(pzRoutes.explore)"
+            :label="t('pz.home.exploreCta')"
+            icon="i-lucide-compass"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            class="ring-(--ui-border-accented)"
+          />
+          <UButton
+            :to="localePath('/potkalnicko-prigorje/o-projektu')"
+            :label="t('pz.home.aboutCta')"
+            trailing-icon="i-lucide-arrow-right"
+            color="neutral"
+            variant="ghost"
+          />
+        </div>
+        <PzRidge class="mt-2 h-14 w-full lg:mt-6 lg:h-24" />
+      </section>
 
-    <HeritageDailyWord compact-when-played />
+      <div class="min-w-0 lg:col-span-5">
+        <HeritageDailyWord
+          compact-when-played
+          bare
+        />
+      </div>
+    </div>
 
-    <PzLearnPlaySwitch />
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-6">
+      <div class="min-w-0">
+        <PzLearnPlaySwitch />
+      </div>
+      <HeritageChallengeHomeSection />
+    </div>
 
-    <HeritageChallengeHomeSection />
-
-    <UPageSection
-      :title="t('pz.home.scopeTitle')"
-      :description="t('pz.home.scopeDescription')"
-      :ui="{ root: 'border-t border-default' }"
+    <section
+      class="flex flex-col gap-4"
       data-testid="obuhvat"
     >
-      <ul class="divide-y divide-default rounded-lg ring ring-default">
-        <li
-          v-for="municipality in scopeMunicipalities"
-          :key="municipality.id"
-        >
-          <ULink
-            :to="municipality.to"
-            class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
-          >
-            <span class="font-medium text-highlighted">{{ municipality.label }}</span>
-            <span class="text-muted tabular-nums">{{ t('pz.home.scopeCounts', { settlements: municipality.settlements, items: municipality.items }) }}</span>
-          </ULink>
-        </li>
-      </ul>
-    </UPageSection>
-
-    <UPageSection
-      :title="t('pz.home.discoveryTitle')"
-      :ui="{ root: 'border-t border-default' }"
-    >
-      <div class="grid gap-4 sm:grid-cols-2">
-        <UCard
-          v-for="card in discoveryCards"
-          :key="card.key"
-          variant="outline"
-          :class="card.to ? 'hover:ring-primary/30' : ''"
-        >
-          <component
-            :is="card.to ? 'ULink' : 'div'"
-            :to="card.to"
-            class="flex items-start justify-between gap-3"
-            :class="card.to ? 'block' : ''"
-          >
-            <div class="space-y-2">
-              <UIcon
-                :name="card.icon"
-                class="size-6 text-primary"
-              />
-              <h3 class="text-lg font-semibold text-highlighted">
-                {{ t(`pz.home.discovery.${card.key}.title`) }}
-              </h3>
-              <p class="text-sm text-muted">
-                {{ t(`pz.home.discovery.${card.key}.description`) }}
-              </p>
-            </div>
-            <UBadge
-              v-if="card.soon"
-              :label="t('pz.home.soon')"
-              color="neutral"
-              variant="subtle"
-            />
-            <UIcon
-              v-else-if="card.to"
-              name="i-lucide-arrow-right"
-              class="size-5 shrink-0 text-muted"
-            />
-          </component>
-        </UCard>
+      <div class="flex flex-col gap-1 lg:flex-row lg:items-baseline lg:justify-between lg:gap-6">
+        <h2 class="pz-h2 text-highlighted">
+          {{ t('pz.home.scopeTitle') }}
+        </h2>
+        <p class="pz-body-sm text-muted">
+          {{ t('pz.home.scopeDescription') }}
+        </p>
       </div>
-    </UPageSection>
+      <PzMunicipalityList :rows="scopeMunicipalities" />
+    </section>
 
-    <UPageSection
+    <section
       id="doprinos"
-      orientation="horizontal"
-      :title="t('pz.home.contributeTitle')"
-      :description="t('pz.home.contributeDescription')"
-      :links="[{ label: t('pz.home.contributeCta'), to: localePath('/potkalnicko-prigorje/doprinesi'), trailingIcon: 'i-lucide-arrow-right', color: 'primary', variant: 'solid', size: 'lg' }]"
-      :ui="{ root: 'scroll-mt-(--ui-header-height) border-t border-default', container: 'lg:items-start', footer: 'print:hidden' }"
+      class="flex scroll-mt-(--pz-header-h) flex-col gap-3 rounded-(--pz-radius-lg) border border-accented bg-muted p-5 lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-6"
+      aria-labelledby="doprinos-title"
       data-testid="doprinos"
-    />
+    >
+      <div class="flex flex-col gap-3 lg:contents">
+        <PzStitch class="w-30 lg:hidden" />
+        <h2
+          id="doprinos-title"
+          class="font-serif text-[22px]/7 font-semibold text-highlighted"
+        >
+          {{ t('pz.home.contributeTitle') }}
+        </h2>
+        <p class="pz-body text-muted">
+          {{ t('pz.home.contributeDescription') }}
+        </p>
+      </div>
+      <UButton
+        :to="localePath('/potkalnicko-prigorje/doprinesi')"
+        :label="t('pz.home.contributeCta')"
+        icon="i-lucide-pen-line"
+        color="neutral"
+        variant="outline"
+        size="lg"
+        class="self-start ring-(--ui-border-accented) print:hidden"
+      />
+    </section>
   </div>
 </template>

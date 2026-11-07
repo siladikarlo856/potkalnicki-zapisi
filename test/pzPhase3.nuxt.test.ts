@@ -17,6 +17,17 @@ describe('Potkalnički zapisi phase 3 atlas routes', () => {
     expect(page.findAll('li').length).toBe(5)
   })
 
+  it('opens the explore hub with three equal entries: places, Baština, Naš govor', async () => {
+    const page = await mountSuspended(Explore, { route: '/potkalnicko-prigorje/istrazi' })
+    const entries = page.findAll('[data-testid="explore-entries"] a')
+    expect(entries.map(entry => entry.find('b').text())).toEqual(['Mjesta', 'Baština', 'Naš govor'])
+    expect(entries.map(entry => entry.attributes('href'))).toEqual([
+      '/potkalnicko-prigorje/istrazi#opcine',
+      '/potkalnicko-prigorje/bastina',
+      '/potkalnicko-prigorje/govor'
+    ])
+  })
+
   it('renders a municipality settlement list', async () => {
     const page = await mountSuspended(Municipality, {
       route: { path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', params: { opcina: 'opcina-kalnik' } }
@@ -46,7 +57,7 @@ describe('Potkalnički zapisi phase 3 atlas routes', () => {
       route: { path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } }
     })
     await vi.waitFor(() => expect(page.find('[data-testid="heritage-item-page"]').exists()).toBe(true))
-    expect(page.find('[data-testid="heritage-status-unverified"]').exists()).toBe(true)
+    expect(page.find('[data-testid="verification-badge-unverified"]').exists()).toBe(true)
     expect(page.text()).toContain('Što još provjeravamo')
     expect(page.text()).toContain(item!.researchNotes.slice(0, 20))
   })

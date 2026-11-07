@@ -89,9 +89,11 @@ try {
         'test/challengeTemplates.integration.test.ts', 'test/challengeSets.integration.test.ts', 'test/publicContent.integration.test.ts', 'test/atlasPages.integration.test.ts', 'test/contractMigration.integration.test.ts',
         'test/clubs.integration.test.ts', 'test/contentApply.integration.test.ts', 'test/persons.integration.test.ts', 'test/seedPersons.integration.test.ts',
         // Project node-serial: one at a time, after all of the above (vitest.config.ts).
-        'test/api.serial.integration.test.ts', 'test/dailyWordResolver.serial.integration.test.ts', 'test/dailyApi.serial.integration.test.ts', 'test/dailyAdminApi.serial.integration.test.ts', 'test/adminInbox.serial.integration.test.ts'
+        'test/api.serial.integration.test.ts', 'test/dailyWordResolver.serial.integration.test.ts', 'test/dailyApi.serial.integration.test.ts', 'test/dailyAdminApi.serial.integration.test.ts',
+        // Project node-last: one at a time, after the serial files.
+        'test/adminInbox.last.integration.test.ts'
       ]
-  const child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--project=node', '--project=node-serial', ...testFiles], {
+  const child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--project=node', '--project=node-serial', '--project=node-last', ...testFiles], {
     cwd: root, stdio: 'inherit', env: {
       ...process.env, TEST_CHALLENGE_API_URL: `http://127.0.0.1:${proxy.address().port}`, TEST_CHALLENGE_SERVICE_KEY: jwt('service_role'),
       TEST_CHALLENGE_PUBLIC_KEY: jwt('anon'), TEST_CHALLENGE_CONTAINER: name

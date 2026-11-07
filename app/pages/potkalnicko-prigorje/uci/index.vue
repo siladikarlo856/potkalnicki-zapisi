@@ -147,139 +147,160 @@ watch(placeSlug, () => {
 </script>
 
 <template>
-  <UContainer class="py-6">
-    <UButton
-      :to="localePath('/potkalnicko-prigorje')"
-      :label="t('heritage.title')"
-      icon="i-lucide-arrow-left"
-      color="neutral"
-      variant="link"
-      size="sm"
-      class="-ms-0.5 mb-2 px-0"
-    />
-    <h1 class="text-2xl font-bold text-highlighted">
-      {{ t('pz.learn.title') }}
-    </h1>
+  <UContainer class="py-4 lg:py-6">
+    <div class="mx-auto flex w-full max-w-(--pz-measure) flex-col gap-6">
+      <PzBackPill :to="localePath('/potkalnicko-prigorje')">
+        {{ t('heritage.title') }}
+      </PzBackPill>
+      <header class="flex flex-col gap-2">
+        <span class="pz-overline text-muted">{{ t('pz.learn.setupOverline') }}</span>
+        <h1 class="pz-h1 text-highlighted">
+          {{ t('pz.learn.title') }}
+        </h1>
+      </header>
 
-    <div
-      v-if="!ready || status === 'pending'"
-      class="mt-6 space-y-3"
-    >
-      <USkeleton class="h-10 w-full" />
-      <USkeleton class="h-32 w-full" />
-    </div>
+      <div
+        v-if="!ready || status === 'pending'"
+        class="space-y-3"
+      >
+        <USkeleton class="h-10 w-full" />
+        <USkeleton class="h-32 w-full" />
+      </div>
 
-    <UAlert
-      v-else-if="error"
-      color="error"
-      variant="subtle"
-      :title="t('pz.learn.loadError')"
-      class="mt-6"
-    >
-      <UButton
-        :label="t('game.retry')"
-        variant="link"
-        @click="refresh()"
-      />
-    </UAlert>
-
-    <div
-      v-else
-      class="mt-6 space-y-6"
-      data-testid="learn-setup"
-    >
-      <section>
-        <h2 class="mb-2 text-sm font-semibold text-highlighted">
-          {{ t('pz.learn.pickTopics') }}
-        </h2>
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            v-for="topic in topTopics"
-            :key="topic.id"
-            :label="`${topic.label} (${topic.count})`"
-            :color="selected.has(topic.id) ? 'primary' : 'neutral'"
-            :variant="selected.has(topic.id) ? 'solid' : 'outline'"
-            :disabled="topic.status === 'soon'"
-            size="sm"
-            @click="toggleTopic(topic)"
-          />
-        </div>
-        <div
-          v-if="childTopics.length"
-          class="mt-2 flex flex-wrap gap-2 ps-2"
-        >
-          <UButton
-            v-for="topic in childTopics"
-            :key="topic.id"
-            :label="`${topic.label} (${topic.count})`"
-            :color="selected.has(topic.id) ? 'primary' : 'neutral'"
-            :variant="selected.has(topic.id) ? 'solid' : 'outline'"
-            size="sm"
-            @click="toggleTopic(topic)"
-          />
-        </div>
-      </section>
-
-      <section data-testid="learn-place">
-        <h2 class="mb-2 text-sm font-semibold text-highlighted">
-          {{ t('pz.learn.myPlace') }}
-        </h2>
-        <HeritagePlacePicker
-          v-model="placeId"
-          v-model:query="placeQuery"
-          @selection="onPlaceSelection"
+      <UAlert
+        v-else-if="error"
+        color="error"
+        variant="subtle"
+        :title="t('pz.learn.loadError')"
+      >
+        <UButton
+          :label="t('game.retry')"
+          variant="link"
+          @click="refresh()"
         />
-        <p
-          v-if="placeSlug"
-          class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted"
+      </UAlert>
+
+      <div
+        v-else
+        class="flex flex-col gap-6"
+        data-testid="learn-setup"
+      >
+        <section
+          class="flex flex-col gap-3"
+          aria-labelledby="learn-topics-heading"
         >
-          <span>{{ settlementForSlug(pool, placeSlug)?.name }}</span>
-          <UButton
-            :label="t('pz.learn.changePlace')"
-            color="neutral"
-            variant="link"
-            size="xs"
-            class="px-0"
-            @click="clearPlace"
-          />
-        </p>
-        <p
-          v-if="placeSlug && selected.has('rijeci')"
-          class="mt-2 text-xs text-muted"
+          <h2
+            id="learn-topics-heading"
+            class="pz-h3 text-highlighted"
+          >
+            {{ t('pz.learn.pickTopics') }}
+          </h2>
+          <div
+            class="flex flex-wrap gap-2"
+            role="group"
+            :aria-label="t('pz.learn.topicsGroup')"
+          >
+            <LearnChip
+              v-for="topic in topTopics"
+              :key="topic.id"
+              :label="`${topic.label} (${topic.count})`"
+              :selected="selected.has(topic.id)"
+              :disabled="topic.status === 'soon'"
+              @click="toggleTopic(topic)"
+            />
+          </div>
+          <div
+            v-if="childTopics.length"
+            class="flex flex-wrap gap-2 ps-2"
+            role="group"
+            :aria-label="t('pz.learn.topicsGroup')"
+          >
+            <LearnChip
+              v-for="topic in childTopics"
+              :key="topic.id"
+              :label="`${topic.label} (${topic.count})`"
+              :selected="selected.has(topic.id)"
+              @click="toggleTopic(topic)"
+            />
+          </div>
+        </section>
+
+        <section
+          class="flex flex-col gap-3"
+          aria-labelledby="learn-place-heading"
+          data-testid="learn-place"
         >
-          {{ t('pz.learn.wordsNoPlaceData') }}
-        </p>
-      </section>
-
-      <section>
-        <h2 class="mb-2 text-sm font-semibold text-highlighted">
-          {{ t('pz.learn.pickLength') }}
-        </h2>
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            v-for="len in lengths"
-            :key="len"
-            :label="String(len)"
-            :color="n === len ? 'primary' : 'neutral'"
-            :variant="n === len ? 'solid' : 'outline'"
-            size="sm"
-            @click="n = len"
+          <h2
+            id="learn-place-heading"
+            class="pz-h3 text-highlighted"
+          >
+            {{ t('pz.learn.myPlace') }}
+          </h2>
+          <HeritagePlacePicker
+            v-model="placeId"
+            v-model:query="placeQuery"
+            @selection="onPlaceSelection"
           />
-        </div>
-      </section>
+          <p
+            v-if="placeSlug"
+            class="pz-body-sm flex flex-wrap items-center gap-2 text-muted"
+          >
+            <span>{{ settlementForSlug(pool, placeSlug)?.name }}</span>
+            <UButton
+              :label="t('pz.learn.changePlace')"
+              color="neutral"
+              variant="link"
+              class="min-h-(--pz-tap-min) px-0"
+              @click="clearPlace"
+            />
+          </p>
+          <p
+            v-if="placeSlug && selected.has('rijeci')"
+            class="pz-body-sm text-muted"
+          >
+            {{ t('pz.learn.wordsNoPlaceData') }}
+          </p>
+        </section>
 
-      <p class="text-xs text-muted">
-        {{ t('pz.learn.deviceNote') }}
-      </p>
+        <section
+          class="flex flex-col gap-3"
+          aria-labelledby="learn-length-heading"
+        >
+          <h2
+            id="learn-length-heading"
+            class="pz-h3 text-highlighted"
+          >
+            {{ t('pz.learn.pickLength') }}
+          </h2>
+          <div
+            class="flex flex-wrap gap-2"
+            role="group"
+            :aria-label="t('pz.learn.lengthGroup')"
+          >
+            <LearnChip
+              v-for="len in lengths"
+              :key="len"
+              :label="String(len)"
+              :selected="n === len"
+              @click="n = len"
+            />
+          </div>
+        </section>
 
-      <UButton
-        :to="startHref()"
-        :label="startLabel"
-        size="xl"
-        block
-        data-testid="learn-setup-start"
-        @click="learn.rememberSetup([...selected], n)"
-      />
+        <p class="pz-body-sm text-muted">
+          {{ t('pz.learn.deviceNote') }}
+        </p>
+
+        <UButton
+          :to="startHref()"
+          :label="startLabel"
+          trailing-icon="i-lucide-arrow-right"
+          size="xl"
+          block
+          data-testid="learn-setup-start"
+          @click="learn.rememberSetup([...selected], n)"
+        />
+      </div>
     </div>
   </UContainer>
 </template>

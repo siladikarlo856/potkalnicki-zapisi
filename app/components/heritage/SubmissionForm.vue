@@ -14,7 +14,10 @@ const props = defineProps<{
   intent?: SubmissionIntent
   /** Prefill the place field (learn “Moje mjesto”). Resolved through `/api/places` on the client. */
   presetPlace?: { name: string, query?: string }
+  /** On /doprinesi: Pošalji sits in the sticky action bar on a phone, and the success state offers links back into the archive. */
+  stickyBar?: boolean
 }>()
+const formId = useId()
 
 const { t } = useI18n()
 const { locale, toFormErrors, submit } = useSubmissionRequest()
@@ -116,8 +119,12 @@ const successActions = computed(() => [
 
 <template>
   <div class="flex flex-col gap-4">
+    <PzSubmissionSuccess
+      v-if="sendState === 'sent' && stickyBar"
+      @again="sendAnother"
+    />
     <UAlert
-      v-if="sendState === 'sent'"
+      v-else-if="sendState === 'sent'"
       :title="t('heritage.form.successTitle')"
       :description="t('heritage.form.successDescription')"
       icon="i-lucide-circle-check"
@@ -129,6 +136,7 @@ const successActions = computed(() => [
 
     <UForm
       v-else
+      :id="formId"
       ref="form"
       :state="state"
       :validate="validate"
@@ -211,7 +219,10 @@ const successActions = computed(() => [
         role="alert"
       />
 
-      <div class="flex flex-wrap justify-end gap-2 print:hidden">
+      <div
+        class="flex flex-wrap justify-end gap-2 print:hidden"
+        :class="{ 'max-lg:hidden': stickyBar }"
+      >
         <UButton
           type="submit"
           :label="t('heritage.form.submit')"
@@ -220,5 +231,16 @@ const successActions = computed(() => [
         />
       </div>
     </UForm>
+
+    <PzStickyActionBar v-if="stickyBar && sendState !== 'sent'">
+      <UButton
+        type="submit"
+        :form="formId"
+        :label="t('heritage.form.submit')"
+        trailing-icon="i-lucide-send"
+        size="lg"
+        data-testid="contribute-submit-mobile"
+      />
+    </PzStickyActionBar>
   </div>
 </template>

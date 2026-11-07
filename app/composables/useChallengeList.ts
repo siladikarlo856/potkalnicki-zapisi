@@ -114,7 +114,7 @@ export function useChallengeList() {
       const state = await $fetch<ChallengeState>(`/api/challenges/${code}`)
       update(state)
       if (options?.fetchLeaderboard) {
-        const board = await $fetch<ChallengeLeaderboard>(`/api/challenges/${code}/ljestvica`)
+        const board = await $fetch<ChallengeLeaderboard>(`/api/challenges/${code}/leaderboard`)
         leaderboardCounts.value = { ...leaderboardCounts.value, [code]: board.count }
       }
     } catch (cause) {

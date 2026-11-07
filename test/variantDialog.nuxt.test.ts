@@ -71,7 +71,7 @@ describe('variant dialog', () => {
     expect(shown.textContent).toContain(word.meaning.hr)
     expect(shown.querySelector('input, textarea')).toBeNull()
     await vi.waitFor(() => expect(document.activeElement).toBe(field('input[name="variant"]')))
-    for (const label of ['Kako se to kaže kod vas?', 'Gdje se tako govori?', 'Primjer rečenice (neobavezno)', 'Tvoje ime (neobavezno)', 'Kontakt (neobavezno)']) {
+    for (const label of ['Kako se to kaže kod vas?', 'Gdje se tako govori?', 'Primjer rečenice (nije obavezno)', 'Tvoje ime (nije obavezno)', 'Kontakt (nije obavezno)']) {
       expect(root.textContent).toContain(label)
     }
   })
@@ -98,7 +98,7 @@ describe('variant dialog', () => {
     button('Pošalji').click()
     await vi.waitFor(() => expect(dialog()!.textContent).toContain('Odaberi mjesto gdje se tako govori.'))
     expect(field('[role="combobox"]').getAttribute('aria-invalid')).toBe('true')
-    expect(dialog()!.textContent).not.toContain('Gdje se tako govori? (neobavezno)')
+    expect(dialog()!.textContent).not.toContain('Gdje se tako govori? (nije obavezno)')
     expect(dialog()!.textContent).not.toContain('nastavi bez mjesta')
     expect(posted).toHaveLength(0)
     await choosePlace()

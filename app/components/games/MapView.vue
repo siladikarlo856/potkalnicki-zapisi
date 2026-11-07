@@ -187,7 +187,7 @@ function screenToImage(clientX: number, clientY: number) {
 function pickPlaceAt(imageX: number, imageY: number): PoolPlace | undefined {
   for (const place of visibleDots.value) {
     const { x, y } = project(place.lat, place.lng)
-    if (Math.hypot(imageX - x, imageY - y) <= 18) return place
+    if (Math.hypot(imageX - x, imageY - y) <= HIT_RADIUS) return place
   }
   return undefined
 }
@@ -195,9 +195,32 @@ function pickPlaceAt(imageX: number, imageY: number): PoolPlace | undefined {
 function pickNumberedAt(imageX: number, imageY: number): number | undefined {
   for (const marker of challengeMarkers.value) {
     if (marker.index === undefined) continue
-    if (Math.hypot(imageX - marker.x, imageY - marker.y) <= 18) return marker.index
+    if (Math.hypot(imageX - marker.x, imageY - marker.y) <= HIT_RADIUS) return marker.index
   }
   return undefined
+}
+
+/** A dot is 6px wide inside an invisible hit circle of 44px (in frame units, before the viewport's zoom). */
+const HIT_RADIUS = 22
+
+/** Dots in reading order (top to bottom, then left to right) for the arrow keys. */
+function readingOrder(places: PoolPlace[]) {
+  return [...places].sort((a, b) => b.lat - a.lat || a.lng - b.lng)
+}
+
+function onDotKey(event: KeyboardEvent, place: PoolPlace) {
+  if (props.disabled) return
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    pickFromList(place.id)
+    return
+  }
+  const step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0
+  if (!step) return
+  event.preventDefault()
+  const dots = [...(viewport.value?.querySelectorAll<SVGElement>('[data-dot]') ?? [])]
+  const at = dots.indexOf(event.currentTarget as SVGElement)
+  dots[(at + step + dots.length) % dots.length]?.focus()
 }
 
 const pointers = new Map<number, { x: number, y: number }>()
@@ -297,7 +320,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
         v-if="!layerLocked"
         role="radiogroup"
         :aria-label="t('pz.map.layers')"
-        class="inline-flex flex-wrap gap-1 rounded-lg bg-elevated p-1"
+        class="inline-flex flex-wrap gap-1 rounded-full border border-accented bg-muted p-1"
       >
         <button
           v-for="layer in availableLayers"
@@ -305,8 +328,8 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
           type="button"
           role="radio"
           :aria-checked="layerId === layer.id"
-          class="min-h-9 rounded-md px-3 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          :class="layerId === layer.id ? 'bg-primary text-inverted shadow-sm' : 'text-muted hover:text-highlighted'"
+          class="min-h-(--pz-tap-min) rounded-full px-3 text-sm font-semibold transition-colors motion-reduce:transition-none"
+          :class="layerId === layer.id ? 'bg-default text-default ring-1 ring-(--ui-border-accented)' : 'text-muted hover:text-highlighted'"
           :data-testid="`map-layer-${layer.id}`"
           @click="layerId = layer.id"
         >
@@ -317,18 +340,20 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
         <UButton
           :aria-label="t('pz.map.zoomIn')"
           icon="i-lucide-plus"
-          size="sm"
+          size="lg"
           color="neutral"
           variant="outline"
+          class="size-(--pz-tap-min) justify-center"
           data-testid="map-zoom-in"
           @click="zoomBy(0.5)"
         />
         <UButton
           :aria-label="t('pz.map.zoomOut')"
           icon="i-lucide-minus"
-          size="sm"
+          size="lg"
           color="neutral"
           variant="outline"
+          class="size-(--pz-tap-min) justify-center"
           data-testid="map-zoom-out"
           @click="zoomBy(-0.5)"
         />
@@ -337,7 +362,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
 
     <div
       ref="viewport"
-      class="relative aspect-[1600/1373] w-full touch-none overflow-hidden rounded-lg bg-muted ring ring-default"
+      class="relative aspect-[1600/1373] w-full touch-none overflow-hidden rounded-(--pz-radius-lg) border border-accented bg-muted"
       data-testid="map-viewport"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
@@ -360,44 +385,70 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
         <svg
           class="pointer-events-none absolute inset-0 h-full w-full"
           :viewBox="`0 0 ${MAP_FRAME.width} ${MAP_FRAME.height}`"
-          aria-hidden="true"
+          role="group"
+          :aria-label="t('pz.map.layers')"
         >
           <g v-if="feedback">
+            <!-- A miss: the right place in teal with a check, the pick in brick, a dashed line between them. -->
             <line
               :x1="feedback.tap.x"
               :y1="feedback.tap.y"
               :x2="feedback.target.x"
               :y2="feedback.target.y"
-              stroke="currentColor"
+              stroke="var(--ui-error)"
               stroke-width="2"
-              class="text-primary"
+              stroke-dasharray="4 4"
+            />
+            <circle
+              :cx="feedback.tap.x"
+              :cy="feedback.tap.y"
+              r="7"
+              fill="var(--ui-error)"
+              stroke="var(--ui-bg)"
+              stroke-width="2"
             />
             <circle
               :cx="feedback.target.x"
               :cy="feedback.target.y"
               r="14"
               fill="none"
-              stroke="currentColor"
+              stroke="var(--ui-success)"
               stroke-width="3"
-              class="text-success"
             />
+            <text
+              :x="feedback.target.x"
+              :y="feedback.target.y - 20"
+              text-anchor="middle"
+              class="fill-current text-[12px] font-semibold text-highlighted"
+              stroke="var(--ui-bg)"
+              stroke-width="4"
+              paint-order="stroke fill"
+            >
+              ✓ {{ t('pz.map.mapHit') }}
+            </text>
           </g>
           <g
-            v-for="place in visibleDots"
+            v-for="place in readingOrder(visibleDots)"
             :key="place.id"
           >
             <circle
               :cx="dotStyle(place).cx"
               :cy="dotStyle(place).cy"
-              r="18"
+              :r="HIT_RADIUS"
               fill="transparent"
-              class="pointer-events-auto cursor-pointer"
+              class="pointer-events-auto cursor-pointer outline-none focus-visible:stroke-(--focus-ring) focus-visible:stroke-[3px]"
+              role="button"
+              tabindex="0"
+              data-dot
+              :aria-label="place.name"
+              :aria-disabled="disabled ? 'true' : undefined"
               :data-testid="`map-dot-${place.id}`"
+              @keydown="onDotKey($event, place)"
             />
             <circle
               :cx="dotStyle(place).cx"
               :cy="dotStyle(place).cy"
-              r="5"
+              r="4"
               :fill="dotStyle(place).fill"
               :stroke="dotStyle(place).stroke"
               stroke-width="1.5"
@@ -423,7 +474,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="marker.x"
               :cy="marker.y"
-              r="18"
+              r="22"
               fill="transparent"
               class="pointer-events-auto cursor-pointer"
               :data-testid="marker.index === undefined ? 'map-challenge-target' : `map-numbered-${marker.index + 1}`"
@@ -490,23 +541,31 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
 
     <details
       v-if="mode !== 'learn' && difficulty !== 'tesko' && !numberedPoints?.length && !targetPoint"
-      class="rounded-lg bg-elevated p-2 text-sm"
+      class="rounded-(--pz-radius-md) border border-accented bg-default"
     >
-      <summary class="cursor-pointer font-medium text-highlighted">
-        {{ t('pz.map.settlementList') }}
+      <summary class="flex min-h-(--pz-tap-min) cursor-pointer items-center gap-2 px-3 text-sm font-semibold text-default">
+        <UIcon
+          name="i-lucide-list"
+          class="size-5 shrink-0"
+        />
+        {{ t('pz.play.chooseFromList') }}
       </summary>
-      <ul class="mt-2 flex max-h-40 flex-col gap-1 overflow-y-auto">
+      <ul class="m-0 flex max-h-72 list-none flex-col gap-2 overflow-y-auto p-3 pt-1">
         <li
           v-for="place in sortedPlaces"
           :key="place.id"
         >
           <button
             type="button"
-            class="w-full rounded-md px-2 py-1.5 text-left hover:bg-default disabled:opacity-50"
-            :disabled="disabled"
+            class="flex min-h-(--pz-option-min) w-full items-center gap-2 rounded-(--pz-radius-md) border border-accented bg-default px-4 py-3 text-start text-base text-default hover:bg-muted aria-disabled:cursor-default aria-disabled:border-default aria-disabled:bg-muted aria-disabled:text-muted"
+            :aria-disabled="disabled ? 'true' : undefined"
             :data-testid="`map-list-${place.id}`"
-            @click="pickFromList(place.id)"
+            @click="!disabled && pickFromList(place.id)"
           >
+            <UIcon
+              name="i-lucide-map-pin"
+              class="size-5 shrink-0 text-dimmed"
+            />
             {{ place.name }}
           </button>
         </li>

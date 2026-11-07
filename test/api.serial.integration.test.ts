@@ -144,7 +144,8 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi app home', () => {
     expect(window.document.querySelector('#doprinos')).not.toBeNull()
     expect(window.document.querySelector('a[href="/potkalnicko-prigorje/doprinesi"]')).not.toBeNull()
     const scope = window.document.querySelector('[data-testid="obuhvat"]')
-    expect(scope?.textContent).toContain('Obuhvat projekta')
+    expect(scope?.textContent).toContain('Pet općina')
+    expect(scope?.textContent).toContain('Radni obuhvat projekta, ne službena granica prigorja.')
     expect(scope?.textContent).not.toContain('Pet područja')
     expect(scope?.textContent).toContain('Grad Križevci')
     expect(scope?.textContent).toContain('60 naselja · 34 zapisa')
@@ -973,7 +974,7 @@ describe.skipIf(!harness.enabled)('atlas SSR pages', () => {
     const html = await (await fetch(path)).text()
     expect(metaContent(html, 'og:title')).toBe(`${item.name} · Potkalnički zapisi`)
     expect(metaContent(html, 'robots')).toBe('index, follow')
-    expect(html).toContain('data-testid="heritage-status-unverified"')
+    expect(html).toContain('data-testid="verification-badge-unverified"')
   })
 })
 

@@ -23,6 +23,7 @@ const props = defineProps<{
   dialog?: boolean
 }>()
 const emit = defineEmits<{ close: [] }>()
+const formId = useId()
 
 const { t } = useI18n()
 const { locale, toFormErrors, submit } = useSubmissionRequest()
@@ -49,6 +50,7 @@ const placeQuery = ref('')
 const form = useTemplateRef('form')
 const root = useTemplateRef<HTMLElement>('root')
 const closeButton = useTemplateRef<{ $el: HTMLElement }>('closeButton')
+const success = useTemplateRef<{ focus: () => void }>('success')
 const sendState = ref<'idle' | 'sending' | 'sent' | 'error'>('idle')
 const sendError = ref('')
 const formToken = ref<string | null>(null)
@@ -148,6 +150,7 @@ async function send() {
     sendState.value = 'sent'
     await nextTick()
     closeButton.value?.$el?.focus()
+    success.value?.focus()
     return
   }
   if (outcome.issues) form.value?.setErrors(toErrors(outcome.issues))
@@ -187,8 +190,13 @@ defineExpose({
       </p>
     </div>
 
+    <PzSubmissionSuccess
+      v-if="sendState === 'sent' && !dialog"
+      ref="success"
+      @again="reset"
+    />
     <div
-      v-if="sendState === 'sent'"
+      v-else-if="sendState === 'sent'"
       class="flex flex-col items-start gap-3"
     >
       <UAlert
@@ -201,25 +209,17 @@ defineExpose({
         class="w-full"
       />
       <UButton
-        v-if="dialog"
         ref="closeButton"
         :label="t('heritage.form.close')"
         color="neutral"
         variant="subtle"
         @click="emit('close')"
       />
-      <UButton
-        v-else
-        ref="closeButton"
-        :label="t('heritage.form.sendAnother')"
-        color="neutral"
-        variant="subtle"
-        @click="reset"
-      />
     </div>
 
     <UForm
       v-else
+      :id="formId"
       ref="form"
       :state="state"
       :validate="validate"
@@ -327,7 +327,10 @@ defineExpose({
         role="alert"
       />
 
-      <div class="flex flex-wrap justify-end gap-2">
+      <div
+        class="flex flex-wrap justify-end gap-2"
+        :class="dialog ? 'sticky bottom-0 bg-elevated pt-3' : 'max-lg:hidden'"
+      >
         <UButton
           v-if="dialog"
           :label="t('heritage.variantDialog.cancel')"
@@ -344,5 +347,17 @@ defineExpose({
         />
       </div>
     </UForm>
+
+    <PzStickyActionBar v-if="!dialog && sendState !== 'sent'">
+      <UButton
+        type="submit"
+        :form="formId"
+        :label="t('heritage.form.submit')"
+        trailing-icon="i-lucide-send"
+        :loading="sendState === 'sending'"
+        size="lg"
+        data-testid="contribute-submit-mobile"
+      />
+    </PzStickyActionBar>
   </div>
 </template>

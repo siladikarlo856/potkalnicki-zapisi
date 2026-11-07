@@ -6,6 +6,7 @@ defineI18nRoute({ locales: ['hr'] })
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+const count = usePzCount()
 
 const proposalOpen = ref(false)
 const municipalityFilter = ref('all')
@@ -46,6 +47,11 @@ function locationLabel(item: (typeof filtered.value)[number]) {
   return parts.length ? parts.join(' · ') : t('pz.heritage.locationPending')
 }
 
+function clearFilters() {
+  municipalityFilter.value = 'all'
+  categoryFilter.value = 'all'
+}
+
 useSeoMeta({
   title: () => t('pz.heritage.listTitle'),
   ogTitle: () => `${t('pz.heritage.listTitle')} · Potkalnički zapisi`,
@@ -55,93 +61,133 @@ useSeoMeta({
 </script>
 
 <template>
-  <div>
-    <UPageHero
-      :title="t('pz.heritage.listTitle')"
-      :description="t('pz.heritage.listIntro')"
-      :ui="{ container: 'py-12 sm:py-16' }"
-    />
+  <div class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-6 px-4 py-6 lg:px-12 lg:py-12">
+    <header class="flex max-w-(--pz-measure) flex-col gap-3">
+      <h1 class="pz-h1 text-highlighted lg:pz-display">
+        {{ t('pz.heritage.listTitle') }}
+      </h1>
+      <p class="pz-body text-muted">
+        {{ t('pz.heritage.listIntro') }}
+      </p>
+    </header>
 
-    <UPageSection :ui="{ root: 'border-t border-default' }">
-      <div class="mb-6 flex flex-wrap gap-4">
+    <div class="flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
+      <div
+        class="sticky top-(--pz-header-h) z-10 -mx-4 flex flex-col gap-3 border-b border-default bg-default px-4 py-3 lg:top-22 lg:col-span-3 lg:mx-0 lg:gap-5 lg:rounded-(--pz-radius-lg) lg:border lg:bg-muted lg:p-4"
+        role="group"
+        :aria-label="t('pz.heritage.filtersLabel')"
+        data-testid="heritage-filters"
+      >
         <UFormField :label="t('pz.heritage.filterMunicipality')">
           <USelect
             v-model="municipalityFilter"
             :items="municipalityOptions"
-            class="min-w-48"
+            class="w-full lg:min-w-0"
             data-testid="heritage-filter-municipality"
           />
         </UFormField>
-        <UFormField :label="t('pz.heritage.filterCategory')">
-          <USelect
-            v-model="categoryFilter"
-            :items="categoryOptions"
-            class="min-w-48"
-            data-testid="heritage-filter-category"
-          />
-        </UFormField>
-      </div>
-
-      <ul
-        class="divide-y divide-default rounded-lg ring ring-default"
-        data-testid="heritage-list"
-      >
-        <li
-          v-for="item in filtered"
-          :key="item.id"
+        <div
+          class="flex flex-col gap-1.5"
+          role="group"
+          :aria-label="t('pz.heritage.filterCategory')"
         >
-          <ULink
-            v-if="item.path"
-            :to="localePath(item.path)"
-            class="block px-4 py-3 hover:bg-elevated/40"
+          <span class="pz-label hidden text-default lg:block">{{ t('pz.heritage.filterCategory') }}</span>
+          <ul
+            class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0"
+            data-testid="heritage-filter-category"
           >
-            <div class="flex flex-wrap items-start justify-between gap-2">
-              <div class="space-y-1">
-                <p class="font-medium text-highlighted">
-                  {{ item.name }}
-                </p>
-                <p class="text-sm text-muted">
-                  {{ item.category.label }} · {{ locationLabel(item) }} · {{ item.municipality.label }}
-                </p>
-              </div>
-              <PzHeritageStatusBadge :verification="item.verification" />
-            </div>
-          </ULink>
-          <div
-            v-else
-            class="block px-4 py-3"
-          >
-            <div class="flex flex-wrap items-start justify-between gap-2">
-              <div class="space-y-1">
-                <p class="font-medium text-highlighted">
-                  {{ item.name }}
-                </p>
-                <p class="text-sm text-muted">
-                  {{ item.category.label }} · {{ locationLabel(item) }} · {{ item.municipality.label }}
-                </p>
-              </div>
-              <PzHeritageStatusBadge :verification="item.verification" />
-            </div>
-          </div>
-        </li>
-      </ul>
-
-      <div class="mt-6">
-        <UButton
-          :label="t('pz.heritage.missingItem')"
-          icon="i-lucide-plus"
-          color="neutral"
-          variant="outline"
-          aria-haspopup="dialog"
-          data-testid="heritage-list-suggest-item"
-          @click="proposalOpen = true"
-        />
-        <HeritageSuggestDialog
-          v-model:open="proposalOpen"
-          kind="heritage_item"
-          mode="proposal"
-        />
+            <li
+              v-for="option in categoryOptions"
+              :key="option.value"
+              class="shrink-0"
+            >
+              <button
+                type="button"
+                class="pz-label inline-flex min-h-(--pz-tap-min) items-center rounded-full border px-3.5 whitespace-nowrap"
+                :class="categoryFilter === option.value
+                  ? 'border-primary bg-accented text-highlighted'
+                  : 'border-accented bg-default text-default hover:bg-muted'"
+                :aria-pressed="categoryFilter === option.value"
+                :data-category="option.value"
+                @click="categoryFilter = option.value"
+              >
+                {{ option.label }}
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
-    </UPageSection>
+
+      <div class="flex min-w-0 flex-col gap-4 lg:col-span-9">
+        <h2 class="sr-only">
+          {{ t('pz.heritage.listHeading') }}
+        </h2>
+        <p
+          class="pz-body-sm text-muted"
+          role="status"
+          data-testid="heritage-count"
+        >
+          {{ count('pz.heritage.resultCount', filtered.length) }}
+        </p>
+
+        <ul
+          v-if="filtered.length"
+          class="grid gap-3 lg:grid-cols-2"
+          data-testid="heritage-list"
+        >
+          <li
+            v-for="item in filtered"
+            :key="item.id"
+            class="flex"
+          >
+            <PzHeritageCard
+              class="w-full"
+              :title="item.name"
+              :to="item.path ? localePath(item.path) : localePath(`/potkalnicko-prigorje/istrazi/${item.municipality.slug}`)"
+              :settlement="locationLabel(item)"
+              :municipality="item.municipality.label"
+              :category="item.category.label"
+              :icon="pzHeritageIcon(item.category.key)"
+            >
+              <template #trust>
+                <PzVerificationBadge :verification="item.verification" />
+              </template>
+            </PzHeritageCard>
+          </li>
+        </ul>
+        <template v-else>
+          <PzEmptyState
+            :title="t('pz.heritage.noResultsTitle')"
+            :description="t('pz.heritage.noResultsAsk')"
+          />
+          <UButton
+            :label="t('pz.heritage.clearFilters')"
+            color="neutral"
+            variant="outline"
+            class="self-start ring-(--ui-border-accented)"
+            data-testid="heritage-clear-filters"
+            @click="clearFilters"
+          />
+        </template>
+
+        <div class="mt-2">
+          <UButton
+            :label="t('pz.heritage.missingItem')"
+            icon="i-lucide-plus"
+            color="neutral"
+            variant="outline"
+            class="min-h-(--pz-tap-min) max-w-full justify-start text-start whitespace-normal ring-(--ui-border-accented)"
+            aria-haspopup="dialog"
+            data-testid="heritage-list-suggest-item"
+            @click="proposalOpen = true"
+          />
+          <HeritageSuggestDialog
+            v-model:open="proposalOpen"
+            kind="heritage_item"
+            mode="proposal"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 </template>

@@ -9,8 +9,11 @@ import {
 } from '~~/shared/utils/learn/learnState'
 import { buildSession } from '~~/shared/utils/learn/session'
 import { buildLearnReviewQuestion, shouldAskReviewQuestion } from '~~/shared/utils/learn/reviewQuestion'
-import type { TopicId } from '~~/shared/utils/learn/types'
-import { cardByKey, isDisplayCard } from '~/utils/learnUi'
+import type { CardKey, PoolItem, PoolPerson, PoolPlace, PoolWord, TopicId } from '~~/shared/utils/learn/types'
+import type { GameQuestion } from '~~/shared/utils/games/types'
+import { cardByKey, isDisplayCard, topicLabels } from '~/utils/learnUi'
+
+type DisplayCardType = PoolWord | PoolPlace | PoolItem | PoolPerson
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -142,12 +145,18 @@ const currentCard = computed(() => {
   return isDisplayCard(card) ? card : undefined
 })
 
+// While a review answer waits for Dalje the session has already moved on (or finished), so the progress row
+// keeps showing the session the held card belongs to.
+const shownSession = computed(() => session.value ?? (reviewHold.value ? finished.value : null))
+
 const counter = computed(() => {
-  if (!active.value) return { i: 0, n: 0 }
+  const current = shownSession.value
+  if (!current) return { i: 0, n: 0 }
   const n = targetN.value
-  const answered = Object.keys(active.value.results).length
-  const key = active.value.queue[active.value.index]
-  const i = key && !Object.hasOwn(active.value.results, key) ? answered + 1 : answered
+  const answered = Object.keys(current.results).length
+  if (reviewHold.value) return { i: Math.min(Math.max(answered, 1), n), n }
+  const key = current.queue[current.index]
+  const i = key && !Object.hasOwn(current.results, key) ? answered + 1 : answered
   return { i: Math.min(i, n), n }
 })
 
@@ -184,18 +193,60 @@ const reviewQuestion = computed(() => {
   return buildLearnReviewQuestion(pool.value, key)
 })
 
-const useReviewCard = computed(() => !!reviewQuestion.value)
+// A due card is asked as multiple choice. The answer is saved as soon as it is picked, but the player stays on
+// the question (with its feedback) until Dalje: `reviewHold` keeps that card on screen while the session has moved on.
+const reviewHold = ref<{ key: CardKey, card: DisplayCardType, question: GameQuestion } | null>(null)
+const reviewStep = ref(0)
+const reviewShown = computed(() => {
+  if (reviewHold.value) return reviewHold.value
+  const key = currentKey.value
+  const card = currentCard.value
+  const question = reviewQuestion.value
+  return active.value && key && card && question ? { key, card, question } : null
+})
 
 async function scoreReview(correct: boolean) {
-  if (!active.value || !currentKey.value) return
+  const shown = reviewShown.value
+  if (!shown || !active.value || reviewHold.value) return
+  reviewHold.value = shown
   seen.value = true
-  recordSeenCard(currentKey.value)
+  recordSeenCard(shown.key)
   await score(correct)
 }
 
-defineShortcuts(computed(() => ({
-  space: currentCard.value && !finished.value && !useReviewCard.value ? () => { flipped.value = !flipped.value } : false
-})))
+async function reviewNext() {
+  reviewHold.value = null
+  reviewStep.value += 1
+  await nextTick()
+  document.getElementById('learn-review-prompt')?.focus()
+}
+
+async function grade(knew: boolean) {
+  await score(knew)
+  await nextTick()
+  card.value?.focus()
+}
+
+const marks = computed(() => {
+  const current = shownSession.value
+  if (!current) return []
+  const seenKeys = new Set<string>()
+  const done: ('known' | 'missed')[] = []
+  for (const key of current.queue.slice(0, current.index)) {
+    if (seenKeys.has(key)) continue
+    seenKeys.add(key)
+    const result = current.results[key]
+    if (result) done.push(result)
+  }
+  return done
+})
+
+const topicsLine = computed(() => shownSession.value ? topicLabels(pool.value, shownSession.value.topics) : '')
+
+// The sticky action bar (Znam / Dalje / Nova sesija) takes the tab bar's place while a session runs and at its end.
+useHidePzTabBar(() => ready.value && !unavailable.value && !error.value && !!(reviewShown.value || currentCard.value || finished.value), 'game')
+
+const card = useTemplateRef<{ focus: () => void }>('card')
 
 onMounted(() => {
   if (status.value === 'success' || pool.value.cards.length) {
@@ -213,135 +264,107 @@ watch(() => status.value, (s) => {
 </script>
 
 <template>
-  <UContainer class="py-6">
-    <UButton
-      :to="localePath('/potkalnicko-prigorje/uci')"
-      :label="t('pz.learn.title')"
-      icon="i-lucide-arrow-left"
-      color="neutral"
-      variant="link"
-      size="sm"
-      class="-ms-0.5 mb-2 px-0"
-    />
+  <UContainer class="py-4 lg:py-6">
+    <div class="mx-auto flex w-full max-w-(--pz-game-col) flex-col gap-4">
+      <h1
+        v-if="!finished || reviewShown"
+        class="sr-only"
+      >
+        {{ t('pz.learn.title') }}
+      </h1>
+      <PzBackPill :to="localePath('/potkalnicko-prigorje/uci')">
+        {{ t('pz.learn.title') }}
+      </PzBackPill>
 
-    <div
-      v-if="!ready || status === 'pending'"
-      class="space-y-3"
-    >
-      <USkeleton class="h-8 w-48" />
-      <USkeleton class="h-64 w-full" />
-    </div>
-
-    <UAlert
-      v-else-if="error"
-      color="error"
-      variant="subtle"
-      :title="t('pz.learn.loadError')"
-    >
-      <UButton
-        :label="t('game.retry')"
-        variant="link"
-        @click="refresh()"
-      />
-    </UAlert>
-
-    <div
-      v-else-if="unavailable"
-      class="rounded-xl bg-default p-6 ring ring-default"
-      data-testid="learn-unavailable"
-    >
-      <p class="text-highlighted">
-        {{ t('pz.learn.sessionUnavailable') }}
-      </p>
-      <UButton
-        :to="localePath('/potkalnicko-prigorje/uci')"
-        :label="t('pz.learn.title')"
-        class="mt-4"
-      />
-    </div>
-
-    <LearnSummary
-      v-else-if="finished"
-      :pool="pool"
-      :session="finished"
-      :streak="streak"
-    />
-
-    <div
-      v-else-if="currentCard && active && useReviewCard && reviewQuestion"
-      class="mx-auto flex max-w-md flex-col gap-3"
-      data-testid="learn-runner"
-    >
-      <div class="flex items-center justify-between text-sm text-muted">
-        <span>{{ t('pz.learn.counter', counter) }}</span>
+      <div
+        v-if="!ready || status === 'pending'"
+        class="space-y-3"
+      >
+        <USkeleton class="h-8 w-48" />
+        <USkeleton class="h-64 w-full" />
       </div>
-      <UProgress
-        :model-value="counter.i - 1"
-        :max="counter.n"
-        size="sm"
-        aria-hidden="true"
-      />
-      <LearnReviewCard
-        :key="currentKey"
-        :card="currentCard"
-        :pool="pool"
-        :question="reviewQuestion"
-        @answer="scoreReview"
-      />
-    </div>
 
-    <div
-      v-else-if="currentCard && active"
-      class="mx-auto flex max-w-md flex-col gap-3"
-      data-testid="learn-runner"
-    >
-      <div class="flex items-center justify-between text-sm text-muted">
-        <span>{{ t('pz.learn.counter', counter) }}</span>
+      <UAlert
+        v-else-if="error"
+        color="error"
+        variant="subtle"
+        :title="t('pz.learn.loadError')"
+      >
+        <UButton
+          :label="t('game.retry')"
+          variant="link"
+          @click="refresh()"
+        />
+      </UAlert>
+
+      <div
+        v-else-if="unavailable"
+        class="rounded-(--pz-radius-lg) border border-default bg-default p-6"
+        data-testid="learn-unavailable"
+      >
+        <p class="pz-body text-highlighted">
+          {{ t('pz.learn.sessionUnavailable') }}
+        </p>
+        <UButton
+          :to="localePath('/potkalnicko-prigorje/uci')"
+          :label="t('pz.learn.title')"
+          class="mt-4"
+        />
       </div>
-      <UProgress
-        :model-value="counter.i - 1"
-        :max="counter.n"
-        size="sm"
-        aria-hidden="true"
-      />
 
-      <LearnCard
-        :key="currentKey"
-        v-model:flipped="flipped"
-        :card="currentCard"
+      <div
+        v-else-if="reviewShown"
+        class="flex min-w-0 flex-col gap-4"
+        data-testid="learn-runner"
+      >
+        <LearnProgress
+          :current="counter.i"
+          :total="counter.n"
+          :marks="marks"
+          :topics="topicsLine"
+        />
+        <LearnReviewCard
+          :key="`${reviewShown.key}-${reviewStep}`"
+          :card="reviewShown.card"
+          :pool="pool"
+          :question="reviewShown.question"
+          :last="finished !== null"
+          @answer="scoreReview"
+          @next="reviewNext"
+        />
+      </div>
+
+      <LearnSummary
+        v-else-if="finished"
         :pool="pool"
-        :place-slug="placeSlug"
-      />
-
-      <UButton
-        :label="t('pz.learn.flip')"
-        icon="i-lucide-rotate-3d"
-        :color="seen ? 'neutral' : 'primary'"
-        :variant="seen ? 'outline' : 'solid'"
-        size="xl"
-        block
-        @click="flipped = !flipped"
+        :session="finished"
+        :streak="streak"
       />
 
       <div
-        v-if="seen"
-        class="grid grid-cols-2 gap-2"
+        v-else-if="currentCard && active"
+        class="flex min-w-0 flex-col gap-4"
+        data-testid="learn-runner"
       >
-        <UButton
-          :label="t('pz.learn.unknown')"
-          color="neutral"
-          variant="subtle"
-          size="xl"
-          block
-          data-testid="learn-unknown"
-          @click="score(false)"
+        <LearnProgress
+          :current="counter.i"
+          :total="counter.n"
+          :marks="marks"
+          :topics="topicsLine"
         />
-        <UButton
-          :label="t('pz.learn.known')"
-          size="xl"
-          block
-          data-testid="learn-known"
-          @click="score(true)"
+
+        <LearnCard
+          :key="currentKey"
+          ref="card"
+          v-model:flipped="flipped"
+          :card="currentCard"
+          :pool="pool"
+          :place-slug="placeSlug"
+        />
+
+        <LearnGrade
+          v-if="seen"
+          @score="grade"
         />
       </div>
     </div>
