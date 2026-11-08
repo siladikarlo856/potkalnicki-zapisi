@@ -456,8 +456,9 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
 
     <div
       ref="viewport"
-      class="relative aspect-[1600/1373] w-full touch-none overflow-hidden rounded-(--pz-radius-lg) border border-accented bg-muted"
+      class="relative w-full touch-none overflow-hidden rounded-(--pz-radius-lg) border border-accented bg-muted"
       data-testid="map-viewport"
+      :style="{ aspectRatio: `${MAP_FRAME.width} / ${MAP_FRAME.height}` }"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"

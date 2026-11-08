@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Drives headless Chrome through render.html and saves a 1600x1373 PNG of one layer.
+// Drives headless Chrome through render.html and saves a PNG (MAP_FRAME.width x MAP_FRAME.height) of one layer.
 //
 //   node scripts/map/capture.mjs karta|reljef <out.png>
 //
@@ -9,6 +9,7 @@
 import { spawn } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { MAP_FRAME } from '../../shared/utils/games/mapFrame.ts'
 
 const [layer, out] = process.argv.slice(2)
 if (!['karta', 'reljef'].includes(layer) || !out) {
@@ -20,7 +21,7 @@ const page = fileURLToPath(new URL('./render.html', import.meta.url))
 const port = 9300 + Math.floor(Math.random() * 500)
 
 const proc = spawn(chrome, [
-  '--headless=new', `--remote-debugging-port=${port}`, '--window-size=1600,1373', '--hide-scrollbars',
+  '--headless=new', `--remote-debugging-port=${port}`, `--window-size=${MAP_FRAME.width},${MAP_FRAME.height}`, '--hide-scrollbars',
   '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist',
   `--user-data-dir=${process.env.TMPDIR ?? '/tmp'}/ksh-map-capture-${port}`, 'about:blank'
 ], { stdio: 'ignore' })
@@ -48,8 +49,8 @@ async function main() {
     pending.set(++id, resolve)
     ws.send(JSON.stringify({ id, method, params }))
   })
-  await send('Emulation.setDeviceMetricsOverride', { width: 1600, height: 1373, deviceScaleFactor: 1, mobile: false })
-  await send('Page.navigate', { url: `file://${page}?layer=${layer}` })
+  await send('Emulation.setDeviceMetricsOverride', { width: MAP_FRAME.width, height: MAP_FRAME.height, deviceScaleFactor: 1, mobile: false })
+  await send('Page.navigate', { url: `file://${page}?layer=${layer}&${new URLSearchParams(Object.entries(MAP_FRAME).map(([k, v]) => [k, String(v)]))}` })
   for (let i = 0; i < 150; i++) {
     const r = await send('Runtime.evaluate', { expression: 'document.title' })
     if (r.result?.result?.value === 'ready') break
