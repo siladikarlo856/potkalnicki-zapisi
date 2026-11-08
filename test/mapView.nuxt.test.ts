@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import MapView from '../app/components/games/MapView.vue'
-import { project } from '../shared/utils/games/mapFrame'
+import { MAP_FRAME, project } from '../shared/utils/games/mapFrame'
 import type { PoolMunicipality, PoolPlace } from '../shared/utils/learn/types'
 
 const municipalities: PoolMunicipality[] = [{
@@ -91,7 +91,7 @@ describe('GamesMapView', () => {
       const y = point.y * v.scale + v.translate.y
       return x >= 0 && x <= VW && y >= 0 && y <= VH
     }
-    const fit = Math.min(VW / 1600, VH / 1373)
+    const fit = Math.min(VW / MAP_FRAME.width, VH / MAP_FRAME.height)
 
     it('opens on the whole area and never zooms out further', async () => {
       const page = await mountSuspended(MapView, {
@@ -100,7 +100,7 @@ describe('GamesMapView', () => {
       const v = view(page)
       expect(v.scale).toBeCloseTo(fit, 5)
       // all four corners of the frame are on screen
-      for (const corner of [{ x: 0, y: 0 }, { x: 1600, y: 0 }, { x: 0, y: 1373 }, { x: 1600, y: 1373 }]) {
+      for (const corner of [{ x: 0, y: 0 }, { x: MAP_FRAME.width, y: 0 }, { x: 0, y: MAP_FRAME.height }, { x: MAP_FRAME.width, y: MAP_FRAME.height }]) {
         expect(visible(v, corner)).toBe(true)
       }
       await page.get('[data-testid="map-zoom-out"]').trigger('click')

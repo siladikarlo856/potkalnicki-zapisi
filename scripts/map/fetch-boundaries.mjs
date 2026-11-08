@@ -11,7 +11,8 @@
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-const FRAME = { west: 16.3298, east: 16.7322, south: 45.9187, north: 46.1584, width: 1600, height: 1373 }
+import { MAP_FRAME as FRAME } from '../../shared/utils/games/mapFrame.ts'
+
 /** Douglas-Peucker tolerance in frame pixels. */
 const TOLERANCE = 0.9
 

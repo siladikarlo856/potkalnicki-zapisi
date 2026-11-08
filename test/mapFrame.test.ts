@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { MUNICIPALITY_BOUNDARIES } from '../shared/utils/games/mapBoundaries'
 import { distanceKm, distanceScore, MAP_FRAME, project, unproject } from '../shared/utils/games/mapFrame'
 
 describe('mapFrame', () => {
@@ -17,6 +18,20 @@ describe('mapFrame', () => {
     expect(se.y).toBeCloseTo(MAP_FRAME.height, 0)
   })
 
+  it('keeps every municipality boundary inside the frame with a margin', () => {
+    const margin = 20
+    for (const [slug, { d }] of Object.entries(MUNICIPALITY_BOUNDARIES)) {
+      const pts = [...d.matchAll(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g)].map(m => ({ x: Number(m[1]), y: Number(m[2]) }))
+      expect(pts.length, slug).toBeGreaterThan(10)
+      for (const { x, y } of pts) {
+        expect(x, slug).toBeGreaterThanOrEqual(margin)
+        expect(x, slug).toBeLessThanOrEqual(MAP_FRAME.width - margin)
+        expect(y, slug).toBeGreaterThanOrEqual(margin)
+        expect(y, slug).toBeLessThanOrEqual(MAP_FRAME.height - margin)
+      }
+    }
+  })
+
   it('round-trips project and unproject', () => {
     const points = [
       { lat: 46.02194, lng: 16.5425 },
@@ -33,8 +48,8 @@ describe('mapFrame', () => {
 
   it('places Križevci near the handbook check point', () => {
     const { x, y } = project(46.02194, 16.5425)
-    expect(x).toBeCloseTo(845.7, 0)
-    expect(y).toBeCloseTo(782.4, 0)
+    expect(x).toBeCloseTo(840.3, 0)
+    expect(y).toBeCloseTo(949.1, 0)
   })
 
   it('measures Šopron to Potok Kalnički at about 1.5 km', () => {

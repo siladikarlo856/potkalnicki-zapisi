@@ -7,17 +7,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; margin: 1rem; }
-    #map { width: 1600px; height: 1373px; }
+    #map { width: 1px; height: 1px; }
     button { margin: 0.5rem 0.5rem 0.5rem 0; }
   </style>
 </head>
 <body>
-  <p>Export 1600×1373 px images for <code>MAP_FRAME</code>. Remove symbol layers on Positron before capture.</p>
+  <p>Export images for <code>MAP_FRAME</code>. Needs <code>?west=&east=&south=&north=&width=&height=</code> (scripts/map/capture.mjs fills them in from <code>mapFrame.ts</code>). Symbol layers on Positron are removed before capture.</p>
   <div id="map"></div>
   <button type="button" id="dl-karta">Download Karta PNG</button>
   <button type="button" id="dl-reljef">Download Reljef PNG</button>
   <script>
-    const frame = { west: 16.3298, east: 16.7322, south: 45.9187, north: 46.1584 }
+    // The frame comes from the query string (capture.mjs reads it from shared/utils/games/mapFrame.ts).
+    const params = new URLSearchParams(location.search)
+    const frame = Object.fromEntries(['west', 'east', 'south', 'north', 'width', 'height'].map(k => [k, Number(params.get(k))]))
+    if (Object.values(frame).some(v => !v)) throw new Error('render.html needs ?west&east&south&north&width&height')
+    const mapEl = document.getElementById('map')
+    mapEl.style.width = `${frame.width}px`
+    mapEl.style.height = `${frame.height}px`
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://tiles.openfreemap.org/styles/positron',
@@ -29,7 +35,6 @@
     })
     // ?layer=karta|reljef renders that layer alone, without the page chrome, so a headless browser can
     // screenshot it (see README). Without it, use the download buttons.
-    const params = new URLSearchParams(location.search)
     const only = params.get('layer')
     if (only) {
       document.body.style.margin = '0'

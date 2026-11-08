@@ -1,10 +1,12 @@
+// All five municipalities' OSM boundaries (bbox 16.3412..16.7247 E, 45.9185..46.1805 N) fit with a ~40 px margin.
+// Changing this means re-running scripts/map/ (images + boundaries); settlements are lat/lng and follow it.
 export const MAP_FRAME = {
-  west: 16.3298,
-  east: 16.7322,
-  south: 45.9187,
-  north: 46.1584,
-  width: 1600,
-  height: 1373
+  west: 16.3312,
+  east: 16.7348,
+  south: 45.9115,
+  north: 46.1874,
+  width: 1605,
+  height: 1581
 } as const
 
 export type MapLayerId = 'karta' | 'reljef' | 'satelit'
