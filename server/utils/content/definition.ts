@@ -28,6 +28,11 @@ export interface ContentKindDefinition<V extends { status: ContentStatus } = { s
   fields: { [K in Exclude<keyof V, 'status'>]: string }
   /** The column that names a row in lookups, references and messages. */
   labelColumn: string
+  /**
+   * A column, kept with its accents, that the admin search matches besides `search_text` (a Narrator's real name:
+   * `search_text` holds it only with consent, but an editor must find the narrator by name either way).
+   */
+  searchAlso?: string
   /** The shared validator, also used by the admin dialog. */
   validate(input: unknown, id?: string): ContentValidation<V>
   /** Sort key accepted in `?sort=` (prefix `-` for descending) → column; `status`, `updatedAt` and `createdAt` are common. */

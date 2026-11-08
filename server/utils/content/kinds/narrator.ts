@@ -40,6 +40,8 @@ export const narratorKind = defineContentKind({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   labelColumn: 'name',
+  // search_text leaves the name out without consent; editors look a narrator up by the name column itself.
+  searchAlso: 'name',
   validate: validateNarrator,
   sorts: { name: 'name', verification: 'verification', bornYear: 'born_year' },
   defaultSort: 'name',

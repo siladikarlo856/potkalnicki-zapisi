@@ -12,6 +12,8 @@ const credit = defineModel<boolean>('credit', { default: true })
 
 const submission = computed(() => props.detail.submission)
 const isCorrection = computed(() => submission.value.type === 'correction')
+/** A Memory: the Draft is a Story, Custom or Folk text started from it; publishing the Draft applies it. */
+const isMemory = computed(() => submission.value.type === 'memory')
 const applied = computed(() => !!submission.value.appliedAt)
 /** Sources carry no credits, and an anonymous contributor has no name to thank. */
 const creditable = computed(() => !applied.value && !!submission.value.name && submission.value.targetKind !== 'source')
@@ -22,7 +24,7 @@ const creditable = computed(() => !applied.value && !!submission.value.name && s
     :color="applied ? 'neutral' : 'info'"
     variant="subtle"
     icon="i-lucide-git-pull-request"
-    :title="`${isCorrection ? 'Ispravak' : 'Prijedlog novog zapisa'} #${submission.id}${submission.targetKind ? ` · ${CONTRIBUTION_KIND_LABELS[submission.targetKind]}` : ''}`"
+    :title="`${isCorrection ? 'Ispravak' : isMemory ? 'Sjećanje' : 'Prijedlog novog zapisa'} #${submission.id}${submission.targetKind ? ` · ${CONTRIBUTION_KIND_LABELS[submission.targetKind]}` : ''}`"
     data-test="admin-proposal-banner"
   >
     <template #description>
@@ -38,6 +40,14 @@ const creditable = computed(() => !applied.value && !!submission.value.name && s
           class="text-sm"
         >
           Predložene vrijednosti su unesene u obrazac. Pregledaj ih i spremi: spremanje primjenjuje prijedlog i odobrava ga.
+        </p>
+        <p
+          v-else-if="isMemory"
+          class="text-sm"
+          data-test="admin-memory-banner"
+        >
+          Skica počinje tekstom sjećanja. Dovrši je (vrstu, mjesta, kazivača i vrijeme) i objavi: objava odobrava sjećanje,
+          a pošiljatelj se navodi u zahvalama samo ako je imenovan i dao privolu.
         </p>
         <p
           v-else
