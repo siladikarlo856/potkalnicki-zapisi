@@ -3,7 +3,7 @@ import type { AtlasItemStatus } from '#shared/types/atlas'
 import type { PublicCredit } from '#shared/types/publicAtlas'
 import { INTANGIBLE_KINDS, type IntangibleKind } from '#shared/utils/intangiblePublic'
 import { containsNamePart } from '#shared/utils/content/narrator'
-import type { SnapshotItem, SnapshotPerson, SnapshotSource, SnapshotSettlement, SnapshotMunicipality } from './publicContent'
+import type { SnapshotItem, SnapshotPerson, SnapshotSource } from './publicContent'
 
 // Intangible heritage in the public content snapshot (Story, Custom, Folk text, Narrator, Theme and the type and
 // occasion lists). Built from published and archived rows only, so a draft never reaches this file. What the public
@@ -271,8 +271,6 @@ export interface IntangibleContext {
   /** Area id → live (towns, municipalities, settlements of the atlas). */
   areaState: Map<string, boolean>
   regionId: string | null
-  municipalities: readonly SnapshotMunicipality[]
-  settlements: readonly SnapshotSettlement[]
   itemById: Map<string, SnapshotItem>
   personById: Map<string, SnapshotPerson>
   sources: Map<string, SnapshotSource>
@@ -514,7 +512,7 @@ async function loadLinks(client: SupabaseClient, kind: IntangibleKind): Promise<
  * the database), and never the columns that are for editors: `research_notes`, `search_text`, `apply_credit` and a
  * Narrator's `consent_note`.
  */
-export async function loadIntangibleRows(client: SupabaseClient): Promise<IntangibleRows> {
+async function readIntangibleRows(client: SupabaseClient): Promise<IntangibleRows> {
   const keyed = (table: string) => readAll<KeyedRow>((from, to) => client.from(table)
     .select('id,key,label_hr,sort,status').in('status', VISIBLE).order('id').range(from, to))
   const records = (kind: IntangibleKind) => readAll<IntangibleRow>((from, to) => client.from(TABLES[kind])
@@ -548,5 +546,28 @@ export async function loadIntangibleRows(client: SupabaseClient): Promise<Intang
     links: { story: storyLinks!, custom: customLinks!, folk_text: folkLinks! },
     types: { story: storyTypes!, custom: customTypes!, folk_text: folkTypes! },
     occasions, themes, narrators, folkTextWords, words
+  }
+}
+
+/** PostgREST's answer when a table is not there (the migrations are not applied yet). */
+const MISSING_TABLE = /could not find the table|schema cache|relation .* does not exist/i
+let warnedMissing = false
+
+/**
+ * `readIntangibleRows`, except that tables that are not there yet read as no records: deploying the app before
+ * `20261108000000_intangible_heritage.sql` is applied must not take the rest of the public site down with it (the
+ * other public kinds share this snapshot). Any other failure still fails the load, so a transient error never
+ * turns into a snapshot that silently lacks the records.
+ */
+export async function loadIntangibleRows(client: SupabaseClient): Promise<IntangibleRows> {
+  try {
+    return await readIntangibleRows(client)
+  } catch (error) {
+    if (!(error instanceof Error) || !MISSING_TABLE.test(error.message)) throw error
+    if (!warnedMissing) {
+      warnedMissing = true
+      console.warn('[content] Intangible heritage tables are missing; the public pages show no Stories, Customs or Folk texts until the migrations are applied.')
+    }
+    return NO_INTANGIBLE_ROWS
   }
 }

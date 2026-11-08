@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { buildPublicContent, loadPublicContentRows } from '../server/utils/publicContent'
 import {
   intangibleDetail,
@@ -192,6 +192,25 @@ describe('narrators and consent', () => {
     expect(selects.narrators).toContain('consent_named')
     expect(selects.narrators).toContain('public_description')
     expect(selects.story_narrators).toContain('record_id:story_id')
+  })
+
+  it('reads missing intangible tables as no records, so deploying before the migration keeps the rest of the site up', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const client = (failure: { message: string } | null) => ({
+      from: (table: string) => {
+        const result = { data: [], error: table === 'stories' ? failure : null }
+        const chain: Record<string, unknown> = {}
+        for (const method of ['select', 'in', 'order', 'range', 'eq', 'is']) chain[method] = () => chain
+        chain.then = (resolve: (value: typeof result) => unknown) => resolve(result)
+        return chain
+      }
+    }) as never
+    const rows = await loadPublicContentRows(client({ message: 'Could not find the table \'public.stories\' in the schema cache' }))
+    expect(rows.intangible!.records).toEqual({ story: [], custom: [], folk_text: [] })
+    expect(buildPublicContent(rows, {}).intangible.records).toEqual([])
+    // Any other failure still fails the load.
+    await expect(loadPublicContentRows(client({ message: 'connection reset' }))).rejects.toThrow('connection reset')
+    warn.mockRestore()
   })
 })
 

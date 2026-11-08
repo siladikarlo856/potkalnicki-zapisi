@@ -507,7 +507,7 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
 
   const personById = new Map(persons.map(p => [p.id, p]))
   const intangible = buildIntangible(rows.intangible ?? NO_INTANGIBLE_ROWS, {
-    areaState, regionId: regionRow?.id ?? null, municipalities, settlements,
+    areaState, regionId: regionRow?.id ?? null,
     itemById: new Map(items.map(i => [i.id, i])), personById, sources
   }, rows.slugHistory)
   const slugHistory = new Map(intangible.slugHistory.map(h => [slugHistoryKey(h.kind, h.namespace, h.scope_id, h.slug), h.entity_id]))
