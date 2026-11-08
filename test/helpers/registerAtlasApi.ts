@@ -19,12 +19,21 @@ import {
   settlementPage,
   suggestOptions
 } from '../../server/utils/publicAtlas'
-import { fakeRowsWithPersons } from './fakePersons'
+import {
+  intangibleDetail,
+  intangibleList,
+  narratorPage,
+  resolveIntangible,
+  resolveNarrator,
+  resolveTheme,
+  themePage
+} from '../../server/utils/publicIntangible'
+import { fakeRowsWithIntangible } from './fakeIntangible'
 
 let cached: ReturnType<typeof buildPublicContent> | undefined
 
 function content() {
-  cached ??= buildPublicContent(fakeRowsWithPersons(), {})
+  cached ??= buildPublicContent(fakeRowsWithIntangible(), {})
   return cached
 }
 
@@ -46,6 +55,28 @@ function heritageItemResponse(settlement: string, slug: string) {
 function getQuery(event: H3Event): Record<string, string> {
   const url = (event as unknown as { web?: { request: Request } }).web?.request.url ?? event.path
   return Object.fromEntries(new URL(url, 'http://localhost').searchParams)
+}
+
+function intangibleResponse(kind: string, slug: string) {
+  const result = resolveIntangible(content(), kind, slug)
+  if (result.status === 'redirect') return { redirect: result.path }
+  if (result.status === 'gone') throw createError({ statusCode: 410, statusMessage: 'Content has been removed' })
+  if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Record not found' })
+  return { record: intangibleDetail(content(), result.value) }
+}
+
+function themeResponse(slug: string) {
+  const result = resolveTheme(content(), slug)
+  if (result.status === 'redirect') return { redirect: result.path }
+  if (result.status !== 'ok') throw createError({ statusCode: result.status === 'gone' ? 410 : 404, statusMessage: 'Theme not found' })
+  return themePage(content(), result.value)
+}
+
+function narratorResponse(slug: string) {
+  const result = resolveNarrator(content(), slug)
+  if (result.status === 'redirect') return { redirect: result.path }
+  if (result.status !== 'ok') throw createError({ statusCode: result.status === 'gone' ? 410 : 404, statusMessage: 'Narrator not found' })
+  return narratorPage(content(), result.value)
 }
 
 /** Mock public atlas API routes for component tests (same data as the fake Supabase seed). */
@@ -112,6 +143,19 @@ export function registerAtlasApiEndpoints() {
     if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Municipality not found' })
     return municipalityPage(content(), result.value)
   })
+  registerEndpoint('/api/atlas/intangible', (event) => {
+    const query = getQuery(event)
+    const list = intangibleList(content(), { kind: query.kind, type: query.type, theme: query.theme, place: query.place })
+    if (!list) throw createError({ statusCode: 400, statusMessage: 'Unknown filter' })
+    return list
+  })
+  registerEndpoint('/api/atlas/intangible/prica/kalnicka-vjestica', () => intangibleResponse('prica', 'kalnicka-vjestica'))
+  registerEndpoint('/api/atlas/intangible/obicaj/martinje-u-kalniku', () => intangibleResponse('obicaj', 'martinje-u-kalniku'))
+  registerEndpoint('/api/atlas/intangible/usmeni-tekst/martinjska-zdravica', () => intangibleResponse('usmeni-tekst', 'martinjska-zdravica'))
+  registerEndpoint('/api/atlas/themes/vino', () => themeResponse('vino'))
+  registerEndpoint('/api/atlas/themes/prazna', () => themeResponse('prazna'))
+  registerEndpoint('/api/atlas/narrators/marija-horvat', () => narratorResponse('marija-horvat'))
+  registerEndpoint('/api/atlas/narrators/kazivac-r-1950-kalnik', () => narratorResponse('kazivac-r-1950-kalnik'))
   registerEndpoint('/api/content/target', (event) => {
     const query = getQuery(event)
     const kindRaw = typeof query.kind === 'string' ? query.kind : 'heritage_item'

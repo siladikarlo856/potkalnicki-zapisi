@@ -17,6 +17,9 @@ describe('pzNav tabs', () => {
     ['/potkalnicko-prigorje/istrazi/opcina-kalnik', 'explore'],
     ['/potkalnicko-prigorje/bastina/kalnik/crkva', 'explore'],
     ['/potkalnicko-prigorje/govor/hiza', 'explore'],
+    ['/potkalnicko-prigorje/price-i-obicaji', 'explore'],
+    ['/potkalnicko-prigorje/price-i-obicaji/obicaj/martinje', 'explore'],
+    ['/potkalnicko-prigorje/price-i-obicaji/kazivac/kazivacica-r-1938', 'explore'],
     ['/potkalnicko-prigorje/naselja/kalnik', 'explore'],
     ['/potkalnicko-prigorje/doprinesi', 'contribute'],
     ['/potkalnicko-prigorje/doprinesi?x=1#a', 'contribute']
@@ -28,12 +31,13 @@ describe('pzNav tabs', () => {
     expect(pzTabForPath(path)).toBeNull()
   })
 
-  it('maps pages to the six header sections', () => {
+  it('maps pages to the seven header sections', () => {
     expect(pzSectionForPath('/potkalnicko-prigorje/igre/kviz')).toBe('/potkalnicko-prigorje/igre')
     expect(pzSectionForPath('/potkalnicko-prigorje/istrazi/opcina-kalnik')).toBe('/potkalnicko-prigorje/istrazi')
     expect(pzSectionForPath('/potkalnicko-prigorje/naselja/kalnik')).toBe('/potkalnicko-prigorje/istrazi')
     expect(pzSectionForPath('/potkalnicko-prigorje/bastina/kalnik/crkva')).toBe('/potkalnicko-prigorje/bastina')
     expect(pzSectionForPath('/potkalnicko-prigorje/govor')).toBe('/potkalnicko-prigorje/govor')
+    expect(pzSectionForPath('/potkalnicko-prigorje/price-i-obicaji/tema/vino')).toBe('/potkalnicko-prigorje/price-i-obicaji')
     expect(pzSectionForPath('/potkalnicko-prigorje/o-projektu')).toBe('/potkalnicko-prigorje/o-projektu')
     expect(pzSectionForPath('/potkalnicko-prigorje')).toBeNull()
   })

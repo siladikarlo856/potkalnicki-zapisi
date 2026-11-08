@@ -22,6 +22,7 @@ const formatDate = (iso: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle
 const settlement = computed(() => page.value?.settlement)
 const municipality = computed(() => page.value?.municipality)
 const persons = computed(() => page.value?.persons ?? [])
+const intangible = computed(() => page.value?.intangible ?? [])
 
 const items = computed(() => (page.value?.items ?? []).map(item => ({
   ...item,
@@ -281,6 +282,19 @@ useSeoMeta({
           <PersonsList
             :persons="persons"
             testid="settlement-persons"
+          />
+        </section>
+
+        <section
+          v-if="intangible.length"
+          class="flex flex-col gap-4"
+        >
+          <h2 class="pz-h2 text-highlighted">
+            {{ t('pz.intangible.fromThisPlace') }}
+          </h2>
+          <IntangibleRefList
+            :records="intangible"
+            testid="settlement-intangible"
           />
         </section>
 

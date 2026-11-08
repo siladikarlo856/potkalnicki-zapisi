@@ -19,6 +19,7 @@ describe('atlas sitemap parity (in-memory snapshot)', () => {
       'https://karlo-siladi.from.hr/en',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/govor',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
+      'https://karlo-siladi.from.hr/potkalnicko-prigorje/price-i-obicaji',
       ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
     ]
     expect(urls.sort()).toEqual(expected.sort())

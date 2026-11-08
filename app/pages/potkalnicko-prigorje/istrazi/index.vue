@@ -18,11 +18,12 @@ useSeoMeta({
 
 const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
 
-// Three equal entries open the hub: places (the list below), Baština and Naš govor. The word count is
-// not part of the overview, so Naš govor shows no number.
+// Four equal entries open the hub: places (the list below), Baština, Priče i običaji and Naš govor. The word and
+// record counts are not part of the overview, so those two show no number.
 const entries = computed(() => [
   { key: 'places', to: `${localePath(pzRoutes.explore)}#opcine`, icon: 'i-lucide-map-pin', label: t('pz.explore.entryPlaces'), count: overview.value?.totals.settlements },
   { key: 'heritage', to: localePath(pzRoutes.heritage), icon: 'i-lucide-church', label: t('pz.explore.entryHeritage'), count: overview.value?.totals.items },
+  { key: 'intangible', to: localePath(pzRoutes.intangible), icon: 'i-lucide-scroll-text', label: t('pz.explore.entryIntangible'), count: undefined },
   { key: 'speech', to: localePath(`${pzRoutes.home}/govor`), icon: 'i-lucide-book-open', label: t('pz.explore.entrySpeech'), count: undefined }
 ])
 
@@ -47,7 +48,7 @@ const municipalities = computed(() => (overview.value?.municipalities ?? []).map
     </header>
 
     <section
-      class="grid grid-cols-3 gap-2 lg:gap-4"
+      class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:gap-4"
       :aria-label="t('pz.explore.entriesLabel')"
       data-testid="explore-entries"
     >

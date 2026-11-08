@@ -92,10 +92,10 @@ describe('useHidePzTabBar', () => {
 })
 
 describe('PzHeader', () => {
-  it('lists all six sections inline and in the menu, with the current one marked on desktop', async () => {
+  it('lists all seven sections inline and in the menu, with the current one marked on desktop', async () => {
     const header = await mountSuspended(PzHeader, { route: '/potkalnicko-prigorje/govor' })
     const inline = header.find('[data-testid="pz-header-nav"]')
-    expect(inline.findAll('a').map(link => link.text())).toEqual(['Igre', 'Istraži', 'Baština', 'Naš govor', 'Doprinesi', 'O projektu'])
+    expect(inline.findAll('a').map(link => link.text())).toEqual(['Igre', 'Istraži', 'Baština', 'Priče i običaji', 'Naš govor', 'Doprinesi', 'O projektu'])
     expect(inline.findAll('a[aria-current="page"]').map(link => link.text())).toEqual(['Naš govor'])
     expect(header.find('[data-testid="pz-menu-button"]').attributes('aria-label')).toBe('Izbornik')
     expect(header.find('[data-testid="pz-lang-desktop"]').text()).toContain('HR')

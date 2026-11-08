@@ -17,13 +17,14 @@ describe('Potkalnički zapisi phase 3 atlas routes', () => {
     expect(page.findAll('li').length).toBe(5)
   })
 
-  it('opens the explore hub with three equal entries: places, Baština, Naš govor', async () => {
+  it('opens the explore hub with four equal entries: places, Baština, Priče i običaji, Naš govor', async () => {
     const page = await mountSuspended(Explore, { route: '/potkalnicko-prigorje/istrazi' })
     const entries = page.findAll('[data-testid="explore-entries"] a')
-    expect(entries.map(entry => entry.find('b').text())).toEqual(['Mjesta', 'Baština', 'Naš govor'])
+    expect(entries.map(entry => entry.find('b').text())).toEqual(['Mjesta', 'Baština', 'Priče i običaji', 'Naš govor'])
     expect(entries.map(entry => entry.attributes('href'))).toEqual([
       '/potkalnicko-prigorje/istrazi#opcine',
       '/potkalnicko-prigorje/bastina',
+      '/potkalnicko-prigorje/price-i-obicaji',
       '/potkalnicko-prigorje/govor'
     ])
   })

@@ -164,6 +164,17 @@ useHead(() => ({
     </UPageSection>
 
     <UPageSection
+      v-if="person.intangible.length"
+      :title="t('pz.intangible.fromThisPerson')"
+      :ui="{ root: 'border-t border-default' }"
+    >
+      <IntangibleRefList
+        :records="person.intangible"
+        testid="person-intangible"
+      />
+    </UPageSection>
+
+    <UPageSection
       v-if="person.openQuestions"
       :title="t('pz.persons.openQuestions')"
       :ui="{ root: 'border-t border-default' }"

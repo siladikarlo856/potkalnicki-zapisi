@@ -4,6 +4,7 @@ export const pzNavSections = {
   games: true,
   explore: true,
   heritage: true,
+  intangible: true,
   speech: true,
   contribute: true,
   about: true
@@ -14,6 +15,7 @@ export function pzHeaderNavItems() {
   if (pzNavSections.games) items.push({ label: 'Igre', to: `${pzRoutes.home}/igre` })
   if (pzNavSections.explore) items.push({ label: 'Istraži', to: `${pzRoutes.home}/istrazi` })
   if (pzNavSections.heritage) items.push({ label: 'Baština', to: `${pzRoutes.home}/bastina` })
+  if (pzNavSections.intangible) items.push({ label: 'Priče i običaji', to: pzRoutes.intangible })
   if (pzNavSections.speech) items.push({ label: 'Naš govor', to: `${pzRoutes.home}/govor` })
   if (pzNavSections.contribute) items.push({ label: 'Doprinesi', to: `${pzRoutes.home}/doprinesi` })
   if (pzNavSections.about) items.push({ label: 'O projektu', to: `${pzRoutes.home}/o-projektu` })
@@ -48,7 +50,7 @@ function under(path: string, root: string) {
 }
 
 /**
- * Which tab marks the current page. Istraži covers the archive: places, Baština, Naš govor
+ * Which tab marks the current page. Istraži covers the archive: places, Baština, Priče i običaji, Naš govor
  * (and the person and settlement pages that hang off them). `null` for the pages that belong to no
  * tab, such as O projektu, Privatnost and the challenge flow.
  */
@@ -57,17 +59,17 @@ export function pzTabForPath(path: string): PzTabKey | null {
   if (p === pzRoutes.home) return 'home'
   if (under(p, pzRoutes.games) || under(p, pzRoutes.learn)) return 'games'
   if (under(p, pzRoutes.contribute)) return 'contribute'
-  if ([pzRoutes.explore, pzRoutes.heritage, `${pzRoutes.home}/govor`, `${pzRoutes.home}/naselja`, pzRoutes.persons].some(root => under(p, root))) return 'explore'
+  if ([pzRoutes.explore, pzRoutes.heritage, pzRoutes.intangible, `${pzRoutes.home}/govor`, `${pzRoutes.home}/naselja`, pzRoutes.persons].some(root => under(p, root))) return 'explore'
   return null
 }
 
-/** The header section (one of the six) the current page belongs to, for the desktop inline nav. */
+/** The header section (one of the seven) the current page belongs to, for the desktop inline nav. */
 export function pzSectionForPath(path: string): string | null {
   const p = normalisePath(path)
   const items = pzHeaderNavItems()
   const hit = items.find(item => under(p, item.to))
   if (hit) return hit.to
   const tab = pzTabForPath(p)
-  if (tab === 'explore' && !under(p, pzRoutes.heritage) && !under(p, `${pzRoutes.home}/govor`)) return pzRoutes.explore
+  if (tab === 'explore' && !under(p, pzRoutes.heritage) && !under(p, pzRoutes.intangible) && !under(p, `${pzRoutes.home}/govor`)) return pzRoutes.explore
   return null
 }

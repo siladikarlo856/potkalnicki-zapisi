@@ -20,6 +20,7 @@ const proposalOpen = ref(false)
 const municipality = computed(() => page.value?.municipality)
 const stats = computed(() => page.value?.stats)
 const persons = computed(() => page.value?.persons ?? [])
+const intangible = computed(() => page.value?.intangible ?? [])
 
 const settlements = computed(() => (page.value?.settlements ?? []).map(s => ({
   ...s,
@@ -180,6 +181,19 @@ useSeoMeta({
       <PersonsList
         :persons="persons"
         testid="municipality-persons"
+      />
+    </section>
+
+    <section
+      v-if="intangible.length"
+      class="flex flex-col gap-4 lg:max-w-(--pz-measure)"
+    >
+      <h2 class="pz-h2 text-highlighted">
+        {{ t('pz.intangible.fromThisPlace') }}
+      </h2>
+      <IntangibleRefList
+        :records="intangible"
+        testid="municipality-intangible"
       />
     </section>
 

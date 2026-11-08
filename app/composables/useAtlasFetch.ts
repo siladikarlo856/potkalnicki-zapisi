@@ -7,6 +7,7 @@ function isRedirect(value: unknown): value is AtlasRedirectResponse {
 /** Fetch a public atlas API route during SSR; follow slug-history with 301 and surface HTTP errors. */
 export async function useAtlasFetch<T>(path: MaybeRefOrGetter<string>) {
   const localePath = useLocalePath()
+  const nuxtApp = useNuxtApp()
   const { data, error } = await useFetch<T | AtlasRedirectResponse>(path)
   if (error.value) {
     throw createError({
@@ -16,7 +17,9 @@ export async function useAtlasFetch<T>(path: MaybeRefOrGetter<string>) {
     })
   }
   if (isRedirect(data.value)) {
-    await navigateTo(localePath(data.value.redirect), { redirectCode: 301 })
+    // The Nuxt context is gone after the await above, and navigateTo needs it (it answered 500 without).
+    const target = localePath(data.value.redirect)
+    await nuxtApp.runWithContext(() => navigateTo(target, { redirectCode: 301 }))
   }
   return { data: data as Ref<T | null> }
 }

@@ -2,9 +2,9 @@
 import { pzHeaderNavItems, pzSectionForPath } from '~~/shared/utils/pzNav'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
-// Mobile (below 1024px): the logo, the theme toggle and a menu with all six sections, HR/EN and
+// Mobile (below 1024px): the logo, the theme toggle and a menu with all seven sections, HR/EN and
 // Privatnost. The tab bar marks the current section there, so the header does not.
-// Desktop: the six sections inline, then HR/EN, then the theme toggle.
+// Desktop: the seven sections inline, then HR/EN, then the theme toggle.
 const { t, locale } = useI18n()
 const route = useRoute()
 const localePath = useLocalePath()

@@ -899,7 +899,8 @@
       "nearbyTitle": "U blizini",
       "correctShort": "Predloži ispravak",
       "addRecord": "Dodaj zapis",
-      "thinTitle": "Za naselje {name} još skupljamo zapise."
+      "thinTitle": "Za naselje {name} još skupljamo zapise.",
+      "entryIntangible": "Priče i običaji"
     },
     "heritage": {
       "listTitle": "Sakralna baština",
@@ -1344,6 +1345,83 @@
       "resume": "Nastavi izazov · runda {round} od {rounds}",
       "waiting": "Čekamo {n} prijatelja",
       "boardPreview": "Pogledaj ljestvicu"
+    },
+    "intangible": {
+      "title": "Priče i običaji",
+      "seoTitle": "Priče i običaji Potkalničkog prigorja",
+      "intro": "Što su ljudi našega kraja pripovijedali, govorili, pjevali i činili: priče i predaje, običaji, pjesme, molitve, izreke i zagonetke, onako kako su ih zapamtili stariji. Svaki zapis navodi tko ga je ispričao i odakle potječe.",
+      "listLabel": "Popis zapisa",
+      "listHeading": "Zapisi",
+      "filtersLabel": "Filtri",
+      "filterKind": "Što",
+      "filterType": "Vrsta",
+      "filterTheme": "Tema",
+      "filterPlace": "Mjesto",
+      "filterAll": "Sve",
+      "clearFilters": "Očisti filtre",
+      "noResultsTitle": "Nema zapisa za ove filtere.",
+      "noResultsAsk": "Probaj drugu vrstu, temu ili mjesto, ili nam pošalji ono čega se sjećaš.",
+      "emptyTitle": "Još skupljamo priče i običaje.",
+      "emptyAsk": "Sjećaš li se priče, običaja, pjesme, molitve ili izreke koju su pričali stariji? Pošalji nam je kao sjećanje, a mi je zapisujemo i navodimo tko ju je ispričao.",
+      "contributeMemory": "Pošalji sjećanje",
+      "resultCount": {
+        "one": "{n} zapis",
+        "few": "{n} zapisa",
+        "other": "{n} zapisa"
+      },
+      "recordedIn": "Zabilježeno u",
+      "about": "Odnosi se na",
+      "recordedOn": "Zabilježeno",
+      "setIn": "Vrijeme radnje",
+      "practised": "Vrijeme prakse",
+      "occasion": "Prigoda",
+      "type": "Vrsta",
+      "narrators": "Kazivači",
+      "collectors": "Zapisivači",
+      "authors": "Autori",
+      "themes": "Teme",
+      "heritage": "Povezana baština",
+      "words": "Riječi iz teksta",
+      "wordsHint": "Riječi iz našeg govora koje se javljaju u ovom tekstu.",
+      "custom": "Pripada običaju",
+      "customHint": "Izgovarano ili pjevano uz ovaj običaj.",
+      "folkTexts": "Izreke, pjesme i molitve uz ovaj običaj",
+      "textLocal": "Izvorno, kako se govorilo",
+      "textStandard": "Standardnim jezikom",
+      "description": "Opis",
+      "quotes": "Kako se govorilo",
+      "credits": "Zahvaljujemo: {names}",
+      "updatedAt": "Zadnja izmjena: {date}",
+      "attestation": {
+        "verified": "Potvrđeno da je ovako zaista bilo",
+        "unverified": "Još bez potvrde",
+        "needsUpdate": "Potvrdu treba ponoviti",
+        "helpVerified": "Kazivač ili izvor potvrđuje da se ovo zaista ovako pričalo ili činilo u našem kraju. To ne znači da je sve što priča kaže istina.",
+        "helpUnverified": "Još nismo potvrdili da se ovo zaista ovako pričalo ili činilo u našem kraju.",
+        "helpNeedsUpdate": "Potvrdu o tome da se ovo zaista ovako pričalo ili činilo treba ponoviti."
+      },
+      "theme": {
+        "overline": "Tema",
+        "seoTitle": "Tema: {name}",
+        "seoDescription": "Priče, običaji i usmeni tekstovi na temu {name}.",
+        "empty": "U ovoj temi još nema zapisa.",
+        "recordsHeading": "Zapisi u ovoj temi"
+      },
+      "narrator": {
+        "overline": "Kazivač/ica",
+        "seoTitle": "Kazivač/ica: {name}",
+        "seoDescription": "Priče, običaji i usmeni tekstovi koje je ispričao/la ili zapisao/la {name}.",
+        "born": "Rođen/a {year}.",
+        "deceased": "Preminuo/la",
+        "homePlace": "Mjesto življenja",
+        "isPerson": "Povijesna osoba",
+        "told": "Ispričao/la",
+        "collected": "Zapisao/la",
+        "empty": "Za ovog kazivača još nema objavljenih zapisa.",
+        "anonymousNote": "Ime ovog kazivača ne navodimo bez njegovog pristanka."
+      },
+      "fromThisPlace": "Priče i običaji iz ovog mjesta",
+      "fromThisPerson": "Priče i običaji"
     }
   },
   "daily": {
