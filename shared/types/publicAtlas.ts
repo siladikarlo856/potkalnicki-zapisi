@@ -1,4 +1,5 @@
 import type { AtlasItemStatus } from './atlas'
+import type { PublicIntangibleRef } from './publicIntangible'
 
 // Response shapes of the public atlas API (/api/atlas/*, /api/content/target). Ids are content UUIDs; paths
 // are canonical, unlocalized site paths (pass them through localePath). Only published rows appear.
@@ -103,6 +104,8 @@ export interface PublicPerson extends PublicPersonListItem {
   /** Linked places grouped by role, in the fixed role order; roles without places are left out */
   placeGroups: PublicPersonPlaceGroup[]
   heritage: Array<{ id: string, name: string, path: string | null, relation: string, verification: AtlasItemStatus }>
+  /** Stories, Customs and Folk texts the person wrote, or told through a named narrator who is this person */
+  intangible: PublicIntangibleRef[]
   sources: PublicSource[]
   updatedAt: string
 }
@@ -139,6 +142,8 @@ export interface AtlasMunicipalityResponse {
   categories: Array<PublicCategoryRef & { count: number }>
   /** Persons linked to the unit or to one of its settlements */
   persons: PublicPersonRef[]
+  /** "Priče i običaji" tied to the unit or to one of its settlements */
+  intangible: PublicIntangibleRef[]
 }
 
 export interface AtlasSettlementResponse {
@@ -152,6 +157,8 @@ export interface AtlasSettlementResponse {
   items: PublicHeritageListItem[]
   /** "Osobe iz ovog mjesta" */
   persons: PublicPersonRef[]
+  /** "Priče i običaji" tied to this settlement */
+  intangible: PublicIntangibleRef[]
 }
 
 export interface AtlasHeritageListResponse {

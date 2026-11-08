@@ -24,5 +24,6 @@ export const pzRoutes = {
   privacy: `${PZ_ROOT}/privatnost`,
   explore: `${PZ_ROOT}/istrazi`,
   heritage: `${PZ_ROOT}/bastina`,
-  persons: `${PZ_ROOT}/osobe`
+  persons: `${PZ_ROOT}/osobe`,
+  intangible: `${PZ_ROOT}/price-i-obicaji`
 } as const

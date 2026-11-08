@@ -3,6 +3,8 @@ import type { AtlasItemStatus } from '../../shared/types/atlas'
 import type { PublicCredit, PublicMunicipalityKind } from '../../shared/types/publicAtlas'
 import { isCorrectionTargetRefFormat } from '../../shared/utils/correctionReport'
 import { PERSON_AREA_ROLES, type PersonAreaRole } from '../../shared/utils/content/person'
+import { NO_INTANGIBLE_ROWS, buildIntangible, loadIntangibleRows } from './publicIntangibleContent'
+import type { IntangibleRows, SnapshotIntangibleContent } from './publicIntangibleContent'
 
 // The public read layer over the content tables: one in-process snapshot of everything the public atlas
 // shows, built from the database and served stale-while-revalidate. Admin writes call
@@ -125,6 +127,8 @@ export interface PublicContentRows {
   personAreas?: PersonAreaRow[]
   personItems?: PersonItemRow[]
   personSources?: PersonSourceRow[]
+  /** Stories, Customs, Folk texts, Narrators, themes and their lists; absent in rows built before they existed (treated as none). */
+  intangible?: IntangibleRows
 }
 
 export interface SnapshotMunicipality {
@@ -242,6 +246,8 @@ export interface PublicContent {
   /** Live persons, by name */
   persons: SnapshotPerson[]
   clubs: SnapshotClub[]
+  /** Intangible heritage (Priče i običaji): records, narrators, themes and the maps between them. */
+  intangible: SnapshotIntangibleContent
   categories: Map<string, SnapshotCategory>
   sources: Map<string, SnapshotSource>
   municipalityById: Map<string, SnapshotMunicipality>
@@ -499,12 +505,18 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
   }
   clubs.sort(byName)
 
-  const slugHistory = new Map(rows.slugHistory.map(h => [slugHistoryKey(h.kind, h.namespace, h.scope_id, h.slug), h.entity_id]))
+  const personById = new Map(persons.map(p => [p.id, p]))
+  const intangible = buildIntangible(rows.intangible ?? NO_INTANGIBLE_ROWS, {
+    areaState, regionId: regionRow?.id ?? null,
+    itemById: new Map(items.map(i => [i.id, i])), personById, sources
+  }, rows.slugHistory)
+  const slugHistory = new Map(intangible.slugHistory.map(h => [slugHistoryKey(h.kind, h.namespace, h.scope_id, h.slug), h.entity_id]))
   const region = regionRow ? { id: regionRow.id, slug: regionSlug, name: regionRow.name } : null
 
   return {
     region, municipalities, settlements, items, persons, clubs, categories, sources,
-    personById: new Map(persons.map(p => [p.id, p])),
+    intangible: intangible.content,
+    personById,
     personBySlug: new Map(persons.map(p => [p.slug, p])),
     personsByArea, personsByItem, personClueById,
     municipalityById: new Map(municipalities.map(m => [m.id, m])),
@@ -529,7 +541,7 @@ async function readAll<T>(read: (from: number, to: number) => Page<T>) {
 
 /** Reads every row the snapshot needs (published and archived only; drafts never leave the database). */
 export async function loadPublicContentRows(client: SupabaseClient): Promise<PublicContentRows> {
-  const [areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources] = await Promise.all([
+  const [areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources, intangible] = await Promise.all([
     readAll<AreaRow>((from, to) => client.from('areas')
       .select('id,kind,parent_id,name,slug,official_code,latitude,longitude,credits,status,updated_at')
       .in('kind', ['region', 'town', 'municipality', 'settlement']).in('status', VISIBLE).order('id').range(from, to)),
@@ -547,16 +559,17 @@ export async function loadPublicContentRows(client: SupabaseClient): Promise<Pub
     readAll<ClubSourceRow>((from, to) => client.from('club_sources').select('club_id,source_id,position').order('club_id').order('position').range(from, to)),
     readAll<LegacyIdRow>((from, to) => client.from('content_legacy_ids').select('kind,legacy_id,entity_id').in('kind', LEGACY_KINDS).order('kind').order('legacy_id').range(from, to)),
     readAll<SlugHistoryRow>((from, to) => client.from('content_slug_history').select('kind,namespace,scope_id,slug,entity_id')
-      .in('kind', ['area', 'heritage_item', 'person']).order('created_at').order('slug').range(from, to)),
+      .in('kind', ['area', 'heritage_item', 'person', 'story', 'custom', 'folk_text', 'narrator', 'theme']).order('created_at').order('slug').range(from, to)),
     // research_notes and search_text are private: never selected. clue is loaded for the card pool only.
     readAll<PersonRow>((from, to) => client.from('persons')
       .select('id,name,slug,role,clue,bio,born,born_year,born_place,died,died_year,died_place,open_questions,verification,noindex,status,updated_at')
       .in('status', VISIBLE).order('id').range(from, to)),
     readAll<PersonAreaRow>((from, to) => client.from('person_areas').select('person_id,area_id,role,position').order('person_id').order('position').range(from, to)),
     readAll<PersonItemRow>((from, to) => client.from('person_heritage_items').select('person_id,item_id,relation,position').order('person_id').order('position').range(from, to)),
-    readAll<PersonSourceRow>((from, to) => client.from('person_sources').select('person_id,source_id,position').order('person_id').order('position').range(from, to))
+    readAll<PersonSourceRow>((from, to) => client.from('person_sources').select('person_id,source_id,position').order('person_id').order('position').range(from, to)),
+    loadIntangibleRows(client)
   ])
-  return { areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources }
+  return { areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources, intangible }
 }
 
 export async function loadPublicContent(client: SupabaseClient, options: Omit<BuildOptions, 'loadedAt'> = {}) {

@@ -994,9 +994,14 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     const expected = sitemapEntries(content, wordEntries)
       .map(entry => SITE_URL + entry.path)
     expect(urls.sort()).toEqual(expected.sort())
-    expect(expected).toEqual([
+    // The Priče i običaji list is always there; the pages of its records, narrators and themes depend on what the
+    // database holds (test/publicIntangible.test.ts covers which of them the sitemap lists).
+    const intangibleRoot = 'https://karlo-siladi.from.hr/potkalnicko-prigorje/price-i-obicaji'
+    expect(expected).toContain(intangibleRoot)
+    expect(expected.filter(url => !url.startsWith(`${intangibleRoot}/`)).sort()).toEqual([
       'https://karlo-siladi.from.hr/',
       'https://karlo-siladi.from.hr/en',
+      intangibleRoot,
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/govor',
       'https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
       ...personSlugs.map(slug => `https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe/${slug}`),

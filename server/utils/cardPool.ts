@@ -20,7 +20,7 @@ import type {
   PoolWord
 } from '../../shared/utils/learn/types'
 import { formatSeasonLabel } from '../../shared/utils/content/club'
-import { heritageItemPath } from './publicAtlas'
+import { heritageItemPath } from './publicRefs'
 import type { PublicContent, SnapshotClub, SnapshotItem, SnapshotPerson, SnapshotSettlement } from './publicContent'
 import { derive, getPublicContent } from './publicContent'
 import { publicWords } from './words'

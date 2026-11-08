@@ -9,16 +9,17 @@ import type {
   PublicCategoryRef,
   PublicHeritageItem,
   PublicHeritageListItem,
-  PublicMunicipalityRef,
   PublicPerson,
   PublicPersonListItem,
-  PublicPersonRef,
   PublicPlaceStats,
-  PublicSettlementRef,
   SuggestOptionsResponse
 } from '../../shared/types/publicAtlas'
-import { pzRoutes } from '../../shared/utils/appRoutes'
 import { slugHistoryKey } from './publicContent'
+import { intangibleForMunicipality, intangibleForPerson, intangibleForSettlement } from './publicIntangible'
+import {
+  atlasMunicipalityPath, atlasPersonPath, atlasSettlementPath, heritageItemPath,
+  municipalityRef, personRef, personRefs, settlementRef
+} from './publicRefs'
 import { PERSON_AREA_ROLE_LABELS } from '../../shared/utils/content/person'
 import type { PublicContent, SnapshotItem, SnapshotMunicipality, SnapshotPerson, SnapshotSettlement } from './publicContent'
 
@@ -32,16 +33,6 @@ export type Resolved<T>
     | { status: 'not_found' }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-export const atlasMunicipalityPath = (slug: string) => `${pzRoutes.explore}/${slug}`
-export const atlasSettlementPath = (slug: string) => `${pzRoutes.home}/naselja/${slug}`
-export const atlasPersonPath = (slug: string) => `${pzRoutes.persons}/${slug}`
-export const atlasItemPath = (settlementSlug: string, slug: string) => `${pzRoutes.heritage}/${settlementSlug}/${slug}`
-
-export function heritageItemPath(content: PublicContent, item: SnapshotItem) {
-  const settlement = item.settlementId ? content.settlementById.get(item.settlementId) : undefined
-  return settlement ? atlasItemPath(settlement.slug, item.slug) : null
-}
 
 type AreaNamespace = 'lau' | 'settlement'
 type AreaMatch = { id: string, moved: boolean } | 'gone' | null
@@ -104,30 +95,9 @@ export function resolveContentId(content: PublicContent, kind: string, value: st
   return content.legacyIds.get(`${kind}:${value}`) ?? null
 }
 
-function municipalityRef(m: SnapshotMunicipality): PublicMunicipalityRef {
-  return { id: m.id, slug: m.slug, name: m.name, label: m.label, kind: m.kind, path: atlasMunicipalityPath(m.slug) }
-}
-
-function settlementRef(s: SnapshotSettlement): PublicSettlementRef {
-  return { id: s.id, slug: s.slug, name: s.name, code: s.code, path: atlasSettlementPath(s.slug) }
-}
-
 function categoryRef(content: PublicContent, item: SnapshotItem): PublicCategoryRef {
   const category = content.categories.get(item.categoryId)!
   return { key: category.key, label: category.label }
-}
-
-const personYears = (p: SnapshotPerson) => (p.bornYear ? `${p.bornYear}–${p.diedYear}` : String(p.diedYear))
-
-function personRef(p: SnapshotPerson): PublicPersonRef {
-  return { id: p.id, slug: p.slug, name: p.name, years: personYears(p), role: p.role, path: atlasPersonPath(p.slug) }
-}
-
-function personRefs(content: PublicContent, ids: readonly string[]) {
-  return ids.flatMap((id) => {
-    const person = content.personById.get(id)
-    return person ? [personRef(person)] : []
-  })
 }
 
 /** The unit (town or municipality) an area belongs to: itself, or the parent of a settlement. */
@@ -178,6 +148,7 @@ export function personDetail(content: PublicContent, p: SnapshotPerson): PublicP
       const item = content.itemById.get(link.itemId)!
       return { id: item.id, name: item.name, path: heritageItemPath(content, item), relation: link.relation, verification: item.verification }
     }),
+    intangible: intangibleForPerson(content, p.id),
     sources: p.sourceIds.map(id => content.sources.get(id)!),
     updatedAt: p.updatedAt
   }
@@ -286,7 +257,8 @@ export function municipalityPage(content: PublicContent, m: SnapshotMunicipality
     stats: placeStats(settlements, items),
     settlements: settlements.map(s => ({ ...settlementRef(s), itemCount: items.filter(i => i.settlementId === s.id).length })),
     categories: categoryCounts(content, items),
-    persons: personRefs(content, personIdsInMunicipality(content, m.id))
+    persons: personRefs(content, personIdsInMunicipality(content, m.id)),
+    intangible: intangibleForMunicipality(content, m.id)
   }
 }
 
@@ -295,7 +267,8 @@ export function settlementPage(content: PublicContent, s: SnapshotSettlement): A
     settlement: { ...settlementRef(s), centroid: s.centroid, credits: s.credits, updatedAt: s.updatedAt },
     municipality: municipalityRef(content.municipalityById.get(s.municipalityId)!),
     items: content.items.filter(i => i.settlementId === s.id).map(i => heritageListItem(content, i)),
-    persons: personRefs(content, content.personsByArea.get(s.id) ?? [])
+    persons: personRefs(content, content.personsByArea.get(s.id) ?? []),
+    intangible: intangibleForSettlement(content, s.id)
   }
 }
 

@@ -8,6 +8,8 @@ defineProps<{
   to: string
   settlement?: string
   municipality?: string
+  /** A line or two of what the record says (an excerpt), under the place. */
+  description?: string
   category?: string
   /** Lucide icon for the category tile, used when there is no photo. */
   icon?: string
@@ -58,6 +60,12 @@ const titleId = useId()
           aria-hidden="true"
         />
         <span>{{ [settlement, municipality].filter(Boolean).join(', ') }}</span>
+      </p>
+      <p
+        v-if="description"
+        class="pz-body-sm line-clamp-3 text-default"
+      >
+        {{ description }}
       </p>
       <div
         v-if="$slots.trust || category"
