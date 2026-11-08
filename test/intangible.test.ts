@@ -4,6 +4,7 @@ import { validateCustom } from '../shared/utils/content/custom'
 import { validateFolkText } from '../shared/utils/content/folkText'
 import { HISTORY_FIELDS, HISTORY_KINDS, HISTORY_KIND_META } from '../shared/utils/content/history'
 import { INTANGIBLE_LIMITS, parseRecordedOn } from '../shared/utils/content/intangible'
+import { validateNarrator } from '../shared/utils/content/narrator'
 import {
   validateCustomType, validateFolkTextType, validateOccasion, validateStoryType, validateTheme
 } from '../shared/utils/content/intangibleList'
@@ -12,6 +13,7 @@ import { validateStory } from '../shared/utils/content/story'
 const TYPE = '6f1c1c36-3a5e-4b7f-9a52-0d3f0b6c1a10'
 const AREA = '92140ed6-6420-81d0-8661-91ce0c257f5f'
 const PERSON = 'cb2f662f-3359-8378-b5f3-448d25991ec6'
+const NARRATOR = '3b9a0f7e-5f0a-4a52-8d57-9d6f4d2f3c11'
 const SOURCE = '466778a5-5665-86a1-b60c-608c05383f11'
 
 const story = (extra: Record<string, unknown> = {}) => ({ title: 'Vrag na Kalniku', typeId: TYPE, textLocal: 'Bil je jen put...', ...extra })
@@ -39,7 +41,8 @@ describe('validateStory', () => {
       noindex: false,
       status: 'draft',
       areaLinks: [],
-      people: [],
+      narrators: [],
+      authorIds: [],
       itemIds: [],
       themeIds: [],
       sourceIds: []
@@ -59,13 +62,13 @@ describe('validateStory', () => {
     expect(validateStory(story({ status: 'published', verification: 'unverified' })).issues).toEqual([])
   })
 
-  it('lets Verified stand only on a narrator (named or described) or a source', () => {
+  it('lets Verified stand only on a narrator or a source', () => {
     expect(paths(validateStory(story({ verification: 'verified' })).issues)).toEqual(['verification'])
     // A collector alone does not vouch that it was told here.
-    const collector = [{ role: 'collector', description: 'zapisao Karlo' }]
-    expect(paths(validateStory(story({ verification: 'verified', people: collector })).issues)).toEqual(['verification'])
-    const narrator = [{ role: 'narrator', description: 'kazivačica, r. 1938., Gornji Fodrovec' }]
-    expect(validateStory(story({ verification: 'verified', people: narrator })).issues).toEqual([])
+    const collector = [{ role: 'collector', narratorId: NARRATOR }]
+    expect(paths(validateStory(story({ verification: 'verified', narrators: collector })).issues)).toEqual(['verification'])
+    const narrator = [{ role: 'narrator', narratorId: NARRATOR }]
+    expect(validateStory(story({ verification: 'verified', narrators: narrator })).issues).toEqual([])
     expect(validateStory(story({ verification: 'verified', sourceIds: [SOURCE] })).issues).toEqual([])
     expect(validateStory(story({ verification: 'needs_update' })).issues).toEqual([])
     expect(paths(validateStory(story({ verification: 'checked' })).issues)).toEqual(['verification'])
@@ -98,42 +101,105 @@ describe('validateStory', () => {
   })
 })
 
-describe('people links: narrator, collector, author and consent', () => {
-  const people = (rows: unknown) => validateStory(story({ people: rows }))
+describe('narrator and author links', () => {
+  const narrators = (rows: unknown) => validateStory(story({ narrators: rows }))
 
-  it('names a living narrator only with recorded consent, and otherwise needs the public description', () => {
-    const { value, issues } = people([
-      { role: 'narrator', personId: null, description: 'kazivačica, r. 1938., Gornji Fodrovec' },
-      { role: 'narrator', personId: PERSON, consentNamed: true, consentNote: 'usmeno, 8. 11. 2026.' },
-      { role: 'collector', personId: null, description: 'zapisao Karlo Siladi' },
-      { role: 'author', personId: PERSON }
+  it('links Narrator records as narrator or collector, in order, once per narrator and role', () => {
+    const { value, issues } = narrators([
+      { narratorId: NARRATOR, role: 'narrator' },
+      { narratorId: NARRATOR.toUpperCase(), role: 'narrator' },
+      { narratorId: NARRATOR, role: 'collector' },
+      { narratorId: PERSON, role: 'narrator' }
     ])
     expect(issues).toEqual([])
-    expect(value.people).toEqual([
-      { role: 'narrator', personId: null, consentNamed: false, consentNote: null, description: 'kazivačica, r. 1938., Gornji Fodrovec' },
-      { role: 'narrator', personId: PERSON, consentNamed: true, consentNote: 'usmeno, 8. 11. 2026.', description: null },
-      { role: 'collector', personId: null, consentNamed: false, consentNote: null, description: 'zapisao Karlo Siladi' },
-      { role: 'author', personId: PERSON, consentNamed: false, consentNote: null, description: null }
+    expect(value.narrators).toEqual([
+      { narratorId: NARRATOR, role: 'narrator' },
+      { narratorId: NARRATOR, role: 'collector' },
+      { narratorId: PERSON, role: 'narrator' }
     ])
   })
 
-  it('refuses a narrator who is neither named with consent nor described, and consent without a person', () => {
-    expect(paths(people([{ role: 'narrator', personId: PERSON }]).issues)).toEqual(['people.0.description'])
-    expect(paths(people([{ role: 'narrator', personId: PERSON, consentNamed: false }]).issues)).toEqual(['people.0.description'])
-    expect(paths(people([{ role: 'narrator' }]).issues)).toEqual(['people.0.description', 'people.0.description'])
-    expect(paths(people([{ role: 'narrator', consentNamed: true, description: 'x' }]).issues)).toEqual(['people.0.consentNamed'])
-    expect(paths(people([{ role: 'editor', description: 'x' }]).issues)).toEqual(['people.0.role'])
-    expect(paths(people([{ role: 'collector', personId: 'x' }]).issues)).toContain('people.0.personId')
-    expect(paths(people('x').issues)).toEqual(['people'])
+  it('refuses a link with no valid narrator or role, and anything but a list', () => {
+    expect(paths(narrators([{ role: 'narrator' }]).issues)).toEqual(['narrators.0.narratorId'])
+    expect(paths(narrators([{ narratorId: 'x', role: 'narrator' }]).issues)).toEqual(['narrators.0.narratorId'])
+    expect(paths(narrators([{ narratorId: NARRATOR, role: 'author' }]).issues)).toEqual(['narrators.0.role'])
+    expect(paths(narrators(['x']).issues)).toEqual(['narrators.0'])
+    expect(paths(narrators('x').issues)).toEqual(['narrators'])
+    // Narrators are records: a name or description typed into the link is not accepted.
+    expect(narrators([{ narratorId: NARRATOR, role: 'narrator', name: 'Ana' }]).value.narrators).toEqual([{ narratorId: NARRATOR, role: 'narrator' }])
   })
 
-  it('keeps one link per person and role', () => {
-    const { value } = people([
-      { role: 'narrator', personId: PERSON, consentNamed: true },
-      { role: 'narrator', personId: PERSON, consentNamed: true },
-      { role: 'collector', personId: PERSON }
-    ])
-    expect(value.people.map(link => link.role)).toEqual(['narrator', 'collector'])
+  it('keeps authors as Person ids, once each', () => {
+    const { value, issues } = validateStory(story({ authorIds: [PERSON, PERSON.toUpperCase(), AREA] }))
+    expect(issues).toEqual([])
+    expect(value.authorIds).toEqual([PERSON, AREA])
+    expect(paths(validateStory(story({ authorIds: ['x'] })).issues)).toEqual(['authorIds.0'])
+    expect(paths(validateStory(story({ authorIds: 'x' })).issues)).toEqual(['authorIds'])
+  })
+})
+
+describe('validateNarrator: named only with recorded consent, otherwise described', () => {
+  const described = { name: 'Ana Horvat', publicDescription: 'kazivačica, r. 1938., Gornji Fodrovec' }
+
+  it('takes an anonymous narrator with a public description, slugged from the description and not the name', () => {
+    const { value, issues } = validateNarrator(described)
+    expect(issues).toEqual([])
+    expect(value).toEqual({
+      name: 'Ana Horvat',
+      slug: 'kazivacica-r-1938-gornji-fodrovec',
+      publicDescription: 'kazivačica, r. 1938., Gornji Fodrovec',
+      consentNamed: false,
+      consentNote: null,
+      living: true,
+      bornYear: null,
+      settlementId: null,
+      personId: null,
+      verification: 'unverified',
+      researchNotes: '',
+      noindex: false,
+      status: 'draft'
+    })
+  })
+
+  it('takes a named narrator with consent, slugged from the name, with the consent note kept for editors', () => {
+    const { value, issues } = validateNarrator({
+      name: 'Ana Horvat', consentNamed: true, consentNote: ' usmeno, 8. 11. 2026. ', living: false, bornYear: 1938, settlementId: AREA, personId: PERSON, status: 'published'
+    })
+    expect(issues).toEqual([])
+    expect(value).toMatchObject({
+      slug: 'ana-horvat', consentNamed: true, consentNote: 'usmeno, 8. 11. 2026.', publicDescription: null,
+      living: false, bornYear: 1938, settlementId: AREA, personId: PERSON, status: 'published'
+    })
+  })
+
+  it('needs a name, and a public description unless consent to publish the name is recorded', () => {
+    expect(paths(validateNarrator({}).issues)).toEqual(['name', 'publicDescription', 'slug'])
+    expect(paths(validateNarrator({ name: 'Ana Horvat' }).issues)).toEqual(['publicDescription', 'slug'])
+    expect(paths(validateNarrator({ name: 'Ana Horvat', consentNamed: false, slug: 'kazivacica' }).issues)).toEqual(['publicDescription'])
+    expect(validateNarrator({ name: 'Ana Horvat', consentNamed: true }).issues).toEqual([])
+    // Consent is an editor's recorded yes, never a guess: only a real true counts.
+    expect(paths(validateNarrator({ name: 'Ana Horvat', consentNamed: 'yes', slug: 'kazivacica' }).issues)).toEqual(['consentNamed', 'publicDescription'])
+  })
+
+  it('does not let the name leak through the public description or the slug without consent', () => {
+    expect(paths(validateNarrator({ ...described, slug: 'kazivacica', publicDescription: 'Ana iz Gornjeg Fodrovca' }).issues)).toEqual(['publicDescription'])
+    // A slug derived from a description that names the narrator is refused too.
+    expect(paths(validateNarrator({ ...described, publicDescription: 'Ana iz Gornjeg Fodrovca' }).issues)).toEqual(['slug', 'publicDescription'])
+    expect(paths(validateNarrator({ ...described, slug: 'ana-horvat' }).issues)).toEqual(['slug'])
+    expect(paths(validateNarrator({ ...described, slug: 'kazivac-horvat-1938' }).issues)).toEqual(['slug'])
+    // With consent the name is public anyway.
+    expect(validateNarrator({ name: 'Ana Horvat', consentNamed: true, publicDescription: 'Ana iz Gornjeg Fodrovca' }).issues).toEqual([])
+  })
+
+  it('refuses a malformed year, a malformed link and a malformed flag', () => {
+    expect(paths(validateNarrator({ ...described, bornYear: 999 }).issues)).toEqual(['bornYear'])
+    expect(paths(validateNarrator({ ...described, bornYear: '1938' }).issues)).toEqual(['bornYear'])
+    expect(paths(validateNarrator({ ...described, settlementId: 'x', personId: 'y' }).issues)).toEqual(['settlementId', 'personId'])
+    expect(paths(validateNarrator({ ...described, living: 'no' }).issues)).toEqual(['living'])
+    expect(paths(validateNarrator({ ...described, verification: 'checked' }).issues)).toEqual(['verification'])
+    expect(paths(validateNarrator({ ...described, status: 'live' }).issues)).toEqual(['status'])
+    expect(paths(validateNarrator({ ...described, name: 'x'.repeat(201) }).issues)).toContain('name')
+    expect(paths(validateNarrator(null).issues)).toContain('')
   })
 })
 
@@ -247,7 +313,7 @@ describe('type, occasion and theme lists', () => {
 })
 
 describe('registration in the shared content layer', () => {
-  const kinds = ['story', 'custom', 'folk_text', 'story_type', 'custom_type', 'folk_text_type', 'occasion', 'theme']
+  const kinds = ['story', 'custom', 'folk_text', 'narrator', 'story_type', 'custom_type', 'folk_text_type', 'occasion', 'theme']
 
   it('knows every kind, for the admin API and the history', () => {
     for (const kind of kinds) {
@@ -261,9 +327,12 @@ describe('registration in the shared content layer', () => {
     for (const kind of ['story', 'custom', 'folk_text'] as const) {
       const fields = Object.keys(HISTORY_FIELDS[kind])
       expect(fields, kind).toEqual(expect.arrayContaining([
-        'title', 'slug', 'typeId', 'recordedPrecision', 'recordedYear', 'verification', 'areaLinks', 'people', 'itemIds', 'themeIds', 'sourceIds'
+        'title', 'slug', 'typeId', 'recordedPrecision', 'recordedYear', 'verification', 'areaLinks', 'narrators', 'authorIds', 'itemIds', 'themeIds', 'sourceIds'
       ]))
     }
+    expect(Object.keys(HISTORY_FIELDS.narrator)).toEqual(expect.arrayContaining([
+      'name', 'slug', 'publicDescription', 'consentNamed', 'consentNote', 'living', 'bornYear', 'settlementId', 'personId'
+    ]))
     expect(Object.keys(HISTORY_FIELDS.custom)).toEqual(expect.arrayContaining(['occasionId', 'description', 'quotes', 'period']))
     expect(Object.keys(HISTORY_FIELDS.folk_text)).toEqual(expect.arrayContaining(['customId', 'wordIds', 'textLocal']))
   })

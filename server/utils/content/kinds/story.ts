@@ -23,7 +23,7 @@ export const storyKind = defineContentKind({
     verification: 'verification',
     researchNotes: 'research_notes',
     noindex: 'noindex'
-  // The links (areaLinks, people, itemIds, themeIds, sourceIds) live in link tables (sidecars), not on the row.
+  // The links (areaLinks, narrators, authorIds, itemIds, themeIds, sourceIds) live in link tables (sidecars), not on the row.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   labelColumn: 'title',
@@ -39,7 +39,7 @@ export const storyKind = defineContentKind({
   uniqueConstraints: { stories_slug_key: 'slug' },
   references: async () => [],
   sidecars: {
-    fields: ['areaLinks', 'people', 'itemIds', 'themeIds', 'sourceIds'],
+    fields: ['areaLinks', 'narrators', 'authorIds', 'itemIds', 'themeIds', 'sourceIds'],
     load: async (db, id) => ({ ...await loadLinks(db, 'story', id) })
   },
   checkLinks: async (db, value) => [

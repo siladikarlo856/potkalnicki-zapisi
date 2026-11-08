@@ -9,8 +9,8 @@
  */
 export const CONTENT_KINDS = [
   'area', 'source', 'challenge_template', 'word', 'heritage_category', 'heritage_item', 'person', 'club',
-  // Intangible heritage: the three kinds and their editor-managed lists.
-  'story', 'custom', 'folk_text', 'story_type', 'custom_type', 'folk_text_type', 'occasion', 'theme'
+  // Intangible heritage: the three kinds, the narrators who told them and the editor-managed lists.
+  'story', 'custom', 'folk_text', 'narrator', 'story_type', 'custom_type', 'folk_text_type', 'occasion', 'theme'
 ] as const
 export type ContentKind = typeof CONTENT_KINDS[number]
 

@@ -9,16 +9,17 @@
 --   On a create it may also carry id, revision and created_at (a restore recreates a deleted row under its old id and
 --   creation time) and source_submission_id (a Draft made from a Memory). An update leaves those columns as they are.
 -- * The links are JSON arrays in the API's shape, saved in their given order: p_area_links
---   [{areaId, relation: recorded_in | about}], p_people [{role, personId, consentNamed, consentNote, description}],
---   p_item_ids, p_theme_ids, p_source_ids (UUIDs) and, for a Folk text, p_word_ids (heritage_words ids, text).
--- * The links are recorded on the revision of the write as data->'sidecars' (areaLinks, people, itemIds, themeIds,
---   sourceIds, wordIds), handed to content_audit through app.revision_sidecars, so a restore brings them back.
+--   [{areaId, relation: recorded_in | about}], p_narrators [{narratorId, role: narrator | collector}], p_author_ids
+--   (Persons, for literary retellings), p_item_ids, p_theme_ids, p_source_ids (UUIDs) and, for a Folk text, p_word_ids
+--   (heritage_words ids, text).
+-- * The links are recorded on the revision of the write as data->'sidecars' (areaLinks, narrators, authorIds, itemIds,
+--   themeIds, sourceIds, wordIds), handed to content_audit through app.revision_sidecars, so a restore brings them back.
 -- Every rule is checked by the API before these run; the constraints and triggers still guard the data.
 
 -- Replaces the link rows of one record. The prefix picks the kind's tables; it is checked against the three
 -- kinds, so the dynamic SQL below only ever names their tables.
 create function public.content_intangible_links(
-  p_prefix text, p_id uuid, p_area_links jsonb, p_people jsonb, p_item_ids jsonb, p_theme_ids jsonb, p_source_ids jsonb, p_word_ids jsonb
+  p_prefix text, p_id uuid, p_area_links jsonb, p_narrators jsonb, p_author_ids jsonb, p_item_ids jsonb, p_theme_ids jsonb, p_source_ids jsonb, p_word_ids jsonb
 ) returns void
 language plpgsql set search_path = '' as $$
 declare
@@ -34,13 +35,17 @@ begin
     || 'from jsonb_array_elements($2) with ordinality as t(l, n)', p_prefix || '_areas', fk
   ) using p_id, coalesce(p_area_links, '[]');
 
-  execute format('delete from public.%I where %I = $1', p_prefix || '_people', fk) using p_id;
+  execute format('delete from public.%I where %I = $1', p_prefix || '_narrators', fk) using p_id;
   execute format(
-    'insert into public.%I (%I, position, role, person_id, consent_named, consent_note, description) '
-    || 'select $1, (n - 1)::smallint, l->>''role'', nullif(l->>''personId'', '''')::uuid, coalesce((l->>''consentNamed'')::boolean, false), '
-    || 'nullif(l->>''consentNote'', ''''), nullif(l->>''description'', '''') from jsonb_array_elements($2) with ordinality as t(l, n)',
-    p_prefix || '_people', fk
-  ) using p_id, coalesce(p_people, '[]');
+    'insert into public.%I (%I, narrator_id, role, position) select $1, (l->>''narratorId'')::uuid, l->>''role'', (n - 1)::smallint '
+    || 'from jsonb_array_elements($2) with ordinality as t(l, n)', p_prefix || '_narrators', fk
+  ) using p_id, coalesce(p_narrators, '[]');
+
+  execute format('delete from public.%I where %I = $1', p_prefix || '_authors', fk) using p_id;
+  execute format(
+    'insert into public.%I (%I, person_id, position) select $1, (v #>> ''{}'')::uuid, (n - 1)::smallint from jsonb_array_elements($2) with ordinality as t(v, n)',
+    p_prefix || '_authors', fk
+  ) using p_id, coalesce(p_author_ids, '[]');
 
   execute format('delete from public.%I where %I = $1', p_prefix || '_heritage_items', fk) using p_id;
   execute format(
@@ -69,7 +74,7 @@ end;
 $$;
 
 create function public.content_story_save(
-  p_id uuid, p_revision integer, p_row jsonb, p_area_links jsonb, p_people jsonb, p_item_ids jsonb, p_theme_ids jsonb, p_source_ids jsonb
+  p_id uuid, p_revision integer, p_row jsonb, p_area_links jsonb, p_narrators jsonb, p_author_ids jsonb, p_item_ids jsonb, p_theme_ids jsonb, p_source_ids jsonb
 ) returns uuid
 language plpgsql set search_path = '' as $$
 declare
@@ -77,7 +82,8 @@ declare
   saved uuid := coalesce(p_id, r.id, gen_random_uuid());
 begin
   perform set_config('app.revision_sidecars', jsonb_build_object('id', saved, 'sidecars', jsonb_build_object(
-    'areaLinks', coalesce(p_area_links, '[]'), 'people', coalesce(p_people, '[]'), 'itemIds', coalesce(p_item_ids, '[]'),
+    'areaLinks', coalesce(p_area_links, '[]'), 'narrators', coalesce(p_narrators, '[]'), 'authorIds', coalesce(p_author_ids, '[]'),
+    'itemIds', coalesce(p_item_ids, '[]'),
     'themeIds', coalesce(p_theme_ids, '[]'), 'sourceIds', coalesce(p_source_ids, '[]')
   ))::text, true);
   if p_id is null then
@@ -106,13 +112,13 @@ begin
     end if;
   end if;
 
-  perform public.content_intangible_links('story', saved, p_area_links, p_people, p_item_ids, p_theme_ids, p_source_ids, null);
+  perform public.content_intangible_links('story', saved, p_area_links, p_narrators, p_author_ids, p_item_ids, p_theme_ids, p_source_ids, null);
   return saved;
 end;
 $$;
 
 create function public.content_custom_save(
-  p_id uuid, p_revision integer, p_row jsonb, p_area_links jsonb, p_people jsonb, p_item_ids jsonb, p_theme_ids jsonb, p_source_ids jsonb
+  p_id uuid, p_revision integer, p_row jsonb, p_area_links jsonb, p_narrators jsonb, p_author_ids jsonb, p_item_ids jsonb, p_theme_ids jsonb, p_source_ids jsonb
 ) returns uuid
 language plpgsql set search_path = '' as $$
 declare
@@ -120,7 +126,8 @@ declare
   saved uuid := coalesce(p_id, r.id, gen_random_uuid());
 begin
   perform set_config('app.revision_sidecars', jsonb_build_object('id', saved, 'sidecars', jsonb_build_object(
-    'areaLinks', coalesce(p_area_links, '[]'), 'people', coalesce(p_people, '[]'), 'itemIds', coalesce(p_item_ids, '[]'),
+    'areaLinks', coalesce(p_area_links, '[]'), 'narrators', coalesce(p_narrators, '[]'), 'authorIds', coalesce(p_author_ids, '[]'),
+    'itemIds', coalesce(p_item_ids, '[]'),
     'themeIds', coalesce(p_theme_ids, '[]'), 'sourceIds', coalesce(p_source_ids, '[]')
   ))::text, true);
   if p_id is null then
@@ -149,13 +156,13 @@ begin
     end if;
   end if;
 
-  perform public.content_intangible_links('custom', saved, p_area_links, p_people, p_item_ids, p_theme_ids, p_source_ids, null);
+  perform public.content_intangible_links('custom', saved, p_area_links, p_narrators, p_author_ids, p_item_ids, p_theme_ids, p_source_ids, null);
   return saved;
 end;
 $$;
 
 create function public.content_folk_text_save(
-  p_id uuid, p_revision integer, p_row jsonb, p_area_links jsonb, p_people jsonb, p_item_ids jsonb, p_theme_ids jsonb, p_source_ids jsonb,
+  p_id uuid, p_revision integer, p_row jsonb, p_area_links jsonb, p_narrators jsonb, p_author_ids jsonb, p_item_ids jsonb, p_theme_ids jsonb, p_source_ids jsonb,
   p_word_ids jsonb
 ) returns uuid
 language plpgsql set search_path = '' as $$
@@ -164,7 +171,8 @@ declare
   saved uuid := coalesce(p_id, r.id, gen_random_uuid());
 begin
   perform set_config('app.revision_sidecars', jsonb_build_object('id', saved, 'sidecars', jsonb_build_object(
-    'areaLinks', coalesce(p_area_links, '[]'), 'people', coalesce(p_people, '[]'), 'itemIds', coalesce(p_item_ids, '[]'),
+    'areaLinks', coalesce(p_area_links, '[]'), 'narrators', coalesce(p_narrators, '[]'), 'authorIds', coalesce(p_author_ids, '[]'),
+    'itemIds', coalesce(p_item_ids, '[]'),
     'themeIds', coalesce(p_theme_ids, '[]'), 'sourceIds', coalesce(p_source_ids, '[]'), 'wordIds', coalesce(p_word_ids, '[]')
   ))::text, true);
   if p_id is null then
@@ -193,16 +201,16 @@ begin
     end if;
   end if;
 
-  perform public.content_intangible_links('folk_text', saved, p_area_links, p_people, p_item_ids, p_theme_ids, p_source_ids, p_word_ids);
+  perform public.content_intangible_links('folk_text', saved, p_area_links, p_narrators, p_author_ids, p_item_ids, p_theme_ids, p_source_ids, p_word_ids);
   return saved;
 end;
 $$;
 
-revoke all on function public.content_intangible_links(text, uuid, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
-grant execute on function public.content_intangible_links(text, uuid, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to service_role;
-revoke all on function public.content_story_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
-grant execute on function public.content_story_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to service_role;
-revoke all on function public.content_custom_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
-grant execute on function public.content_custom_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to service_role;
-revoke all on function public.content_folk_text_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
-grant execute on function public.content_folk_text_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to service_role;
+revoke all on function public.content_intangible_links(text, uuid, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.content_intangible_links(text, uuid, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to service_role;
+revoke all on function public.content_story_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.content_story_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to service_role;
+revoke all on function public.content_custom_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.content_custom_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to service_role;
+revoke all on function public.content_folk_text_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.content_folk_text_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb) to service_role;

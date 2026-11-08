@@ -40,7 +40,7 @@ export const customKind = defineContentKind({
   // A Folk text keeps the Custom it belonged to (folk_texts.custom_id restricts the delete).
   references: (db, id) => usedBy(db, 'folk_texts', 'custom_id', id, { kind: 'folk_text', label: 'Usmeni tekstovi' }),
   sidecars: {
-    fields: ['areaLinks', 'people', 'itemIds', 'themeIds', 'sourceIds'],
+    fields: ['areaLinks', 'narrators', 'authorIds', 'itemIds', 'themeIds', 'sourceIds'],
     load: async (db, id) => ({ ...await loadLinks(db, 'custom', id) })
   },
   checkLinks: async (db, value) => [

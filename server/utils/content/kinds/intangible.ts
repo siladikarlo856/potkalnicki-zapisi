@@ -1,11 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentIssue, ContentReferenceGroup } from '#shared/utils/content/common'
-import type { AreaLink, AreaRelation, IntangibleLinks, PeopleLink, PeopleRole } from '#shared/utils/content/intangible'
+import type { AreaLink, AreaRelation, IntangibleLinks, NarratorLink, NarratorRole } from '#shared/utils/content/intangible'
 import { missingLinkIssues, missingSourceIssues } from '../linkCheck'
 
 // What the three intangible heritage kinds (stories, customs, folk_texts) have in common on the server: their link
 // tables and how to read them, the rules on linked rows, the labels the admin list shows and the references that
-// stop a linked row from being deleted. Table names follow the kind: `<prefix>_areas`, `<prefix>_people`, ...
+// stop a linked row from being deleted. Table names follow the kind: `<prefix>_areas`, `<prefix>_narrators`, `<prefix>_authors`, ...
 
 export type IntangiblePrefix = 'story' | 'custom' | 'folk_text'
 const PREFIXES = ['story', 'custom', 'folk_text'] as const
@@ -21,17 +21,10 @@ export async function loadAreaLinks(db: SupabaseClient, prefix: IntangiblePrefix
   return (data ?? []).map(row => ({ areaId: row.area_id as string, relation: row.relation as AreaRelation }))
 }
 
-export async function loadPeople(db: SupabaseClient, prefix: IntangiblePrefix, id: string): Promise<PeopleLink[]> {
-  const { data, error } = await db.from(`${prefix}_people`)
-    .select('role,person_id,consent_named,consent_note,description,position').eq(`${prefix}_id`, id).order('position')
+export async function loadNarrators(db: SupabaseClient, prefix: IntangiblePrefix, id: string): Promise<NarratorLink[]> {
+  const { data, error } = await db.from(`${prefix}_narrators`).select('narrator_id,role,position').eq(`${prefix}_id`, id).order('position')
   if (error) throw error
-  return (data ?? []).map(row => ({
-    role: row.role as PeopleRole,
-    personId: (row.person_id as string | null) ?? null,
-    consentNamed: row.consent_named as boolean,
-    consentNote: (row.consent_note as string | null) ?? null,
-    description: (row.description as string | null) ?? null
-  }))
+  return (data ?? []).map(row => ({ narratorId: row.narrator_id as string, role: row.role as NarratorRole }))
 }
 
 /** The ids a link table holds for one record, in order (items, themes, sources, words). */
@@ -46,7 +39,8 @@ export async function loadLinks(db: SupabaseClient, prefix: IntangiblePrefix, id
   const fk = `${prefix}_id`
   return {
     areaLinks: await loadAreaLinks(db, prefix, id),
-    people: await loadPeople(db, prefix, id),
+    narrators: await loadNarrators(db, prefix, id),
+    authorIds: await loadIds(db, `${prefix}_authors`, fk, 'person_id', id),
     itemIds: await loadIds(db, `${prefix}_heritage_items`, fk, 'item_id', id),
     themeIds: await loadIds(db, `${prefix}_themes`, fk, 'theme_id', id),
     sourceIds: await loadIds(db, `${prefix}_sources`, fk, 'source_id', id)
@@ -57,15 +51,12 @@ export function loadWordIds(db: SupabaseClient, id: string) {
   return loadIds(db, 'folk_text_words', 'folk_text_id', 'word_id', id)
 }
 
-/** The rules on linked rows that need the database: every place, person, heritage item, theme and source exists. */
+/** The rules on linked rows that need the database: every place, narrator, author (Person), heritage item, theme and source exists. */
 export async function checkLinks(db: SupabaseClient, links: IntangibleLinks): Promise<ContentIssue[]> {
   return [
     ...await missingLinkIssues(db, 'areas', links.areaLinks.map((link, index) => [`areaLinks.${index}.areaId`, link.areaId] as const), 'To mjesto ne postoji.'),
-    ...await missingLinkIssues(
-      db, 'persons',
-      links.people.flatMap((link, index) => link.personId ? [[`people.${index}.personId`, link.personId] as const] : []),
-      'Ta osoba ne postoji.'
-    ),
+    ...await missingLinkIssues(db, 'narrators', links.narrators.map((link, index) => [`narrators.${index}.narratorId`, link.narratorId] as const), 'Taj kazivač ne postoji.'),
+    ...await missingLinkIssues(db, 'persons', links.authorIds.map((id, index) => [`authorIds.${index}`, id] as const), 'Ta osoba ne postoji.'),
     ...await missingLinkIssues(db, 'heritage_items', links.itemIds.map((id, index) => [`itemIds.${index}`, id] as const), 'Taj zapis baštine ne postoji.'),
     ...await missingLinkIssues(db, 'themes', links.themeIds.map((id, index) => [`themeIds.${index}`, id] as const), 'Ta tema ne postoji.'),
     ...await missingSourceIssues(db, links.sourceIds)
@@ -76,7 +67,8 @@ export async function checkLinks(db: SupabaseClient, links: IntangibleLinks): Pr
 export function linkArguments(links: IntangibleLinks) {
   return {
     p_area_links: links.areaLinks,
-    p_people: links.people,
+    p_narrators: links.narrators,
+    p_author_ids: links.authorIds,
     p_item_ids: links.itemIds,
     p_theme_ids: links.themeIds,
     p_source_ids: links.sourceIds
@@ -147,15 +139,17 @@ export function checkOwnLinks(db: SupabaseClient, links: ReadonlyArray<readonly 
 }
 
 /**
- * Records that link to a row of another kind (a place, person, heritage item, source or word). Each link table
- * restricts that row's deletion, so the groups are blocking: archive it instead.
+ * Records that link to a row of another kind (a place, narrator, person, heritage item, source or word). Each link
+ * table restricts that row's deletion, so the groups are blocking: archive it instead. A person is linked as the
+ * author of a text (`*_authors`); a narrator is linked as its narrator or collector (`*_narrators`).
  */
 export async function intangibleReferences(
-  db: SupabaseClient, link: 'area' | 'person' | 'heritage_item' | 'source' | 'word', id: string
+  db: SupabaseClient, link: 'area' | 'narrator' | 'person' | 'heritage_item' | 'source' | 'word', id: string
 ): Promise<ContentReferenceGroup[]> {
   const spec = {
     area: { table: 'areas', column: 'area_id' },
-    person: { table: 'people', column: 'person_id' },
+    narrator: { table: 'narrators', column: 'narrator_id' },
+    person: { table: 'authors', column: 'person_id' },
     heritage_item: { table: 'heritage_items', column: 'item_id' },
     source: { table: 'sources', column: 'source_id' },
     word: { table: 'words', column: 'word_id' }
@@ -178,6 +172,20 @@ export async function intangibleReferences(
         const record = row[TABLES[prefix]] as { title: string } | null
         return { id: row[fk] as string, label: record?.title ?? String(row[fk]) }
       })
+    })
+  }
+  // Narrators have a home settlement (an area) and may be one notable Person; both restrict deletion too.
+  const narratorColumn = link === 'area' ? 'settlement_id' : link === 'person' ? 'person_id' : null
+  if (narratorColumn) {
+    const { data, count, error } = await db.from('narrators').select('id,name', { count: 'exact' }).eq(narratorColumn, id).order('name').limit(EXAMPLES)
+    if (error) throw error
+    const rows = data ?? []
+    groups.push({
+      kind: 'narrator',
+      label: 'Kazivači',
+      count: count ?? rows.length,
+      blocking: true,
+      items: rows.map(row => ({ id: row.id as string, label: row.name as string }))
     })
   }
   return groups

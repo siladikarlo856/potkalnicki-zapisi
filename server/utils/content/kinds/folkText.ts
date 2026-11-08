@@ -37,7 +37,7 @@ export const folkTextKind = defineContentKind({
   uniqueConstraints: { folk_texts_slug_key: 'slug' },
   references: async () => [],
   sidecars: {
-    fields: ['areaLinks', 'people', 'itemIds', 'themeIds', 'sourceIds', 'wordIds'],
+    fields: ['areaLinks', 'narrators', 'authorIds', 'itemIds', 'themeIds', 'sourceIds', 'wordIds'],
     load: async (db, id) => ({ ...await loadLinks(db, 'folk_text', id), wordIds: await loadWordIds(db, id) })
   },
   checkLinks: async (db, value) => [

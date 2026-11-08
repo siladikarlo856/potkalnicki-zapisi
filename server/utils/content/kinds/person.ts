@@ -63,7 +63,7 @@ export const personKind = defineContentKind({
     const { count, error } = await db.from('person_areas').select('person_id', { count: 'exact', head: true }).eq('person_id', id)
     if (error) throw error
     if (count) groups.push({ kind: 'person_area', label: 'Veze na mjesta', count, blocking: false, items: [] })
-    // Stories, customs and folk texts that name the person as narrator, collector or author.
+    // Stories, customs and folk texts that name the person as their author, and the narrator who is this person.
     groups.push(...await intangibleReferences(db, 'person', id))
     return groups
   },

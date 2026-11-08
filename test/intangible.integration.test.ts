@@ -3,12 +3,14 @@ import type { Custom } from '../shared/utils/content/custom'
 import type { FolkText } from '../shared/utils/content/folkText'
 import type { HistoryRestoreResult, HistoryRevisions } from '../shared/utils/content/history'
 import type { KeyedListEntry, Theme } from '../shared/utils/content/intangibleList'
+import type { Narrator } from '../shared/utils/content/narrator'
 import type { Story } from '../shared/utils/content/story'
 import { integrationDb } from './support/integrationDb'
 
 // Intangible heritage over real Postgres: the seeded type lists, the three kinds saved through the admin content API
-// with their links in one transaction, history and restore, the database rules (partial dates, narrators and
-// consent, a Published record needs a text), deletes blocked while a record is in use, and Drafts made from a Memory
+// and the narrators who told them (a record of their own, named in public only with consent), the three kinds
+// saved through the admin content API with their links in one transaction, history and restore, the database rules
+// (partial dates, narrators and consent, a Published record needs a text), deletes blocked while a record is in use, and Drafts made from a Memory
 // (credited on publishing, withdrawn on rejection). Run with `node scripts/test-challenges.mjs` (disposable Postgres
 // and PostgREST, every migration applied); skipped everywhere else. Rows created here have an `intangible-test` slug.
 const SECRET = 'content-intangible-review-secret-0123456789'
@@ -56,22 +58,22 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
 
   it('is server-only: RLS on and no grant for anon or authenticated on any table', () => {
     const tables = sql(`select string_agg(relname, ',') from pg_class c join pg_namespace n on n.oid = c.relnamespace
-      where n.nspname = 'public' and c.relkind = 'r' and (relname in ('story_types', 'custom_types', 'folk_text_types', 'occasions', 'themes', 'stories', 'customs', 'folk_texts', 'folk_text_words')
-        or relname ~ '^(story|custom|folk_text)_(areas|people|heritage_items|themes|sources)$')`).split(',')
-    expect(tables).toHaveLength(24)
+      where n.nspname = 'public' and c.relkind = 'r' and (relname in ('story_types', 'custom_types', 'folk_text_types', 'occasions', 'themes', 'narrators', 'stories', 'customs', 'folk_texts', 'folk_text_words')
+        or relname ~ '^(story|custom|folk_text)_(areas|narrators|authors|heritage_items|themes|sources)$')`).split(',')
+    expect(tables).toHaveLength(28)
     for (const table of tables) {
       expect(sql(`select relrowsecurity from pg_class where oid = 'public.${table}'::regclass`), table).toBe('t')
       expect(failure(`set role anon; select count(*) from public.${table};`), table).toMatch(/permission denied/)
       expect(failure(`set role authenticated; select count(*) from public.${table};`), table).toMatch(/permission denied/)
     }
-    for (const fn of ['content_story_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb)', 'content_custom_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb)',
-      'content_folk_text_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb)']) {
+    for (const fn of ['content_story_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb)', 'content_custom_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb)',
+      'content_folk_text_save(uuid, integer, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb)']) {
       expect(sql(`select has_function_privilege('anon', 'public.${fn}', 'execute') or has_function_privilege('authenticated', 'public.${fn}', 'execute')`), fn).toBe('f')
       expect(sql(`select has_function_privilege('service_role', 'public.${fn}', 'execute')`), fn).toBe('t')
     }
   })
 
-  it('saves a Story with its places, people, theme, items and sources in one transaction, versions it and restores the links', async () => {
+  it('saves a Story with its places, narrators, authors, theme, items and sources in one transaction, versions it and restores the links', async () => {
     const suffix = crypto.randomUUID().slice(0, 8)
     const settlement = id(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
     const region = id(`select id from areas where kind = 'region' limit 1`)
@@ -83,14 +85,20 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
     const theme = await create<Theme>('theme', { labelHr: `Intangible test tema ${suffix}`, slug: `intangible-test-tema-${suffix}`, labelEn: 'Test theme' })
     expect(theme.slug).toBe(`intangible-test-tema-${suffix}`)
 
+    // Narrators are records of their own: an anonymous one, a named one (with consent, and a Person) and a collector.
+    const anonymous = await create<Narrator>('narrator', { name: 'Intangible Test Anonimna', publicDescription: 'kazivačica, r. 1938., Gornji Fodrovec', bornYear: 1938, settlementId: settlement })
+    const named = await create<Narrator>('narrator', { name: `Intangible Test Imenovana ${suffix}`, consentNamed: true, consentNote: 'usmeno, 8. 11. 2026.', personId: person })
+    const collector = await create<Narrator>('narrator', { name: 'Intangible Test Ivan', publicDescription: 'zapisivač, Križevci' })
+
     const slug = `intangible-test-prica-${suffix}`
     const links = {
       areaLinks: [{ areaId: settlement, relation: 'recorded_in' }, { areaId: region, relation: 'about' }],
-      people: [
-        { role: 'narrator', personId: null, consentNamed: false, description: 'kazivačica, r. 1938., Gornji Fodrovec' },
-        { role: 'narrator', personId: person, consentNamed: true, consentNote: 'usmeno, 8. 11. 2026.' },
-        { role: 'collector', personId: null, description: 'zapisao Karlo Siladi' }
+      narrators: [
+        { narratorId: anonymous.id, role: 'narrator' },
+        { narratorId: named.id, role: 'narrator' },
+        { narratorId: collector.id, role: 'collector' }
       ],
+      authorIds: [person],
       itemIds: [item],
       themeIds: [theme.id],
       sourceIds: [sourceB, sourceA]
@@ -112,11 +120,8 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
     expect(draft.typeLabel).toBe('bajka')
     expect(draft.placesLabel).toBeTruthy()
     expect(draft.areaLinks).toEqual(links.areaLinks)
-    expect(draft.people).toEqual([
-      { role: 'narrator', personId: null, consentNamed: false, consentNote: null, description: 'kazivačica, r. 1938., Gornji Fodrovec' },
-      { role: 'narrator', personId: person, consentNamed: true, consentNote: 'usmeno, 8. 11. 2026.', description: null },
-      { role: 'collector', personId: null, consentNamed: false, consentNote: null, description: 'zapisao Karlo Siladi' }
-    ])
+    expect(draft.narrators).toEqual(links.narrators)
+    expect(draft.authorIds).toEqual([person])
     expect(draft.sourceIds).toEqual([sourceB, sourceA])
     expect(sql(`select period_sort_year from stories where id = '${draft.id}'`)).toBe('1501')
     expect(sql(`select recorded_precision || ' ' || recorded_year || ' ' || recorded_month || ' ' || coalesce(recorded_day::text, 'null') from stories where id = '${draft.id}'`)).toBe('month 2026 11 null')
@@ -127,20 +132,22 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
     expect(published.status).toBe('published')
     expect(sql(`select status from stories where id = '${draft.id}'`)).toBe('published')
 
-    // A refused save leaves the row and its links alone: the missing person is caught before any write.
+    // A refused save leaves the row and its links alone: the missing narrator is caught before any write.
     const missing = crypto.randomUUID()
-    const refused = await patch('story', published, { people: [{ role: 'collector', personId: missing }], themeIds: [missing] }, 400)
+    const refused = await patch('story', published, { narrators: [{ narratorId: missing, role: 'collector' }], authorIds: [missing], themeIds: [missing] }, 400)
     expect(refused.body.data?.issues).toEqual(expect.arrayContaining([
-      expect.objectContaining({ path: 'people.0.personId' }),
+      expect.objectContaining({ path: 'narrators.0.narratorId' }),
+      expect.objectContaining({ path: 'authorIds.0' }),
       expect.objectContaining({ path: 'themeIds.0' })
     ]))
-    expect(sql(`select count(*) from story_people where story_id = '${draft.id}'`)).toBe('3')
+    expect(sql(`select count(*) from story_narrators where story_id = '${draft.id}'`)).toBe('3')
 
     // The newest revision carries the links, so a restore brings them back.
     const edited = (await patch('story', published, {
       title: `Intangible test priča (izmijenjena) ${suffix}`,
       areaLinks: [{ areaId: settlement, relation: 'about' }],
-      people: [{ role: 'collector', personId: null, description: 'zapisao netko drugi' }],
+      narrators: [{ narratorId: collector.id, role: 'collector' }],
+      authorIds: [],
       themeIds: [],
       sourceIds: [sourceA]
     })).body.entity
@@ -159,7 +166,8 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
     expect(back.areaLinks).toEqual(links.areaLinks)
     expect(back.sourceIds).toEqual([sourceB, sourceA])
     expect(back.themeIds).toEqual([theme.id])
-    expect(back.people).toHaveLength(3)
+    expect(back.narrators).toEqual(links.narrators)
+    expect(back.authorIds).toEqual([person])
 
     // A renamed slug is remembered for redirects.
     const renamed = (await patch('story', back, { slug: `${slug}-nova` })).body.entity
@@ -173,13 +181,102 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
     const blocked = await api(`/api/admin/content/theme/${theme.id}?mode=hard`, { method: 'DELETE' })
     expect(blocked.status).toBe(409)
 
-    // The same goes for a person, place or source a Story names.
-    const personRefs = await api<{ blocking: boolean }>(`/api/admin/content/person/${person}/references`)
+    // The same goes for a narrator, author, place or source a Story names.
+    const narratorRefs = await api<{ blocking: boolean, groups: Array<{ kind: string, count: number }> }>(`/api/admin/content/narrator/${anonymous.id}/references`)
+    expect(narratorRefs.body.blocking).toBe(true)
+    expect(narratorRefs.body.groups).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'story', count: 1 })]))
+    expect((await api(`/api/admin/content/narrator/${anonymous.id}?mode=hard`, { method: 'DELETE' })).status).toBe(409)
+    const personRefs = await api<{ blocking: boolean, groups: Array<{ kind: string, count: number }> }>(`/api/admin/content/person/${person}/references`)
     expect(personRefs.body.blocking).toBe(true)
+    expect(personRefs.body.groups.map(group => group.kind)).toEqual(expect.arrayContaining(['story', 'narrator']))
     expect((await api(`/api/admin/content/story/${draft.id}?mode=hard`, { method: 'DELETE' })).status).toBe(200)
-    expect(sql(`select count(*) from story_people where story_id = '${draft.id}'`)).toBe('0')
+    expect(sql(`select count(*) from story_narrators where story_id = '${draft.id}'`)).toBe('0')
+    expect(sql(`select count(*) from story_authors where story_id = '${draft.id}'`)).toBe('0')
     expect(sql(`select count(*) from content_revisions where entity_kind = 'story' and entity_id = '${draft.id}' and action = 'delete'`)).toBe('1')
     expect((await api(`/api/admin/content/theme/${theme.id}?mode=hard`, { method: 'DELETE' })).status).toBe(200)
+    for (const narrator of [anonymous, named, collector]) expect((await api(`/api/admin/content/narrator/${narrator.id}?mode=hard`, { method: 'DELETE' })).status).toBe(200)
+  })
+
+  it('records a Narrator as its own record: named in public only with consent, one per Person, and listing everything they told', async () => {
+    const suffix = crypto.randomUUID().slice(0, 8)
+    const settlement = id(`select id from areas where kind = 'settlement' and slug = 'apatovec' limit 1`)
+    const region = id(`select id from areas where kind = 'region' limit 1`)
+    const person = id(`select id from persons limit 1`)
+    const issues = (response: { body: { data?: Record<string, unknown> } }) => ((response.body.data?.issues ?? []) as Array<{ path: string }>).map(issue => issue.path)
+
+    // Without consent the name stays with the editors: a public description is required and may not repeat the name.
+    const post = (body: Record<string, unknown>) => api('/api/admin/content/narrator', { method: 'POST', body })
+    expect(issues(await post({ name: `Ana Horvat ${suffix}` }))).toEqual(expect.arrayContaining(['publicDescription']))
+    expect(issues(await post({ name: `Horvat${suffix}`, publicDescription: `kazivačica horvat${suffix}` }))).toEqual(['slug', 'publicDescription'])
+    // The home settlement must be a settlement, and the Person must exist.
+    expect(issues(await post({ name: 'Intangible Test Bad', publicDescription: `kazivac ${suffix}`, settlementId: region }))).toEqual(['settlementId'])
+    expect(issues(await post({ name: 'Intangible Test Bad', publicDescription: `kazivac ${suffix}`, personId: crypto.randomUUID() }))).toEqual(['personId'])
+
+    const narrator = await create<Narrator>('narrator', {
+      name: 'Intangible Test Marija',
+      publicDescription: `kazivačica, r. 1938., Gornji Fodrovec ${suffix}`,
+      consentNamed: false,
+      consentNote: 'nije pristala na navođenje imena',
+      living: true,
+      bornYear: 1938,
+      settlementId: settlement,
+      personId: person,
+      researchNotes: 'Privatna bilješka.',
+      status: 'published'
+    })
+    expect(narrator.slug).toBe(`kazivacica-r-1938-gornji-fodrovec-${suffix}`)
+    expect(narrator.slug).not.toContain('intangible')
+    expect(narrator.settlementLabel).toBeTruthy()
+    expect(narrator.personLabel).toBeTruthy()
+    expect(sql(`select consent_named::text || ' ' || living::text || ' ' || born_year from narrators where id = '${narrator.id}'`)).toBe('false true 1938')
+    // Editors find a narrator by name or by description, accent-folded.
+    expect(sql(`select (search_text like '%marija%' and search_text like '%kazivacica%')::text from narrators where id = '${narrator.id}'`)).toBe('true')
+
+    // Another Narrator cannot take the same slug or the same Person: reported on the field.
+    const duplicate = await post({ name: 'Intangible Test Ivana', publicDescription: 'kazivačica iz Križevaca', slug: narrator.slug })
+    expect(duplicate.status).toBe(409)
+    const samePerson = await post({ name: 'Intangible Test Ivana', publicDescription: 'kazivačica iz Križevaca', slug: `kazivacica-krizevci-${suffix}`, personId: person })
+    expect(samePerson.status).toBe(409)
+
+    // Everything a narrator told, across the three kinds: what their public page lists.
+    const story = await create<Story>('story', {
+      title: `Intangible test priča kazivačice ${suffix}`, typeId: typeId('story_types', 'bajka'), textLocal: 'Bil je jen put...',
+      narrators: [{ narratorId: narrator.id, role: 'narrator' }], status: 'published'
+    })
+    const custom = await create<Custom>('custom', {
+      title: `Intangible test običaj kazivačice ${suffix}`, typeId: typeId('custom_types', 'godisnji-obicaji'), description: 'Opis.',
+      narrators: [{ narratorId: narrator.id, role: 'narrator' }], status: 'published'
+    })
+    const folk = await create<FolkText>('folk_text', {
+      title: `Intangible test pjesma kazivačice ${suffix}`, typeId: typeId('folk_text_types', 'pjesma'), textLocal: 'Tekst.',
+      narrators: [{ narratorId: narrator.id, role: 'collector' }], status: 'published'
+    })
+    expect(sql(`select string_agg(kind || ':' || role, ',' order by kind) from (
+      select 'custom' as kind, role from custom_narrators where narrator_id = '${narrator.id}'
+      union all select 'folk_text', role from folk_text_narrators where narrator_id = '${narrator.id}'
+      union all select 'story', role from story_narrators where narrator_id = '${narrator.id}') t`)).toBe('custom:narrator,folk_text:collector,story:narrator')
+    const references = await api<{ blocking: boolean, groups: Array<{ kind: string, count: number }> }>(`/api/admin/content/narrator/${narrator.id}/references`)
+    expect(references.body.blocking).toBe(true)
+    expect(references.body.groups.filter(group => group.count).map(group => group.kind).sort()).toEqual(['custom', 'folk_text', 'story'])
+    // The settlement and the Person cannot be deleted while a Narrator names them.
+    const areaRefs = await api<{ blocking: boolean, groups: Array<{ kind: string, count: number }> }>(`/api/admin/content/area/${settlement}/references`)
+    expect(areaRefs.status, JSON.stringify(areaRefs.body)).toBe(200)
+    expect(areaRefs.body.groups.filter(group => group.kind === 'narrator' && group.count).length).toBe(1)
+
+    // The slug is remembered when it changes, and the change is in the history.
+    const renamed = (await patch('narrator', narrator, { slug: `${narrator.slug}-nova` })).body.entity
+    expect(sql(`select count(*) from content_slug_history where kind = 'narrator' and entity_id = '${narrator.id}' and slug = '${narrator.slug}'`)).toBe('1')
+    const revisions = await api<HistoryRevisions>(`/api/admin/content/narrator/${narrator.id}/revisions`)
+    expect(revisions.status).toBe(200)
+    expect(revisions.body.revisions.length).toBeGreaterThanOrEqual(2)
+    expect(renamed.slug).toBe(`${narrator.slug}-nova`)
+
+    // A narrator in use is archived, never deleted.
+    expect((await api(`/api/admin/content/narrator/${narrator.id}?mode=hard`, { method: 'DELETE' })).status).toBe(409)
+    for (const [kind, entity] of [['story', story], ['custom', custom], ['folk_text', folk]] as const) {
+      expect((await api(`/api/admin/content/${kind}/${entity.id}?mode=hard`, { method: 'DELETE' })).status).toBe(200)
+    }
+    expect((await api(`/api/admin/content/narrator/${narrator.id}?mode=hard`, { method: 'DELETE' })).status).toBe(200)
   })
 
   it('links a Custom to its Occasion and a Folk text to its Custom and Words, and keeps a used Custom from being deleted', async () => {
@@ -266,17 +363,33 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
     expect(failure(`insert into customs (title, slug, type_id, status) values ('c', 'intangible-test-c', '${typeId('custom_types', 'godisnji-obicaji')}', 'published');`)).toMatch(/violates check constraint/)
     expect(failure(`insert into folk_texts (title, slug, type_id, status) values ('f', 'intangible-test-f', '${typeId('folk_text_types', 'pjesma')}', 'published');`)).toMatch(/violates check constraint/)
 
-    // People: a link needs a person or a description; consent needs a person; an unnamed narrator needs the public description.
-    const story = id(`with s as (insert into stories (title, slug, type_id) values ('intangible-test', 'intangible-test-people-${crypto.randomUUID().slice(0, 8)}', '${type}') returning id) select id from s`)
+    // Narrators: the public always has the name (with consent) or an anonymous description; years and places are sane.
+    const narratorInsert = (columns: string, values: string) => `insert into narrators (name, slug, ${columns}) values ('Intangible Test', 'intangible-test-n-${crypto.randomUUID().slice(0, 8)}', ${values});`
+    expect(failure(narratorInsert('consent_named', 'false'))).toMatch(/narrators_public_identity/)
+    expect(failure(narratorInsert('consent_named, public_description', `false, '  '`))).toMatch(/violates check constraint/)
+    expect(failure(narratorInsert('public_description, born_year', `'x', 999`))).toMatch(/violates check constraint/)
+    expect(failure(`insert into narrators (name, slug, public_description) values ('Intangible Test', 'Loš Slug', 'x');`)).toMatch(/violates check constraint/)
+    expect(failure(narratorInsert('public_description, settlement_id', `'x', '${id(`select id from areas where kind = 'region' limit 1`)}'`))).toMatch(/settlement_id must be a settlement/)
+    const narrator = id(`with n as (insert into narrators (name, slug, public_description) values ('Intangible Test', 'intangible-test-n-${crypto.randomUUID().slice(0, 8)}', 'x') returning id) select id from n`)
+    expect(sql(`select consent_named::text || ' ' || living::text from narrators where id = '${narrator}'`)).toBe('false true')
+    sql(`update narrators set consent_named = true, public_description = null where id = '${narrator}'`)
+    expect(failure(`update narrators set consent_named = false where id = '${narrator}'`)).toMatch(/narrators_public_identity/)
+
+    // A narrator link has the narrator or collector role, once per role; an author is a Person, once per text.
+    const story = id(`with s as (insert into stories (title, slug, type_id) values ('intangible-test', 'intangible-test-links-${crypto.randomUUID().slice(0, 8)}', '${type}') returning id) select id from s`)
     const person = id(`select id from persons limit 1`)
-    const link = (columns: string, values: string) => `insert into story_people (story_id, position, ${columns}) values ('${story}', 0, ${values});`
-    expect(failure(link('role', `'narrator'`))).toMatch(/violates check constraint/)
-    expect(failure(link('role, person_id', `'narrator', '${person}'`))).toMatch(/story_people_narrator_fallback/)
-    expect(failure(link('role, consent_named, description', `'collector', true, 'x'`))).toMatch(/story_people_consent_needs_person/)
-    expect(failure(link('role, person_id', `'wizard', '${person}'`))).toMatch(/violates check constraint/)
-    sql(link('role, person_id, consent_named', `'narrator', '${person}', true`))
-    expect(failure(`insert into story_people (story_id, position, role, person_id, consent_named) values ('${story}', 1, 'narrator', '${person}', true);`)).toMatch(/duplicate key/)
+    const link = (role: string) => `insert into story_narrators (story_id, narrator_id, role, position) values ('${story}', '${narrator}', '${role}', 0);`
+    expect(failure(link('author'))).toMatch(/violates check constraint/)
+    sql(link('narrator'))
+    expect(failure(link('narrator'))).toMatch(/duplicate key/)
+    sql(link('collector'))
+    sql(`insert into story_authors (story_id, person_id, position) values ('${story}', '${person}', 0)`)
+    expect(failure(`insert into story_authors (story_id, person_id, position) values ('${story}', '${person}', 1)`)).toMatch(/duplicate key/)
+    // A narrator in use cannot be deleted; deleting the story releases it.
+    expect(failure(`delete from narrators where id = '${narrator}'`)).toMatch(/foreign key/)
     sql(`delete from stories where id = '${story}'`)
+    expect(sql(`select count(*) from story_narrators where narrator_id = '${narrator}'`)).toBe('0')
+    sql(`delete from narrators where id = '${narrator}'`)
   })
 
   it('credits the sender of a Memory when the Draft made from it is published, and withdraws both when the Memory is rejected', async () => {

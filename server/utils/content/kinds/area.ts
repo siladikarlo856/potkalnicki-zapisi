@@ -61,7 +61,7 @@ async function areaReferences(db: SupabaseClient, id: string): Promise<ContentRe
     items: (wordAreas.data ?? []).map(row => ({ id: row.word_id as string, label: row.word_id as string }))
   })
 
-  const regionMembers = await db.from('area_regions').select('area_id, areas(name, kind)', { count: 'exact' }).eq('region_id', id).order('area_id').limit(EXAMPLES)
+  const regionMembers = await db.from('area_regions').select('area_id, areas!area_regions_area_id_fkey(name, kind)', { count: 'exact' }).eq('region_id', id).order('area_id').limit(EXAMPLES)
   if (regionMembers.error) throw regionMembers.error
   const memberRows = (regionMembers.data ?? []) as unknown as Array<{ area_id: string, areas: { name: string, kind: AreaKind } | null }>
   groups.push({

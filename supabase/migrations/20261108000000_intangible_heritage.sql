@@ -4,7 +4,8 @@
 -- * Story (Priča, stories), Custom (Običaj, customs) and Folk text (Usmeni tekst, folk_texts), each with one
 --   editor-managed type list (story_types, custom_types, folk_text_types), plus the Occasions a Custom belongs
 --   to (occasions) and the Themes any kind can share (themes).
--- * Per kind, link tables for places (recorded in / about, any area level), people (narrator, collector, author),
+-- * Narrators (narrators): their own record, with a public page, linked from each kind as narrator or collector; per kind,
+--   link tables for places (recorded in / about, any area level), narrators, authors (Persons, for literary retellings),
 --   heritage items, themes and ordered sources; a Folk text also links to the Words it contains and to the Custom
 --   it belonged to.
 -- * Memories (heritage_submissions of type 'memory') feed Drafts the way Proposals do: a Draft made from a Memory
@@ -79,6 +80,52 @@ create table public.themes (
   updated_at timestamptz not null default now()
 );
 comment on table public.themes is 'Themes (Tema): editor-managed subjects shared across Stories, Customs and Folk texts.';
+
+-- A Narrator (Kazivač): someone who told, said, sang or described a record, and (as a Collector link) someone who wrote
+-- it down. A record of its own, not a Person: persons are deceased notable people for Learn and Play, while narrators are
+-- mostly family and friends, many of them living. Each has a public page listing everything they told (hence the slug).
+-- * name is the real name, for editors. It is shown publicly only when consent_named is true, recorded by an editor
+--   (consent_note says how and when, for editors only); otherwise the public sees public_description, an anonymous
+--   description such as "kazivačica, r. 1938., Gornji Fodrovec". So the public always has one of the two.
+-- * living, born_year and settlement_id (the home settlement) describe the narrator; person_id links a narrator who is
+--   also a notable historical Person.
+-- * research_notes is a private note. credits and the rest follow the content conventions.
+create table public.narrators (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(btrim(name)) between 1 and 200),
+  slug text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(slug) <= 120),
+  public_description text check (char_length(btrim(public_description)) between 1 and 300),
+  consent_named boolean not null default false,
+  consent_note text check (char_length(consent_note) <= 500),
+  living boolean not null default true,
+  born_year smallint check (born_year between 1000 and 2100),
+  settlement_id uuid references public.areas(id) on delete restrict,
+  person_id uuid unique references public.persons(id) on delete restrict,
+  verification text not null default 'unverified' check (verification in ('unverified', 'in_review', 'verified', 'needs_update')),
+  research_notes text not null default '' check (char_length(research_notes) <= 5000),
+  noindex boolean not null default false,
+  credits jsonb not null default '[]' check (jsonb_typeof(credits) = 'array' and octet_length(credits::text) <= 8192),
+  status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
+  revision integer not null default 1 check (revision > 0),
+  search_text text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint narrators_public_identity check (consent_named or public_description is not null)
+);
+create index narrators_settlement on public.narrators (settlement_id) where settlement_id is not null;
+comment on table public.narrators is
+  'Narrators (Kazivač): who told, said, sang or described a record. Named publicly only with consent_named; otherwise public_description.';
+comment on column public.narrators.consent_note is 'Editors only: how and when the consent to name the narrator was given. Never public.';
+
+-- The home settlement must be a settlement.
+create function public.narrator_settlement_check() returns trigger language plpgsql set search_path = '' as $$
+begin
+  if new.settlement_id is not null and not exists (select 1 from public.areas where id = new.settlement_id and kind = 'settlement') then
+    raise exception 'settlement_id must be a settlement' using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
 
 -- Something people told. text_local is the original telling in local speech, text_standard a standard Croatian
 -- retelling; a Published Story has at least one of them.
@@ -215,7 +262,7 @@ comment on column public.stories.apply_submission_id is
   'Transient: set by the API on a write that applies a submission; the trigger clears it, so it is always null when stored.';
 comment on column public.stories.source_submission_id is 'The Memory this Draft was made from; publishing the Draft applies the Memory and credits its sender.';
 
--- Stories: places, people, linked heritage items, themes and ordered sources.
+-- Stories: places, narrators and collectors, authors, linked heritage items, themes and ordered sources.
 create table public.story_areas (
   story_id uuid not null references public.stories(id) on delete cascade,
   area_id uuid not null references public.areas(id) on delete restrict,
@@ -225,21 +272,22 @@ create table public.story_areas (
 );
 create index story_areas_area on public.story_areas (area_id);
 
-create table public.story_people (
+create table public.story_narrators (
   story_id uuid not null references public.stories(id) on delete cascade,
+  narrator_id uuid not null references public.narrators(id) on delete restrict,
+  role text not null check (role in ('narrator', 'collector')),
   position smallint not null check (position >= 0),
-  role text not null check (role in ('narrator', 'collector', 'author')),
-  person_id uuid references public.persons(id) on delete restrict,
-  consent_named boolean not null default false,
-  consent_note text check (char_length(consent_note) <= 500),
-  description text check (char_length(btrim(description)) between 1 and 300),
-  primary key (story_id, position),
-  constraint story_people_who check (person_id is not null or description is not null),
-  constraint story_people_consent_needs_person check (not consent_named or person_id is not null),
-  constraint story_people_narrator_fallback check (role <> 'narrator' or consent_named or description is not null)
+  primary key (story_id, narrator_id, role)
 );
-create unique index story_people_person_role on public.story_people (story_id, person_id, role) where person_id is not null;
-create index story_people_person on public.story_people (person_id) where person_id is not null;
+create index story_narrators_narrator on public.story_narrators (narrator_id);
+
+create table public.story_authors (
+  story_id uuid not null references public.stories(id) on delete cascade,
+  person_id uuid not null references public.persons(id) on delete restrict,
+  position smallint not null check (position >= 0),
+  primary key (story_id, person_id)
+);
+create index story_authors_person on public.story_authors (person_id);
 
 create table public.story_heritage_items (
   story_id uuid not null references public.stories(id) on delete cascade,
@@ -265,7 +313,7 @@ create table public.story_sources (
 );
 create index story_sources_source on public.story_sources (source_id);
 
--- Customs: places, people, linked heritage items, themes and ordered sources.
+-- Customs: places, narrators and collectors, authors, linked heritage items, themes and ordered sources.
 create table public.custom_areas (
   custom_id uuid not null references public.customs(id) on delete cascade,
   area_id uuid not null references public.areas(id) on delete restrict,
@@ -275,21 +323,22 @@ create table public.custom_areas (
 );
 create index custom_areas_area on public.custom_areas (area_id);
 
-create table public.custom_people (
+create table public.custom_narrators (
   custom_id uuid not null references public.customs(id) on delete cascade,
+  narrator_id uuid not null references public.narrators(id) on delete restrict,
+  role text not null check (role in ('narrator', 'collector')),
   position smallint not null check (position >= 0),
-  role text not null check (role in ('narrator', 'collector', 'author')),
-  person_id uuid references public.persons(id) on delete restrict,
-  consent_named boolean not null default false,
-  consent_note text check (char_length(consent_note) <= 500),
-  description text check (char_length(btrim(description)) between 1 and 300),
-  primary key (custom_id, position),
-  constraint custom_people_who check (person_id is not null or description is not null),
-  constraint custom_people_consent_needs_person check (not consent_named or person_id is not null),
-  constraint custom_people_narrator_fallback check (role <> 'narrator' or consent_named or description is not null)
+  primary key (custom_id, narrator_id, role)
 );
-create unique index custom_people_person_role on public.custom_people (custom_id, person_id, role) where person_id is not null;
-create index custom_people_person on public.custom_people (person_id) where person_id is not null;
+create index custom_narrators_narrator on public.custom_narrators (narrator_id);
+
+create table public.custom_authors (
+  custom_id uuid not null references public.customs(id) on delete cascade,
+  person_id uuid not null references public.persons(id) on delete restrict,
+  position smallint not null check (position >= 0),
+  primary key (custom_id, person_id)
+);
+create index custom_authors_person on public.custom_authors (person_id);
 
 create table public.custom_heritage_items (
   custom_id uuid not null references public.customs(id) on delete cascade,
@@ -315,7 +364,7 @@ create table public.custom_sources (
 );
 create index custom_sources_source on public.custom_sources (source_id);
 
--- Folk texts: places, people, linked heritage items, Words, themes and ordered sources.
+-- Folk texts: places, narrators and collectors, authors, linked heritage items, Words, themes and ordered sources.
 create table public.folk_text_areas (
   folk_text_id uuid not null references public.folk_texts(id) on delete cascade,
   area_id uuid not null references public.areas(id) on delete restrict,
@@ -325,21 +374,22 @@ create table public.folk_text_areas (
 );
 create index folk_text_areas_area on public.folk_text_areas (area_id);
 
-create table public.folk_text_people (
+create table public.folk_text_narrators (
   folk_text_id uuid not null references public.folk_texts(id) on delete cascade,
+  narrator_id uuid not null references public.narrators(id) on delete restrict,
+  role text not null check (role in ('narrator', 'collector')),
   position smallint not null check (position >= 0),
-  role text not null check (role in ('narrator', 'collector', 'author')),
-  person_id uuid references public.persons(id) on delete restrict,
-  consent_named boolean not null default false,
-  consent_note text check (char_length(consent_note) <= 500),
-  description text check (char_length(btrim(description)) between 1 and 300),
-  primary key (folk_text_id, position),
-  constraint folk_text_people_who check (person_id is not null or description is not null),
-  constraint folk_text_people_consent_needs_person check (not consent_named or person_id is not null),
-  constraint folk_text_people_narrator_fallback check (role <> 'narrator' or consent_named or description is not null)
+  primary key (folk_text_id, narrator_id, role)
 );
-create unique index folk_text_people_person_role on public.folk_text_people (folk_text_id, person_id, role) where person_id is not null;
-create index folk_text_people_person on public.folk_text_people (person_id) where person_id is not null;
+create index folk_text_narrators_narrator on public.folk_text_narrators (narrator_id);
+
+create table public.folk_text_authors (
+  folk_text_id uuid not null references public.folk_texts(id) on delete cascade,
+  person_id uuid not null references public.persons(id) on delete restrict,
+  position smallint not null check (position >= 0),
+  primary key (folk_text_id, person_id)
+);
+create index folk_text_authors_person on public.folk_text_authors (person_id);
 
 create table public.folk_text_heritage_items (
   folk_text_id uuid not null references public.folk_texts(id) on delete cascade,
@@ -398,6 +448,15 @@ create trigger themes_audit after insert or update or delete on public.themes
 create trigger themes_slug_history after update of slug on public.themes
   for each row execute function public.content_slug_history_write('theme');
 
+create trigger narrators_before_write before insert or update on public.narrators
+  for each row execute function public.content_before_write('name', 'slug', 'public_description');
+create trigger narrators_audit after insert or update or delete on public.narrators
+  for each row execute function public.content_audit('narrator');
+create trigger narrators_slug_history after update of slug on public.narrators
+  for each row execute function public.content_slug_history_write('narrator');
+create trigger narrators_settlement_check before insert or update of settlement_id on public.narrators
+  for each row execute function public.narrator_settlement_check();
+
 create trigger stories_before_write before insert or update on public.stories
   for each row execute function public.content_before_write('title', 'slug', 'text_local', 'text_standard', 'period');
 create trigger stories_audit after insert or update or delete on public.stories
@@ -445,10 +504,10 @@ create trigger customs_single_draft before insert or update of source_submission
 create trigger folk_texts_single_draft before insert or update of source_submission_id on public.folk_texts
   for each row execute function public.intangible_single_draft_check();
 
--- Old public slugs of a renamed Story, Custom, Folk text or Theme can redirect.
+-- Old public slugs of a renamed Story, Custom, Folk text, Theme or Narrator can redirect.
 alter table public.content_slug_history drop constraint content_slug_history_kind_check;
 alter table public.content_slug_history add constraint content_slug_history_kind_check check (
-  kind in ('area', 'heritage_item', 'word', 'person', 'club', 'story', 'custom', 'folk_text', 'theme')
+  kind in ('area', 'heritage_item', 'word', 'person', 'club', 'story', 'custom', 'folk_text', 'theme', 'narrator')
 );
 
 -- Applying a submission (20261103110000_contributions_inbox.sql, plus the widened kinds since): the same function,
@@ -624,10 +683,11 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'story_types', 'custom_types', 'folk_text_types', 'occasions', 'themes', 'stories', 'customs', 'folk_texts',
-    'story_areas', 'story_people', 'story_heritage_items', 'story_themes', 'story_sources',
-    'custom_areas', 'custom_people', 'custom_heritage_items', 'custom_themes', 'custom_sources',
-    'folk_text_areas', 'folk_text_people', 'folk_text_heritage_items', 'folk_text_themes', 'folk_text_sources', 'folk_text_words'
+    'story_types', 'custom_types', 'folk_text_types', 'occasions', 'themes', 'narrators', 'stories', 'customs', 'folk_texts',
+    'story_areas', 'story_narrators', 'story_authors', 'story_heritage_items', 'story_themes', 'story_sources',
+    'custom_areas', 'custom_narrators', 'custom_authors', 'custom_heritage_items', 'custom_themes', 'custom_sources',
+    'folk_text_areas', 'folk_text_narrators', 'folk_text_authors', 'folk_text_heritage_items', 'folk_text_themes', 'folk_text_sources',
+    'folk_text_words'
   ] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all privileges on table public.%I from public, anon, authenticated', t);
@@ -635,6 +695,7 @@ begin
   end loop;
 end $$;
 -- The date check runs as the writing role (service_role); the trigger function needs no EXECUTE to fire.
-revoke all on function public.content_partial_date_valid(text, integer, integer, integer), public.intangible_single_draft_check()
+revoke all on function public.content_partial_date_valid(text, integer, integer, integer), public.intangible_single_draft_check(),
+  public.narrator_settlement_check()
   from public, anon, authenticated;
 grant execute on function public.content_partial_date_valid(text, integer, integer, integer) to service_role;

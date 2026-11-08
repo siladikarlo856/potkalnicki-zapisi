@@ -19,7 +19,7 @@ import { PERIOD_UNIT_LABELS, RECORDED_PRECISION_LABELS } from './intangible'
  */
 export const HISTORY_KINDS = [
   'area', 'challenge_template', 'heritage_category', 'heritage_item', 'person', 'club', 'source', 'word',
-  'story', 'custom', 'folk_text', 'story_type', 'custom_type', 'folk_text_type', 'occasion', 'theme'
+  'story', 'custom', 'folk_text', 'narrator', 'story_type', 'custom_type', 'folk_text_type', 'occasion', 'theme'
 ] as const
 export type HistoryKind = typeof HISTORY_KINDS[number]
 
@@ -60,6 +60,7 @@ export const HISTORY_KIND_META: Record<HistoryKind, HistoryKindMeta> = {
   story: { singular: 'Priča', plural: 'Priče', adminPath: '/admin/price' },
   custom: { singular: 'Običaj', plural: 'Običaji', adminPath: '/admin/obicaji' },
   folk_text: { singular: 'Usmeni tekst', plural: 'Usmeni tekstovi', adminPath: '/admin/usmeni-tekstovi' },
+  narrator: { singular: 'Kazivač', plural: 'Kazivači', adminPath: '/admin/kazivaci' },
   story_type: { singular: 'Vrsta priče', plural: 'Vrste priča', adminPath: '/admin/vrste-prica' },
   custom_type: { singular: 'Vrsta običaja', plural: 'Vrste običaja', adminPath: '/admin/vrste-obicaja' },
   folk_text_type: { singular: 'Vrsta usmenog teksta', plural: 'Vrste usmenih tekstova', adminPath: '/admin/vrste-usmenih-tekstova' },
@@ -107,7 +108,8 @@ const INTANGIBLE_COMMON_FIELDS: Record<string, HistoryFieldMeta> = {
 /** The links Story, Custom and Folk text share (their sidecars). */
 const INTANGIBLE_LINK_FIELDS: Record<string, HistoryFieldMeta> = {
   areaLinks: { label: 'Mjesta' },
-  people: { label: 'Kazivači, zapisivači i autori' },
+  narrators: { label: 'Kazivači i zapisivači' },
+  authorIds: { label: 'Autori' },
   itemIds: { label: 'Povezana baština' },
   themeIds: { label: 'Teme' },
   sourceIds: { label: 'Izvori' }
@@ -238,6 +240,20 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
     ...INTANGIBLE_COMMON_FIELDS,
     ...INTANGIBLE_LINK_FIELDS,
     wordIds: { label: 'Riječi' }
+  },
+  narrator: {
+    name: { label: 'Ime' },
+    slug: { label: 'Slug' },
+    publicDescription: { label: 'Javni opis' },
+    consentNamed: { label: 'Pristanak za javno navođenje imena' },
+    consentNote: { label: 'Bilješka o pristanku' },
+    living: { label: 'Živ/a' },
+    bornYear: { label: 'Godina rođenja' },
+    settlementId: { label: 'Mjesto življenja' },
+    personId: { label: 'Osoba' },
+    researchNotes: { label: 'Bilješka' },
+    verification: { label: 'Status provjere', values: HERITAGE_VERIFICATION_LABELS },
+    noindex: { label: 'Noindex' }
   },
   story_type: KEYED_LIST_FIELDS,
   custom_type: KEYED_LIST_FIELDS,

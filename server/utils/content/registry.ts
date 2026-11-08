@@ -13,6 +13,7 @@ import { clubKind } from './kinds/club'
 import { storyKind } from './kinds/story'
 import { customKind } from './kinds/custom'
 import { folkTextKind } from './kinds/folkText'
+import { narratorKind } from './kinds/narrator'
 import { customTypeKind, folkTextTypeKind, occasionKind, storyTypeKind, themeKind } from './kinds/intangibleList'
 
 // The content registry: one definition per entity kind tells the generic admin handlers
@@ -32,6 +33,7 @@ const REGISTRY: Record<ContentKind, AnyContentKindDefinition> = {
   story: storyKind,
   custom: customKind,
   folk_text: folkTextKind,
+  narrator: narratorKind,
   story_type: storyTypeKind,
   custom_type: customTypeKind,
   folk_text_type: folkTextTypeKind,

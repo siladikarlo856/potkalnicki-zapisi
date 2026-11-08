@@ -4,7 +4,7 @@ import { atlasSlug } from '../atlasSlug'
 import { HERITAGE_VERIFICATIONS, type HeritageVerification } from './heritageItem'
 
 // What Story, Custom and Folk text share (GLOSSARY.md, "Intangible heritage"; docs/adr/0001): the limits, the
-// vocabulary of places, people, dates and periods, and the parsers that turn the fields of an admin form into
+// vocabulary of places, narrators, dates and periods, and the parsers that turn the fields of an admin form into
 // validated values. The three kinds' own validators (story.ts, custom.ts, folkText.ts) are built from these, and
 // the database repeats every rule as a constraint (supabase/migrations/20261108000000_intangible_heritage.sql).
 
@@ -17,14 +17,13 @@ export const INTANGIBLE_LIMITS = {
   period: 200,
   researchNotes: 5000,
   quote: 500,
-  personDescription: 300,
-  consentNote: 500,
   wordId: 200
 } as const
 
 export const INTANGIBLE_MAX = {
   areaLinks: 20,
-  people: 12,
+  narrators: 12,
+  authors: 12,
   items: 12,
   themes: 12,
   sources: 10,
@@ -40,13 +39,15 @@ export const AREA_RELATION_LABELS: Record<AreaRelation, string> = {
   about: 'Odnosi se na'
 }
 
-/** Narrator (Kazivač), Collector (Zapisivač) and Author (Autor, of literary retellings only). */
-export const PEOPLE_ROLES = ['narrator', 'collector', 'author'] as const
-export type PeopleRole = typeof PEOPLE_ROLES[number]
-export const PEOPLE_ROLE_LABELS: Record<PeopleRole, string> = {
+/**
+ * How a Narrator (Kazivač) stands to a record: told it (narrator) or wrote it down (collector, Zapisivač). A collector
+ * is recorded the same way as a narrator, as a Narrator record, so a person who only writes things down needs no Person.
+ */
+export const NARRATOR_ROLES = ['narrator', 'collector'] as const
+export type NarratorRole = typeof NARRATOR_ROLES[number]
+export const NARRATOR_ROLE_LABELS: Record<NarratorRole, string> = {
   narrator: 'Kazivač/ica',
-  collector: 'Zapisivač/ica',
-  author: 'Autor/ica'
+  collector: 'Zapisivač/ica'
 }
 
 /** How precisely a date is known (Datum bilježenja): never a guessed exact day. */
@@ -75,18 +76,10 @@ export interface AreaLink {
   relation: AreaRelation
 }
 
-/**
- * A person linked to a record. `personId` is null for a narrator, collector or author who has no person record
- * (a living relative: persons are historical people). A link names its person publicly only when `consentNamed`
- * is true, recorded by an editor; otherwise the public sees `description` ("kazivačica, r. 1938., Gornji
- * Fodrovec"). `consentNote` is for editors only (how and when the consent was given) and is never public.
- */
-export interface PeopleLink {
-  role: PeopleRole
-  personId: string | null
-  consentNamed: boolean
-  consentNote: string | null
-  description: string | null
+/** A Narrator linked to a record, as its narrator or its collector. The Narrator's own record says how they are named publicly. */
+export interface NarratorLink {
+  narratorId: string
+  role: NarratorRole
 }
 
 export interface RecordedOn {
@@ -105,7 +98,9 @@ export interface Period {
 /** The links every kind has, in their API shape (the kind's `sidecars`). */
 export interface IntangibleLinks {
   areaLinks: AreaLink[]
-  people: PeopleLink[]
+  narrators: NarratorLink[]
+  /** Persons (historical people) who wrote the text, for literary retellings only. */
+  authorIds: string[]
   itemIds: string[]
   themeIds: string[]
   sourceIds: string[]
@@ -237,48 +232,25 @@ export function parseAreaLinks(add: Add, value: unknown): AreaLink[] {
 }
 
 /**
- * Narrators, collectors and authors. Each link names a person, or describes one, or both; consent to be named
- * needs a person; a narrator who is not named needs the public description that stands in for the name.
+ * Narrators and collectors: Narrator records, each as its narrator or its collector. A narrator can be both on one
+ * record; the same narrator in the same role twice is kept once. Whether the Narrator exists is checked against the
+ * database, and how they are named in public is the Narrator record's own business (narrator.ts).
  */
-export function parsePeople(add: Add, value: unknown): PeopleLink[] {
-  const people = parseList(add, 'people', value, INTANGIBLE_MAX.people, (row, index) => {
+export function parseNarratorLinks(add: Add, value: unknown): NarratorLink[] {
+  const links = parseList(add, 'narrators', value, INTANGIBLE_MAX.narrators, (row, index) => {
     if (!isRecord(row)) {
-      add(`people.${index}`, 'Veza na osobu nije valjana.')
+      add(`narrators.${index}`, 'Veza na kazivača nije valjana.')
       return null
     }
-    const role = (PEOPLE_ROLES as readonly unknown[]).includes(row.role) ? row.role as PeopleRole : null
-    if (!role) add(`people.${index}.role`, 'Odaberite ulogu.')
-    let personId: string | null = null
-    if (row.personId !== undefined && row.personId !== null && row.personId !== '') {
-      if (typeof row.personId === 'string' && isUuid(row.personId)) personId = row.personId.toLowerCase()
-      else add(`people.${index}.personId`, 'Osoba nije valjana.')
-    }
-    const text = (field: 'description' | 'consentNote', max: number, label: string) => {
-      const raw = row[field]
-      if (raw === undefined || raw === null) return null
-      if (typeof raw !== 'string') {
-        add(`people.${index}.${field}`, `Polje „${label}“ mora biti tekst.`)
-        return null
-      }
-      const trimmed = raw.trim()
-      if (trimmed.length > max) add(`people.${index}.${field}`, `Polje „${label}“ može imati najviše ${max} znakova.`)
-      return trimmed || null
-    }
-    const description = text('description', INTANGIBLE_LIMITS.personDescription, 'Opis')
-    const consentNote = text('consentNote', INTANGIBLE_LIMITS.consentNote, 'Bilješka o pristanku')
-    const consentNamed = row.consentNamed === true
-    if (!personId && !description) add(`people.${index}.description`, 'Povežite osobu ili ju opišite.')
-    if (consentNamed && !personId) add(`people.${index}.consentNamed`, 'Pristanak se bilježi uz povezanu osobu.')
-    if (role === 'narrator' && !consentNamed && !description) {
-      add(`people.${index}.description`, 'Kazivač bez pristanka za navođenje imena treba javni opis, npr. „kazivačica, r. 1938., Gornji Fodrovec“.')
-    }
-    if (!role) return null
-    return { role, personId, consentNamed, consentNote, description }
+    const narratorId = typeof row.narratorId === 'string' && isUuid(row.narratorId) ? row.narratorId.toLowerCase() : null
+    if (!narratorId) add(`narrators.${index}.narratorId`, 'Kazivač nije valjan.')
+    const role = (NARRATOR_ROLES as readonly unknown[]).includes(row.role) ? row.role as NarratorRole : null
+    if (!role) add(`narrators.${index}.role`, 'Odaberite je li kazivač ispričao ili zapisao zapis.')
+    return narratorId && role ? { narratorId, role } : null
   })
   const seen = new Set<string>()
-  return people.filter((link) => {
-    if (!link.personId) return true
-    const key = `${link.personId}:${link.role}`
+  return links.filter((link) => {
+    const key = `${link.narratorId}:${link.role}`
     if (seen.has(key)) return false
     seen.add(key)
     return true
@@ -320,9 +292,9 @@ export function parseRequiredId(add: Add, path: string, value: unknown, message:
  * Verification confirms the attestation (that it was really told or practised here, in this form), which needs
  * someone or something to vouch for it: a narrator (named or described) or a source. It never blocks publishing.
  */
-export function verifiedNeedsBacking(add: Add, verification: string, links: Pick<IntangibleLinks, 'people' | 'sourceIds'>) {
+export function verifiedNeedsBacking(add: Add, verification: string, links: Pick<IntangibleLinks, 'narrators' | 'sourceIds'>) {
   if (verification !== 'verified') return
-  if (links.people.some(link => link.role === 'narrator') || links.sourceIds.length) return
+  if (links.narrators.some(link => link.role === 'narrator') || links.sourceIds.length) return
   add('verification', 'Provjereno traži barem jednog kazivača ili izvor koji potvrđuje da je ovako zaista pričano ili činjeno.')
 }
 
@@ -348,7 +320,8 @@ export function parseIntangibleCommon(check: ReturnType<typeof issueCollector>, 
   const verification = body.verification === undefined ? 'unverified' : check.oneOf('verification', body.verification, HERITAGE_VERIFICATIONS, 'Status provjere')
   const links: IntangibleLinks = {
     areaLinks: parseAreaLinks(check.add, body.areaLinks),
-    people: parsePeople(check.add, body.people),
+    narrators: parseNarratorLinks(check.add, body.narrators),
+    authorIds: parseIdList(check.add, 'authorIds', body.authorIds, INTANGIBLE_MAX.authors, 'Autori'),
     itemIds: parseIdList(check.add, 'itemIds', body.itemIds, INTANGIBLE_MAX.items, 'Zapisi baštine'),
     themeIds: parseIdList(check.add, 'themeIds', body.themeIds, INTANGIBLE_MAX.themes, 'Teme'),
     sourceIds: parseIdList(check.add, 'sourceIds', body.sourceIds, INTANGIBLE_MAX.sources, 'Izvori')

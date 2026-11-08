@@ -93,16 +93,20 @@ The era a **Story** is set in, or the period a **Custom** was alive, in the word
 _Avoid_: Date, year
 
 **Narrator** (Kazivač / Kazivačica):
-The **Person** who told, said, sang or described a record. A living Narrator is named publicly only with their consent; otherwise the record shows only a description such as year of birth and **Settlement**.
-_Avoid_: Author, source, informant
+A record of its own for someone who told, said, sang or described a **Story**, **Custom** or **Folk text**. A Narrator is **not a Person**: Persons are notable historical people for Learn and Play, while Narrators are mostly family and friends, many of them living. A Narrator has a name or an anonymous public description (such as "kazivačica, r. 1938., Gornji Fodrovec"), a birth year, a home **Settlement**, whether they are living or deceased, and whether they have agreed to be named. Their name is shown publicly only when an editor has recorded that consent; otherwise the public sees only the description. Each Narrator has a page listing everything they told. A Narrator who is also a notable historical **Person** links to that Person.
+_Avoid_: Person, author, source, informant
 
 **Collector** (Zapisivač):
-The **Person** who recorded or wrote the record down.
+Whoever wrote the record down. Recorded the same way as a **Narrator**, as a Narrator record linked to the text in the role of collector, so someone who only writes things down needs no **Person**.
 _Avoid_: Author, editor, contributor
 
 **Author** (Autor):
-The writer of a literary retelling. Folk material has no Author.
+The writer of a literary retelling, a **Person**. Folk material has no Author.
 _Avoid_: Narrator, collector (for folk material)
+
+**Person** (Osoba):
+A notable historical person of the region, a record for Learn and Play. Persons are unchanged by intangible heritage: a **Narrator** is not a Person, though the two can be linked, and a Person can be the **Author** of a literary retelling.
+_Avoid_: Narrator (for someone who told a record)
 
 ## Contributions
 
@@ -145,7 +149,7 @@ Content withdrawn from the public site but kept.
 _Avoid_: Deleted, inactive, placeholder
 
 **Verification** (Provjera):
-How far a record's facts have been confirmed against sources: **Unverified**, **Verified**, or **Needs update** when a Verified record is known to be stale or disputed. It is the same scale for every kind of content, independent of who contributed it. For **Intangible heritage**, what is confirmed is the attestation — that it was really told, said or practised here in this form, backed by a named **Narrator** or source — never whether a legend is true. Verification never blocks publishing.
+How far a record's facts have been confirmed against sources: **Unverified**, **Verified**, or **Needs update** when a Verified record is known to be stale or disputed. It is the same scale for every kind of content, independent of who contributed it. For **Intangible heritage**, what is confirmed is the attestation — that it was really told, said or practised here in this form, backed by a **Narrator** or a source — never whether a legend is true. Verification never blocks publishing.
 _Avoid_: Community, in review, checked
 
 **Protection status** (Status zaštite):
