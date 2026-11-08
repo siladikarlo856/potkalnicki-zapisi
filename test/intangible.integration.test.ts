@@ -22,7 +22,13 @@ let ip = 0
 async function api<T = Record<string, unknown>>(path: string, init: { method?: string, body?: unknown } = {}) {
   const headers: Record<string, string> = { 'authorization': `Bearer ${SECRET}`, 'x-forwarded-for': `198.51.100.${(++ip % 250) + 1}` }
   if (init.body !== undefined) headers['content-type'] = 'application/json'
-  const response = await fetch(path, { method: init.method ?? 'GET', headers, body: init.body === undefined ? undefined : JSON.stringify(init.body) })
+  const send = () => fetch(path, { method: init.method ?? 'GET', headers, body: init.body === undefined ? undefined : JSON.stringify(init.body) })
+  // A test that only runs SQL leaves the keep-alive socket idle until the server closes it; the next request then fails
+  // before the server has read it ("other side closed", UND_ERR_SOCKET), so sending it again once is safe.
+  const response = await send().catch((error: { cause?: { code?: string } }) => {
+    if (error.cause?.code === 'UND_ERR_SOCKET') return send()
+    throw error
+  })
   const text = await response.text()
   return { status: response.status, body: (text ? JSON.parse(text) : null) as T & { data?: Record<string, unknown> } }
 }
