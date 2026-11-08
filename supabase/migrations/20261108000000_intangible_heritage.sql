@@ -449,11 +449,33 @@ create trigger themes_slug_history after update of slug on public.themes
   for each row execute function public.content_slug_history_write('theme');
 
 create trigger narrators_before_write before insert or update on public.narrators
-  for each row execute function public.content_before_write('name', 'slug', 'public_description');
+  for each row execute function public.content_before_write('slug', 'public_description');
+create function public.narrators_search_text() returns trigger language plpgsql set search_path = '' as $$
+begin
+  if new.consent_named then new.search_text := public.content_fold(new.search_text || ' ' || new.name); end if;
+  return new;
+end;
+$$;
+-- The real name is searchable only with consent; editors look a narrator up by the name column itself.
+create trigger narrators_search_text before insert or update on public.narrators
+  for each row execute function public.narrators_search_text();
+-- A name-derived slug exists only while consent stands: when consent is withdrawn, no old slug is kept or redirected.
+create function public.narrators_slug_history() returns trigger language plpgsql set search_path = '' as $$
+begin
+  if old.consent_named and not new.consent_named then
+    delete from public.content_slug_history where kind = 'narrator' and entity_id = old.id;
+  elsif old.slug is distinct from new.slug then
+    insert into public.content_slug_history (kind, namespace, scope_id, slug, entity_id)
+    values ('narrator', '', null, old.slug, old.id)
+    on conflict (kind, namespace, scope_id, slug) do update set entity_id = excluded.entity_id, created_at = now();
+  end if;
+  return null;
+end;
+$$;
 create trigger narrators_audit after insert or update or delete on public.narrators
   for each row execute function public.content_audit('narrator');
-create trigger narrators_slug_history after update of slug on public.narrators
-  for each row execute function public.content_slug_history_write('narrator');
+create trigger narrators_slug_history after update of slug, consent_named on public.narrators
+  for each row execute function public.narrators_slug_history();
 create trigger narrators_settlement_check before insert or update of settlement_id on public.narrators
   for each row execute function public.narrator_settlement_check();
 
@@ -696,6 +718,6 @@ begin
 end $$;
 -- The date check runs as the writing role (service_role); the trigger function needs no EXECUTE to fire.
 revoke all on function public.content_partial_date_valid(text, integer, integer, integer), public.intangible_single_draft_check(),
-  public.narrator_settlement_check()
+  public.narrator_settlement_check(), public.narrators_search_text(), public.narrators_slug_history()
   from public, anon, authenticated;
 grant execute on function public.content_partial_date_valid(text, integer, integer, integer) to service_role;

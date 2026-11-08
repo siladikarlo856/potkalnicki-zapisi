@@ -229,8 +229,8 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
     expect(narrator.settlementLabel).toBeTruthy()
     expect(narrator.personLabel).toBeTruthy()
     expect(sql(`select consent_named::text || ' ' || living::text || ' ' || born_year from narrators where id = '${narrator.id}'`)).toBe('false true 1938')
-    // Editors find a narrator by name or by description, accent-folded.
-    expect(sql(`select (search_text like '%marija%' and search_text like '%kazivacica%')::text from narrators where id = '${narrator.id}'`)).toBe('true')
+    // Without consent the shared search projection holds the description, never the real name.
+    expect(sql(`select (search_text like '%kazivacica%' and search_text not like '%marija%')::text from narrators where id = '${narrator.id}'`)).toBe('true')
 
     // Another Narrator cannot take the same slug or the same Person: reported on the field.
     const duplicate = await post({ name: 'Intangible Test Ivana', publicDescription: 'kazivačica iz Križevaca', slug: narrator.slug })
@@ -270,6 +270,14 @@ describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
     expect(revisions.status).toBe(200)
     expect(revisions.body.revisions.length).toBeGreaterThanOrEqual(2)
     expect(renamed.slug).toBe(`${narrator.slug}-nova`)
+
+    // Consent shows the name in the projection; withdrawing it removes the name, and any slug the name made, from public reach.
+    const named = (await patch('narrator', renamed, { consentNamed: true, slug: `intangible-test-marija-${suffix}` })).body.entity
+    expect(sql(`select (search_text like '%marija%')::text from narrators where id = '${narrator.id}'`)).toBe('true')
+    const withdrawn = (await patch('narrator', named, { consentNamed: false, slug: `kazivacica-gornji-fodrovec-${suffix}` })).body.entity
+    expect(withdrawn.consentNamed).toBe(false)
+    expect(sql(`select (search_text not like '%marija%')::text from narrators where id = '${narrator.id}'`)).toBe('true')
+    expect(sql(`select count(*) from content_slug_history where kind = 'narrator' and entity_id = '${narrator.id}'`)).toBe('0')
 
     // A narrator in use is archived, never deleted.
     expect((await api(`/api/admin/content/narrator/${narrator.id}?mode=hard`, { method: 'DELETE' })).status).toBe(409)
