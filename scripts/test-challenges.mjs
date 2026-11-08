@@ -87,7 +87,7 @@ try {
         'test/challenge.integration.test.ts', 'test/dailyWord.integration.test.ts', 'test/content.integration.test.ts', 'test/contentSeed.integration.test.ts',
         'test/wordColumns.integration.test.ts', 'test/wordAreas.integration.test.ts', 'test/adminContent.integration.test.ts', 'test/adminAreas.integration.test.ts', 'test/adminHeritage.integration.test.ts', 'test/adminWords.integration.test.ts', 'test/contentHistory.integration.test.ts',
         'test/challengeTemplates.integration.test.ts', 'test/challengeSets.integration.test.ts', 'test/publicContent.integration.test.ts', 'test/atlasPages.integration.test.ts', 'test/contractMigration.integration.test.ts',
-        'test/clubs.integration.test.ts', 'test/contentApply.integration.test.ts', 'test/persons.integration.test.ts', 'test/seedPersons.integration.test.ts',
+        'test/clubs.integration.test.ts', 'test/contentApply.integration.test.ts', 'test/persons.integration.test.ts', 'test/seedPersons.integration.test.ts', 'test/intangible.integration.test.ts',
         // Project node-serial: one at a time, after all of the above (vitest.config.ts).
         'test/api.serial.integration.test.ts', 'test/dailyWordResolver.serial.integration.test.ts', 'test/dailyApi.serial.integration.test.ts', 'test/dailyAdminApi.serial.integration.test.ts',
         // Project node-last: one at a time, after the serial files.

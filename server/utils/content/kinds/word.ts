@@ -5,6 +5,7 @@ import {
   projectWordRow, validateAdminWord, wordStatusToActive, WORD_BODY_LIMIT
 } from '../../../../shared/utils/content/word'
 import { defineContentKind } from '../definition'
+import { intangibleReferences } from './intangible'
 import { whereStatus } from '../store'
 import { loadAreaIndex, projectAreas } from '../../wordAreas'
 
@@ -86,7 +87,7 @@ async function wordReferences(db: SupabaseClient, id: string): Promise<ContentRe
     .limit(EXAMPLES)
   if (error) throw error
   const rows = data ?? []
-  return [{
+  return [...await intangibleReferences(db, 'word', id), {
     kind: 'daily_word',
     label: 'Riječ dana',
     count: count ?? rows.length,

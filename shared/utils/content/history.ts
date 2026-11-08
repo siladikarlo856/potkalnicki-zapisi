@@ -5,6 +5,7 @@ import { AREA_KIND_LABELS } from './area'
 import { SOURCE_TYPE_LABELS } from './source'
 import { HERITAGE_STATUS_LABELS, HERITAGE_VERIFICATION_LABELS } from './heritageItem'
 import { PERSON_AREA_ROLE_LABELS } from './person'
+import { PERIOD_UNIT_LABELS, RECORDED_PRECISION_LABELS } from './intangible'
 
 // Change history of the content admin: the shapes of the history API, the vocabulary the screens
 // use (kind and field labels) and the pure helpers that turn two row snapshots into a field diff.
@@ -16,7 +17,10 @@ import { PERSON_AREA_ROLE_LABELS } from './person'
  * `ContentKind` because history also lists kinds whose admin resource is not built yet (the
  * imported areas, heritage items and categories, and words).
  */
-export const HISTORY_KINDS = ['area', 'challenge_template', 'heritage_category', 'heritage_item', 'person', 'club', 'source', 'word'] as const
+export const HISTORY_KINDS = [
+  'area', 'challenge_template', 'heritage_category', 'heritage_item', 'person', 'club', 'source', 'word',
+  'story', 'custom', 'folk_text', 'narrator', 'story_type', 'custom_type', 'folk_text_type', 'occasion', 'theme'
+] as const
 export type HistoryKind = typeof HISTORY_KINDS[number]
 
 export function isHistoryKind(value: unknown): value is HistoryKind {
@@ -52,7 +56,16 @@ export const HISTORY_KIND_META: Record<HistoryKind, HistoryKindMeta> = {
   person: { singular: 'Osoba', plural: 'Osobe', adminPath: '/admin/osobe' },
   club: { singular: 'Klub', plural: 'Klubovi', adminPath: '/admin/klubovi' },
   source: { singular: 'Izvor', plural: 'Izvori', adminPath: '/admin/izvori' },
-  word: { singular: 'Riječ', plural: 'Riječi', adminPath: '/admin/rijeci' }
+  word: { singular: 'Riječ', plural: 'Riječi', adminPath: '/admin/rijeci' },
+  story: { singular: 'Priča', plural: 'Priče', adminPath: '/admin/price' },
+  custom: { singular: 'Običaj', plural: 'Običaji', adminPath: '/admin/obicaji' },
+  folk_text: { singular: 'Usmeni tekst', plural: 'Usmeni tekstovi', adminPath: '/admin/usmeni-tekstovi' },
+  narrator: { singular: 'Kazivač', plural: 'Kazivači', adminPath: '/admin/kazivaci' },
+  story_type: { singular: 'Vrsta priče', plural: 'Vrste priča', adminPath: '/admin/vrste-prica' },
+  custom_type: { singular: 'Vrsta običaja', plural: 'Vrste običaja', adminPath: '/admin/vrste-obicaja' },
+  folk_text_type: { singular: 'Vrsta usmenog teksta', plural: 'Vrste usmenih tekstova', adminPath: '/admin/vrste-usmenih-tekstova' },
+  occasion: { singular: 'Prigoda', plural: 'Prigode', adminPath: '/admin/prigode' },
+  theme: { singular: 'Tema', plural: 'Teme', adminPath: '/admin/teme' }
 }
 
 /** One labelled part of a structured value (see `HistoryFieldMeta.entries`). */
@@ -72,6 +85,34 @@ export interface HistoryFieldMeta {
    * parts that changed instead of two large JSON blobs. See `expandHistoryChange`.
    */
   entries?(value: unknown): HistoryEntry[]
+}
+
+const KEYED_LIST_FIELDS: Record<string, HistoryFieldMeta> = {
+  key: { label: 'Ključ' },
+  labelHr: { label: 'Naziv (hr)' },
+  labelEn: { label: 'Naziv (en)' },
+  sort: { label: 'Redoslijed' }
+}
+
+/** Fields Story, Custom and Folk text share, besides their own text fields. */
+const INTANGIBLE_COMMON_FIELDS: Record<string, HistoryFieldMeta> = {
+  recordedPrecision: { label: 'Preciznost datuma bilježenja', values: RECORDED_PRECISION_LABELS },
+  recordedYear: { label: 'Godina bilježenja' },
+  recordedMonth: { label: 'Mjesec bilježenja' },
+  recordedDay: { label: 'Dan bilježenja' },
+  verification: { label: 'Status provjere', values: HERITAGE_VERIFICATION_LABELS },
+  researchNotes: { label: 'Bilješke istraživanja' },
+  noindex: { label: 'Noindex' }
+}
+
+/** The links Story, Custom and Folk text share (their sidecars). */
+const INTANGIBLE_LINK_FIELDS: Record<string, HistoryFieldMeta> = {
+  areaLinks: { label: 'Mjesta' },
+  narrators: { label: 'Kazivači i zapisivači' },
+  authorIds: { label: 'Autori' },
+  itemIds: { label: 'Povezana baština' },
+  themeIds: { label: 'Teme' },
+  sourceIds: { label: 'Izvori' }
 }
 
 /**
@@ -163,6 +204,67 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
     noindex: { label: 'Noindex' },
     seasons: { label: 'Sezone' },
     sourceIds: { label: 'Izvori' }
+  },
+  story: {
+    title: { label: 'Naslov' },
+    slug: { label: 'Slug' },
+    typeId: { label: 'Vrsta priče' },
+    textLocal: { label: 'Izvorni tekst' },
+    textStandard: { label: 'Standardni tekst' },
+    ...INTANGIBLE_COMMON_FIELDS,
+    period: { label: 'Vrijeme radnje' },
+    periodUnit: { label: 'Približno razdoblje', values: PERIOD_UNIT_LABELS },
+    periodValue: { label: 'Desetljeće ili stoljeće' },
+    ...INTANGIBLE_LINK_FIELDS
+  },
+  custom: {
+    title: { label: 'Naslov' },
+    slug: { label: 'Slug' },
+    typeId: { label: 'Vrsta običaja' },
+    occasionId: { label: 'Prigoda' },
+    description: { label: 'Opis' },
+    quotes: { label: 'Citati' },
+    ...INTANGIBLE_COMMON_FIELDS,
+    period: { label: 'Vrijeme prakse' },
+    periodUnit: { label: 'Približno razdoblje', values: PERIOD_UNIT_LABELS },
+    periodValue: { label: 'Desetljeće ili stoljeće' },
+    ...INTANGIBLE_LINK_FIELDS
+  },
+  folk_text: {
+    title: { label: 'Naslov' },
+    slug: { label: 'Slug' },
+    typeId: { label: 'Vrsta usmenog teksta' },
+    customId: { label: 'Običaj' },
+    textLocal: { label: 'Izvorni tekst' },
+    textStandard: { label: 'Standardni tekst' },
+    ...INTANGIBLE_COMMON_FIELDS,
+    ...INTANGIBLE_LINK_FIELDS,
+    wordIds: { label: 'Riječi' }
+  },
+  narrator: {
+    name: { label: 'Ime' },
+    slug: { label: 'Slug' },
+    publicDescription: { label: 'Javni opis' },
+    consentNamed: { label: 'Pristanak za javno navođenje imena' },
+    consentNote: { label: 'Bilješka o pristanku' },
+    living: { label: 'Živ/a' },
+    bornYear: { label: 'Godina rođenja' },
+    settlementId: { label: 'Mjesto življenja' },
+    personId: { label: 'Osoba' },
+    researchNotes: { label: 'Bilješka' },
+    verification: { label: 'Status provjere', values: HERITAGE_VERIFICATION_LABELS },
+    noindex: { label: 'Noindex' }
+  },
+  story_type: KEYED_LIST_FIELDS,
+  custom_type: KEYED_LIST_FIELDS,
+  folk_text_type: KEYED_LIST_FIELDS,
+  occasion: KEYED_LIST_FIELDS,
+  theme: {
+    slug: { label: 'Slug' },
+    labelHr: { label: 'Naziv (hr)' },
+    labelEn: { label: 'Naziv (en)' },
+    description: { label: 'Opis' },
+    sort: { label: 'Redoslijed' }
   }
 }
 

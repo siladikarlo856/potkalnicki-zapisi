@@ -9,6 +9,7 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       '~~/': `${rootDir}/`,
+      '#shared/': `${rootDir}/shared/`,
       '~/': `${rootDir}/app/`
     }
   },
