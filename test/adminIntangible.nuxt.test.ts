@@ -153,7 +153,10 @@ describe('admin Priče', () => {
 
   it('opens a story with every link in its saved order and saves a reordered source list with the revision', async () => {
     wrapper = await mountInApp(Stories, `/admin/price?uredi=${STORY}`)
-    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Rukopis župnika'))
+    // The labels of the linked records come from lookups, so wait for every one of them, not just the first.
+    await vi.waitFor(() => {
+      for (const label of ['Rukopis župnika', 'Snimka 2026. (skica)', 'Marija Horvat']) expect(dialog()?.textContent).toContain(label)
+    }, { timeout: 5000 })
     const text = dialog()!.textContent!
     // Both place groups, the narrator with a role, the sources in order, the attestation explained.
     expect(text).toContain('Zabilježeno u')
@@ -178,7 +181,9 @@ describe('admin Priče', () => {
     await vi.waitFor(() => expect(useRoute().query.uredi).toBeUndefined())
     calls.length = 0
     await useRouter().replace({ query: { uredi: STORY } })
-    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Rukopis župnika'))
+    await vi.waitFor(() => {
+      for (const label of ['Rukopis župnika', 'Snimka 2026. (skica)']) expect(dialog()?.textContent).toContain(label)
+    }, { timeout: 5000 })
     dialog()!.querySelector<HTMLButtonElement>('button[aria-label^="Pomakni izvor dolje: Rukopis"]')!.click()
     await vi.waitFor(() => expect(dialog()!.textContent!.indexOf('Snimka 2026.')).toBeLessThan(dialog()!.textContent!.indexOf('Rukopis župnika')))
     buttonIn(dialog(), 'Spremi')!.click()
