@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentReferenceGroup } from '../../../../shared/utils/content/common'
 import { SOURCE_TYPES, validateSource } from '../../../../shared/utils/content/source'
 import { defineContentKind } from '../definition'
+import { intangibleReferences } from './intangible'
 
 const EXAMPLES = 5
 
@@ -14,7 +15,7 @@ async function sourceReferences(db: SupabaseClient, id: string): Promise<Content
     .limit(EXAMPLES)
   if (error) throw error
   const rows = (data ?? []) as unknown as Array<{ item_id: string, heritage_items: { name: string } | null }>
-  return [{
+  return [...await intangibleReferences(db, 'source', id), {
     kind: 'heritage_item',
     label: 'Zapisi baštine',
     count: count ?? rows.length,

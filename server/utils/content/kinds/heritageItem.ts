@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { validateHeritageItem } from '../../../../shared/utils/content/heritageItem'
 import { defineContentKind } from '../definition'
 import { missingSourceIssues } from '../linkCheck'
+import { intangibleReferences } from './intangible'
 
 async function loadSourceIds(db: SupabaseClient, itemId: string) {
   const { data, error } = await db.from('heritage_item_sources')
@@ -43,7 +44,8 @@ export const heritageItemKind = defineContentKind({
     verification: { column: 'verification', values: ['unverified', 'in_review', 'verified', 'needs_update'] }
   },
   uniqueConstraints: { heritage_items_settlement_slug: 'slug' },
-  references: async () => [],
+  // Stories, customs and folk texts tied to the item (their link tables restrict its deletion).
+  references: (db, id) => intangibleReferences(db, 'heritage_item', id),
   sidecars: {
     fields: ['sourceIds'],
     load: async (db, id) => ({ sourceIds: await loadSourceIds(db, id) })

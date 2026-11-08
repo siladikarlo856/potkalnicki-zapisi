@@ -7,7 +7,11 @@
  * and, later, `heritage_submissions.target_kind`), so one name follows a row everywhere.
  * A kind is added here when its admin resource is built.
  */
-export const CONTENT_KINDS = ['area', 'source', 'challenge_template', 'word', 'heritage_category', 'heritage_item', 'person', 'club'] as const
+export const CONTENT_KINDS = [
+  'area', 'source', 'challenge_template', 'word', 'heritage_category', 'heritage_item', 'person', 'club',
+  // Intangible heritage: the three kinds and their editor-managed lists.
+  'story', 'custom', 'folk_text', 'story_type', 'custom_type', 'folk_text_type', 'occasion', 'theme'
+] as const
 export type ContentKind = typeof CONTENT_KINDS[number]
 
 export function isContentKind(value: unknown): value is ContentKind {

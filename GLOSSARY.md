@@ -27,7 +27,7 @@ _Avoid_: Five areas, pet područja, project area, regions
 ## Local speech
 
 **Word** (Riječ):
-An entry in the project's dictionary of local speech: a single word or a fixed multi-word expression, with its meaning.
+An entry in the project's dictionary of local speech: a single word or a fixed multi-word expression, with its meaning. A whole proverb or saying that stands alone is a **Folk text**, not a Word.
 _Avoid_: Expression, izraz, term, entry
 
 **Variant** (Inačica):
@@ -37,6 +37,72 @@ _Avoid_: Version, spelling, dialect form
 **Usage** (Upotreba):
 The link between a **Variant** and a **Settlement** where people say it.
 _Avoid_: Occurrence, location
+
+## Intangible heritage
+
+**Intangible heritage** (Nematerijalna baština):
+What the people of the region told, said, sang and did, as opposed to what stands in it: every **Story**, **Custom** and **Folk text**. Public navigation calls it "Priče i običaji".
+_Avoid_: Oral heritage, usmena baština, predaje (as the umbrella), folklore
+
+**Story** (Priča):
+Something people of the region told: a tale, legend, anecdote or belief, recorded as told and published as its own record. It is not a **Heritage item** and has no protection status, though it may be about one.
+_Avoid_: Memory, sjećanje, post, article
+
+**Custom** (Običaj):
+Something people of the region did: a tradition, custom, habit or manner, with the occasion it belonged to and the people who took part. It is not a **Heritage item**, though it may be tied to one.
+_Avoid_: Tradition (as a synonym), habit, practice
+
+**Folk text** (Usmeni tekst):
+A short fixed text people of the region said or sang, where the exact wording is the record: a song, prayer, proverb, riddle, counting rhyme, curse, blessing or toast. It stands alone as a whole utterance; a phrase used inside a sentence is a **Word** instead. It may link to the **Words** it contains and to the **Custom** it belonged to.
+_Avoid_: Saying (as the umbrella), lyric, quote, Word (for whole proverbs)
+
+**Story type** (Vrsta priče):
+The one kind a **Story** belongs to, from an editor-managed list: legenda/predaja, mitska predaja, bajka, šaljiva priča, životna priča.
+_Avoid_: Category, genre (in the UI), tag
+
+**Custom type** (Vrsta običaja):
+The one kind a **Custom** belongs to, from an editor-managed list: godišnji običaji, životni običaji, rad i svakodnevica, vjera i pobožnost, društveni život.
+_Avoid_: Category, tag
+
+**Folk text type** (Vrsta usmenog teksta):
+The one kind a **Folk text** belongs to, from an editor-managed list: pjesma, molitva, poslovica/izreka, zagonetka, brojalica, kletva/blagoslov, zdravica.
+_Avoid_: Category, genre, tag
+
+**Occasion** (Prigoda):
+The named day, feast or life event a **Custom** belongs to, such as Martinje or a wedding.
+_Avoid_: Event, holiday, date
+
+**Theme** (Tema):
+An editor-managed subject, such as wine or Kalnik, that any number of **Stories**, **Customs** and **Folk texts** can share; the way to browse across kinds.
+_Avoid_: Tag, keyword, category
+
+**Recorded in** (Zabilježeno u):
+The **Place** where a **Story**, **Custom** or **Folk text** was told, practised or collected. Any level of Place; something shared across a **Region** names the Region.
+_Avoid_: Origin, from, location
+
+**About** (Odnosi se na):
+The **Place** a record is set in or tied to, when it differs from where it was recorded.
+_Avoid_: Location, setting (as a field name)
+
+**Recorded on** (Datum bilježenja):
+When a record was told or collected, as precise as is actually known (day, month or year). Never a guessed exact day.
+_Avoid_: Date, created
+
+**Set in** (Vrijeme radnje) / **Practised** (Vrijeme prakse):
+The era a **Story** is set in, or the period a **Custom** was alive, in the words people use ("u turska vremena", "do 1960-ih"), optionally with an approximate decade or century.
+_Avoid_: Date, year
+
+**Narrator** (Kazivač / Kazivačica):
+The **Person** who told, said, sang or described a record. A living Narrator is named publicly only with their consent; otherwise the record shows only a description such as year of birth and **Settlement**.
+_Avoid_: Author, source, informant
+
+**Collector** (Zapisivač):
+The **Person** who recorded or wrote the record down.
+_Avoid_: Author, editor, contributor
+
+**Author** (Autor):
+The writer of a literary retelling. Folk material has no Author.
+_Avoid_: Narrator, collector (for folk material)
 
 ## Contributions
 
@@ -53,7 +119,7 @@ A **Contribution** saying that something already published is wrong or incomplet
 _Avoid_: Fix, report, edit
 
 **Memory** (Sjećanje):
-A free-text **Contribution** carrying a personal story, recollection or anything else that is not a requested change.
+A free-text **Contribution** carrying a personal story, recollection or anything else that is not a requested change. A Memory is never published itself; an editor may start a **Draft** **Story**, **Custom** or **Folk text** from it, credited to the person who sent it.
 _Avoid_: Story, anecdote, other
 
 **Review** (Pregled):
@@ -79,7 +145,7 @@ Content withdrawn from the public site but kept.
 _Avoid_: Deleted, inactive, placeholder
 
 **Verification** (Provjera):
-How far a record's facts have been confirmed against sources: **Unverified**, **Verified**, or **Needs update** when a Verified record is known to be stale or disputed. It is the same scale for every kind of content, independent of who contributed it.
+How far a record's facts have been confirmed against sources: **Unverified**, **Verified**, or **Needs update** when a Verified record is known to be stale or disputed. It is the same scale for every kind of content, independent of who contributed it. For **Intangible heritage**, what is confirmed is the attestation — that it was really told, said or practised here in this form, backed by a named **Narrator** or source — never whether a legend is true. Verification never blocks publishing.
 _Avoid_: Community, in review, checked
 
 **Protection status** (Status zaštite):

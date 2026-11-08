@@ -5,6 +5,7 @@ import {
 } from '../../../../shared/utils/content/area'
 import { defineContentKind } from '../definition'
 import { missingLinkIssues } from '../linkCheck'
+import { intangibleReferences } from './intangible'
 
 const EXAMPLES = 5
 
@@ -73,6 +74,8 @@ async function areaReferences(db: SupabaseClient, id: string): Promise<ContentRe
       label: row.areas ? areaAdminLabel(row.areas.kind, row.areas.name) : row.area_id
     }))
   })
+
+  groups.push(...await intangibleReferences(db, 'area', id))
 
   return groups
 }

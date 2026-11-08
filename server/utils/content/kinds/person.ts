@@ -3,6 +3,7 @@ import type { ContentReferenceGroup } from '../../../../shared/utils/content/com
 import { validatePerson, type PersonAreaLink } from '../../../../shared/utils/content/person'
 import { defineContentKind } from '../definition'
 import { missingLinkIssues, missingSourceIssues } from '../linkCheck'
+import { intangibleReferences } from './intangible'
 
 async function loadAreaLinks(db: SupabaseClient, personId: string) {
   const { data, error } = await db.from('person_areas').select('area_id,role,position').eq('person_id', personId).order('position')
@@ -62,6 +63,8 @@ export const personKind = defineContentKind({
     const { count, error } = await db.from('person_areas').select('person_id', { count: 'exact', head: true }).eq('person_id', id)
     if (error) throw error
     if (count) groups.push({ kind: 'person_area', label: 'Veze na mjesta', count, blocking: false, items: [] })
+    // Stories, customs and folk texts that name the person as narrator, collector or author.
+    groups.push(...await intangibleReferences(db, 'person', id))
     return groups
   },
   sidecars: {

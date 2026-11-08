@@ -10,6 +10,10 @@ import { sourceKind } from './kinds/source'
 import { wordKind } from './kinds/word'
 import { personKind } from './kinds/person'
 import { clubKind } from './kinds/club'
+import { storyKind } from './kinds/story'
+import { customKind } from './kinds/custom'
+import { folkTextKind } from './kinds/folkText'
+import { customTypeKind, folkTextTypeKind, occasionKind, storyTypeKind, themeKind } from './kinds/intangibleList'
 
 // The content registry: one definition per entity kind tells the generic admin handlers
 // (server/api/admin/content/[kind]/*) which table to use, how to validate and project a row,
@@ -24,7 +28,15 @@ const REGISTRY: Record<ContentKind, AnyContentKindDefinition> = {
   heritage_category: heritageCategoryKind,
   heritage_item: heritageItemKind,
   person: personKind,
-  club: clubKind
+  club: clubKind,
+  story: storyKind,
+  custom: customKind,
+  folk_text: folkTextKind,
+  story_type: storyTypeKind,
+  custom_type: customTypeKind,
+  folk_text_type: folkTextTypeKind,
+  occasion: occasionKind,
+  theme: themeKind
 }
 
 export function contentKind(kind: ContentKind) {
