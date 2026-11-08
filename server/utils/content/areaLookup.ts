@@ -2,13 +2,17 @@ import type { H3Event } from 'h3'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ContentLookupItem, ContentStatus } from '../../../shared/utils/content/common'
 import { CONTENT_LOOKUP_LIMIT, CONTENT_SEARCH_MAX, contentFold, isUuid } from '../../../shared/utils/content/common'
+import { AREA_KINDS as ALL_AREA_KINDS, AREA_KIND_LABELS } from '../../../shared/utils/content/area'
+import type { AreaKind } from '../../../shared/utils/content/area'
 import { municipalityLabel } from '../publicContent'
 import type { PublicMunicipalityKind } from '../../../shared/types/publicAtlas'
 import { fail, queryText } from '../content/store'
 
 const AREA_KINDS = {
   municipality: ['town', 'municipality'] as const,
-  settlement: ['settlement'] as const
+  settlement: ['settlement'] as const,
+  // Every level, for links that may name a settlement, a municipality or a whole region (Priče i običaji).
+  all: ALL_AREA_KINDS
 }
 
 function searchPattern(value: string) {
@@ -16,7 +20,9 @@ function searchPattern(value: string) {
   return `%${folded}%`
 }
 
-function areaLabel(kind: string, name: string) {
+function areaLabel(kind: string, name: string, scope: string) {
+  // In the all-levels menu a name alone is ambiguous (a town and its settlement), so the level follows it.
+  if (scope === 'all') return `${name} · ${AREA_KIND_LABELS[kind as AreaKind] ?? kind}`
   if (kind === 'settlement') return name
   return municipalityLabel(kind as PublicMunicipalityKind, name)
 }
@@ -53,7 +59,7 @@ export async function lookupAreas(event: H3Event) {
     const name = row.name as string
     return {
       id: row.id as string,
-      label: areaLabel(kind, name),
+      label: areaLabel(kind, name, scope),
       status: row.status as ContentStatus
     }
   })

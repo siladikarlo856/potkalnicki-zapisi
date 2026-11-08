@@ -2,9 +2,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
 import type { ContentErrorData, ContentIssue, ContentList, ContentLookupItem, ContentReferences, ContentStatus } from '../../../shared/utils/content/common'
 import {
-  CONTENT_BODY_LIMIT, CONTENT_LOOKUP_LIMIT, CONTENT_PAGE_SIZES, CONTENT_SEARCH_MAX, CONTENT_STATUSES, contentFold, isUuid
+  CONTENT_BODY_LIMIT, CONTENT_LOOKUP_LIMIT, CONTENT_PAGE_SIZES, CONTENT_SEARCH_MAX, CONTENT_STATUSES, isUuid
 } from '../../../shared/utils/content/common'
+import { WORD_ID_PATTERN } from '../../../shared/utils/submission'
 import type { AnyContentKindDefinition, ContentFilter, ContentPersistOptions } from './definition'
+import { searchOrFilter, searchPattern } from './search'
 
 // Generic admin operations over one registry definition. The database owns the invariants:
 // `revision`, `updated_at` and `search_text` are set by the `content_before_write` trigger, every
@@ -152,12 +154,6 @@ export function queryInteger(value: unknown, name: string, fallback: number, max
   return number
 }
 
-/** An `ilike` pattern for the folded search text; LIKE wildcards in the query are matched literally. */
-function searchPattern(value: string) {
-  const folded = contentFold(value.trim()).replace(/\*/g, '').replace(/[\\%_]/g, char => `\\${char}`)
-  return `%${folded}%`
-}
-
 // The PostgREST filter methods `whereStatus` needs; every select builder has them.
 interface StatusFilterable<T> {
   eq(column: string, value: unknown): T
@@ -216,7 +212,7 @@ export async function listContent(event: H3Event, def: AnyContentKindDefinition)
       else request = request.eq(filter.column, value)
     }
     if (statusFilter) request = whereStatus(def, request, statusFilter as ContentStatus)
-    if (q) request = request.ilike('search_text', searchPattern(q))
+    if (q) request = def.searchAlso ? request.or(searchOrFilter(q, def.searchAlso)) : request.ilike('search_text', searchPattern(q))
     return request
   }
 
@@ -247,7 +243,9 @@ export async function getContent(def: AnyContentKindDefinition, id: string) {
   return { entity: entity!, legacyIds: (data ?? []).map(entry => entry.legacy_id as string) }
 }
 
-const APPLY_KINDS = new Set<string>(['word', 'heritage_item', 'area', 'source', 'person'])
+// Story, Custom and Folk text take it too: publishing the Draft made from a Memory applies the Memory, and `applyCredit`
+// lets the editor leave the sender out of the credits.
+const APPLY_KINDS = new Set<string>(['word', 'heritage_item', 'area', 'source', 'person', 'story', 'custom', 'folk_text'])
 
 /**
  * `applySubmissionId` (and `applyCredit`: false leaves the contributor out of the credits) turn an update into
@@ -404,14 +402,16 @@ export async function lookupContent(event: H3Event, def: AnyContentKindDefinitio
   if (q.length > CONTENT_SEARCH_MAX) fail(400, 'Invalid q', { message: `Pretraga može imati najviše ${CONTENT_SEARCH_MAX} znakova.` })
   const idsText = queryText(query.ids, 'ids')
   const ids = idsText ? idsText.split(',') : []
-  if (ids.length > MAX_LOOKUP_IDS || !ids.every(isUuid)) fail(400, 'Invalid ids', { message: 'Parametar ids nije ispravan.' })
+  // Words are the one kind with ids that are not UUIDs (old ids are kept), so they are checked as word ids.
+  const wordIds = def.kind === 'word'
+  if (ids.length > MAX_LOOKUP_IDS || !ids.every(id => wordIds ? WORD_ID_PATTERN.test(id) : isUuid(id))) fail(400, 'Invalid ids', { message: 'Parametar ids nije ispravan.' })
 
   let request = useDatabaseClient().from(def.table).select(def.adapter ? selectList(def) : `id,status,${def.labelColumn}`)
   if (ids.length) {
-    request = request.in('id', ids.map(id => id.toLowerCase()))
+    request = request.in('id', wordIds ? ids : ids.map(id => id.toLowerCase()))
   } else {
     request = def.adapter ? whereStatus(def, request, 'published') : request.neq('status', 'archived')
-    if (q) request = request.ilike('search_text', searchPattern(q))
+    if (q) request = def.searchAlso ? request.or(searchOrFilter(q, def.searchAlso)) : request.ilike('search_text', searchPattern(q))
   }
   const { data, error } = await request.order(def.adapter ? 'search_text' : def.labelColumn).order('id').limit(ids.length || CONTENT_LOOKUP_LIMIT)
   if (error) contentDatabaseError(def, error)

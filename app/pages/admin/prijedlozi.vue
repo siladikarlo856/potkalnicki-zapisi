@@ -5,6 +5,7 @@ import { CONTRIBUTION_KINDS, CONTRIBUTION_KIND_LABELS, isContributionKind } from
 import { CONTENT_PAGE_SIZES } from '~~/shared/utils/content/common'
 import { SUBMISSION_STATUSES, SUBMISSION_TYPES } from '~~/shared/utils/submission'
 import type { SubmissionStatus, SubmissionType } from '~~/shared/utils/submission'
+import { isMemoryDraftKind, MEMORY_DRAFT_KIND_LABELS } from '~~/shared/utils/memoryDraft'
 import { INTENT_LABELS, SUBMISSION_STATUS_COLORS, SUBMISSION_STATUS_LABELS, SUBMISSION_TYPE_LABELS } from '~/utils/inbox'
 
 // The unified inbox: word and memory contributions, corrections and proposals for new rows. Corrections are
@@ -97,6 +98,11 @@ const columns: TableColumn<InboxRow>[] = [
 
 function formatDate(value: string) {
   return new Date(`${value.replace(' ', 'T')}Z`).toLocaleString('hr-HR')
+}
+
+/** The Story, Custom or Folk text a Memory became, for its row in the list. */
+function memoryDraftLabel(row: InboxRow) {
+  return row.created && isMemoryDraftKind(row.created.kind) ? MEMORY_DRAFT_KIND_LABELS[row.created.kind] : null
 }
 
 const bulkBusy = ref(false)
@@ -312,6 +318,13 @@ const pending = computed(() => list.data.value?.counts.pending ?? 0)
               :label="SUBMISSION_STATUS_LABELS[row.original.status]"
               :color="SUBMISSION_STATUS_COLORS[row.original.status]"
               variant="subtle"
+            />
+            <UBadge
+              v-if="memoryDraftLabel(row.original)"
+              :label="`Skica: ${memoryDraftLabel(row.original)}`"
+              color="info"
+              variant="outline"
+              data-test="admin-inbox-memory-draft-badge"
             />
             <UBadge
               v-if="row.original.appliedAt"

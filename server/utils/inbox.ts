@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto'
-import type { InboxCreated, InboxDetail, InboxDraftResult, InboxFilters, InboxList, InboxRow, InboxTarget } from '../../shared/types/inbox'
+import type { InboxCreated, InboxDetail, InboxDraftResult, InboxFilters, InboxList, InboxMemoryDraftResult, InboxRow, InboxTarget } from '../../shared/types/inbox'
 import { atlasSlug } from '../../shared/utils/atlasSlug'
 import type { ContributionChange, ContributionKind, ContributionPayload } from '../../shared/utils/contribution'
 import { applyWordCorrection, CONTRIBUTION_KINDS, contributionFields, isContributionKind, SOURCE_PROPOSAL_TYPES } from '../../shared/utils/contribution'
+import { MEMORY_DRAFT_KINDS, memoryDraftFields } from '../../shared/utils/memoryDraft'
+import type { MemoryDraftKind } from '../../shared/utils/memoryDraft'
 import type { SubmissionStatus } from '../../shared/utils/submission'
 import { contentKind } from './content/registry'
 import { createDraft, createdFrom, findPublished, readContent, suggestSlug } from './content/records'
@@ -42,7 +44,8 @@ async function targetsOf(rows: Row[]) {
 async function createdBy(ids: number[]) {
   const found = new Map<number, InboxCreated>()
   if (!ids.length) return found
-  for (const kind of CONTRIBUTION_KINDS) {
+  // A Memory's Story, Custom or Folk text comes last, so it is the one shown (a Memory yields one of them at most).
+  for (const kind of [...CONTRIBUTION_KINDS, ...MEMORY_DRAFT_KINDS]) {
     for (const [submissionId, record] of await createdFrom(kind, ids)) {
       found.set(submissionId, { kind, id: record.id, label: record.label, status: record.status })
     }
@@ -331,6 +334,29 @@ export async function draftFromProposal(id: number): Promise<InboxDraftResult> {
   if (draftKind === 'word') return { kind: 'word', ...await draftWord(row) }
   const draft = await createDraft(draftKind, await draftValue(draftKind, (row.payload ?? {}) as ContributionPayload), { submissionId: id })
   return { kind: draftKind, ...draft }
+}
+
+/**
+ * The Draft Story, Custom or Folk text an editor starts from a Memory, saved through the kind's own validation and
+ * save (`createDraft`) like an admin create. The editor chooses the kind and its type; the Draft starts with the
+ * sender's text (`memoryDraftFields`). A Memory yields one Draft in total, whichever kind (the database refuses a
+ * second), so asking again returns the first one. Publishing the Draft applies the Memory and credits a named,
+ * consenting sender (content_apply_submission); rejecting or deleting the Memory withdraws it again.
+ */
+export async function draftFromMemory(id: number, kind: MemoryDraftKind, typeId: string): Promise<InboxMemoryDraftResult> {
+  const row = await readSubmissionRow(id)
+  if (row.type !== 'memory') fail(400, 'Not a memory', { message: 'Samo se sjećanja pretvaraju u priču, običaj ili usmeni tekst.' })
+  if (row.status === 'rejected') fail(409, 'Rejected', { message: 'Odbijeno sjećanje se ne može pretvoriti u skicu.' })
+  if (!row.consent_publish) fail(400, 'Publication consent required', { message: 'Pošiljatelj nije dao privolu za objavu.' })
+
+  for (const prior of MEMORY_DRAFT_KINDS) {
+    const made = (await createdFrom(prior, [id])).get(id)
+    if (made) return { kind: prior, id: made.id, created: false }
+  }
+  const memory = { id, text: String(row.text ?? ''), place: (row.place as string | null) ?? null, locale: String(row.locale ?? 'hr') }
+  const fields = memoryDraftFields(kind, memory)
+  const draft = await createDraft(kind, { ...fields, typeId, slug: await suggestSlug(kind, atlasSlug(fields.title) || kind, null) }, { submissionId: id })
+  return { kind, ...draft }
 }
 
 /** A Proposal's payload as the API fields of its kind. */

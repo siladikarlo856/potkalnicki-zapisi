@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { InboxDetail, InboxDraftResult, InboxRow } from '~~/shared/types/inbox'
 import { CONTRIBUTION_ADMIN_PATHS, CONTRIBUTION_KIND_LABELS } from '~~/shared/utils/contribution'
+import { createdAdminPath, MEMORY_DRAFT_KINDS, MEMORY_DRAFT_KIND_LABELS } from '~~/shared/utils/memoryDraft'
+import type { MemoryDraftKind } from '~~/shared/utils/memoryDraft'
 import type { SubmissionStatus } from '~~/shared/utils/submission'
 import { INTENT_LABELS, SUBMISSION_TYPE_LABELS } from '~/utils/inbox'
 
@@ -101,8 +103,19 @@ const appliedPath = computed(() => row.value.targetKind
   ? { path: CONTRIBUTION_ADMIN_PATHS[row.value.targetKind], query: { uredi: row.value.appliedEntityId ?? '' } }
   : undefined)
 const createdPath = computed(() => row.value.created
-  ? { path: CONTRIBUTION_ADMIN_PATHS[row.value.created.kind], query: { uredi: row.value.created.id } }
+  ? { path: createdAdminPath(row.value.created.kind), query: { uredi: row.value.created.id } }
   : undefined)
+
+// A Memory can become a Story, Custom or Folk text (a Draft the editor finishes); it keeps its separate word flow.
+const isMemory = computed(() => row.value.type === 'memory')
+const memoryDraft = computed(() => row.value.created && (MEMORY_DRAFT_KINDS as readonly string[]).includes(row.value.created.kind) ? row.value.created : null)
+const memoryDialogOpen = ref(false)
+
+/** Opens the Draft made from the Memory in its editor, with the Memory's banner and credit choice. */
+function openMemoryDraft() {
+  if (!memoryDraft.value) return
+  return navigateTo({ path: createdAdminPath(memoryDraft.value.kind), query: { uredi: memoryDraft.value.id, prijedlog: String(row.value.id) } })
+}
 </script>
 
 <template>
@@ -242,7 +255,7 @@ const createdPath = computed(() => row.value.created
       </template>
       <template v-if="row.created">
         <dt class="text-muted">
-          Nastalo iz prijedloga
+          {{ isMemory ? 'Nastalo iz sjećanja' : 'Nastalo iz prijedloga' }}
         </dt>
         <dd data-test="admin-inbox-created">
           <ULink
@@ -251,6 +264,9 @@ const createdPath = computed(() => row.value.created
           >
             {{ row.created.label || 'bez naziva' }}
           </ULink>
+          <template v-if="memoryDraft">
+            ({{ MEMORY_DRAFT_KIND_LABELS[memoryDraft.kind as MemoryDraftKind] }})
+          </template>
           · {{ row.created.status === 'published' ? 'objavljeno' : row.created.status === 'draft' ? 'skica' : 'arhivirano' }}
         </dd>
       </template>
@@ -317,7 +333,15 @@ const createdPath = computed(() => row.value.created
         @click="apply"
       />
       <UButton
-        v-if="row.canDraft && row.status !== 'rejected'"
+        v-if="isMemory && row.status !== 'rejected' && !applied"
+        :label="memoryDraft ? 'Otvori skicu' : 'Započni skicu priče, običaja ili teksta'"
+        icon="i-lucide-scroll-text"
+        :disabled="busy"
+        data-test="admin-inbox-memory-draft"
+        @click="memoryDraft ? openMemoryDraft() : (memoryDialogOpen = true)"
+      />
+      <UButton
+        v-if="row.canDraft && row.status !== 'rejected' && !memoryDraft"
         :label="row.created ? 'Otvori skicu' : row.type === 'proposal' ? 'Otvori skicu' : 'Dodaj u riječi / otvori skicu'"
         icon="i-lucide-file-plus"
         :loading="busy"
@@ -364,5 +388,10 @@ const createdPath = computed(() => row.value.created
         @click="remove"
       />
     </div>
+    <AdminMemoryDraftDialog
+      v-if="isMemory"
+      v-model:open="memoryDialogOpen"
+      :row="row"
+    />
   </div>
 </template>

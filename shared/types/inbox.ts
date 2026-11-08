@@ -1,5 +1,6 @@
 import type { ContentStatus } from '../utils/content/common'
 import type { ContributionChange, ContributionKind } from '../utils/contribution'
+import type { MemoryDraftKind } from '../utils/memoryDraft'
 import type { Submission, SubmissionStatus, SubmissionType } from '../utils/submission'
 
 // API shapes of the admin inbox (/api/admin/inbox): submissions with what they point at and what they
@@ -16,9 +17,9 @@ export interface InboxTarget {
   revision: number | null
 }
 
-/** The row an admin has already made from a proposal (a draft, or the published row). */
+/** The row an admin has already made from a proposal (a draft, or the published row), or a Story, Custom or Folk text from a Memory. */
 export interface InboxCreated {
-  kind: ContributionKind
+  kind: ContributionKind | MemoryDraftKind
   id: string
   label: string
   status: ContentStatus
@@ -60,6 +61,13 @@ export interface InboxDetail {
 
 export interface InboxDraftResult {
   kind: ContributionKind
+  id: string
+  created: boolean
+}
+
+/** The Draft Story, Custom or Folk text started from a Memory; `created` is false when it already existed. */
+export interface InboxMemoryDraftResult {
+  kind: MemoryDraftKind
   id: string
   created: boolean
 }
