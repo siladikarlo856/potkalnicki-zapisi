@@ -213,6 +213,11 @@ export interface AtlasHeritageItemResponse {
   item: PublicHeritageItem
 }
 
+/** GET /api/atlas/photos: every photo on the atlas with its credit, by item name ("Zasluge za fotografije"). */
+export interface AtlasPhotoCreditsResponse {
+  photos: Array<PublicImage & { item: { id: string, name: string, path: string | null } }>
+}
+
 /** Answer for an old URL (slug history): the page should redirect with 301 to `redirect`. */
 export interface AtlasRedirectResponse {
   redirect: string

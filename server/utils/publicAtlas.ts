@@ -1,5 +1,6 @@
 import type {
   AtlasHeritageListResponse,
+  AtlasPhotoCreditsResponse,
   AtlasMunicipalityResponse,
   AtlasOverviewResponse,
   AtlasPersonListResponse,
@@ -223,6 +224,16 @@ export function heritageItemDetail(content: PublicContent, item: SnapshotItem): 
     images: item.images,
     persons: personRefs(content, content.personsByItem.get(item.id) ?? []),
     updatedAt: item.updatedAt
+  }
+}
+
+/** Every photo of a live item, with its credit, in item-name order (the photo credits page). */
+export function photoCredits(content: PublicContent): AtlasPhotoCreditsResponse {
+  return {
+    photos: content.items.flatMap(item => item.images.map(image => ({
+      ...image,
+      item: { id: item.id, name: item.name, path: heritageItemPath(content, item) }
+    })))
   }
 }
 
