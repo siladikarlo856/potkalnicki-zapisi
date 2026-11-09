@@ -22,6 +22,7 @@ const input = ref<HTMLInputElement | null>(null)
 const uploading = ref(0)
 const failure = ref('')
 
+const SOURCE_EXAMPLE = 'https://commons.wikimedia.org/wiki/File:...'
 const licenseOptions = IMAGE_LICENSES.map(value => ({ label: IMAGE_LICENSE_LABELS[value], value }))
 const free = computed(() => HERITAGE_IMAGE_LIMITS.perItem - props.images.length - uploading.value)
 
@@ -63,7 +64,7 @@ async function upload(file: File): Promise<HeritageImageValue> {
     })
   } catch (error) {
     const problem = adminApiError(error)
-    throw new Error(problem.issues?.map(issue => issue.message).join(' ') || problem.message)
+    throw new Error(problem.issues?.map(issue => issue.message).join(' ') || problem.message, { cause: error })
   }
   return {
     ...stored,
@@ -221,7 +222,7 @@ async function onFiles(event: Event) {
             :model-value="image.sourceUrl ?? ''"
             :maxlength="HERITAGE_IMAGE_LIMITS.url"
             type="url"
-            placeholder="https://commons.wikimedia.org/wiki/File:…"
+            :placeholder="SOURCE_EXAMPLE"
             class="w-full"
             @update:model-value="value => optional(index, 'sourceUrl', value)"
           />
