@@ -167,7 +167,8 @@ The public read layer serves this content to the site without a redeploy. Atlas 
 - `GET /api/atlas/overview`: the region, its towns and municipalities (towns first, then by name) with settlement and item counts.
 - `GET /api/atlas/municipalities/:slug` and `GET /api/atlas/settlements/:slug`: one place page (settlements with item counts, category counts, or the settlement's items).
 - `GET /api/atlas/heritage?municipality=<slug>&category=<key>`: the heritage list with its filter options; an unknown filter is a 400.
-- `GET /api/atlas/heritage/:settlement/:slug`: one item as `{ item }`, with its sources, the dataset fields and `ref` (the old item id that correction submissions use as `target_ref`; the UUID for items created later).
+- `GET /api/atlas/heritage/:settlement/:slug`: one item as `{ item }`, with its sources, the dataset fields, its photos (`images`, each with author, licence and source) and `ref` (the old item id that correction submissions use as `target_ref`; the UUID for items created later). List items carry the main photo as `thumb`.
+- `GET /api/atlas/photos`: every photo on the atlas with its credit, for the page "Zasluge za fotografije" (`/potkalnicko-prigorje/o-projektu/fotografije`).
 - `GET /api/content/target?kind=heritage_item|area|source&id=<uuid or old id>`: what a correction form points at; old ids such as `krizevci-crkva-sv-ane`, `krizevci` or a DGU code still resolve.
 - `GET /api/content/suggest-options`: the published categories, towns and municipalities and settlements (with ids) the suggestion forms pick from; `GET /api/content/search?q=`: heritage items and settlements whose name contains `q`, for the "Ispravak" search (words are searched in the browser). A settlement page also carries `credits` ("Zahvaljujemo") and `updatedAt` ("Zadnja izmjena"), like an item.
 
@@ -179,7 +180,7 @@ Copy `.env.example` to `.env` for local development (`pnpm dev:local` does it fo
 
 | Variable | What it is |
 | --- | --- |
-| `NUXT_SUPABASE_URL` | Supabase project URL, e.g. `https://<ref>.supabase.co`. Also read as `SUPABASE_URL`. |
+| `NUXT_SUPABASE_URL` | Supabase project URL, e.g. `https://<ref>.supabase.co`. Also read as `SUPABASE_URL`. Heritage photos are served from this project's public Storage bucket `heritage-media`, which the migration `20261109000000_heritage_item_images.sql` creates (see [docs/database.md](docs/database.md#heritage-item-photos)). |
 | `SUPABASE_API_KEY` | One server-only Supabase secret key (`sb_secret_...`, or the legacy `service_role` key), used for submissions and review. Hostinger supplies it. |
 | `NUXT_SUPABASE_SERVICE_ROLE_KEY` | Optional server-only override for `SUPABASE_API_KEY`. No duplicate key is needed. Local setup fills this automatically. |
 | `NUXT_REVIEW_SECRET` | Password for admin login and review API access, at least 16 characters. Generate one with `openssl rand -base64 24`. |
