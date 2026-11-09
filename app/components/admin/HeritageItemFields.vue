@@ -37,6 +37,7 @@ const municipalityId = bind('municipalityId')
 const verification = bind('verification')
 const researchNotes = bind('researchNotes')
 const sourceIds = bind('sourceIds')
+const images = bind('images')
 const noindex = bind('noindex')
 const slug = bind('slug')
 const settlementId = computed({
@@ -277,6 +278,7 @@ function onSlugInput() {
       class="w-full"
     />
   </UFormField>
+  <AdminHeritageImagesField v-model:images="images" />
   <div class="grid gap-4 sm:grid-cols-2">
     <UFormField
       name="latitude"
