@@ -1,9 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AtlasItemStatus } from '../../shared/types/atlas'
-import type { PublicCredit, PublicMunicipalityKind } from '../../shared/types/publicAtlas'
+import type { PublicCredit, PublicImage, PublicMunicipalityKind } from '../../shared/types/publicAtlas'
+import { IMAGE_LICENSES, IMAGE_LICENSE_LABELS, heritageImageUrl, imageLicenseUrl, type ImageLicense } from '../../shared/utils/content/heritageImage'
 import { isCorrectionTargetRefFormat } from '../../shared/utils/correctionReport'
 import { PERSON_AREA_ROLES, type PersonAreaRole } from '../../shared/utils/content/person'
-import { NO_INTANGIBLE_ROWS, buildIntangible, loadIntangibleRows } from './publicIntangibleContent'
+import { MISSING_TABLE, NO_INTANGIBLE_ROWS, buildIntangible, loadIntangibleRows } from './publicIntangibleContent'
 import type { IntangibleRows, SnapshotIntangibleContent } from './publicIntangibleContent'
 
 // The public read layer over the content tables: one in-process snapshot of everything the public atlas
@@ -67,6 +68,20 @@ export interface ItemRow {
   updated_at: string
 }
 export interface ItemSourceRow { item_id: string, source_id: string, position: number }
+export interface ItemImageRow {
+  item_id: string
+  position: number
+  path: string
+  thumb_path: string
+  width: number
+  height: number
+  alt: string
+  caption: string | null
+  author: string
+  author_url: string | null
+  source_url: string | null
+  license: string
+}
 /** A person row as the public snapshot reads it: never `research_notes` or `search_text`. `clue` is kept off SnapshotPerson and exposed only via personClueById (Learn/Play). */
 export interface PersonRow {
   id: string
@@ -129,6 +144,8 @@ export interface PublicContentRows {
   personSources?: PersonSourceRow[]
   /** Stories, Customs, Folk texts, Narrators, themes and their lists; absent in rows built before they existed (treated as none). */
   intangible?: IntangibleRows
+  /** Photos of heritage items; absent in rows built before they existed (treated as none). */
+  itemImages?: ItemImageRow[]
 }
 
 export interface SnapshotMunicipality {
@@ -186,6 +203,8 @@ export interface SnapshotItem {
   noindex: boolean
   credits: PublicCredit[]
   sourceIds: string[]
+  /** Photos in order, the first being the main one; none when the Storage URL is not configured */
+  images: PublicImage[]
   updatedAt: string
 }
 
@@ -367,11 +386,34 @@ export interface BuildOptions {
   /** The region whose members are in scope; tests use their own. */
   regionSlug?: string
   loadedAt?: number
+  /** The Supabase project URL photo files are served from; without it items show no photos. */
+  mediaBase?: string
+}
+
+function publicImage(row: ItemImageRow, mediaBase: string): PublicImage | null {
+  if (!IMAGE_LICENSES.includes(row.license as ImageLicense)) return null
+  const license = row.license as ImageLicense
+  return {
+    url: heritageImageUrl(mediaBase, row.path), thumbUrl: heritageImageUrl(mediaBase, row.thumb_path),
+    width: row.width, height: row.height, alt: row.alt, caption: row.caption, author: row.author,
+    authorUrl: row.author_url, sourceUrl: row.source_url, license,
+    licenseLabel: IMAGE_LICENSE_LABELS[license], licenseUrl: imageLicenseUrl(license)
+  }
+}
+
+function itemImages(rows: readonly ItemImageRow[], mediaBase: string) {
+  const byItem = new Map<string, PublicImage[]>()
+  if (!mediaBase) return byItem
+  for (const row of [...rows].sort((a, b) => a.position - b.position)) {
+    const image = publicImage(row, mediaBase)
+    if (image) byItem.set(row.item_id, [...(byItem.get(row.item_id) ?? []), image])
+  }
+  return byItem
 }
 
 /** Shapes database rows into the public snapshot. Pure, so the rules are testable without a database. */
 export function buildPublicContent(rows: PublicContentRows, options: BuildOptions = {}): PublicContent {
-  const { regionSlug = ATLAS_REGION_SLUG, loadedAt = Date.now() } = options
+  const { regionSlug = ATLAS_REGION_SLUG, loadedAt = Date.now(), mediaBase = '' } = options
   const regionRow = rows.areas.find(a => a.kind === 'region' && a.slug === regionSlug && a.status === 'published')
   const members = new Set(regionRow ? rows.areaRegions.filter(r => r.region_id === regionRow.id).map(r => r.area_id) : [])
 
@@ -438,6 +480,8 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
     itemSources.set(link.item_id, [...(itemSources.get(link.item_id) ?? []), link])
   }
 
+  const imagesByItem = itemImages(rows.itemImages ?? [], mediaBase)
+
   const items: SnapshotItem[] = []
   const itemByRoute = new Map<string, string>()
   for (const i of rows.items) {
@@ -456,6 +500,7 @@ export function buildPublicContent(rows: PublicContentRows, options: BuildOption
       researchNotes: i.research_notes, coordinates: coordinates(i.latitude, i.longitude), noindex: i.noindex,
       credits: publicCredits(i.credits),
       sourceIds: (itemSources.get(i.id) ?? []).sort((a, b) => a.position - b.position).map(link => link.source_id),
+      images: imagesByItem.get(i.id) ?? [],
       updatedAt: i.updated_at
     })
     if (i.settlement_id) itemByRoute.set(`${i.settlement_id}/${i.slug}`, i.id)
@@ -539,9 +584,30 @@ async function readAll<T>(read: (from: number, to: number) => Page<T>) {
   }
 }
 
+let warnedMissingImages = false
+
+/**
+ * The photo rows, or none while `20261109000000_heritage_item_images.sql` is not applied: deploying the app first
+ * must not take the public atlas down. Any other failure still fails the load.
+ */
+async function loadItemImageRows(client: SupabaseClient) {
+  try {
+    return await readAll<ItemImageRow>((from, to) => client.from('heritage_item_images')
+      .select('item_id,position,path,thumb_path,width,height,alt,caption,author,author_url,source_url,license')
+      .order('item_id').order('position').range(from, to))
+  } catch (error) {
+    if (!(error instanceof Error) || !MISSING_TABLE.test(error.message)) throw error
+    if (!warnedMissingImages) {
+      warnedMissingImages = true
+      console.warn('[content] heritage_item_images is missing; items show no photos until the migrations are applied.')
+    }
+    return []
+  }
+}
+
 /** Reads every row the snapshot needs (published and archived only; drafts never leave the database). */
 export async function loadPublicContentRows(client: SupabaseClient): Promise<PublicContentRows> {
-  const [areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources, intangible] = await Promise.all([
+  const [areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources, intangible, itemImages] = await Promise.all([
     readAll<AreaRow>((from, to) => client.from('areas')
       .select('id,kind,parent_id,name,slug,official_code,latitude,longitude,credits,status,updated_at')
       .in('kind', ['region', 'town', 'municipality', 'settlement']).in('status', VISIBLE).order('id').range(from, to)),
@@ -567,9 +633,10 @@ export async function loadPublicContentRows(client: SupabaseClient): Promise<Pub
     readAll<PersonAreaRow>((from, to) => client.from('person_areas').select('person_id,area_id,role,position').order('person_id').order('position').range(from, to)),
     readAll<PersonItemRow>((from, to) => client.from('person_heritage_items').select('person_id,item_id,relation,position').order('person_id').order('position').range(from, to)),
     readAll<PersonSourceRow>((from, to) => client.from('person_sources').select('person_id,source_id,position').order('person_id').order('position').range(from, to)),
-    loadIntangibleRows(client)
+    loadIntangibleRows(client),
+    loadItemImageRows(client)
   ])
-  return { areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources, intangible }
+  return { areas, areaRegions, categories, sources, items, itemSources, clubs, clubSeasons, clubSources, legacyIds, slugHistory, persons, personAreas, personItems, personSources, intangible, itemImages }
 }
 
 export async function loadPublicContent(client: SupabaseClient, options: Omit<BuildOptions, 'loadedAt'> = {}) {
@@ -686,7 +753,7 @@ export function derive<T, U>(source: DerivationSource<T>, compute: (snapshot: T)
   }
 }
 
-const store = createSnapshotStore({ load: () => loadPublicContent(useDatabaseClient()) })
+const store = createSnapshotStore({ load: () => loadPublicContent(useDatabaseClient(), { mediaBase: useStorageBase() }) })
 
 /** The current public content snapshot; answers 503 when the database is unreachable on a cold start. */
 export async function getPublicContent(): Promise<PublicContent> {

@@ -550,7 +550,7 @@ async function readIntangibleRows(client: SupabaseClient): Promise<IntangibleRow
 }
 
 /** PostgREST's answer when a table is not there (the migrations are not applied yet). */
-const MISSING_TABLE = /could not find the table|schema cache|relation .* does not exist/i
+export const MISSING_TABLE = /could not find the table|schema cache|relation .* does not exist/i
 let warnedMissing = false
 
 /**
