@@ -15,6 +15,8 @@ defineProps<{
   icon?: string
   /** A photo, shown 4:3 in place of the tile. */
   image?: string
+  /** The photo's one-line credit ("Foto: Autor, CC BY-SA 4.0"), shown under it. */
+  imageCredit?: string
 }>()
 
 const titleId = useId()
@@ -25,13 +27,24 @@ const titleId = useId()
     class="group relative grid grid-cols-[3rem_minmax(0,1fr)] gap-3 rounded-(--pz-radius-lg) border border-default bg-default p-4 pe-11 text-default hover:border-accented hover:shadow-[var(--pz-shadow-lift)]"
     data-testid="pz-heritage-card"
   >
-    <img
+    <div
       v-if="image"
-      :src="image"
-      alt=""
-      loading="lazy"
-      class="col-span-2 aspect-4/3 w-full rounded-(--pz-radius-lg) object-cover"
+      class="col-span-2 flex flex-col gap-1"
     >
+      <img
+        :src="image"
+        alt=""
+        loading="lazy"
+        class="aspect-4/3 w-full rounded-(--pz-radius-lg) bg-elevated object-cover"
+      >
+      <p
+        v-if="imageCredit"
+        class="pz-caption font-normal text-dimmed"
+        data-testid="pz-heritage-card-credit"
+      >
+        {{ imageCredit }}
+      </p>
+    </div>
     <span
       v-else
       class="grid size-12 place-items-center rounded-(--pz-radius-md) bg-accented text-primary"
@@ -43,7 +56,10 @@ const titleId = useId()
       />
     </span>
 
-    <div class="flex min-w-0 flex-col gap-2">
+    <div
+      class="flex min-w-0 flex-col gap-2"
+      :class="{ 'col-span-2': image }"
+    >
       <h3
         :id="titleId"
         class="pz-h3 wrap-anywhere text-highlighted"

@@ -148,6 +148,8 @@ useSeoMeta({
               :municipality="item.municipality.label"
               :category="item.category.label"
               :icon="pzHeritageIcon(item.category.key)"
+              :image="item.thumb?.url"
+              :image-credit="item.thumb ? t('pz.photos.credit', { author: item.thumb.author, license: item.thumb.licenseLabel }) : undefined"
             >
               <template #trust>
                 <PzVerificationBadge :verification="item.verification" />

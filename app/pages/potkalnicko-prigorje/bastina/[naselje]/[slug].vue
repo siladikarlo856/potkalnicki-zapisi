@@ -33,11 +33,21 @@ const correctionCurrent = computed<Record<string, string | undefined>>(() => her
   : {})
 const formatDate = (iso: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'long' }).format(new Date(iso))
 
+// The description is what the record says; the research notes (what is still being checked) only stand in
+// while there is no description.
+const metaDescription = computed(() => (heritageItem.value?.description || heritageItem.value?.researchNotes || '').slice(0, 160))
+const mainPhoto = computed(() => heritageItem.value?.images[0])
+
 useSeoMeta({
   title: () => heritageItem.value ? `${heritageItem.value.name} · Potkalnički zapisi` : '',
   ogTitle: () => heritageItem.value ? `${heritageItem.value.name} · Potkalnički zapisi` : '',
-  description: () => heritageItem.value?.researchNotes.slice(0, 160) ?? '',
-  ogDescription: () => heritageItem.value?.researchNotes.slice(0, 160) ?? '',
+  description: () => metaDescription.value,
+  ogDescription: () => metaDescription.value,
+  // Without a photo the layout's share image (and its size) stays.
+  ogImage: () => mainPhoto.value?.url,
+  ogImageWidth: () => mainPhoto.value?.width,
+  ogImageHeight: () => mainPhoto.value?.height,
+  ogImageAlt: () => mainPhoto.value?.alt,
   robots: () => heritageItem.value?.noindex ? 'noindex, follow' : 'index, follow'
 })
 
@@ -172,6 +182,11 @@ const verificationHelp = computed(() => ({
       </PzFactPanel>
 
       <div class="flex min-w-0 max-w-(--pz-measure) flex-col gap-8">
+        <PzHeritagePhotos
+          v-if="heritageItem.images.length"
+          :images="heritageItem.images"
+        />
+
         <UAlert
           v-if="heritageItem.researchNotes"
           color="warning"
