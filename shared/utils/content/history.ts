@@ -169,7 +169,8 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
     latitude: { label: 'Geografska širina' },
     longitude: { label: 'Geografska dužina' },
     noindex: { label: 'Noindex' },
-    sourceIds: { label: 'Izvori' }
+    sourceIds: { label: 'Izvori' },
+    images: { label: 'Fotografije' }
   },
   person: {
     name: { label: 'Ime' },

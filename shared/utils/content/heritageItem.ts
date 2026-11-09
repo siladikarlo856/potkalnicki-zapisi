@@ -1,6 +1,7 @@
 import type { ContentEntity, ContentStatus, ContentValidation } from './common'
 import { contentStatus, isRecord, isUuid, issueCollector } from './common'
 import { atlasSlug } from '../atlasSlug'
+import { parseHeritageImages, type HeritageImageValue } from './heritageImage'
 
 export const HERITAGE_ITEM_LIMITS = {
   name: 200,
@@ -50,6 +51,8 @@ export interface HeritageItemValue {
   longitude: number | null
   noindex: boolean
   sourceIds: string[]
+  /** Photos in display order; the first is the main one. */
+  images: HeritageImageValue[]
   status: ContentStatus
 }
 
@@ -124,6 +127,7 @@ export function validateHeritageItem(input: unknown): ContentValidation<Heritage
     longitude,
     noindex: body.noindex === true,
     sourceIds: parseSourceIds(body.sourceIds, check.add),
+    images: parseHeritageImages(body.images, check),
     status: contentStatus(body.status, 'published', check.add)
   }
   return { value, issues: check.issues }

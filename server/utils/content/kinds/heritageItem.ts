@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { validateHeritageItem } from '../../../../shared/utils/content/heritageItem'
+import type { HeritageImageValue, ImageLicense } from '../../../../shared/utils/content/heritageImage'
 import { defineContentKind } from '../definition'
 import { missingSourceIssues } from '../linkCheck'
 import { intangibleReferences } from './intangible'
@@ -9,6 +10,25 @@ async function loadSourceIds(db: SupabaseClient, itemId: string) {
     .select('source_id,position').eq('item_id', itemId).order('position')
   if (error) throw error
   return (data ?? []).map(row => row.source_id as string)
+}
+
+async function loadImages(db: SupabaseClient, itemId: string): Promise<HeritageImageValue[]> {
+  const { data, error } = await db.from('heritage_item_images')
+    .select('path,thumb_path,width,height,alt,caption,author,author_url,source_url,license,position')
+    .eq('item_id', itemId).order('position')
+  if (error) throw error
+  return (data ?? []).map(row => ({
+    path: row.path as string,
+    thumbPath: row.thumb_path as string,
+    width: row.width as number,
+    height: row.height as number,
+    alt: row.alt as string,
+    caption: row.caption as string | null,
+    author: row.author as string,
+    authorUrl: row.author_url as string | null,
+    sourceUrl: row.source_url as string | null,
+    license: row.license as ImageLicense
+  }))
 }
 
 export const heritageItemKind = defineContentKind({
@@ -30,7 +50,7 @@ export const heritageItemKind = defineContentKind({
     latitude: 'latitude',
     longitude: 'longitude',
     noindex: 'noindex'
-  // sourceIds live in heritage_item_sources (sidecar), not on the row.
+  // sourceIds and images live in heritage_item_sources and heritage_item_images (sidecars), not on the row.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
   labelColumn: 'name',
@@ -47,14 +67,15 @@ export const heritageItemKind = defineContentKind({
   // Stories, customs and folk texts tied to the item (their link tables restrict its deletion).
   references: (db, id) => intangibleReferences(db, 'heritage_item', id),
   sidecars: {
-    fields: ['sourceIds'],
-    load: async (db, id) => ({ sourceIds: await loadSourceIds(db, id) })
+    fields: ['sourceIds', 'images'],
+    load: async (db, id) => ({ sourceIds: await loadSourceIds(db, id), images: await loadImages(db, id) })
   },
   checkLinks: async (db, value) => missingSourceIssues(db, value.sourceIds),
-  // The heritage_items row and its sources in one transaction (supabase/migrations/20261107000000_content_save.sql).
+  // The heritage_items row, its sources and its photos in one transaction
+  // (supabase/migrations/20261109000000_heritage_item_images.sql).
   persist: async (db, id, value, { row, revision }) => {
     const { data, error } = await db.rpc('content_heritage_item_save', {
-      p_id: id, p_revision: revision ?? null, p_row: row, p_source_ids: value.sourceIds ?? []
+      p_id: id, p_revision: revision ?? null, p_row: row, p_source_ids: value.sourceIds ?? [], p_images: value.images ?? []
     })
     if (error) throw error
     return (data as string | null) ?? null
