@@ -38,6 +38,14 @@ export function useDatabaseClient() {
   return clientFor(url, serviceRoleKey)
 }
 
+/**
+ * The Supabase project URL that public Storage files are served from, or '' when the database is not
+ * configured (pages then show items without photos instead of failing).
+ */
+export function useStorageBase() {
+  return supabaseSettings().url
+}
+
 export function databaseError(error: { message: string }): never {
   console.error('[db] Supabase request failed:', error.message)
   throw createError({ statusCode: 500, statusMessage: 'Database error' })
