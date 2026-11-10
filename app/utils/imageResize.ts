@@ -3,7 +3,10 @@
 
 export const IMAGE_LARGE_SIDE = 1600
 export const IMAGE_THUMB_SIDE = 480
-const FILE_BUDGET = 1_400_000
+// Byte budgets well under the server's 1.5 MB cap, so both files as base64 stay under 1 MB of JSON (a proxy in
+// front of the app may refuse larger bodies). Quality steps down until a file fits.
+const LARGE_BUDGET = 600_000
+const THUMB_BUDGET = 120_000
 
 export interface ResizedImage {
   /** Base64 without the data: prefix, as the upload endpoint takes it. */
@@ -26,7 +29,7 @@ function toBase64(blob: Blob) {
   })
 }
 
-async function encode(source: ImageBitmap, maxSide: number, type: 'image/webp' | 'image/jpeg'): Promise<ResizedImage> {
+async function encode(source: ImageBitmap, maxSide: number, budget: number, type: 'image/webp' | 'image/jpeg'): Promise<ResizedImage> {
   const scale = Math.min(1, maxSide / Math.max(source.width, source.height))
   const width = Math.max(1, Math.round(source.width * scale))
   const height = Math.max(1, Math.round(source.height * scale))
@@ -37,10 +40,10 @@ async function encode(source: ImageBitmap, maxSide: number, type: 'image/webp' |
   if (!context) throw new Error('Preglednik ne može obraditi fotografiju.')
   context.imageSmoothingQuality = 'high'
   context.drawImage(source, 0, 0, width, height)
-  for (const quality of [0.82, 0.7, 0.55]) {
+  for (const quality of [0.82, 0.7, 0.55, 0.4]) {
     const blob = await toBlob(canvas, type, quality)
     if (!blob || blob.type !== type) throw new Error('unsupported')
-    if (blob.size <= FILE_BUDGET) return { base64: await toBase64(blob), type, width, height }
+    if (blob.size <= budget) return { base64: await toBase64(blob), type, width, height }
   }
   throw new Error('Fotografija je i nakon smanjivanja prevelika.')
 }
@@ -56,8 +59,8 @@ export async function resizeImage(file: File) {
   try {
     for (const type of ['image/webp', 'image/jpeg'] as const) {
       try {
-        const large = await encode(source, IMAGE_LARGE_SIDE, type)
-        const thumb = await encode(source, IMAGE_THUMB_SIDE, type)
+        const large = await encode(source, IMAGE_LARGE_SIDE, LARGE_BUDGET, type)
+        const thumb = await encode(source, IMAGE_THUMB_SIDE, THUMB_BUDGET, type)
         return { large, thumb }
       } catch (error) {
         if (!(error instanceof Error) || error.message !== 'unsupported') throw error

@@ -14,7 +14,7 @@ const { t } = useI18n()
     data-testid="pz-photo-credit"
   >
     <span v-if="image.caption">{{ image.caption }} · </span>
-    <span>{{ t('pz.photos.by') }} </span>
+    <span>{{ `${t('pz.photos.by')} ` }}</span>
     <a
       v-if="image.authorUrl"
       :href="image.authorUrl"
