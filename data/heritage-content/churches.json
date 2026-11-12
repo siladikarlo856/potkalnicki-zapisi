@@ -1,0 +1,1177 @@
+{
+  "schemaVersion": 1,
+  "title": "Potkalnički zapisi: pregledani opisi i fotografije crkava",
+  "sources": {
+    "hrwiki-5802789": {
+      "title": "Wikipedija: Crkva sv. Andrije u Kamešnici",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=5802789",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-6566856": {
+      "title": "Wikipedija: Crkva Pohođenja Marijina u Cirkveni",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=6566856",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-6741105": {
+      "title": "Wikipedija: Crkva sv. Petra u Sv. Petru Čvrstecu",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=6741105",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7225884": {
+      "title": "Wikipedija: Crkva sv. Ivana Krstitelja u Sv. Ivanu Žabno",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7225884",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7328986": {
+      "title": "Wikipedija: Crkva Majke Božje Koruške u Križevcima",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7328986",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7328987": {
+      "title": "Wikipedija: Kapela sv. Florijana u Križevcima",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7328987",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7363925": {
+      "title": "Wikipedija: Crkva sv. Petra u Sv. Petru Orehovcu",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7363925",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7363927": {
+      "title": "Wikipedija: Crkva sv. Mihaela u Miholcu",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7363927",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7389078": {
+      "title": "Wikipedija: Pavlinski samostan i crkva sv. Ane u Križevcima",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7389078",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7405318": {
+      "title": "Wikipedija: Križevačka grkokatolička katedrala",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7405318",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7405319": {
+      "title": "Wikipedija: Križevačka konkatedrala",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7405319",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7552372": {
+      "title": "Wikipedija: Kapela sv. Marka Križevčanina u Križevcima",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7552372",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7588949": {
+      "title": "Wikipedija: Crkva Uznesenja Blažene Djevice Marije u Gornjoj Rijeci",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7588949",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "hrwiki-7588988": {
+      "title": "Wikipedija: Crkva sv. Brcka u Kalniku",
+      "type": "website",
+      "url": "https://hr.wikipedia.org/w/index.php?oldid=7588988",
+      "note": "Inačica članka korištena kao izvor podataka; tekst Wikipedije dostupan je pod licencom CC BY-SA 4.0."
+    },
+    "registar-rzg-0522-1969": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Julijane, Trema (RZG-0522-1969)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/RZG-0522-1969",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-1781": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Petra, Apatovec (Z-1781)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-1781",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-1782": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Nikolaja, Osijek Vojakovački (Z-1782)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-1782",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-1899": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Katarine, Erdovec (Z-1899)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-1899",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-1900": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Petra, Sveti Petar Orehovec (Z-1900)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-1900",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-1901": {
+      "title": "Registar kulturnih dobara RH: Katedrala sv. Trojice, Križevci (Z-1901)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-1901",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2073": {
+      "title": "Registar kulturnih dobara RH: Crkva Uznesenja Blažene Djevice Marije, Gornja Rijeka (Z-2073)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2073",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2075": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Marka Križevčanina, Križevci (Z-2075)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2075",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2076": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Ane s pavlinskim samostanom, Križevci (Z-2076)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2076",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2077": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Franje Ksaverskog, Dropkovec (Z-2077)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2077",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2078": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Križa, Križevci (Z-2078)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2078",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2079": {
+      "title": "Registar kulturnih dobara RH: Crkva Majke Božje Koruške, Križevci (Z-2079)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2079",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2183": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Florijana, Križevci (Z-2183)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2183",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2215": {
+      "title": "Registar kulturnih dobara RH: Crkva Uznesenja Blažene Djevice Marije, Donja Glogovnica (Z-2215)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2215",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2311": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Petra i Pavla, Sveti Petar Čvrstec (Z-2311)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2311",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2455": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Brcka, Kalnik (Z-2455)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2455",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2500": {
+      "title": "Registar kulturnih dobara RH: Crkva Velikomučenika Georgija, Vojakovac (Z-2500)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2500",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-2577": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Andrije, Kamešnica (Z-2577)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-2577",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-3115": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Marije od Pohoda i župni dvor, Cirkvena (Z-3115)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-3115",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-3165": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Mihaela Arkanđela, Miholec (Z-3165)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-3165",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-3369": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Margarete, Gornji Dubovec (Z-3369)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-3369",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-3379": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Antuna i ostaci kaštela - dvorca s gospodarskim posjedom, Guščerovec (Z-3379)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-3379",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-7511": {
+      "title": "Registar kulturnih dobara RH: Župna crkva sv. Barbare, Carevdar (Z-7511)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-7511",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-7514": {
+      "title": "Registar kulturnih dobara RH: Parohijska crkva sv. Save, Križevci (Z-7514)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-7514",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-7539": {
+      "title": "Registar kulturnih dobara RH: Kapela sv. Helene, Sveta Helena (Z-7539)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-7539",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-7540": {
+      "title": "Registar kulturnih dobara RH: Crkva sv. Jurja, Đurđic (Z-7540)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-7540",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    },
+    "registar-z-7559": {
+      "title": "Registar kulturnih dobara RH: Župna crkva Presvetog Srca Isusova i sv. Ladislava, Mali Raven (Z-7559)",
+      "type": "official_registry",
+      "url": "https://registar.kulturnadobra.hr/#/details/Z-7559",
+      "note": "Zapis Ministarstva kulture i medija; korišteni su podaci o gradnji, obliku i zaštiti (stanje 9. studenoga 2026.)."
+    }
+  },
+  "items": [
+    {
+      "key": "krizevci/crkva-sv-ane",
+      "name": "Crkva sv. Ane",
+      "description": "Župna crkva sv. Ane u središtu Križevaca zajedno s nekadašnjim pavlinskim samostanom čini baroknu cjelinu. Samostanski sklop počeo se graditi 1699. godine na posjedu Ivana Zakmardija, a gradnja je zaokružena 1721. podizanjem zvonika. Crkva je jednobrodna i svođena, s užim svetištem ravnog zaključka, iza kojeg je sakristija. Masivni zvonik smješten je između crkve i samostana, u liniji pročelja, a crkva i tri samostanska krila okružuju unutarnje dvorište. Pavlini su u Križevcima više od 120 godina poučavali u osnovnoj i njemačkoj školi te u gimnaziji. Kad je car Josip II. 1786. ukinuo red, samostan je postao župni dvor, a crkva župna. Obnovu crkve projektirao je Hermann Bollé. U crkvenom inventaru su predmeti i slike iz razdoblja od gotike do rokokoa, a orgulje je 1891. izgradio Ferdo Heferer.",
+      "period": "1699.–1721.",
+      "registryNumber": "Z-2076",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Završetak gradnje: Registar navodi da je gradnja zaključena podizanjem zvonika 1721., a hr.wiki da je samostan građen od 1699. do 1741.",
+        "Nije navedeno kada je izvedena obnova prema nacrtima Hermanna Bolléa; utvrditi godinu.",
+        "Podaci o posjedu Ivana Zakmardija, pavlinskim školama i ukidanju reda 1786. potječu samo s hr.wiki, bez navedenog izvora; potvrditi u literaturi, kao i to je li Zakmardi darovao posjed ili samostan."
+      ],
+      "sources": [
+        "registar-z-2076",
+        "hrwiki-7389078"
+      ],
+      "photo": {
+        "commonsFile": "File:Saint Anna - Krizevci.jpg",
+        "sha1": "239794c24c17b4e28cd995ed266949527198fce8",
+        "alt": "Crkva sv. Ane u Križevcima: bijelo pročelje i visoki zvonik sa satom i lukovicom, u nizu kuća uz glavnu ulicu",
+        "caption": null,
+        "author": "Andres rus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Andres_rus",
+        "license": "cc-by-sa-3.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Saint_Anna_-_Krizevci.jpg"
+      },
+      "review": {
+        "tier": "A",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "krizevci/crkva-sv-kriza",
+      "name": "Crkva sv. Križa",
+      "description": "Crkva sv. Križa u Križevcima najstarija je crkva u gradu i jedna od najstarijih u kontinentalnoj Hrvatskoj. Spominje se već 1232. godine, a podignuta je izvan zidina donjega grada. Građena je u nekoliko gotičkih faza i kasnije barokno dograđena; iz najstarijeg razdoblja ostali su bočni portal iz 14. stoljeća i male monofore, dok današnji izgled potječe s kraja 15. stoljeća. Godine 1913. obnovljena je prema projektu arhitekta Stjepana Podhorskog, kao jedan od prvih spomenika u Hrvatskoj kod kojeg su obnovom ostavljeni vidljivima svi stilski slojevi. Najvrjedniji dio opreme je kasnobarokni mramorni oltar sv. Križa iz 1756., djelo kipara Francesca Robbe, koji je prenesen iz zagrebačke katedrale. Od osnutka Bjelovarsko-križevačke biskupije 2009. crkva je njezina konkatedrala.",
+      "period": "14.–20. stoljeće",
+      "registryNumber": "Z-2078",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Predaja smješta Krvavi sabor križevački (27. veljače 1397.) u ovu crkvu; to nije potvrđeno izvorom, a u crkvi je slika Otona Ivekovića s tim prizorom.",
+        "Kronologiju gradnje (spomen 1232., gotičke faze, barokna dogradnja) provjeriti u stručnoj literaturi o obnovi Stjepana Podhorskog."
+      ],
+      "sources": [
+        "registar-z-2078",
+        "hrwiki-7405319"
+      ],
+      "photo": {
+        "commonsFile": "File:Crkva sv.Križa Križevci.jpg",
+        "sha1": "3ea7bd07d458d3693dd615da8177faaa9c6ebd8b",
+        "alt": "Crkva sv. Križa u Križevcima: visoki četverokutni zvonik s okruglom stubišnom kulom i brod pod crvenim krovom",
+        "caption": null,
+        "author": "SpeedyGonsales",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:SpeedyGonsales",
+        "license": "cc-by-sa-3.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Crkva_sv.Kri%C5%BEa_Kri%C5%BEevci.jpg"
+      },
+      "review": {
+        "tier": "A",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "krizevci/katedrala-presvetog-trojstva",
+      "name": "Katedrala Presvetog Trojstva",
+      "description": "Katedrala Presvetog Trojstva u Križevcima stolna je crkva grkokatoličke Križevačke biskupije, čiji vjernici slijede bizantski obred. Prije grkokatolika u crkvi su djelovali augustinci, a zatim franjevci. Kad je papa Pio VI. 1777. osnovao Križevačku biskupiju, ta je crkva postala njezina katedrala. Prilagodba franjevačkog samostana i crkve počela je 1802., a nastavljena je 1817. prema klasicističkim nacrtima Bartola Felbingera. Klasicističko pročelje biskupskog dvora izvedeno je od 1841. do 1845., a crkva je obnovljena 1846. Temeljitu pregradnju u neogotičkim oblicima vodio je od 1895. do 1897. Hermann Bollé. Crkva je jednobrodna, s tlocrtom u obliku latinskog križa. U likovnom uređenju unutrašnjosti sudjelovali su Celestin Medović, Ivan Tišov, Bela Čikoš Sesija i Ferdo Kovačević, a ikonostas s njihovim slikama nastao je zaslugom biskupa Julija Drohobeczkog.",
+      "period": null,
+      "registryNumber": "Z-1901",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Početak prilagodbe razlikuje se: Registar navodi 1802., a hr.wiki da je crkva postupno obnavljana od 1801. godine.",
+        "Registar oslik unutrašnjosti pripisuje i J. Baueru, a hr.wiki iste slikare navodi kao autore slika na ikonostasu; utvrditi tko je radio oslik, a tko ikone.",
+        "Podatak da su crkvu prije franjevaca koristili augustinci navodi samo hr.wiki, bez datuma i izvora."
+      ],
+      "sources": [
+        "registar-z-1901",
+        "hrwiki-7405318"
+      ],
+      "photo": {
+        "commonsFile": "File:Grkokatolička katedrala u Križevcima.jpg",
+        "sha1": "c6391fc667a7eb4781acc9dcf3f52930090dbfca",
+        "alt": "Grkokatolička katedrala Presvetog Trojstva u Križevcima: pročelje s mozaikom i arkadama, zvonik sa šiljatom kapom i susjedna zgrada",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Grkokatoli%C4%8Dka_katedrala_u_Kri%C5%BEevcima.jpg"
+      },
+      "review": {
+        "tier": "A",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "krizevci/crkva-majke-bozje-koruske",
+      "name": "Crkva Majke Božje Koruške",
+      "description": "Crkva Majke Božje Koruške u Križevcima jedna je od prvih baroknih crkava u Hrvatskoj s trolisnim svetištem. To su svetište 1725. podignuli pavlini: središnji kvadratni prostor otvara se prema apsidi i dvjema bočnim kapelama, a sa sjeverne strane nalazi se sakristija. Nad središnjim prostorom je kupola s lanternom, a oslik kupole i apsidalnih konha nastao je 1726. Zajedno s pravokutnim brodom crkva ima tlocrt latinskog križa. Zvonik iznad zapadnog pročelja dodan je sedamdesetih godina 19. stoljeća. U narodu se crkva naziva i Majka Božja Žalosna, po kipu Gospe Žalosne koji je 1674. izradio varaždinski kipar Ivan Jakov Altenbach. Knjiga pavlinskog povjesničara Nikole Bengera, objavljena 1730., pridonijela je da crkva postane poznato hodočasničko odredište. Slika Svete Obitelji na glavnom oltaru pripisuje se Ivanu Krstitelju Rangeru. Od 2004. župna je crkva župe Blažene Djevice Marije i sv. Marka Križevčanina.",
+      "period": "1725.",
+      "registryNumber": "Z-2079",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Redoslijed gradnje razlikuje se: Registar navodi da je pravokutni brod pridružen 1872., a hr.wiki da je trotravejni brod dodan već 1715. kapelici koju je 1702. podigao župnik Juraj Janković.",
+        "Godina zvonika razlikuje se: Registar navodi 1873., a hr.wiki 1872.; prema hr.wiki i zapis o posveti novog zvonika na pročelju nosi 1872.",
+        "Atribucija slike Svete Obitelji Ivanu Krstitelju Rangeru i godina kipa Gospe Žalosne (1674.) navode se samo na hr.wiki; potvrditi u literaturi koju članak navodi."
+      ],
+      "sources": [
+        "registar-z-2079",
+        "hrwiki-7328986"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "krizevci/crkva-sv-florijana",
+      "name": "Crkva sv. Florijana",
+      "description": "Crkva sv. Florijana u Križevcima mala je zavjetna barokna građevina u središtu grada, podignuta 1735. u čast zaštitnika vatrogasaca. Iako je po veličini najskromnija među križevačkim crkvama, po likovnoj se kvaliteti smatra najvrjednijom. Kasnobarokno oblikovanje najviše dolazi do izražaja izvana, osobito na zvoniku na zapadnom pročelju. Maleno pročelje konveksno je izvijeno, a sa svake strane vrata raščlanjuju ga po tri pilastra u nejednakom ritmu. Pročelje nosi i kip sveca, nastao u 18. stoljeću. Sliku sv. Florijana na glavnom oltaru naslikao je 1738. Ivan Ranger, a prate je kipovi svetih Pavla i Ivana. Crkva je obnavljana 1751. i 1937. godine. Nalazi se uz cestu, nasuprot zgradi pošte.",
+      "period": "1735.",
+      "registryNumber": "Z-2183",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Naziv i vrsta: Registar je vodi kao crkvu, hr.wiki kao kapelu, a inventar ima naziv »crkva« i kategoriju »kapela«.",
+        "Godine obnove razlikuju se: Registar navodi obnove 1751. i 1937., a hr.wiki popravak 1735. (vjerojatno pogrešna godina) te obnovu nakon požara 1775.",
+        "Kip sv. Florijana na pročelju i atribucija oltarne slike Ivanu Rangeru (1738.) navode se samo na hr.wiki; potvrditi."
+      ],
+      "sources": [
+        "registar-z-2183",
+        "hrwiki-7328987"
+      ],
+      "photo": {
+        "commonsFile": "File:Kapela sv. Florijana u Križevcima.jpg",
+        "sha1": "81f374e8bf303e23bfdfd49bfd899960c6da2e8a",
+        "alt": "Kapela sv. Florijana u Križevcima: mala bijela građevina s crvenim krovom i zvonikom nad pročeljem, uz ulicu i jablanove",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kapela_sv._Florijana_u_Kri%C5%BEevcima.jpg"
+      },
+      "review": {
+        "tier": "A",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": [
+          "The register's name is 'Crkva sv. Florijana', but the inventory category is 'chapel' and hr.wiki calls it 'Kapela sv. Florijana'. Decide which name and category the site should use."
+        ]
+      }
+    },
+    {
+      "key": "krizevci/kapela-sv-marka-krizevcanina",
+      "name": "Kapela sv. Marka Križevčanina",
+      "description": "Kapela sv. Marka Križevčanina stoji u Gornjem gradu Križevaca, uz glavnu cestu prema Kalničkom prigorju. Podignuta je u 17. stoljeću u ranobaroknom slogu, a ima naznaka da je na istom mjestu ranije postojala srednjovjekovna crkva. Izvorno je bila posvećena sv. Ladislavu, čije je ime nosila do devedesetih godina 20. stoljeća. Danas joj je titular sv. Marko Križevčanin, zaštitnik grada, kojega je papa Ivan Pavao II. kanonizirao 1995. godine. Najstariji je dio pravokutni brod, uz koji je trostrano zaključeno svetište, a zvonik je na zapadnom pročelju. Brod je nekad imao oslikani tabulat, a od svetišta ga je dijelio polukružni trijumfalni luk. Između 1731. i 1735. brod je dobio križni svod u dva traveja, a trijumfalni luk novi oblik. Današnja vanjština oblikovana je u 19. stoljeću. Sliku sv. Marka na glavnom oltaru, postavljenu nakon obnove 1993., naslikao je križevački slikar Zoran Homen.",
+      "period": "17. stoljeće",
+      "registryNumber": "Z-2075",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Naziv i vrsta: Registar je vodi kao crkvu, a hr.wiki i inventar kao kapelu.",
+        "hr.wiki navodi i gotička obilježja, a Registar samo ranobarokne stilske oznake; provjeriti ima li gotičkih elemenata.",
+        "Točnu godinu promjene titulara sa sv. Ladislava na sv. Marka Križevčanina treba utvrditi; hr.wiki navodi samo »90-ih godina 20. stoljeća«."
+      ],
+      "sources": [
+        "registar-z-2075",
+        "hrwiki-7552372"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": [
+          "The register's name is 'Crkva sv. Marka Križevčanina', while the inventory and hr.wiki use 'Kapela'. Decide which name and category the site should use."
+        ]
+      }
+    },
+    {
+      "key": "krizevci/crkva-sv-save",
+      "name": "Crkva sv. Save",
+      "description": "Pravoslavna parohijska crkva sv. Save u Križevcima podignuta je 1904., a projekt je izradio Odsjek za građevinarstvo zemaljske vlade. Smještena je u središtu grada, na travnatom trgu koji je nastao nakon uklanjanja jugozapadnog kutnog bastiona zemljane utvrde Križevaca. Građevina je jednobrodna, s užim poligonalnim svetištem, a os joj se pruža u smjeru istok–zapad. Pročelja su oblikovana u klasicističkom duhu. Autor ikonostasa iz 1938. godine je Miljenko Gjurić. Ikone su raspoređene u dva reda i naslikane na zlatnoj podlozi u bizantskoj tradiciji. Iznad prizora drugog reda nalaze se manje ikone s lučnim završetkom, na kojima su poprsja svetaca, a u sredini je Sveto Trojstvo.",
+      "period": "1904.",
+      "registryNumber": "Z-7514",
+      "heritageStatus": "protected",
+      "researchNotes": [],
+      "sources": [
+        "registar-z-7514"
+      ],
+      "photo": {
+        "commonsFile": "File:Crkva sv. Save.jpg",
+        "sha1": "023e3d961aa39eaab11e8e0b4311fb20ef082d97",
+        "alt": "Pravoslavna crkva sv. Save u Križevcima: žuto pročelje sa zvonikom i lukovicom, između stabala",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Crkva_sv._Save.jpg"
+      },
+      "review": {
+        "tier": "B",
+        "basis": [
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "apatovec/crkva-sv-petra",
+      "name": "Crkva sv. Petra",
+      "description": "Crkva sv. Petra u Apatovcu datira se u 19. stoljeće. Vanjske zidne plohe crkve raščlanjene su prozorima polukružnog zaključka, a između prozora postavljeni su jednostavni kontrafori. U unutrašnjosti su i brod i svetište nadsvođeni nizom čeških kapa, a svodna polja međusobno dijele pojasnice koje nose bočni polustupovi. Apsida je nadsvođena kalotom. Oslik unutrašnjosti figuralan je samo na rubnim dijelovima svodnih polja, gdje su naslikani anđeli, dok su ostale površine oslikane dekorativno.",
+      "period": "19. stoljeće",
+      "registryNumber": "Z-1781",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Registar građevinu naziva crkvom, a hu.wiki kapelom; provjeriti je li riječ o crkvi ili kapeli.",
+        "Samo hu.wiki navodi srednjovjekovno podrijetlo crkve te da je u vizitacijama 18. stoljeća zabilježena kao kapela sv. Helene; potvrditi u izvornim izvorima.",
+        "Samo hu.wiki navodi da je crkva teško stradala 1643. u napadu generala Bergera; potvrditi.",
+        "Oltar iz 1653. godine spominje se samo u hu.wiki; provjeriti na terenu i u izvornom izvoru."
+      ],
+      "sources": [
+        "registar-z-1781"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "huwiki",
+          "inventory",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "The inventory also lists 'Kapela sv. Petra (starija kapela sv. Helene)' in Apatovec. hu.wiki says this St Peter church appears as a St Helena chapel in 18th-century visitations, so the two records may describe the same building. Decide whether to merge them or keep both."
+        ]
+      }
+    },
+    {
+      "key": "carevdar/crkva-sv-barbare",
+      "name": "Crkva sv. Barbare",
+      "description": "Župna crkva sv. Barbare u Carevdaru sagrađena je od 1834. do 1838. godine u središtu naselja, istočno od ceste Križevci – Koprivnica. Prije nje u Oslovici, kako se Carevdar ranije zvao, stajala je drvena kapela sv. Barbare usred vinograda, koju crkvene vizitacije bilježe od 1704. i kroz cijelo 18. stoljeće. Za gradnju nove crkve odlučilo se 1833. godine, a znatnu je pomoć dao car Ferdinand I., u čiju je čast naselje preimenovano u Carevdar. Zidana i pravilno orijentirana, crkva tlocrtom pripada tipu vojnokrajiških crkava 18. i 19. stoljeća: jednobrodna je, s nešto užim svetištem kvadratičnog tlocrta i polukružnog zaključka, prizemnom sakristijom uz južni zid svetišta i zvonikom u osi glavnog pročelja. Stilski je klasicistička, ali unutrašnjost pokazuje izražene barokne reminiscencije: brod ritmiziraju pilastri konkavnih linija, pa prostor djeluje dinamično, slično kasnobaroknim dvoranskim crkvama. Ubraja se među značajne crkve 19. stoljeća na križevačkom području.",
+      "period": "1834.–1838.",
+      "registryNumber": "Z-7511",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Godina preimenovanja Oslovice u Carevdar (1836.) navodi se samo u hu.wiki; potvrditi.",
+        "Samo hu.wiki navodi da je nova crkva podignuta na mjestu stare drvene kapele; provjeriti je li riječ o istom mjestu."
+      ],
+      "sources": [
+        "registar-z-7511"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "huwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "donja-glogovnica/crkva-uznesenja-blazene-djevice-marije",
+      "name": "Crkva Uznesenja Blažene Djevice Marije",
+      "description": "Crkva Uznesenja Blažene Djevice Marije u Donjoj Glogovnici pripada rijetkim dvobrodnim crkvama romaničkog podrijetla. Krajem 15. stoljeća dograđena je u gotičkim oblicima, a u 18. i 19. stoljeću na njoj su izvedeni novi zahvati, pa se u građevini mogu razlučiti slojevi od romanike do 19. stoljeća. Crkva je pravokutnog tlocrta s dva broda, a na brodove se nastavlja uže svetište poligonalnog zaključka, poduprto kontraforima. Pred glavnim pročeljem uzdiže se osmerokutni zvonik. Vrijedna je i barokna oprema crkve.",
+      "period": "15.–19. stoljeće",
+      "registryNumber": "Z-2215",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Faze gradnje razlikuju se: Registar navodi romaničku jezgru, gotičku dogradnju s kraja 15. stoljeća i zahvate u 18. i 19. stoljeću, a hu.wiki da su današnju crkvu u 17. stoljeću podigli isusovci.",
+        "Prema hu.wiki prethodnica crkve spominje se 1230. godine u papinskoj ispravi; potvrditi u izvornom izvoru.",
+        "Samo hu.wiki spominje ostatke srednjovjekovnog samostana uz crkvu te nalaze iz 13. stoljeća i apsidu starije crkve otkrivene iskopavanjima 1990-ih; provjeriti.",
+        "Barokni inventar treba popisati; hu.wiki spominje četiri oltara iz 17. i 18. stoljeća, propovjedaonicu iz druge polovice 17. stoljeća i zvonik iz druge polovice 19. stoljeća.",
+        "hu.wiki crkvu naziva župnom; provjeriti njezin današnji status."
+      ],
+      "sources": [
+        "registar-z-2215"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "huwiki",
+          "inventory",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "djurdjic/crkva-sv-jurja",
+      "name": "Crkva sv. Jurja",
+      "description": "Župna crkva sv. Jurja u Đurđicu podignuta je u baroku, početkom 18. stoljeća. Nastala je na mjestu starije zgrade s početka 16. stoljeća, a od nje se do danas sačuvalo prizemlje zvonika. Pri baroknoj gradnji zatečeni dijelovi starije građevine, koji su imali obrambena obilježja, uklopljeni su u novu crkvu, a ta su obilježja u novim dijelovima ponovljena, ali više nisu imala obrambenu, nego ukrasnu namjenu. Upravo po tome crkva ima važno mjesto među baroknim građevinama središnje Hrvatske.",
+      "period": "16.–19. stoljeće",
+      "registryNumber": "Z-7540",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Datacija u Registru seže do 19. stoljeća, a opis ne navodi zahvate iz tog vremena; provjeriti kasnije faze gradnje.",
+        "Utvrditi koja su točno obrambena obilježja starije građevine ponovljena u baroknoj gradnji.",
+        "Za unutrašnjost i opremu crkve nema podataka; potreban je dodatni izvor ili terenski obilazak."
+      ],
+      "sources": [
+        "registar-z-7540"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "erdovec/crkva-sv-katarine",
+      "name": "Crkva sv. Katarine",
+      "description": "Crkva sv. Katarine u Erdovcu historicistička je kapela iz prve polovice 20. stoljeća. Sagrađena je preko puta starije drvene kapele posvećene istoj svetici, koja je uklonjena oko 1935. godine. Stilski spaja neogotičke i neobarokne osobine. Pravokutni brod otvara se trijumfalnim lukom prema užem svetištu, koje ima jedan nadsvođeni travej i kalotu nad poligonalnim zaključkom. Uz svetište je prigrađena mala sakristija. Građevina je upisana kao zaštićeno kulturno dobro 2004. godine.",
+      "period": "prva polovica 20. stoljeća",
+      "registryNumber": "Z-1899",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Prema mađarskoj Wikipediji u kapeli su sačuvana dva barokna oltara, oltar sv. Vida iz 17. stoljeća i oltar sv. Marije Magdalene iz 1735.; podatak potvrditi.",
+        "Registar građevinu naziva kapelom, a popis crkvom; provjeriti koji naziv koristi župa."
+      ],
+      "sources": [
+        "registar-z-1899"
+      ],
+      "photo": {
+        "commonsFile": "File:Erdovec.jpg",
+        "sha1": "2606785d2749b35eb38fc96c470e7cc4e98e08b8",
+        "alt": "Crkva sv. Katarine u Erdovcu: žuta crkva s crvenim krovom i zvonikom s lukovicom, uz vinograd i cestu",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Erdovec.jpg"
+      },
+      "review": {
+        "tier": "B",
+        "basis": [
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "The register calls it a chapel (kapela) while the atlas item is named 'Crkva sv. Katarine'. Keep the name, or rename to 'Kapela sv. Katarine'? The description says 'historicistička kapela'."
+        ]
+      }
+    },
+    {
+      "key": "gornji-dubovec/crkva-sv-margarete",
+      "name": "Crkva sv. Margarete",
+      "description": "Crkva sv. Margarete u Gornjem Dubovcu izvorno je kasnogotička građevina koja je u 18. stoljeću barokizirana. Od starije crkve, nastale na prijelazu iz 15. u 16. stoljeće, sačuvani su obodni zidovi poligonalnog svetišta, poduprti kontraforima. Sakristija se nalazi uz sjevernu stranu svetišta, a datira je godina 1763., zabilježena na kamenom portalu u svetištu. Nešto kasnije, od 1780. do 1788. godine, crkva je obnovljena u kasnobaroknom duhu: tada je nadsvođena i dobila je novi zvonik.",
+      "period": "15.–19. stoljeće",
+      "registryNumber": "Z-3369",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Samo hu.wiki navodi da je crkva župna i posvećena sv. Margareti Antiohijskoj; potvrditi status i titular.",
+        "Datacija u Registru seže do 19. stoljeća, a opis ne navodi radove nakon 1788.; provjeriti zahvate iz 19. stoljeća."
+      ],
+      "sources": [
+        "registar-z-3369"
+      ],
+      "photo": {
+        "commonsFile": "File:Dubovec.jpg",
+        "sha1": "29f5ff2c3420231cc857be51d88d3419df6bd0ca",
+        "alt": "Zvonik i krov crkve sv. Margarete u Gornjem Dubovcu iznad krošanja šume",
+        "caption": "Pogled izdaleka",
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dubovec.jpg"
+      },
+      "review": {
+        "tier": "B",
+        "basis": [
+          "huwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "Commons File:Dubovec.jpg (Fraxinus, 2017, CC BY-SA 4.0) is described as 'St. Margarete Church in Dubovec'. The dedication matches, but the file names only 'Dubovec', not Gornji Dubovec. Confirm it shows this church before using it."
+        ]
+      }
+    },
+    {
+      "key": "mali-raven/zupna-crkva-presvetog-srca-isusova-i-sv-ladislava",
+      "name": "Župna crkva Presvetog Srca Isusova i sv. Ladislava",
+      "description": "Župna crkva Presvetog Srca Isusova i sv. Ladislava u Malom Ravnu podignuta je ondje gdje je prije stajala drvena kapela, spomenuta već 1369. godine. Iz 15. stoljeća potječu bočni zidovi broda i kvadratičnog svetišta, a nad svetištem je kasnogotički zvjezdasti svod iz istog razdoblja. Početkom 19. stoljeća crkva je obnovljena u stilu baroknog klasicizma, kada su izvedeni glavno pročelje sa zvonikom, svod nad brodom i apsidiola uz svetište, a prigrađene su i bočna kapela te sakristija. Danas je to jednobrodna građevina s kvadratičnim svetištem koje završava polukružnom apsidiolom.",
+      "period": "14.–19. stoljeće",
+      "registryNumber": "Z-7559",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "hu.wiki kao titulara navodi samo sv. Ladislava, a Registar Presveto Srce Isusovo i sv. Ladislava; provjeriti današnji titular.",
+        "Registar spominje jednu bočnu kapelu, a hu.wiki bočne kapele u množini; provjeriti na terenu.",
+        "Stil obnove s početka 19. stoljeća Registar opisuje kao barokni klasicizam, a hu.wiki kao barok; provjeriti."
+      ],
+      "sources": [
+        "registar-z-7559"
+      ],
+      "photo": {
+        "commonsFile": "File:Mali Raven.jpg",
+        "sha1": "13738ee8527bc6bf4fe25c5a17f9118aa410b944",
+        "alt": "Župna crkva Presvetog Srca Isusova i sv. Ladislava u Malom Ravnu: pročelje sa zvonikom i lukovicom te nadstrešnicom nad ulazom",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mali_Raven.jpg"
+      },
+      "review": {
+        "tier": "B",
+        "basis": [
+          "huwiki",
+          "inventory",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "osijek-vojakovacki/crkva-sv-nikolaja",
+      "name": "Crkva sv. Nikolaja",
+      "description": "Pravoslavna crkva sv. Nikolaja u Osijeku Vojakovačkom, filijalna kapela posvećena sv. Ocu Nikolaju, sagrađena je 1763. godine. Jednobrodna je građevina pravokutnog tlocrta, zaključena plitkom poligonalnom apsidom. Zvonik se uzdiže nad glavnim pročeljem, a pred glavnim ulazom nalazi se trijem. Unutrašnjost čine dva traveja nadsvođena češkim kapama. Crkva je kao zaštićeno kulturno dobro upisana 2004. godine.",
+      "period": "1763.",
+      "registryNumber": "Z-1782",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Godinu gradnje 1763. potvrđuje Registar kulturnih dobara; o unutrašnjem uređenju i ikonostasu nema podataka u izvorima."
+      ],
+      "sources": [
+        "registar-z-1782"
+      ],
+      "photo": {
+        "commonsFile": "File:Crkva Svetog Nikolaja.jpg",
+        "sha1": "162b3141730e79ed96773adc886c06c966d3d984",
+        "alt": "Pravoslavna crkva sv. Nikolaja u Osijeku Vojakovačkom: bijela crkva s crvenim krovom i zvonikom nad pročeljem, među stablima",
+        "caption": null,
+        "author": "Rajko Rajković",
+        "authorUrl": null,
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Crkva_Svetog_Nikolaja.jpg"
+      },
+      "review": {
+        "tier": "B",
+        "basis": [
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "sveta-helena/kapela-sv-helene",
+      "name": "Kapela sv. Helene",
+      "description": "Kapela sv. Helene u Svetoj Heleni gotička je građevina koja je kasnije barokizirana. Jednobrodna je i pravokutnog tlocrta, sa svetištem kvadratnog zaključka uz koje je sakristija, dok se zvonik nalazi uz glavno pročelje. Iz gotičkog razdoblja sačuvani su dovratnici na glavnom pročelju i na ulazu u sakristiju, trijumfalni luk, zidna kustodija u svetištu te križni svod svetišta, oslonjen na konzole geometrijskih oblika. Nad lađom je drveni strop. Većina opreme nastala je u 17. i 18. stoljeću.",
+      "period": "14.–18. stoljeće",
+      "registryNumber": "Z-7539",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Titular nije usklađen: Registar je vodi kao kapelu sv. Helene, a jedina fotografija na Commonsu kao crkvu sv. Vida; provjeriti na terenu.",
+        "Registar građevinu datira od 14. do 18. stoljeća, ali ne navodi kada su izvedene gotička gradnja i barokizacija."
+      ],
+      "sources": [
+        "registar-z-7539"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "B",
+        "basis": [
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "Dedication/identity: the register (Z-7539) names this building 'Kapela sv. Helene', but the only Commons photo (File:Crkva sv. Vida u Svetoj Heleni.jpg, Fraxinus, 2017) calls it St. Vitus Church. Decide whether the photo shows this building or a different one, and which dedication the site should use."
+        ]
+      }
+    },
+    {
+      "key": "vojakovac/crkva-sv-velikomucenika-georgija",
+      "name": "Crkva sv. Velikomučenika Georgija",
+      "description": "Pravoslavna crkva sv. velikomučenika Georgija u Vojakovcu sagrađena je sredinom 18. stoljeća. Pravokutnog je tlocrta, s izduženim polukružnim svetištem i trokatnim zvonikom nad ulazom. Unutrašnjost pokrivaju češki kupolasti svodovi, koje nose široki pojasnici oslonjeni na snažne pilastre skošenih uglova. Vanjska pročelja raščlanjena su plitkim pilastrima, a zvonik plitkim vodoravnim i okomitim lezenama. Zvonik je izvorno imao baroknu lukovicu, a danas ga zaključuje šiljata kapa. Nad bočnim ulazom stoji trijem s dva zidana stupa i dvostrešnim krovićem.",
+      "period": "sredina 18. stoljeća",
+      "registryNumber": "Z-2500",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Registar ne opisuje ikonostas ni unutrašnje uređenje; potražiti restauratorsku dokumentaciju."
+      ],
+      "sources": [
+        "registar-z-2500"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "rusevac/crkva-predragocjene-krvi-kristove",
+      "name": "Crkva Predragocjene Krvi Kristove",
+      "description": null,
+      "period": null,
+      "registryNumber": null,
+      "heritageStatus": null,
+      "researchNotes": [
+        "Za ovu crkvu još nema izvora za opis; potrebni su podaci župe, lokalna literatura ili terenski obilazak.",
+        "Oznaka preventivne zaštite P-4821 ne nalazi se u aktualnom Registru kulturnih dobara; provjeriti je li zaštita istekla."
+      ],
+      "sources": [],
+      "photo": null,
+      "review": {
+        "tier": "F",
+        "basis": [
+          "inventory"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "No description source exists: P-4821 is not in the current register (preventive protection probably lapsed), and there is no hr.wiki or Wikidata entry, no hu.wiki village section and no Commons photo. Decide whether to keep the record without a description and seek a parish/local source or a field visit.",
+          "Decide whether to keep 'P-4821' as the registryNumber, or clear it or mark it as lapsed."
+        ]
+      }
+    },
+    {
+      "key": "kalnik/crkva-sv-brcka",
+      "name": "Crkva sv. Brcka",
+      "description": "Župna crkva sv. Brcka u Kalniku, podno Staroga grada Velikog Kalnika, ima istaknuto mjesto u hrvatskoj sakralnoj baštini zbog slojevite gradnje od 14. do 19. stoljeća. Brod i svetište iste su širine i tvore izduženi pravokutni prostor, a uz južnu stranu svetišta diže se masivni zvonik-kula. Najizraženija je gotička faza, kojoj pripadaju rebrasti svodovi i zaglavni kamenovi. Posebnu vrijednost imaju zidne slike: starije iz 14. stoljeća na sjevernom zidu te vrlo kvalitetne kasnogotičke freske iz 16. stoljeća, među kojima su prizor smrti sv. Petra Veronskog i Presveto Trojstvo prikazano kao jedna glava s tri lica. U 18. stoljeću crkva je barokizirana, a u 19. stoljeću još je dvaput obnavljana. Od opreme se ističu barokni bočni oltar sv. Valentina sa spiralnim stupovima i orgulje Josipa Erhatića iz 1912.",
+      "period": "14.–19. stoljeće",
+      "registryNumber": "Z-2455",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Godine obnove razlikuju se: hr.wikipedija navodi 1757. i 1805. te još nekoliko obnova, a Registar barokizaciju u 18. i dvije obnove u 19. stoljeću.",
+        "Smještaj kasnogotičkih fresaka nije usklađen: Registar ih navodi u brodu, hr.wikipedija iza i iznad glavnog oltara.",
+        "Prema hr.wikipediji crkva je župna od 1509., a donatori su bili vlasnici Velikog Kalnika i kralj Ludovik I. Anžuvinac; potvrditi u literaturi."
+      ],
+      "sources": [
+        "registar-z-2455",
+        "hrwiki-7588988"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": [
+          "No free photo exists on Commons; the item stays without a photo until one is taken or the Ministry grants use of its register photo."
+        ]
+      }
+    },
+    {
+      "key": "kamesnica/crkva-sv-andrije",
+      "name": "Crkva sv. Andrije",
+      "description": "Crkva sv. Andrije u Kamešnici kamena je gotička crkva iz 14. stoljeća. Godine 1377. posvetio ju je Mihael, generalni vikar zagrebačke biskupije i naslovni skradinski biskup, na molbu kalničkog župnika Stjepana; isprava o tome čuva se u Nadbiskupskom arhivu u Zagrebu. Uz manje izmjene iz 18. stoljeća gotovo je u cijelosti zadržala izvorni gotički izgled i ubraja se među rijetke takve građevine u sjeverozapadnoj Hrvatskoj. Pravokutni brod ima strop, a uže i niže pravokutno svetište presvođeno je baroknim križnim svodom. Strmi dvostrešni krov nekoć je imao pokrov od šindre, a danas je pokriven crijepom. Iz vremena gradnje potječu gotički portali, prozor i slavoluk, zatim rozeta, kameno svetohranište i piramidalna konzola u kutu svetišta. Iza svetišta otkriveni su temelji polukružnog oblika, koji upućuju na to da je ondje možda stajala starija crkva.",
+      "period": "1377.",
+      "registryNumber": "Z-2577",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Registar navodi da je crkva sagrađena 1377., a hr.wiki da je te godine posvećena; provjeriti odnosi li se 1377. na gradnju ili na posvetu.",
+        "Starija crkva na istom mjestu zasad je samo pretpostavka na temelju polukružnih temelja iza svetišta; provjeriti rezultate istraživanja."
+      ],
+      "sources": [
+        "registar-z-2577",
+        "hrwiki-5802789"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": true,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "gornja-rijeka/crkva-uznesenja-blazene-djevice-marije",
+      "name": "Crkva Uznesenja Blažene Djevice Marije",
+      "description": "Župna crkva Uznesenja Blažene Djevice Marije u Gornjoj Rijeci smještena je u središtu mjesta. Kamena je građevina gotičkog podrijetla, a obilježava je velik gotički zvonik-kula s kraja 15. ili početka 16. stoljeća. Po uzoru na njega oblikovani su i drugi zvonici kalničkog i križevačkog kraja. Baroknom pregradnjom crkva je dobila neuobičajen dvobrodni prostor, koji je nestao pri posljednjoj adaptaciji krajem 19. stoljeća. Nakon uklanjanja svodova brod i kapelu pokriva strop, a nad pravokutnim svetištem je križni svod. Glavni oltar nosi sliku Uznesenja Blažene Djevice Marije te kipove sv. Ćirila i Metoda i sv. Petra i Pavla. Unutra se nalaze nadgrobne ploče Sidonije Erdődy Rubido, prve hrvatske operne pjevačice, i njezine obitelji te ploča Ivana pl. Zidarića Sudovečkog. U zid zvonika ugrađen je grb obitelji Erdődy–Zichy.",
+      "period": "14.–19. stoljeće",
+      "registryNumber": "Z-2073",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "hr.wiki bez navedenog izvora tvrdi da se crkva prvi put spominje 1240., a Registar građevinu datira od 14. stoljeća; potvrditi godinu prvog spomena.",
+        "Da je zvonik bio uzor drugim zvonicima kalničkog i križevačkog kraja navodi samo hr.wiki; potvrditi u literaturi.",
+        "hr.wiki opisuje grb Erdődy–Zichy na zvoniku kao jedan od najljepših primjera hrvatske heraldike; provjeriti u stručnoj literaturi."
+      ],
+      "sources": [
+        "registar-z-2073",
+        "hrwiki-7588949"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "dropkovec/crkva-sv-franje-ksaverskog",
+      "name": "Crkva sv. Franje Ksaverskog",
+      "description": "Crkva sv. Franje Ksaverskog u Dropkovcu barokna je građevina podignuta između 1769. i 1771. godine, a djelomično je izmijenjena pri obnovi u prvoj polovici 19. stoljeća. Arhitektonski je osobita po tlocrtu i prostornom rješenju. Središnji prostor kružnog je tlocrta i nadsvođen kupolom koja počiva na pandantivima. Na njega se nadovezuju pravokutno svetište sa zaobljenom apsidom i pravokutni narteks blago zaobljenih uglova. Zajedno sa župnom crkvom u Daruvaru, crkva u Dropkovcu prvi je primjer takvog arhitektonskog oblika.",
+      "period": "1769.–1771.",
+      "registryNumber": "Z-2077",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "U tekstu Registra građevina se naziva kapelom, a u naslovu upisa i u popisu crkvom; provjeriti njezin današnji status.",
+        "hu.wiki navodi da je crkva podignuta na mjestu drvene kapele spomenute 1704., da je zvonik dograđen 1832. i da je pokrov od šindre kasnije zamijenjen limom; potvrditi u izvornom izvoru.",
+        "hu.wiki navodi glavni oltar iz 1740., bočne oltare iz 18. stoljeća pripisane Altenbachu i orgulje iz radionice Jeremić iz 1833.; potvrditi."
+      ],
+      "sources": [
+        "registar-z-2077"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "The register text calls the building a chapel ('Kapela je sagrađena 1769-1771.') while the register title, the inventory and hu.wiki call it a church; decide which term the site uses."
+        ]
+      }
+    },
+    {
+      "key": "sveti-petar-orehovec/crkva-sv-petra",
+      "name": "Crkva sv. Petra",
+      "description": "Župna crkva sv. Petra u Svetom Petru Orehovcu, po kojoj je mjesto nazvano, stoji na uzvišenju u središtu naselja. Prvi poznati spomen potječe iz 1334. godine, kada je navedena u popisu župa zagrebačke biskupije. Današnja kasnobarokna kamena građevina nastala je u razdoblju 1771.–1779., zamijenivši stariju crkvu sa svođenim svetištem i tabulatom u brodu. Od starije crkve sačuvan je dio pročelja sa šiljatolučnim gotičkim kamenim portalom. Crkva ima pravokutni brod i uže svetište kvadratnog tlocrta, zaključeno plitkom segmentnom apsidom. Prostor crkve nadsvođen je češkim svodom, a apsida kalotom. Kipovi apostola Petra i Pavla na glavnom oltaru potječu s kraja 19. stoljeća, a na desnom je oltaru barokna slika Poklonstva kraljeva. Zvonik se srušio tijekom obnove 2001. godine, a obnovljen je 2005.",
+      "period": "14.–19. stoljeće",
+      "registryNumber": "Z-1900",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Godina gradnje orgulja razlikuje se unutar hr.wiki članka: u opisu 1912., a u odjeljku o orguljama 1911. (Josip Erhatić); provjeriti.",
+        "Raniji opis u popisu spominje oštećenja nakon potresa 2020.; provjeriti današnje stanje crkve."
+      ],
+      "sources": [
+        "registar-z-1900",
+        "hrwiki-7363925"
+      ],
+      "photo": {
+        "commonsFile": "File:Orehovec.jpg",
+        "sha1": "f7742c5e501383753c31fcbbbd0a9211671f7851",
+        "alt": "Crkva sv. Petra u Svetom Petru Orehovcu: bijeli zvonik i crveni krov iznad kuća i stabala",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Orehovec.jpg"
+      },
+      "review": {
+        "tier": "A",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "guscerovec/crkva-sv-antuna",
+      "name": "Crkva sv. Antuna",
+      "description": "Crkva sv. Antuna u Guščerovcu klasicistička je građevina podignuta 1822. godine. Tlocrt joj čine pravokutni brod i jednako široko svetište s polukružnim zaključkom. Sakristija se nalazi uz sjevernu stranu svetišta, a 1913. godine uz nju je dograđen svećenički stan. Zvonik pred zapadnim pročeljem dodan je kasnije, tek 1881. godine. Unutrašnji prostor crkve nadsvođen je češkim svodovima. Kao kulturno dobro zaštićena je zajedno s ostacima nekadašnjeg kaštela, odnosno dvorca, i gospodarskim posjedom.",
+      "period": "1822.",
+      "registryNumber": "Z-3379",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Registar navodi da je crkva sagrađena 1822., a hu.wiki da je tada obnovom starije crkve dobila današnji oblik, uz potporu grofice Eleonore Patačić (hu.wiki: Patacsich); provjeriti je li riječ o novogradnji ili obnovi.",
+        "hu.wiki navodi da je crkva posvećena sv. Antunu Padovanskom, da je izvorno bila kapela kaštela i da se spominje već 1343.; potvrditi u izvornom izvoru.",
+        "Prema hu.wiki crkva je do 1704. bila sjedište samostalne župe, a tada je pripojena župi u Orehovcu; provjeriti.",
+        "hu.wiki navodi da je srednjovjekovna crkva bila posvećena sv. Ireni i da je stradala u tursko doba; provjeriti titular starije crkve.",
+        "hu.wiki navodi da su u crkvi pokopane grofica Eleonora Patačić i njezina majka Katarina Keglević; provjeriti."
+      ],
+      "sources": [
+        "registar-z-3379"
+      ],
+      "photo": {
+        "commonsFile": "File:Guscerovec sv. Antun.jpg",
+        "sha1": "bdbc0f7b4847cd2f1797d1c2a9bb018fa9953591",
+        "alt": "Crkva sv. Antuna u Guščerovcu: svijetlo pročelje sa zvonikom nad ulazom, iza ograde",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Guscerovec_sv._Antun.jpg"
+      },
+      "review": {
+        "tier": "B",
+        "basis": [
+          "inventory",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "Register Z-3379 covers the church together with the remains of the castle/manor and its estate, and the castle remains are a separate inventory record. Confirm both records cite Z-3379 and link to each other."
+        ]
+      }
+    },
+    {
+      "key": "miholec/crkva-sv-mihaela-arkanela",
+      "name": "Crkva sv. Mihaela Arkanđela",
+      "description": "Župna crkva sv. Mihaela Arkanđela u Miholcu spominje se već u 13. stoljeću. Današnja građevina podignuta je u kasnoj gotici, krajem 15. i početkom 16. stoljeća, a druga velika faza gradnje, kasnobarokna, pripada 18. stoljeću. Jednobrodna je, s nešto užim kvadratnim svetištem i sakristijom uz njegovu sjevernu stranu. Kvadratni zvonik iz prve polovice 16. stoljeća s nižom poligonalnom stubišnom kulom na južnoj strani i polukružno zaključena kapela na sjevernoj daju crkvi križni tlocrt; u prizemlju zvonika uređena je kapela sv. Josipa. Unutrašnjost čuva vrijedan barokni inventar: glavni oltar sa sv. Mihaelom, kojega prate arkanđeli Rafael i Uriel, kipove sv. Petra i Pavla, četiri bočna oltara i pokaznicu s kraja 16. stoljeća. Orgulje su 1906. izgradili Josip Erhatić i sin.",
+      "period": "kraj 15.–18. stoljeće",
+      "registryNumber": "Z-3165",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Hr.wikipedija navodi da je crkva bila župna od 1334. do 1501.; provjeriti odnose li se te godine na popise župa i od kada je ponovno župna.",
+        "Prema mađarskoj Wikipediji prvi pisani spomen crkve je iz 1244., a barokna pregradnja oko 1770.; podatke potvrditi."
+      ],
+      "sources": [
+        "registar-z-3165",
+        "hrwiki-7363927"
+      ],
+      "photo": {
+        "commonsFile": "File:Crkva sv. Mihaela u Miholcu.jpg",
+        "sha1": "1c52c6b9791fb018338ecd987f8c761190feecb7",
+        "alt": "Crkva sv. Mihaela Arkanđela u Miholcu: žuto zabatno pročelje i zvonik sa šiljatom kapom",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Crkva_sv._Mihaela_u_Miholcu.jpg"
+      },
+      "review": {
+        "tier": "A",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    },
+    {
+      "key": "sveti-ivan-zabno/zupna-crkva-sv-ivana-krstitelja",
+      "name": "Župna crkva sv. Ivana Krstitelja",
+      "description": "Župna crkva sv. Ivana Krstitelja u Svetom Ivanu Žabnu stoji usred mjesta, pokraj ceste Bjelovar – Zagreb, kod odvojka prema Križevcima. Mjesto je ime dobilo po njezinu titularu. Crkva potječe iz 14. stoljeća, a nakon višekratnih obnova današnji je izgled dobila krajem 19. stoljeća. Građena je u obliku latinskog križa. Od barokne opreme ostali su kipovi petorice svetaca i anđeo nad propovjedaonicom. Nad glavnim oltarom prikazano je Isusovo krštenje na Jordanu, a s obje strane oltara stoje kipovi apostola Petra i Pavla nastali početkom 20. stoljeća. Orgulje je 1895. izgradio Ferdo Heferer. Iza crkve, u parku, nalazi se kip sv. Ivana Nepomuka u kasnobaroknom stilu, nastao krajem 18. ili početkom 19. stoljeća, zajedno s nadgrobnim spomenicima negdašnjeg groblja. U okolici crkve otkriveni su i antički nalazi.",
+      "period": null,
+      "registryNumber": null,
+      "heritageStatus": null,
+      "researchNotes": [
+        "Crkva nije pronađena u Registru kulturnih dobara kao pojedinačno zaštićeno dobro; provjeriti status zaštite.",
+        "Jedini izvor opisa je hr.wiki bez navedenih izvora; potvrditi u literaturi podrijetlo iz 14. stoljeća i današnji izgled s kraja 19. stoljeća.",
+        "hr.wiki iznosi pretpostavku da je uz crkvu prolazila rimska cesta; provjeriti arheološke izvore."
+      ],
+      "sources": [
+        "hrwiki-7225884"
+      ],
+      "photo": {
+        "commonsFile": "File:Sveti Ivan Zabno.jpg",
+        "sha1": "2afedab616582c4cdc02cedd26259f4dd0924439",
+        "alt": "Župna crkva sv. Ivana Krstitelja u Svetom Ivanu Žabnu: bijela crkva pod sivim krovom sa zvonikom s lukovicom, iza ograde",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sveti_Ivan_Zabno.jpg"
+      },
+      "review": {
+        "tier": "A",
+        "basis": [
+          "hrwiki"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "No register entry: the description rests on hr.wiki alone, which cites no sources for the history. Decide whether to publish it before an independent source confirms the dating. Period left null for the same reason (hr.wiki gives 14th-century origin, present look late 19th century)."
+        ]
+      }
+    },
+    {
+      "key": "cirkvena/crkva-sv-marije-od-pohoda",
+      "name": "Crkva sv. Marije od Pohoda",
+      "description": "Župna crkva sv. Marije od Pohoda u Cirkveni, poznata i kao crkva Pohođenja Marijina, podignuta je između 1748. i 1760. godine na mjestu starije drvene kapele. Ubraja se u razvijeni tip barokne dvoranske crkve, nastao pod utjecajem štajerske arhitekture iz tridesetih godina 18. stoljeća. Na pravokutni brod nastavlja se uže, također pravokutno svetište s plitkom apsidom eliptoidnog oblika. Kapela sv. Josipa smještena je uz južnu stranu broda, a sakristija uz sjevernu stranu svetišta. Kvadratni zvonik s limenom lukovicom naslonjen je na sjeverni zid i poravnat sa zapadnim glavnim pročeljem. Pročelja su jednostavna i plošna, bez arhitektonske profilacije. U unutrašnjosti se nižu četiri polja baroknog križnog svoda, a apsidu zatvara polukalota. Oltari i propovjedaonica potječu iz razdoblja historicizma, a vitraje s prikazima Marijinih svetišta izradio je slovenski slikar Miha Maleš. S crkvom cjelinu čini i župni dvor iz 18. stoljeća.",
+      "period": "1748.–1760.",
+      "registryNumber": "Z-3115",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "hr.wiki navodi da je na mjestu crkve stajala drvena kapelica iz 14. stoljeća, a hu.wiki spominje župnu crkvu već 1306., 1326. i 1334.; provjeriti najstarije spomene crkve."
+      ],
+      "sources": [
+        "registar-z-3115",
+        "hrwiki-6566856"
+      ],
+      "photo": {
+        "commonsFile": "File:Crkva Cirkvena.jpg",
+        "sha1": "810512331269bf117ce9225ac3e9eb0c2f68cca2",
+        "alt": "Crkva sv. Marije od Pohoda u Cirkveni: pročelje sa zvonikom, okruglim prozorom i nadstrešnicom nad ulazom",
+        "caption": null,
+        "author": "Fraxinus",
+        "authorUrl": "https://commons.wikimedia.org/wiki/User:Fraxinus",
+        "license": "cc-by-sa-4.0",
+        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Crkva_Cirkvena.jpg"
+      },
+      "review": {
+        "tier": "A",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "Dedication naming: the register and inventory say 'sv. Marije od Pohoda', hr.wiki 'Pohođenja Marijina' (the same feast, the Visitation). The draft uses the inventory name and mentions the other; decide which form the title uses.",
+          "Register Z-3115 covers the church and the parish house together; decide whether the parish house needs its own inventory record."
+        ]
+      }
+    },
+    {
+      "key": "sveti-petar-cvrstec/crkva-sv-petra-i-pavla",
+      "name": "Crkva sv. Petra i Pavla",
+      "description": "Župna crkva sv. Petra i Pavla u Svetom Petru Čvrstecu smještena je na uzvišenju usred mjesta kojemu je dala ime. Današnja klasicistička crkva podignuta je 1821. godine na mjestu starije, koja se spominje već u 14. stoljeću. Od starije crkve preostao je jedino zvonik-kula, zidan opekom u 16. ili 17. stoljeću. Zvonik je dvaput povišen: u 18. stoljeću dobio je treći i četvrti kat, a peti mu je dodan pri gradnji nove crkve u 19. stoljeću. Crkva ima jedan brod pravokutnog tlocrta i uže, polukružno zaključeno svetište, uz čiju je južnu stranu katna sakristija, dok zvonik stoji pred zapadnim pročeljem. Brod i svetište imaju češke svodove, a apsidu zatvara polukupola. Iz Remeta su 1825. dopremljeni bočni oltari sv. Vida i sv. Križa, propovjedaonica i veliko raspelo. Kip uskrsloga Krista nad propovjedaonicom izradio je oko 1745. zagrebački kipar Josip Weinacht.",
+      "period": "16.–19. stoljeće",
+      "registryNumber": "Z-2311",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Naslov hr.wiki članka glasi Crkva sv. Petra, a njegova uvodna rečenica Crkva sv. Pavla, dok Registar navodi sv. Petra i Pavla; provjeriti titular.",
+        "Registar zvonik datira u 16./17. stoljeće, a hr.wiki u 16. stoljeće; provjeriti.",
+        "hr.wiki navodi da su kipovi glavnog oltara nabavljeni u Tirolu, ali i da je glavni oltar početkom 20. stoljeća izradio majstor Budicki iz Zagreba; razjasniti podrijetlo glavnog oltara.",
+        "hu.wiki navodi da je stara crkva srušena 1819. te da su dva oltara iz 17. stoljeća i propovjedaonica iz oko 1745. djela pavlinskih majstora; potvrditi u izvornom izvoru."
+      ],
+      "sources": [
+        "registar-z-2311",
+        "hrwiki-6741105"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "hrwiki",
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": [
+          "Dedication: the hr.wiki article title says 'Crkva sv. Petra' and its opening line 'Crkva sv. Pavla', while the register, the inventory and hu.wiki say sv. Petra i Pavla. The draft follows the register; confirm the dedication."
+        ]
+      }
+    },
+    {
+      "key": "trema/crkva-sv-julijane",
+      "name": "Crkva sv. Julijane",
+      "description": "Crkva sv. Julijane u Tremi potječe iz 16. i 17. stoljeća i ubraja se među rijetke građevine iz tog razdoblja koje su sačuvane u cijelosti. Riječ je o jednobrodnoj crkvi pravokutnog tlocrta, na koju se nastavlja uže pravokutno svetište s poligonalnom apsidom. Tijekom 17. stoljeća prostor je bio pokriven stropom, a krajem istog stoljeća strop je u svetištu zamijenjen svodom. Nad pročeljem se diže drveni zvonik. U unutrašnjosti crkva je zadržala baroknu opremu.",
+      "period": "16.–17. stoljeće",
+      "registryNumber": "RZG-0522-1969",
+      "heritageStatus": "protected",
+      "researchNotes": [
+        "Postoji samo jedan kratak izvor, bez fotografije i bez pojedinosti o povijesti i baroknoj opremi; potreban je obilazak na terenu."
+      ],
+      "sources": [
+        "registar-rzg-0522-1969"
+      ],
+      "photo": null,
+      "review": {
+        "tier": "C",
+        "basis": [
+          "register"
+        ],
+        "registryNumberWasMissing": false,
+        "openQuestions": []
+      }
+    }
+  ],
+  "notesOnly": [
+    {
+      "key": "apatovec/kapela-sv-petra-starija-kapela-sv-helene",
+      "name": "Kapela sv. Petra (starija kapela sv. Helene)",
+      "researchNotes": [
+        "Moguće je da je ovo isti objekt kao Crkva sv. Petra u Apatovcu (vizitacije iz 18. stoljeća spominju kapelu sv. Helene); zapis se ne briše niti spaja dok se to ne potvrdi na terenu."
+      ],
+      "sources": []
+    },
+    {
+      "key": "kalnik/kapela-sv-katarine",
+      "name": "Kapela sv. Katarine",
+      "researchNotes": [
+        "Moguće je da je ovo isto mjesto kao zapis „Sakralni lokalitet unutar utvrde” (ostaci kapele sv. Katarine u Starom gradu Velikom Kalniku); zapisi se ne spajaju dok se to ne potvrdi."
+      ],
+      "sources": []
+    },
+    {
+      "key": "kalnik/sakralni-lokalitet-unutar-utvrde",
+      "name": "Sakralni lokalitet unutar utvrde",
+      "researchNotes": [
+        "Moguće je da je ovo isto mjesto kao zapis „Kapela sv. Katarine” u Kalniku; zapisi se ne spajaju dok se to ne potvrdi."
+      ],
+      "sources": []
+    }
+  ]
+}
