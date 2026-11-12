@@ -536,6 +536,17 @@
       "resume": "Continue the challenge · round {round} of {rounds}",
       "waiting": "Waiting for {n} friends",
       "boardPreview": "See the leaderboard"
+    },
+    "photos": {
+      "title": "Photos",
+      "by": "Photo:",
+      "credit": "Photo: {author}, {license}",
+      "source": "source",
+      "open": "Open the larger photo: {alt}",
+      "creditsTitle": "Photo credits",
+      "creditsIntro": "Photos in the atlas are published under free licences or with the author's permission. Each lists its author, licence and source; credit them the same way when you reuse a photo.",
+      "creditsEmpty": "The atlas has no photos yet.",
+      "creditsLink": "Photo credits"
     }
   }
 }

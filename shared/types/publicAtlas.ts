@@ -37,6 +37,31 @@ export interface PublicPlaceStats {
   settlementsWithItems: number
 }
 
+/**
+ * A photo with the credit every reuse needs (TASL: title/alt, author, source, licence). URLs point at the public
+ * Storage bucket; `width` and `height` are the large copy's, so they also give the thumbnail's aspect ratio.
+ */
+export interface PublicImage {
+  url: string
+  thumbUrl: string
+  width: number
+  height: number
+  alt: string
+  caption: string | null
+  author: string
+  authorUrl: string | null
+  sourceUrl: string | null
+  /** Licence code, e.g. "cc-by-sa-4.0"; "permission" for a photo used with the author's permission */
+  license: string
+  /** "CC BY-SA 4.0", "Javno dobro", "Uz dopuštenje autora" */
+  licenseLabel: string
+  /** The licence deed; null for "permission" */
+  licenseUrl: string | null
+}
+
+/** The main photo as a card shows it, with what its one-line credit needs ("Autor, CC BY-SA 4.0"). */
+export type PublicImageThumb = Pick<PublicImage, 'width' | 'height' | 'alt' | 'author' | 'licenseLabel'> & { url: string }
+
 export interface PublicHeritageListItem {
   id: string
   slug: string
@@ -49,6 +74,8 @@ export interface PublicHeritageListItem {
   noindex: boolean
   /** Item page path; null when the item has no settlement yet */
   path: string | null
+  /** The main photo; null when the item has none */
+  thumb: PublicImageThumb | null
 }
 
 export interface PublicCredit {
@@ -124,6 +151,8 @@ export interface PublicHeritageItem extends PublicHeritageListItem {
   coordinates: { lat: number, lng: number } | null
   credits: PublicCredit[]
   sources: PublicSource[]
+  /** Photos in order; the first is the main one */
+  images: PublicImage[]
   /** "Povezane osobe": live persons linked to this item */
   persons: PublicPersonRef[]
   updatedAt: string
@@ -182,6 +211,11 @@ export interface AtlasPersonResponse {
 
 export interface AtlasHeritageItemResponse {
   item: PublicHeritageItem
+}
+
+/** GET /api/atlas/photos: every photo on the atlas with its credit, by item name ("Zasluge za fotografije"). */
+export interface AtlasPhotoCreditsResponse {
+  photos: Array<PublicImage & { item: { id: string, name: string, path: string | null } }>
 }
 
 /** Answer for an old URL (slug history): the page should redirect with 301 to `redirect`. */

@@ -1422,6 +1422,17 @@
       },
       "fromThisPlace": "Priče i običaji iz ovog mjesta",
       "fromThisPerson": "Priče i običaji"
+    },
+    "photos": {
+      "title": "Fotografije",
+      "by": "Foto:",
+      "credit": "Foto: {author}, {license}",
+      "source": "izvor",
+      "open": "Otvori veću fotografiju: {alt}",
+      "creditsTitle": "Zasluge za fotografije",
+      "creditsIntro": "Fotografije u atlasu objavljene su pod slobodnim licencijama ili uz dopuštenje autora. Uz svaku su autor, licencija i izvor; pri ponovnoj uporabi navedi ih i ti.",
+      "creditsEmpty": "U atlasu još nema fotografija.",
+      "creditsLink": "Zasluge za fotografije"
     }
   },
   "daily": {

@@ -41,4 +41,8 @@ jobs:
         run: pnpm run test
 
       - name: Challenge, daily word and content database behavior (isolated containers)
+        # These tests start the app from one production Nuxt build (test/support/nuxtServer.ts). That build,
+        # bundling the prerender server with source maps, peaks just above Node's default heap here (~2 GB).
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: node scripts/test-challenges.mjs

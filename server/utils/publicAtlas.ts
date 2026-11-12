@@ -1,5 +1,6 @@
 import type {
   AtlasHeritageListResponse,
+  AtlasPhotoCreditsResponse,
   AtlasMunicipalityResponse,
   AtlasOverviewResponse,
   AtlasPersonListResponse,
@@ -9,6 +10,8 @@ import type {
   PublicCategoryRef,
   PublicHeritageItem,
   PublicHeritageListItem,
+  PublicImage,
+  PublicImageThumb,
   PublicPerson,
   PublicPersonListItem,
   PublicPlaceStats,
@@ -196,8 +199,14 @@ export function heritageListItem(content: PublicContent, item: SnapshotItem): Pu
     locality: item.locality,
     verification: item.verification,
     noindex: item.noindex,
-    path: heritageItemPath(content, item)
+    path: heritageItemPath(content, item),
+    thumb: imageThumb(item.images[0])
   }
+}
+
+function imageThumb(image: PublicImage | undefined): PublicImageThumb | null {
+  if (!image) return null
+  return { url: image.thumbUrl, width: image.width, height: image.height, alt: image.alt, author: image.author, licenseLabel: image.licenseLabel }
 }
 
 export function heritageItemDetail(content: PublicContent, item: SnapshotItem): PublicHeritageItem {
@@ -212,8 +221,19 @@ export function heritageItemDetail(content: PublicContent, item: SnapshotItem): 
     coordinates: item.coordinates,
     credits: item.credits,
     sources: item.sourceIds.map(id => content.sources.get(id)!),
+    images: item.images,
     persons: personRefs(content, content.personsByItem.get(item.id) ?? []),
     updatedAt: item.updatedAt
+  }
+}
+
+/** Every photo of a live item, with its credit, in item-name order (the photo credits page). */
+export function photoCredits(content: PublicContent): AtlasPhotoCreditsResponse {
+  return {
+    photos: content.items.flatMap(item => item.images.map(image => ({
+      ...image,
+      item: { id: item.id, name: item.name, path: heritageItemPath(content, item) }
+    })))
   }
 }
 

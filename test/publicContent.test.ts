@@ -6,13 +6,15 @@ import {
   createSnapshotStore,
   derive
 } from '../server/utils/publicContent'
-import type { AreaRow, ItemRow, PublicContentRows } from '../server/utils/publicContent'
+import type { AreaRow, ItemImageRow, ItemRow, PublicContentRows } from '../server/utils/publicContent'
 import {
   atlasOverview,
   contentTarget,
   heritageItemDetail,
   heritageList,
+  heritageListItem,
   municipalityPage,
+  photoCredits,
   resolveContentId,
   resolveHeritageItem,
   resolveMunicipality,
@@ -140,6 +142,61 @@ describe('public content snapshot', () => {
   })
 })
 
+describe('heritage photos in the snapshot', () => {
+  const MEDIA = 'https://abc.supabase.co'
+  const file = (n: number) => `heritage/00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+  const image = (row: Partial<ItemImageRow> & Pick<ItemImageRow, 'item_id' | 'position'>): ItemImageRow => ({
+    path: `${file(row.position + 1)}.webp`, thumb_path: `${file(row.position + 1)}-thumb.webp`, width: 1600, height: 1200,
+    alt: 'Pročelje', caption: null, author: 'Ivan Horvat', author_url: null,
+    source_url: 'https://commons.wikimedia.org/wiki/File:Ana.jpg', license: 'cc-by-sa-4.0', ...row
+  })
+  const withImages = (mediaBase?: string) => buildPublicContent({
+    ...rows(),
+    itemImages: [
+      image({ item_id: ID.ana, position: 1, path: `${file(9)}.jpg`, thumb_path: `${file(9)}-thumb.jpg`, license: 'permission', source_url: null, author: 'Župa' }),
+      image({ item_id: ID.ana, position: 0, caption: 'Oko 1910.', author_url: 'https://example.com/ivan' }),
+      image({ item_id: ID.kapela, position: 0, license: 'all-rights-reserved' }),
+      image({ item_id: ID.archivedItem, position: 0 })
+    ]
+  }, { loadedAt: 0, mediaBase })
+
+  it('keeps photos in order with public URLs and the full credit, and drops unknown licences', () => {
+    const snapshot = withImages(`${MEDIA}/`)
+    const ana = heritageItemDetail(snapshot, snapshot.itemById.get(ID.ana)!)
+    expect(ana.images).toEqual([
+      {
+        url: `${MEDIA}/storage/v1/object/public/heritage-media/${file(1)}.webp`,
+        thumbUrl: `${MEDIA}/storage/v1/object/public/heritage-media/${file(1)}-thumb.webp`,
+        width: 1600, height: 1200, alt: 'Pročelje', caption: 'Oko 1910.', author: 'Ivan Horvat', authorUrl: 'https://example.com/ivan',
+        sourceUrl: 'https://commons.wikimedia.org/wiki/File:Ana.jpg', license: 'cc-by-sa-4.0', licenseLabel: 'CC BY-SA 4.0',
+        licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+      },
+      expect.objectContaining({ author: 'Župa', license: 'permission', licenseLabel: 'Uz dopuštenje autora', licenseUrl: null, sourceUrl: null })
+    ])
+    expect(snapshot.itemById.get(ID.kapela)!.images).toEqual([])
+  })
+
+  it('gives list cards the main photo as a thumbnail with its credit', () => {
+    const snapshot = withImages(MEDIA)
+    expect(heritageListItem(snapshot, snapshot.itemById.get(ID.ana)!).thumb).toEqual({
+      url: `${MEDIA}/storage/v1/object/public/heritage-media/${file(1)}-thumb.webp`,
+      width: 1600, height: 1200, alt: 'Pročelje', author: 'Ivan Horvat', licenseLabel: 'CC BY-SA 4.0'
+    })
+    expect(heritageListItem(snapshot, snapshot.itemById.get(ID.kapela)!).thumb).toBeNull()
+  })
+
+  it('lists every photo of a live item on the credits page, never one of an archived item', () => {
+    const { photos } = photoCredits(withImages(MEDIA))
+    expect(photos.map(photo => [photo.item.name, photo.author])).toEqual([['Crkva sv. Ane', 'Ivan Horvat'], ['Crkva sv. Ane', 'Župa']])
+    expect(photos[0]!.item).toEqual({ id: ID.ana, name: 'Crkva sv. Ane', path: '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane' })
+  })
+
+  it('shows no photos when the Storage URL is not configured or the table is not there yet', () => {
+    expect(withImages().itemById.get(ID.ana)!.images).toEqual([])
+    expect(content.itemById.get(ID.ana)!.images).toEqual([])
+  })
+})
+
 describe('public route resolution', () => {
   it('resolves towns and municipalities by current, old and archived slug', () => {
     expect(resolveMunicipality(content, 'grad-krizevci')).toMatchObject({ status: 'ok', value: { id: ID.town } })
@@ -210,7 +267,7 @@ describe('public atlas API shapes', () => {
       id: ID.ana, slug: 'crkva-sv-ane', name: 'Crkva sv. Ane', category: { key: 'church', label: 'Crkva' },
       municipality: { id: ID.town, slug: 'grad-krizevci', label: 'Grad Križevci' },
       settlement: { id: ID.krizevci, slug: 'krizevci', name: 'Križevci' },
-      locality: null, verification: 'verified', noindex: false, path: '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane'
+      locality: null, verification: 'verified', noindex: false, path: '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane', thumb: null
     }])
   })
 

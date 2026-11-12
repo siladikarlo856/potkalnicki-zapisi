@@ -47,7 +47,7 @@ const resource = defineAdminResource<HeritageItem, ItemForm>({
   blank: () => ({
     name: '', slug: '', categoryId: '', municipalityId: '', settlementId: null, locality: null,
     verification: 'unverified', heritageStatus: null, registryNumber: null, period: null, description: null,
-    researchNotes: '', latitude: null, longitude: null, noindex: false, sourceIds: [], status: 'published'
+    researchNotes: '', latitude: null, longitude: null, noindex: false, sourceIds: [], images: [], status: 'published'
   }),
   toForm: item => ({
     name: item.name,
@@ -66,6 +66,7 @@ const resource = defineAdminResource<HeritageItem, ItemForm>({
     longitude: item.longitude,
     noindex: item.noindex,
     sourceIds: item.sourceIds ?? [],
+    images: item.images ?? [],
     status: item.status
   }),
   validate: form => validateHeritageItem({

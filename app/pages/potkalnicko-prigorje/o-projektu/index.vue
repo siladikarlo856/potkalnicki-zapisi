@@ -82,6 +82,17 @@ function count(key: string) {
             {{ site.privacyEmail }}
           </ULink>
         </p>
+        <p
+          v-if="section === 'sources'"
+          class="text-default"
+        >
+          <ULink
+            :to="localePath('/potkalnicko-prigorje/o-projektu/fotografije')"
+            class="text-primary underline underline-offset-2"
+          >
+            {{ t('pz.photos.creditsLink') }}
+          </ULink>
+        </p>
       </section>
 
       <p class="text-sm text-dimmed">
