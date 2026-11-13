@@ -58,21 +58,22 @@
       "title": "Selected projects",
       "description": "Software, hardware and experiments — a few things I have built.",
       "all": "See all projects",
+      "press": "Press (in Croatian):",
       "soon": "Soon",
       "community": {
         "tag": "Project 1 · Community",
         "title": "Potkalnički zapisi",
         "description": "Stories, people and heritage from Potkalničko prigorje."
       },
-      "professional": {
-        "tag": "Professional",
-        "title": "Project slot 2",
-        "description": "A publicly shareable professional example — not chosen yet."
+      "faceShields": {
+        "tag": "Project 2 · Community",
+        "title": "COVID-19 3D-printed face shields (2020)",
+        "description": "With Jelena Širjan, I 3D-printed face shields from a Prusa-based model for doctors’ offices in Koprivnica, Sveti Petar Orehovec, Gornja Rijeka and Križevci in spring 2020."
       },
-      "experiment": {
-        "tag": "Experiment",
-        "title": "Project slot 3",
-        "description": "A playful technical experiment — not chosen yet."
+      "prostec": {
+        "tag": "Project 3 · Startup",
+        "title": "Prostec",
+        "description": "A college startup for livestock farms: a handheld animal ID reader and a farm-management web app. Five students from FER and the Faculty of Agriculture in Zagreb; winners of the Croatian qualifier for the University Startup World Cup 2018 and finalists in Copenhagen."
       }
     }
   },
