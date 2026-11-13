@@ -2,7 +2,7 @@
 // uses), authenticated with the review secret as a Bearer token. Dry run by default: it reads the items, the
 // sources and the Commons file pages and reports what it would change; only `apply` creates sources, uploads
 // photos and saves items. `fetchImpl` is injectable so the whole run can be exercised without a network.
-import { datasetIssues, imageValue, needsPhoto, planItem } from './plan.mjs'
+import { commonsLicense, datasetIssues, imageValue, needsPhoto, planItem } from './plan.mjs'
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php'
 const USER_AGENT = 'PotkalnickiZapisiImport/1.0 (heritage content import; https://karlo-siladi.from.hr/potkalnicko-prigorje)'
@@ -79,8 +79,7 @@ async function checkPhoto(fetchImpl, photo) {
   const large = await commonsInfo(fetchImpl, photo.commonsFile, PHOTO_SIDES.large)
   if (large.sha1 !== photo.sha1) throw new ImportError(`${photo.commonsFile}: the file changed on Commons since review (sha1 ${large.sha1})`)
   const license = String(large.extmetadata?.License?.value ?? '').toLowerCase()
-  const reviewed = photo.license === 'cc0-1.0' ? 'cc0' : photo.license
-  if (license !== reviewed) throw new ImportError(`${photo.commonsFile}: licence on Commons is now "${license}", reviewed "${photo.license}"`)
+  if (commonsLicense(license) !== photo.license) throw new ImportError(`${photo.commonsFile}: licence on Commons is now "${license}", reviewed "${photo.license}"`)
   if (large.mime !== 'image/jpeg') throw new ImportError(`${photo.commonsFile}: not a JPEG (${large.mime})`)
   return large
 }
