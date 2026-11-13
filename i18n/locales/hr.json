@@ -57,21 +57,22 @@
       "title": "Izbor projekata",
       "description": "Softver, hardver i pokoji eksperiment — dio onoga što sam napravio.",
       "all": "Svi projekti",
+      "press": "Mediji:",
       "soon": "Uskoro",
       "community": {
         "tag": "Projekt 1 · Za zajednicu",
         "title": "Potkalnički zapisi",
         "description": "Priče, ljudi i baština Potkalničkoga prigorja."
       },
-      "professional": {
-        "tag": "Posao",
-        "title": "Projekt 2",
-        "description": "Ovdje dolazi projekt iz posla koji smijem pokazati."
+      "faceShields": {
+        "tag": "Projekt 2 · Za zajednicu",
+        "title": "COVID-19: 3D-ispisani vizori (2020.)",
+        "description": "Zajedno s Jelenom Širjan 3D-ispisao sam zaštitne vizore prema Prusinu modelu za liječničke ordinacije u Koprivnici, Svetom Petru Orehovcu, Gornjoj Rijeci i Križevcima u proljeće 2020."
       },
-      "experiment": {
-        "tag": "Iz zabave",
-        "title": "Projekt 3",
-        "description": "Ovdje dolazi tehnički eksperiment iz zabave."
+      "prostec": {
+        "tag": "Projekt 3 · Startup",
+        "title": "Prostec",
+        "description": "Studentski startup za učinkovitiju proizvodnju i vođenje stočarskih farmi: ručni čitač za identifikaciju životinja i web aplikacija za upravljanje farmom. Tim od petero studenata s FER-a i Agronomskog fakulteta u Zagrebu; pobjednik hrvatskog kvalifikacijskog natjecanja za University Startup World Cup 2018. i finalist u Kopenhagenu."
       }
     }
   },
