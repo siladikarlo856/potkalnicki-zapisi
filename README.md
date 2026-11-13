@@ -86,6 +86,8 @@ The games consume `useHeritage()` like the flip cards: prerendered HTML shows lo
 
 Follow-up: use stored hand-written distractors in the multiple-choice quiz; random pool meanings remain the interim quiz source and do not guarantee equally plausible choices.
 
+**Reviewed church content.** [`data/heritage-content/churches.json`](data/heritage-content/README.md) holds reviewed descriptions, registry numbers, sources, research notes and Commons photos with their credit for 29 churches and chapels. `node scripts/import-heritage-content.mjs --base <site>` imports it through the admin API with the review password: a dry run by default, `--apply` to write. It only fills empty fields and appends notes, sources and photos, so a second run changes nothing.
+
 Contact details, social links and the Siladi Dizajn link are set in `app/app.config.ts` (`site`); empty values are hidden.
 
 ## Submissions

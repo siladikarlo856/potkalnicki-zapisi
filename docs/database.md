@@ -401,6 +401,10 @@ After rollout, verify that `\dt public.*` lists the 28 new tables (the five list
 
 After rollout, verify that `select id, public, file_size_limit, allowed_mime_types from storage.buckets where id = 'heritage-media';` returns one public bucket, that `select has_table_privilege('anon', 'public.heritage_item_images', 'select');` is false, and that uploading a photo in the admin and saving its item shows it on the item page. `node scripts/test-challenges.mjs test/adminHeritage.integration.test.ts` runs the save, keep and reorder rules and the upload checks on disposable Postgres; `test/heritageImages.test.ts` covers the credit rules and the byte check, `test/publicContent.test.ts` the public shapes.
 
+## Reviewed church content import (no migration)
+
+`scripts/import-heritage-content.mjs` writes the reviewed church content in `data/heritage-content/churches.json` through the admin content API and `POST /api/admin/images`, authenticated with `NUXT_REVIEW_SECRET` as a Bearer token. It adds no migration and puts no content in one. It needs [Heritage item photos](#heritage-item-photos) applied first, because it saves items with their photos. It only fills empty fields and appends research notes, sources and photos, so it is safe to run again; every save is a normal revision in the item's history, so a single item is rolled back with a restore in the admin. Run the dry run (the default) before `--apply`. Details: [data/heritage-content/README.md](../data/heritage-content/README.md).
+
 ## Manual fallback
 
 Keep Hostinger auto-deployment **off** throughout this procedure. Do the baseline verification above first. In a checkout of the exact commit to deploy, link and review history and the pending plan:
