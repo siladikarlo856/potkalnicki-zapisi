@@ -1044,9 +1044,9 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(response.headers.get('location')).toContain('/potkalnicko-prigorje/')
   })
 
-  it('documents Umami visit analytics on the privacy notice', async () => {
+  it('documents Cloudflare visit analytics on the privacy notice', async () => {
     const html = await (await fetch('/potkalnicko-prigorje/privatnost', { headers: { accept: 'text/html' } })).text()
-    expect(html).toContain('Umami Cloud')
+    expect(html).toContain('Cloudflare Web Analytics')
     expect(html).toContain('kolačiće')
     expect(html).toContain('2. studenoga 2026.')
   })

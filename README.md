@@ -23,7 +23,7 @@ Server secrets are never sent to the browser:
 - `NUXT_REVIEW_SECRET` (at least 16 characters)
 - `NUXT_ADMIN_SESSION_PASSWORD` (at least 32 characters)
 - `NUXT_CHALLENGE_RATE_LIMIT_*`, `NUXT_SUBMISSION_RATE_LIMIT_*` and optional `NUXT_DAILY_WORD_EPOCH`
-- optional Umami `NUXT_UMAMI_ID`, `NUXT_UMAMI_HOST` and `NUXT_UMAMI_DOMAINS`; an empty website id disables tracking
+- optional `NUXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN` for Cloudflare Web Analytics
 
 Copy `.env.example` for local defaults. Never commit credentials.
 

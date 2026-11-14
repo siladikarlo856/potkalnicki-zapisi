@@ -462,6 +462,19 @@
       "creditsIntro": "Photos in the atlas are published under free licences or with the author's permission. Each lists its author, licence and source; credit them the same way when you reuse a photo.",
       "creditsEmpty": "The atlas has no photos yet.",
       "creditsLink": "Photo credits"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "How Potkalnički zapisi handles data.",
+      "updated": "Updated {date}",
+      "intro": "This page explains how the atlas handles data.",
+      "sections": {
+        "analytics": {
+          "title": "Visitor counts",
+          "text": ["We use Cloudflare Web Analytics to understand visits and which pages are viewed. It uses no cookies and does not personally identify you. It collects only aggregate page-view data: pages viewed, referrer, browser and device, and country."]
+        }
+      },
+      "back": "Back"
     }
   }
 }
