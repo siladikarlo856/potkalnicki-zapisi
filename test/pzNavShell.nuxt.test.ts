@@ -98,8 +98,9 @@ describe('PzHeader', () => {
     expect(inline.findAll('a').map(link => link.text())).toEqual(['Igre', 'Istraži', 'Baština', 'Priče i običaji', 'Naš govor', 'Doprinesi', 'O projektu'])
     expect(inline.findAll('a[aria-current="page"]').map(link => link.text())).toEqual(['Naš govor'])
     expect(header.find('[data-testid="pz-menu-button"]').attributes('aria-label')).toBe('Izbornik')
-    expect(header.find('[data-testid="pz-lang-desktop"]').text()).toContain('HR')
-    expect(header.find('[data-testid="pz-lang-desktop"]').text()).toContain('EN')
+    expect(header.find('[data-testid="pz-lang-desktop"]').exists()).toBe(false)
+    expect(header.find('[data-testid="pz-lang-menu"]').exists()).toBe(false)
+    expect(header.find('[aria-label="Jezik"]').exists()).toBe(false)
   })
 
   it('is pinned only from lg up, where there is no tab bar', async () => {
