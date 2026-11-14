@@ -1051,6 +1051,14 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(html).toContain('2. studenoga 2026.')
   })
 
+  it('loads Cloudflare Web Analytics only on public pages', async () => {
+    const publicHtml = await (await fetch('/potkalnicko-prigorje/', { headers: { accept: 'text/html' } })).text()
+    const adminHtml = await (await fetch('/admin/prijava', { headers: { accept: 'text/html' } })).text()
+    expect(publicHtml).toContain('https://static.cloudflareinsights.com/beacon.min.js')
+    expect(publicHtml).toContain('56bd22857e3547448cffa5b62e2ffa7e')
+    expect(adminHtml).not.toContain('https://static.cloudflareinsights.com/beacon.min.js')
+  })
+
   it('describes the games, device storage and word-linked contributions on the privacy notice', async () => {
     const html = await (await fetch('/potkalnicko-prigorje/privatnost', { headers: { accept: 'text/html' } })).text()
     expect(html).toContain('Igre i podaci na uređaju')
