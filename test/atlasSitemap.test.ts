@@ -15,12 +15,10 @@ describe('atlas sitemap parity (in-memory snapshot)', () => {
       .filter(item => item.noindex && item.settlementCode)
       .map(item => `/potkalnicko-prigorje/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`))
     const expected = [
-      'https://karlo-siladi.from.hr/',
-      'https://karlo-siladi.from.hr/en',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/govor',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/price-i-obicaji',
-      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
+      'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/govor',
+      'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
+      'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/price-i-obicaji',
+      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path}`)
     ]
     expect(urls.sort()).toEqual(expected.sort())
   })

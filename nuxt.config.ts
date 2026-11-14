@@ -48,8 +48,8 @@ export default defineNuxtConfig({
   // Static marketing and games pages are prerendered at build time; atlas and other database-backed
   // routes render on the server per request. The /api routes run in the Node server build.
   routeRules: {
-    '/': { prerender: true },
-    '/en': { prerender: true },
+    '/': { redirect: { to: '/potkalnicko-prigorje/', statusCode: 301 } },
+    '/en': { redirect: { to: '/potkalnicko-prigorje/', statusCode: 301 } },
     '/potkalnicko-prigorje/igre/kartice': { redirect: { to: '/potkalnicko-prigorje/uci?teme=rijeci', statusCode: 301 }, prerender: false },
     '/potkalnicko-prigorje/uci': { prerender: true },
     '/potkalnicko-prigorje/uci/sesija': { prerender: true },
@@ -108,7 +108,7 @@ export default defineNuxtConfig({
   },
 
   i18n: {
-    baseUrl: 'https://karlo-siladi.from.hr',
+    baseUrl: 'https://prigorje.karlo-siladi.from.hr',
     defaultLocale: 'hr',
     strategy: 'prefix_except_default',
     detectBrowserLanguage: false,
@@ -118,13 +118,12 @@ export default defineNuxtConfig({
     ]
   },
 
-  // Umami Cloud analytics, proxied through our own /api/savory route so ad blockers don't
-  // drop it. The module auto-tracks; app/plugins/umami.client.ts disables it on /admin.
+  // Empty NUXT_UMAMI_ID disables tracking until the atlas website is provisioned.
   umami: {
-    id: 'c554cf77-732f-4f2d-bfbc-5f0b78492f4c',
-    host: 'https://cloud.umami.is',
+    id: process.env.NUXT_UMAMI_ID || '',
+    host: process.env.NUXT_UMAMI_HOST || 'https://cloud.umami.is',
     proxy: 'cloak',
-    domains: ['karlo-siladi.from.hr'],
+    domains: (process.env.NUXT_UMAMI_DOMAINS || 'prigorje.karlo-siladi.from.hr').split(',').map(domain => domain.trim()).filter(Boolean),
     ignoreLocalhost: true
   }
 })

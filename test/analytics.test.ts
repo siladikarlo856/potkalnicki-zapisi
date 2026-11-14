@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { shouldTrackPath } from '../app/utils/analytics'
 
 describe('shouldTrackPath', () => {
-  it('tracks portfolio and app pages', () => {
+  it('tracks public atlas pages', () => {
     for (const path of ['/', '/en', '/potkalnicko-prigorje', '/potkalnicko-prigorje/igre/kviz', '/administracija']) {
       expect(shouldTrackPath(path)).toBe(true)
     }

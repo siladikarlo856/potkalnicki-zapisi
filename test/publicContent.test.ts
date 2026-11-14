@@ -304,14 +304,18 @@ describe('public atlas API shapes', () => {
 describe('content sitemap', () => {
   it('lists static pages, /osobe, /price-i-obicaji, live places and indexable item pages with lastmod', () => {
     const entries = sitemapEntries(content)
-    expect(entries.slice(0, 3)).toEqual([{ path: '/' }, { path: '/en' }, { path: '/potkalnicko-prigorje' }])
-    expect(entries.slice(11, 15)).toEqual([
+    expect(entries.slice(0, 3)).toEqual([
+      { path: '/potkalnicko-prigorje' },
+      { path: '/potkalnicko-prigorje/igre' },
+      { path: '/potkalnicko-prigorje/doprinesi' }
+    ])
+    expect(entries.slice(9, 13)).toEqual([
       { path: '/potkalnicko-prigorje/bastina' },
       { path: '/potkalnicko-prigorje/govor' },
       { path: '/potkalnicko-prigorje/osobe' },
       { path: '/potkalnicko-prigorje/price-i-obicaji' }
     ])
-    expect(entries.slice(15)).toEqual([
+    expect(entries.slice(13)).toEqual([
       { path: '/potkalnicko-prigorje/istrazi/grad-krizevci', lastmod: '2026-10-30' },
       { path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', lastmod: '2026-11-01' },
       { path: '/potkalnicko-prigorje/naselja/apatovec', lastmod: '2026-11-01' },
@@ -328,7 +332,7 @@ describe('content sitemap', () => {
       + '  <url>\n    <loc>https://x.test/a?b=1&amp;c=2</loc>\n  </url>\n'
       + '  <url>\n    <loc>https://x.test/d</loc>\n    <lastmod>2026-11-02</lastmod>\n  </url>\n</urlset>\n')
     expect(contentSitemap(content)).toBe(contentSitemap(content))
-    expect(contentSitemap(content)).toContain('<loc>https://karlo-siladi.from.hr/potkalnicko-prigorje/naselja/krizevci</loc>')
+    expect(contentSitemap(content)).toContain('<loc>https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/naselja/krizevci</loc>')
   })
 })
 

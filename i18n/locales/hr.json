@@ -1,90 +1,6 @@
 {
-  "meta": {
-    "description": "Karlo Siladi izrađuje stvari, digitalne i fizičke. Riječi i običaji našeg kraja, Siladi Dizajn i izbor projekata.",
-    "imageAlt": "Karlo Siladi: Graditelj · stvaratelj · poduzetnik. Gradim stvari. Digitalne, fizičke i sve između."
-  },
-  "nav": {
-    "home": "Početna",
-    "myStory": "Moja priča",
-    "projects": "Projekti",
-    "siladiDizajn": "Siladi Dizajn",
-    "contact": "Kontakt",
-    "soon": "Uskoro"
-  },
   "language": {
     "label": "Jezik"
-  },
-  "home": {
-    "hero": {
-      "headline": "Ideje · izrada · poduzetništvo",
-      "title": "Volim izrađivati stvari — digitalne, fizičke i sve između.",
-      "description": "Ja sam Karlo, poduzetnik s inženjerskim iskustvom. Najdraže mi je kad ideja preraste u nešto što ljudi zaista koriste.",
-      "cta": "Pogledaj na čemu radim"
-    },
-    "heritage": {
-      "eyebrow": "Potkalnički zapisi",
-      "title": "Priče, ljudi i baština našega kraja.",
-      "description": "Samostalna aplikacija posvećena riječima, pričama i baštini Potkalničkoga prigorja.",
-      "explore": "Saznaj više o projektu",
-      "share": "Pošalji riječ",
-      "note": "Projekt je tek u izradi. Sve što pošalješ prvo provjerimo."
-    },
-    "teaser": {
-      "flip": "Okreni karticu",
-      "flipBack": "Okreni natrag",
-      "play": "Isprobaj igru"
-    },
-    "siladi": {
-      "title": "Pokloni po mjeri iz Križevaca",
-      "description": "Za krštenje, prvu pričest, vjenčanje i druge prigode izrađujem poklone po narudžbi, s imenom, datumom ili porukom po tvojoj želji: setove, drvene kutijice za novac, LED lampe, okvire i topere za torte. Sve nastaje laserskim graviranjem i rezanjem te 3D printom. Šaljem na adresu bilo gdje u Hrvatskoj, a poklon možeš preuzeti i osobno u Križevcima.",
-      "cta": "Posjeti Siladi Dizajn",
-      "categoriesLabel": "Pokloni po prigodi i vrsti",
-      "categories": {
-        "baptism": "Krštenje",
-        "communion": "Prva pričest",
-        "wedding": "Vjenčanje",
-        "lamps": "LED lampe",
-        "frames": "Okviri",
-        "toppers": "Toperi za torte"
-      },
-      "images": {
-        "communion": "Bijela drvena kutija za prvu pričest s ugraviranom porukom, Biblijom s imenom i krunicom",
-        "wedding": "Drvena čestitka za vjenčanje s ugraviranim imenima, datumom i mašnom",
-        "frame": "3D okvir s LED rasvjetom, crtežom roditeljskih ruku koje drže bebinu ručicu i bolničkim narukvicama novorođenčeta"
-      }
-    },
-    "projects": {
-      "title": "Izbor projekata",
-      "description": "Softver, hardver i pokoji eksperiment — dio onoga što sam napravio.",
-      "all": "Svi projekti",
-      "press": "Mediji:",
-      "soon": "Uskoro",
-      "community": {
-        "tag": "Projekt 1 · Za zajednicu",
-        "title": "Potkalnički zapisi",
-        "description": "Priče, ljudi i baština Potkalničkoga prigorja."
-      },
-      "faceShields": {
-        "tag": "Projekt 2 · Za zajednicu",
-        "title": "COVID-19: 3D-ispisani vizori (2020.)",
-        "description": "Zajedno s Jelenom Širjan 3D-ispisao sam zaštitne vizore prema Prusinu modelu za liječničke ordinacije u Koprivnici, Svetom Petru Orehovcu, Gornjoj Rijeci i Križevcima u proljeće 2020."
-      },
-      "prostec": {
-        "tag": "Projekt 3 · Startup",
-        "title": "Prostec",
-        "description": "Studentski startup za učinkovitiju proizvodnju i vođenje stočarskih farmi: ručni čitač za identifikaciju životinja i web aplikacija za upravljanje farmom. Tim od petero studenata s FER-a i Agronomskog fakulteta u Zagrebu; pobjednik hrvatskog kvalifikacijskog natjecanja za University Startup World Cup 2018. i finalist u Kopenhagenu."
-      }
-    }
-  },
-  "contact": {
-    "title": "Javi se",
-    "description": "Najlakše ćeš me dobiti e-mailom.",
-    "pending": "Kontaktni podaci uskoro.",
-    "email": "Pošalji e-mail",
-    "social": "Pronađi me na GitHubu i LinkedInu."
-  },
-  "footer": {
-    "copyright": "© {year} Karlo Siladi"
   },
   "heritage": {
     "title": "Potkalnički zapisi",
@@ -585,8 +501,7 @@
       "title": "Nešto je pošlo po zlu",
       "description": "Došlo je do neočekivane pogreške. Pokušaj ponovno malo kasnije."
     },
-    "home": "Na početnu",
-    "heritage": "Projekt lokalne baštine"
+    "home": "Na početnu"
   },
   "challenge": {
     "title": "Izazov zavičaja",

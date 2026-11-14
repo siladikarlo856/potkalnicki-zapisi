@@ -1,91 +1,6 @@
 {
-  "meta": {
-    "description": "Karlo Siladi builds things — digital, physical, and everything in between. A local heritage project, Siladi Dizajn and selected projects.",
-    "imageAlt": "Karlo Siladi: Builder · maker · entrepreneur. I build things. Digital, physical, and everything in between."
-  },
-  "nav": {
-    "home": "Home",
-    "myStory": "My Story",
-    "projects": "Projects",
-    "siladiDizajn": "Siladi Dizajn",
-    "contact": "Contact",
-    "soon": "Soon"
-  },
   "language": {
     "label": "Language"
-  },
-  "home": {
-    "hero": {
-      "headline": "Builder · maker · entrepreneur",
-      "title": "I build things. Digital, physical, and everything in between.",
-      "description": "I’m Karlo — an entrepreneur and maker with a background in engineering. I like turning ideas into things people can use.",
-      "cta": "See what I’m building"
-    },
-    "heritage": {
-      "eyebrow": "Potkalnički zapisi",
-      "title": "Stories, people and heritage from our region.",
-      "description": "A standalone Croatian-language app about Potkalničko prigorje.",
-      "explore": "Explore the project",
-      "share": "Share a word",
-      "note": "In development — nothing is published without review."
-    },
-    "teaser": {
-      "flip": "Flip the card",
-      "flipBack": "Flip back",
-      "play": "Try the game"
-    },
-    "siladi": {
-      "title": "Personalised gifts from Križevci",
-      "description": "For baptisms, First Communions, weddings and other occasions I make gifts to order, with the name, date or message of your choice: gift sets, wooden money boxes, LED lamps, frames and cake toppers. Each piece is laser engraved, laser cut or 3D printed. I ship anywhere in Croatia, or you can pick your order up in Križevci.",
-      "cta": "Visit Siladi Dizajn",
-      "categoriesLabel": "Gifts by occasion and type",
-      "categories": {
-        "baptism": "Baptism",
-        "communion": "First Communion",
-        "wedding": "Wedding",
-        "lamps": "LED lamps",
-        "frames": "Frames",
-        "toppers": "Cake toppers"
-      },
-      "images": {
-        "communion": "White wooden First Communion box with an engraved message, a Bible with the child’s name and a rosary",
-        "wedding": "Wooden wedding card with the couple’s engraved names, the date and a satin bow",
-        "frame": "LED-lit 3D frame with a drawing of parents’ hands holding a baby’s hand, and the newborn’s hospital bracelets"
-      },
-      "shopLanguage": "The Siladi Dizajn shop is in Croatian."
-    },
-    "projects": {
-      "title": "Selected projects",
-      "description": "Software, hardware and experiments — a few things I have built.",
-      "all": "See all projects",
-      "press": "Press (in Croatian):",
-      "soon": "Soon",
-      "community": {
-        "tag": "Project 1 · Community",
-        "title": "Potkalnički zapisi",
-        "description": "Stories, people and heritage from Potkalničko prigorje."
-      },
-      "faceShields": {
-        "tag": "Project 2 · Community",
-        "title": "COVID-19 3D-printed face shields (2020)",
-        "description": "With Jelena Širjan, I 3D-printed face shields from a Prusa-based model for doctors’ offices in Koprivnica, Sveti Petar Orehovec, Gornja Rijeka and Križevci in spring 2020."
-      },
-      "prostec": {
-        "tag": "Project 3 · Startup",
-        "title": "Prostec",
-        "description": "A college startup for livestock farms: a handheld animal ID reader and a farm-management web app. Five students from FER and the Faculty of Agriculture in Zagreb; winners of the Croatian qualifier for the University Startup World Cup 2018 and finalists in Copenhagen."
-      }
-    }
-  },
-  "contact": {
-    "title": "Let’s talk",
-    "description": "The easiest way to reach me is by email.",
-    "pending": "Contact details coming soon.",
-    "email": "Email me",
-    "social": "Find me on GitHub and LinkedIn."
-  },
-  "footer": {
-    "copyright": "© {year} Karlo Siladi"
   },
   "a11y": {
     "newTab": "opens in a new tab",
@@ -100,8 +15,7 @@
       "title": "Something went wrong",
       "description": "An unexpected error occurred. Please try again in a little while."
     },
-    "home": "Back to home",
-    "heritage": "Local Heritage Project"
+    "home": "Back to home"
   },
   "daily": {
     "title": "Word of the day",

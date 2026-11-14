@@ -3,8 +3,8 @@
 // photos with their credit) into a running site through its admin API. See data/heritage-content/README.md.
 //
 //   read -rs NUXT_REVIEW_SECRET && export NUXT_REVIEW_SECRET
-//   node scripts/import-heritage-content.mjs --base https://karlo-siladi.from.hr            # dry run
-//   node scripts/import-heritage-content.mjs --base https://karlo-siladi.from.hr --apply    # import
+//   node scripts/import-heritage-content.mjs --base https://prigorje.karlo-siladi.from.hr            # dry run
+//   node scripts/import-heritage-content.mjs --base https://prigorje.karlo-siladi.from.hr --apply    # import
 //
 // Options: --dry-run (the default), --apply, --only <settlement-slug/item-slug>, --dataset <path>.
 // The secret is read from the environment only, never from an argument, so it stays out of the process list.

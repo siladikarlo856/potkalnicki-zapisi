@@ -157,7 +157,7 @@ export function dailyWordShareText(number: number, result: Pick<DailyProgress, '
   if (!result.done) return ''
   const { solved, tries, maxTries } = result
   const squares = '🟥'.repeat(solved ? tries - 1 : tries) + (solved ? '🟩' : '') + '⬜'.repeat(maxTries - tries)
-  return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://karlo-siladi.from.hr/potkalnicko-prigorje/igre#rijec-dana`
+  return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/igre#rijec-dana`
 }
 
 export interface DailyReadiness {

@@ -11,11 +11,9 @@ import type { WordSitemapEntry } from './words'
 // noindex rows and items without a settlement are left out. Served by server/routes/sitemap.xml.ts, which stays shadowed while
 // public/sitemap.xml exists (static files win in Nitro).
 
-export const SITE_URL = 'https://karlo-siladi.from.hr'
+export const SITE_URL = 'https://prigorje.karlo-siladi.from.hr'
 
 export const STATIC_SITEMAP_PATHS = [
-  '/',
-  '/en',
   pzRoutes.home,
   pzRoutes.games,
   pzRoutes.contribute,

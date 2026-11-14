@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-Issues live in Gitea Issues at git.asus.local/ksiladi/karlo-siladi-from-hr, managed via the `tea` CLI. See `docs/agents/issue-tracker.md`.
+Issues live in Gitea Issues at git.asus.local/ksiladi/potkalnicki-zapisi, managed via the `tea` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://karlo-siladi.from.hr/sitemap.xml
+Sitemap: https://prigorje.karlo-siladi.from.hr/sitemap.xml

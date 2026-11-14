@@ -996,17 +996,15 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(urls.sort()).toEqual(expected.sort())
     // The Priče i običaji list is always there; the pages of its records, narrators and themes depend on what the
     // database holds (test/publicIntangible.test.ts covers which of them the sitemap lists).
-    const intangibleRoot = 'https://karlo-siladi.from.hr/potkalnicko-prigorje/price-i-obicaji'
+    const intangibleRoot = 'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/price-i-obicaji'
     expect(expected).toContain(intangibleRoot)
     expect(expected.filter(url => !url.startsWith(`${intangibleRoot}/`)).sort()).toEqual([
-      'https://karlo-siladi.from.hr/',
-      'https://karlo-siladi.from.hr/en',
       intangibleRoot,
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/govor',
-      'https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
-      ...personSlugs.map(slug => `https://karlo-siladi.from.hr/potkalnicko-prigorje/osobe/${slug}`),
-      ...wordEntries.map(w => `https://karlo-siladi.from.hr/potkalnicko-prigorje/govor/${w.slug}`),
-      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://karlo-siladi.from.hr${path}`)
+      'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/govor',
+      'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
+      ...personSlugs.map(slug => `https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/osobe/${slug}`),
+      ...wordEntries.map(w => `https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/govor/${w.slug}`),
+      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path}`)
     ].sort())
     expect(sitemap).not.toContain('/heritage')
     expect(sitemap).not.toContain('/en/potkalnicko-prigorje')
@@ -1015,7 +1013,7 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     for (const path of ['/admin', '/api/']) {
       expect(robots).toContain(`Disallow: ${path}`)
     }
-    expect(robots).toContain('Sitemap: https://karlo-siladi.from.hr/sitemap.xml')
+    expect(robots).toContain('Sitemap: https://prigorje.karlo-siladi.from.hr/sitemap.xml')
   })
 
   it('does not keep a static sitemap.xml in public/', async () => {
@@ -1056,15 +1054,10 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(html).toContain('povezan s riječju na koju se odnosi')
   })
 
-  it('does not show coming-soon hero badges on the portfolio or app home', async () => {
-    for (const path of ['/', '/potkalnicko-prigorje']) {
-      const html = await (await fetch(path, { headers: { accept: 'text/html' } })).text()
-      expect(html).not.toContain('i-lucide-construction')
-    }
-    const portfolio = await (await fetch('/', { headers: { accept: 'text/html' } })).text()
-    expect(portfolio).toContain('Projekt 1 · Za zajednicu')
-    const heritageBlock = portfolio.split('id="heritage"')[1]?.split('id="projects"')[0] ?? ''
-    expect(heritageBlock).not.toContain('i-lucide-sparkles')
+  it('does not show coming-soon hero badges on the atlas home', async () => {
+    const html = await (await fetch('/potkalnicko-prigorje', { headers: { accept: 'text/html' } })).text()
+    expect(html).not.toContain('i-lucide-construction')
+    expect(html).not.toContain('i-lucide-sparkles')
   })
 
   it.each(['/heritage', '/privacy', '/review', '/review-words', '/en/potkalnicko-prigorje'])('does not keep the retired page route %s', async (path) => {
@@ -1146,16 +1139,6 @@ describe.skipIf(!harness.enabled)('Supabase settings', () => {
       expect((await request(route.path, { ...route, secret: SECRET })).status).toBe(503)
     }
   })
-})
-
-describe.skipIf(!harness.enabled)('Umami analytics', () => {
-  for (const path of ['/', '/potkalnicko-prigorje', '/admin/prijava']) {
-    it(`serves ${path} without any third-party analytics script or website ID`, async () => {
-      const html = await (await fetch(path)).text()
-      expect(html).not.toContain('cloud.umami.is')
-      expect(html).not.toContain('c554cf77-732f-4f2d-bfbc-5f0b78492f4c')
-    })
-  }
 })
 
 describe.skipIf(!harness.enabled)('public atlas API', () => {

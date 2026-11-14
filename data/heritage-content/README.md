@@ -36,8 +36,8 @@ The import authenticates with the review password (`NUXT_REVIEW_SECRET`) as a Be
 
 ```sh
 read -rs NUXT_REVIEW_SECRET && export NUXT_REVIEW_SECRET
-node scripts/import-heritage-content.mjs --base https://karlo-siladi.from.hr            # dry run: reads only
-node scripts/import-heritage-content.mjs --base https://karlo-siladi.from.hr --apply    # imports
+node scripts/import-heritage-content.mjs --base https://prigorje.karlo-siladi.from.hr            # dry run: reads only
+node scripts/import-heritage-content.mjs --base https://prigorje.karlo-siladi.from.hr --apply    # imports
 unset NUXT_REVIEW_SECRET
 ```
 

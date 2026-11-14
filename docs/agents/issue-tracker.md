@@ -1,6 +1,6 @@
 # Issue tracker: Gitea
 
-Issues and specs for this repo live as issues on the self-hosted Gitea server at `https://git.asus.local/ksiladi/karlo-siladi-from-hr`. Use the `tea` CLI for all operations; `gh` and `glab` cannot reach this host. `tea` infers the repo from `git remote -v` when run inside the clone; pass `--repo ksiladi/karlo-siladi-from-hr` if it doesn't.
+Issues and specs for this repo live as issues on the self-hosted Gitea server at `https://git.asus.local/ksiladi/potkalnicki-zapisi`. Use the `tea` CLI for all operations; `gh` and `glab` cannot reach this host. `tea` infers the repo from `git remote -v` when run inside the clone; pass `--repo ksiladi/potkalnicki-zapisi` if it doesn't.
 
 ## Conventions
 
@@ -8,15 +8,15 @@ Issues and specs for this repo live as issues on the self-hosted Gitea server at
 - **Read an issue**: `tea issues <number> --comments`. For JSON: `tea api repos/{owner}/{repo}/issues/<number>` and `tea api repos/{owner}/{repo}/issues/<number>/comments`.
 - **List issues**: `tea issues list --state open --output json [--labels <label>]`.
 - **Parent / child**: Gitea has no sub-issues. Put `Part of #<parent>` at the top of the child body, and add the child to a task list (`- [ ] #<child>`) in the parent body.
-- **Blocking**: Gitea's **native issue dependencies**, the UI-visible representation. Add an edge with `tea api -X POST repos/{owner}/{repo}/issues/<child>/dependencies -d '{"owner":"ksiladi","repo":"karlo-siladi-from-hr","index":<blocker>}'`. If dependencies are unavailable, fall back to a `Blocked by: #<n>, #<n>` line at the top of the child body. A ticket is unblocked when every blocker is closed.
+- **Blocking**: Gitea's **native issue dependencies**, the UI-visible representation. Add an edge with `tea api -X POST repos/{owner}/{repo}/issues/<child>/dependencies -d '{"owner":"ksiladi","repo":"potkalnicki-zapisi","index":<blocker>}'`. If dependencies are unavailable, fall back to a `Blocked by: #<n>, #<n>` line at the top of the child body. A ticket is unblocked when every blocker is closed.
 - **Count open blockers**: `tea api repos/{owner}/{repo}/issues/<n>/dependencies` lists blockers including closed ones; count only entries with `"state": "open"` (0 means startable).
 - **Comment on an issue**: `tea comment <number> "..."`
 - **Apply / remove labels**: `tea issues edit <number> --add-labels "..."` / `--remove-labels "..."`
 - **Close**: post the explanation with `tea comment <number> "..."`, then `tea issues close <number>`.
 
-If a `tea` subcommand or flag is missing in the installed version, fall back to `tea api` against the Gitea REST API (`/api/v1/repos/ksiladi/karlo-siladi-from-hr/...`).
+If a `tea` subcommand or flag is missing in the installed version, fall back to `tea api` against the Gitea REST API (`/api/v1/repos/ksiladi/potkalnicki-zapisi/...`).
 
-File issues only into `ksiladi/karlo-siladi-from-hr`. Never file into `mattpocock/skills` (the repo these skills come from).
+File issues only into `ksiladi/potkalnicki-zapisi`.
 
 ## Pull requests as a triage surface
 
