@@ -23,7 +23,8 @@ Server secrets are never sent to the browser:
 - `NUXT_REVIEW_SECRET` (at least 16 characters)
 - `NUXT_ADMIN_SESSION_PASSWORD` (at least 32 characters)
 - `NUXT_CHALLENGE_RATE_LIMIT_*`, `NUXT_SUBMISSION_RATE_LIMIT_*` and optional `NUXT_DAILY_WORD_EPOCH`
-- optional `NUXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN` for Cloudflare Web Analytics
+
+The Cloudflare Web Analytics beacon token is public and ships to the browser; override it with optional `NUXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN`.
 
 Copy `.env.example` for local defaults. Never commit credentials.
 
