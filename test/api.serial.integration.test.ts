@@ -1021,8 +1021,6 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
   })
 
   it.each([
-    { path: '/', title: 'Karlo Siladi', description: 'Karlo Siladi izrađuje stvari', image: 'share-hr.jpg' },
-    { path: '/en', title: 'Karlo Siladi', description: 'Karlo Siladi builds things', image: 'share-en.jpg' },
     { path: '/potkalnicko-prigorje', title: 'Potkalnički zapisi', description: 'Istraži mjesta', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/igre', title: 'Igraj · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
     { path: '/potkalnicko-prigorje/doprinesi', title: 'Doprinesi · Potkalnički zapisi', description: 'Sve što pošalješ', image: 'og.svg' },
@@ -1038,6 +1036,12 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(metaContent(html, 'og:description')).toContain(description)
     expect(metaContent(html, 'og:image')).toContain(image)
     expect(metaContent(html, 'twitter:card')).toBe('summary_large_image')
+  })
+
+  it.each(['/', '/en'])('redirects the portfolio roots to the Atlas home: %s', async (path) => {
+    const response = await fetch(path, { redirect: 'manual' })
+    expect(response.status).toBe(301)
+    expect(response.headers.get('location')).toContain('/potkalnicko-prigorje/')
   })
 
   it('documents Umami visit analytics on the privacy notice', async () => {
