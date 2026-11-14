@@ -334,7 +334,7 @@
       "analytics": {
         "title": "Brojanje posjeta",
         "text": [
-          "Na stranici Potkalničkih zapisa koristimo Umami Cloud analitiku kako bismo znali koliko je posjeta i koje su stranice gledane. Umami ne koristi kolačiće, ne pokušava te identificirati i ne sprema tvoje ime, e-mail ili drugu osobnu identifikaciju. Prikupljaju se samo agregirani podaci o posjetu: koje je stranice pregledano, odakle dolaziš (referrer), vrsta preglednika i uređaja te država posjetitelja."
+          "Na stranici Potkalničkih zapisa koristimo Cloudflare Web Analytics kako bismo znali koliko je posjeta i koje su stranice gledane. Ne koristi kolačiće i ne pokušava te osobno identificirati. Prikupljaju se samo agregirani podaci o posjetu: koje su stranice pregledane, odakle dolaziš (referrer), vrsta preglednika i uređaja te država posjetitelja."
         ]
       },
       "purpose": {

@@ -4,8 +4,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@nuxtjs/i18n',
-    'nuxt-umami'
+    '@nuxtjs/i18n'
   ],
 
   devtools: {
@@ -24,6 +23,9 @@ export default defineNuxtConfig({
   // Server-only settings. Set them with environment variables on the server, never in the repo
   // (NUXT_SUPABASE_URL, NUXT_REVIEW_SECRET, ...). See the README.
   runtimeConfig: {
+    public: {
+      cloudflareAnalyticsToken: process.env.NUXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN || '56bd22857e3547448cffa5b62e2ffa7e'
+    },
     // Optional launch-day override (`NUXT_DAILY_WORD_EPOCH`); when empty the shared constant is used.
     dailyWordEpoch: '',
     supabase: {
@@ -116,14 +118,5 @@ export default defineNuxtConfig({
       { code: 'hr', language: 'hr-HR', name: 'Hrvatski', file: 'hr.json' },
       { code: 'en', language: 'en-GB', name: 'English', file: 'en.json' }
     ]
-  },
-
-  // Empty NUXT_UMAMI_ID disables tracking until the atlas website is provisioned.
-  umami: {
-    id: process.env.NUXT_UMAMI_ID || '',
-    host: process.env.NUXT_UMAMI_HOST || 'https://cloud.umami.is',
-    proxy: 'cloak',
-    domains: (process.env.NUXT_UMAMI_DOMAINS || 'prigorje.karlo-siladi.from.hr').split(',').map(domain => domain.trim()).filter(Boolean),
-    ignoreLocalhost: true
   }
 })

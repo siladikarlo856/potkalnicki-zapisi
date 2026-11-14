@@ -1044,11 +1044,19 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(response.headers.get('location')).toContain('/potkalnicko-prigorje/')
   })
 
-  it('documents Umami visit analytics on the privacy notice', async () => {
+  it('documents Cloudflare visit analytics on the privacy notice', async () => {
     const html = await (await fetch('/potkalnicko-prigorje/privatnost', { headers: { accept: 'text/html' } })).text()
-    expect(html).toContain('Umami Cloud')
+    expect(html).toContain('Cloudflare Web Analytics')
     expect(html).toContain('kolačiće')
     expect(html).toContain('2. studenoga 2026.')
+  })
+
+  it('loads Cloudflare Web Analytics only on public pages', async () => {
+    const publicHtml = await (await fetch('/potkalnicko-prigorje/', { headers: { accept: 'text/html' } })).text()
+    const adminHtml = await (await fetch('/admin/prijava', { headers: { accept: 'text/html' } })).text()
+    expect(publicHtml).toContain('https://static.cloudflareinsights.com/beacon.min.js')
+    expect(publicHtml).toContain('56bd22857e3547448cffa5b62e2ffa7e')
+    expect(adminHtml).not.toContain('https://static.cloudflareinsights.com/beacon.min.js')
   })
 
   it('describes the games, device storage and word-linked contributions on the privacy notice', async () => {

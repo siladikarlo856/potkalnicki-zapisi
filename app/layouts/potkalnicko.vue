@@ -3,6 +3,7 @@
 // safe-area inset. A hidden bar frees the space for the sticky action bar.
 const { hidden: tabBarHidden } = usePzTabBar()
 const baseUrl = useRuntimeConfig().public.i18n.baseUrl
+const cloudflareAnalyticsToken = useRuntimeConfig().public.cloudflareAnalyticsToken
 
 useThemeColor('#FDF9F0', '#14140F')
 useHead({
@@ -11,7 +12,8 @@ useHead({
   link: [
     { key: 'site-icon', rel: 'icon', type: 'image/svg+xml', href: '/potkalnicko-prigorje/favicon.svg' },
     { key: 'site-apple-icon', rel: 'apple-touch-icon', href: '/potkalnicko-prigorje/apple-touch-icon.svg' }
-  ]
+  ],
+  script: [{ 'type': 'module', 'src': 'https://static.cloudflareinsights.com/beacon.min.js', 'data-cf-beacon': JSON.stringify({ token: cloudflareAnalyticsToken }) }]
 })
 useSeoMeta({
   description: 'Priče, ljudi i baština našega kraja.',
