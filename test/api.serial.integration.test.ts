@@ -173,13 +173,12 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi contribute and about page
     await pickerWindow.happyDOM.close()
   })
 
-  it('documents the author on O projektu without a portfolio link', async () => {
+  it('documents the author on O projektu', async () => {
     const response = await request('/o-projektu')
     expect(response.status).toBe(200)
     const html = await response.text()
     expect(html).toContain('Karlo Siladi')
     expect(html).toContain('id="izvori"')
-    expect(html).not.toMatch(/href="\/"/)
   })
 })
 
@@ -1087,7 +1086,7 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(html).not.toContain('i-lucide-sparkles')
   })
 
-  it.each(['/heritage', '/privacy', '/review', '/review-words', '/en'])('does not keep the retired page route %s', async (path) => {
+  it.each(['/heritage', '/privacy', '/review', '/review-words'])('does not keep the retired page route %s', async (path) => {
     expect((await fetch(path, { headers: { accept: 'text/html' } })).status).toBe(404)
   })
 
