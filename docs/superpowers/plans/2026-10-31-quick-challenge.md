@@ -25,7 +25,7 @@
 - Test: `test/api.test.ts`
 
 **Interfaces:**
-- Consumes: the server-rendered `` page in Croatian and English.
+- Consumes: the server-rendered `/` page in Croatian and English.
 - Produces: assertions requiring `data-testid="challenge-mode-choice"`, a Quick challenge link to `/kviz`, and a disabled Custom challenge control.
 
 - [ ] **Step 1: Write the failing test**
