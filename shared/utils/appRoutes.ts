@@ -1,7 +1,7 @@
-export const PZ_ROOT = '/potkalnicko-prigorje'
+export const PZ_ROOT = ''
 
 export const pzRoutes = {
-  home: PZ_ROOT,
+  home: '',
   games: `${PZ_ROOT}/igre`,
   cards: `${PZ_ROOT}/igre/kartice`,
   learn: `${PZ_ROOT}/uci`,

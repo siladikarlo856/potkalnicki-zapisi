@@ -77,7 +77,7 @@ describe('learn home panel', () => {
     }))
     wrapper = await mountSuspended(LearnHomePanel, {
       props: { pool },
-      route: '/potkalnicko-prigorje'
+      route: ''
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-home-state-a"]').exists()).toBe(true)
     expect(wrapper!.get('[data-testid="learn-home-continue"]').text()).toContain('Nastavi lekciju')
@@ -95,7 +95,7 @@ describe('learn home panel', () => {
     }))
     wrapper = await mountSuspended(LearnHomePanel, {
       props: { pool },
-      route: '/potkalnicko-prigorje'
+      route: ''
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-home-state-b"]').exists()).toBe(true)
     expect(wrapper!.get('[data-testid="learn-home-review"]').exists()).toBe(true)
@@ -105,7 +105,7 @@ describe('learn home panel', () => {
   it('shows first lesson state for empty progress', async () => {
     wrapper = await mountSuspended(LearnHomePanel, {
       props: { pool },
-      route: '/potkalnicko-prigorje'
+      route: ''
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-home-state-c"]').exists()).toBe(true)
     expect(wrapper!.get('[data-testid="learn-home-first"]').exists()).toBe(true)
@@ -122,7 +122,7 @@ describe('learn home panel', () => {
     }))
     wrapper = await mountSuspended(LearnHomePanel, {
       props: { pool },
-      route: '/potkalnicko-prigorje'
+      route: ''
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-home-new-block"]').exists()).toBe(true)
     expect(wrapper!.find('[data-testid="learn-home-state-a"]').exists()).toBe(false)

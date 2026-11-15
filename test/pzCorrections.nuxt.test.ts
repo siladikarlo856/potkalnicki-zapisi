@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import HeritageItem from '../app/pages/potkalnicko-prigorje/bastina/[naselje]/[slug].vue'
-import Contribute from '../app/pages/potkalnicko-prigorje/doprinesi/index.vue'
+import HeritageItem from '../app/pages/bastina/[naselje]/[slug].vue'
+import Contribute from '../app/pages/doprinesi/index.vue'
 import { heritageItemByRoute } from './helpers/atlasFixtures'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
 
@@ -25,7 +25,7 @@ describe('heritage correction flow', () => {
 
   it('opens the correction dialog from an item page, with the last edit date', async () => {
     const page = await mountSuspended(HeritageItem, {
-      route: { path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } },
+      route: { path: '/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } },
       attachTo: document.body
     })
     await vi.waitFor(() => expect(page.find('[data-testid="heritage-suggest-correction"]').exists()).toBe(true))
@@ -41,7 +41,7 @@ describe('heritage correction flow', () => {
 
   it('offers "Dodaj izvor" as a source proposal', async () => {
     const page = await mountSuspended(HeritageItem, {
-      route: { path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } },
+      route: { path: '/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } },
       attachTo: document.body
     })
     await vi.waitFor(() => expect(page.find('[data-testid="heritage-suggest-source"]').exists()).toBe(true))
@@ -53,7 +53,7 @@ describe('heritage correction flow', () => {
 
   it('resolves an old correction link into the structured correction form', async () => {
     const page = await mountSuspended(Contribute, {
-      route: `/potkalnicko-prigorje/doprinesi?vrsta=ispravak&zapis=${item.id}`
+      route: `/doprinesi?vrsta=ispravak&zapis=${item.id}`
     })
     await vi.waitFor(() => expect(page.find('[data-testid="suggest-form"]').exists()).toBe(true))
     expect(page.find('[data-testid="suggest-heading"]').text()).toContain(item.name)
@@ -62,7 +62,7 @@ describe('heritage correction flow', () => {
 
   it('says so when the correction target does not exist', async () => {
     const page = await mountSuspended(Contribute, {
-      route: '/potkalnicko-prigorje/doprinesi?vrsta=ispravak&sadrzaj=heritage_item&id=no-such-item'
+      route: '/doprinesi?vrsta=ispravak&sadrzaj=heritage_item&id=no-such-item'
     })
     await vi.waitFor(() => expect(page.text()).toContain('ne možemo otvoriti'))
   })
@@ -70,7 +70,7 @@ describe('heritage correction flow', () => {
 
 describe('/doprinesi cards', () => {
   it('lists the new cards and links them to the structured forms', async () => {
-    const page = await mountSuspended(Contribute, { route: '/potkalnicko-prigorje/doprinesi' })
+    const page = await mountSuspended(Contribute, { route: '/doprinesi' })
     for (const kind of ['word', 'memory', 'heritage_item', 'area', 'source', 'correction']) {
       expect(page.find(`[data-testid="contribute-card-${kind}"]`).exists()).toBe(true)
     }
@@ -79,7 +79,7 @@ describe('/doprinesi cards', () => {
   })
 
   it('searches for what to correct', async () => {
-    const page = await mountSuspended(Contribute, { route: '/potkalnicko-prigorje/doprinesi?vrsta=ispravak' })
+    const page = await mountSuspended(Contribute, { route: '/doprinesi?vrsta=ispravak' })
     await vi.waitFor(() => expect(page.find('[data-testid="suggest-picker"]').exists()).toBe(true))
     await page.find('[data-testid="suggest-picker"] input').setValue('Kalnik')
     await vi.waitFor(() => expect(page.find('[data-testid="suggest-pick-area"]').exists()).toBe(true), { timeout: 3000 })
@@ -87,7 +87,7 @@ describe('/doprinesi cards', () => {
 
   it('prefills a proposal from the settlement of the link', async () => {
     const page = await mountSuspended(Contribute, {
-      route: '/potkalnicko-prigorje/doprinesi?vrsta=prijedlog&sadrzaj=heritage_item&naselje=kalnik'
+      route: '/doprinesi?vrsta=prijedlog&sadrzaj=heritage_item&naselje=kalnik'
     })
     await vi.waitFor(() => expect(page.find('[data-testid="suggest-form"]').exists()).toBe(true))
     await vi.waitFor(() => expect(page.text()).toContain('Kalnik'))

@@ -96,7 +96,7 @@ describe('persons in the public snapshot', () => {
 describe('person queries', () => {
   it('resolves live, moved, gone and unknown slugs', () => {
     expect(resolvePerson(content, 'ivan-kalnican').status).toBe('ok')
-    expect(resolvePerson(content, 'ivan-stari')).toEqual({ status: 'redirect', path: '/potkalnicko-prigorje/osobe/ivan-kalnican' })
+    expect(resolvePerson(content, 'ivan-stari')).toEqual({ status: 'redirect', path: '/osobe/ivan-kalnican' })
     expect(resolvePerson(content, 'stara-osoba')).toEqual({ status: 'gone' })
     expect(resolvePerson(content, 'vanjska-osoba')).toEqual({ status: 'not_found' })
     expect(resolvePerson(content, 'nitko')).toEqual({ status: 'not_found' })
@@ -106,7 +106,7 @@ describe('person queries', () => {
     const list = personList(content)!
     expect(list.total).toBe(3)
     const ivan = list.persons.find(p => p.slug === 'ivan-kalnican')!
-    expect(ivan).toMatchObject({ years: '1813–1849', role: 'kapelan i pjesnik', place: 'Kalnik', path: '/potkalnicko-prigorje/osobe/ivan-kalnican', municipalitySlugs: ['opcina-kalnik'] })
+    expect(ivan).toMatchObject({ years: '1813–1849', role: 'kapelan i pjesnik', place: 'Kalnik', path: '/osobe/ivan-kalnican', municipalitySlugs: ['opcina-kalnik'] })
     expect(list.persons.find(p => p.slug === 'ana-gradska')!.years).toBe('1844–1910')
     expect(list.municipalities.map(m => m.slug)).toEqual(['grad-krizevci', 'opcina-kalnik'])
   })
@@ -122,11 +122,11 @@ describe('person queries', () => {
     const detail = personDetail(content, content.personById.get(id.live)!)
     expect(detail.ref).toBe(id.live)
     expect(detail.placeGroups).toEqual([
-      { role: 'rodjen', label: 'Rođen/a', places: [{ id: id.kalnikSettlement, name: 'Kalnik', path: '/potkalnicko-prigorje/naselja/kalnik' }] },
-      { role: 'umro', label: 'Umro/la', places: [{ id: id.kalnikSettlement, name: 'Kalnik', path: '/potkalnicko-prigorje/naselja/kalnik' }] }
+      { role: 'rodjen', label: 'Rođen/a', places: [{ id: id.kalnikSettlement, name: 'Kalnik', path: '/naselja/kalnik' }] },
+      { role: 'umro', label: 'Umro/la', places: [{ id: id.kalnikSettlement, name: 'Kalnik', path: '/naselja/kalnik' }] }
     ])
     expect(detail.heritage).toEqual([{
-      id: id.church, name: 'Crkva sv. Brcka', path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', relation: 'kapela mu je posvećena', verification: 'unverified'
+      id: id.church, name: 'Crkva sv. Brcka', path: '/bastina/kalnik/crkva-sv-brcka', relation: 'kapela mu je posvećena', verification: 'unverified'
     }])
     expect(detail.sources.map(s => s.id)).toEqual([id.source])
     expect(detail).toMatchObject({ bornPlace: 'Edde (HU)', diedPlace: 'Križevci', openQuestions: 'Godina smrti 1849. ili 1850.' })
@@ -134,7 +134,7 @@ describe('person queries', () => {
 
   it('links a unit-level person with a unit path', () => {
     const detail = personDetail(content, content.personById.get(id.noindex)!)
-    expect(detail.placeGroups[0]!.places[0]!.path).toBe('/potkalnicko-prigorje/istrazi/opcina-kalnik')
+    expect(detail.placeGroups[0]!.places[0]!.path).toBe('/istrazi/opcina-kalnik')
     expect(detail.place).toBe('Općina Kalnik')
   })
 
@@ -166,12 +166,12 @@ describe('person queries', () => {
 describe('person sitemap and structured data', () => {
   it('lists /osobe and the live, indexable persons', () => {
     const paths = sitemapEntries(content).map(e => e.path)
-    expect(paths).toContain('/potkalnicko-prigorje/osobe')
-    expect(paths).toContain('/potkalnicko-prigorje/osobe/ivan-kalnican')
-    expect(paths).toContain('/potkalnicko-prigorje/osobe/ana-gradska')
-    expect(paths).not.toContain('/potkalnicko-prigorje/osobe/anja-skrivena')
-    expect(paths).not.toContain('/potkalnicko-prigorje/osobe/stara-osoba')
-    expect(paths).not.toContain('/potkalnicko-prigorje/osobe/vanjska-osoba')
+    expect(paths).toContain('/osobe')
+    expect(paths).toContain('/osobe/ivan-kalnican')
+    expect(paths).toContain('/osobe/ana-gradska')
+    expect(paths).not.toContain('/osobe/anja-skrivena')
+    expect(paths).not.toContain('/osobe/stara-osoba')
+    expect(paths).not.toContain('/osobe/vanjska-osoba')
     expect(sitemapEntries(content).find(e => e.path.endsWith('ivan-kalnican'))!.lastmod).toBe('2026-11-02')
   })
 

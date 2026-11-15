@@ -8,8 +8,8 @@ const { locale, localeProperties, t } = useI18n()
 // Nuxt sets `url` on the error at runtime (the SSR request path), but NuxtError does not type it.
 const errorUrl = (props.error as { url?: unknown }).url
 const pathname = (typeof errorUrl === 'string' ? errorUrl.split('?')[0] : '') || useRequestURL().pathname
-const isPotkalnicko = pathname.startsWith('/potkalnicko-prigorje')
 const isAdmin = pathname.startsWith('/admin')
+const isPotkalnicko = !isAdmin && !pathname.startsWith('/api')
 const layoutName = isAdmin ? 'admin' : 'potkalnicko'
 
 const notFound = computed(() => props.error.statusCode === 404)
@@ -25,7 +25,7 @@ useHead({
     { name: 'robots', content: 'noindex' }
   ],
   link: [
-    { rel: 'icon', href: '/potkalnicko-prigorje/favicon.svg' }
+    { rel: 'icon', href: '/favicon.svg' }
   ]
 })
 
@@ -55,7 +55,7 @@ useThemeColor(isPotkalnicko ? '#FDF9F0' : undefined, isPotkalnicko ? '#14140F' :
           <UButton
             :label="t('error.home')"
             icon="i-lucide-house"
-            :to="isAdmin ? '/admin' : '/potkalnicko-prigorje'"
+            :to="isAdmin ? '/admin' : '/'"
             size="lg"
           />
         </template>

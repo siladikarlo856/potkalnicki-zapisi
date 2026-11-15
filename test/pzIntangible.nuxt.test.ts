@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import IntangibleIndex from '../app/pages/potkalnicko-prigorje/price-i-obicaji/index.vue'
-import IntangibleRecord from '../app/pages/potkalnicko-prigorje/price-i-obicaji/[kind]/[slug].vue'
-import ThemePage from '../app/pages/potkalnicko-prigorje/price-i-obicaji/tema/[slug].vue'
-import NarratorPage from '../app/pages/potkalnicko-prigorje/price-i-obicaji/kazivac/[slug].vue'
-import PersonPage from '../app/pages/potkalnicko-prigorje/osobe/[slug].vue'
-import Settlement from '../app/pages/potkalnicko-prigorje/naselja/[naselje].vue'
-import Municipality from '../app/pages/potkalnicko-prigorje/istrazi/[opcina].vue'
+import IntangibleIndex from '../app/pages/price-i-obicaji/index.vue'
+import IntangibleRecord from '../app/pages/price-i-obicaji/[kind]/[slug].vue'
+import ThemePage from '../app/pages/price-i-obicaji/tema/[slug].vue'
+import NarratorPage from '../app/pages/price-i-obicaji/kazivac/[slug].vue'
+import PersonPage from '../app/pages/osobe/[slug].vue'
+import Settlement from '../app/pages/naselja/[naselje].vue'
+import Municipality from '../app/pages/istrazi/[opcina].vue'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
 
 registerAtlasApiEndpoints()
 
 // The public Priče i običaji pages on the fake snapshot (test/helpers/fakeIntangible.ts): the list and its filters,
 // a record page per kind, a theme, narrators with and without consent, and the lists on place and person pages.
-const ROOT = '/potkalnicko-prigorje/price-i-obicaji'
+const ROOT = '/price-i-obicaji'
 
 describe('Priče i običaji list', () => {
   it('lists records with kind and type, and offers the kind filter and the Memory route', async () => {
@@ -30,7 +30,7 @@ describe('Priče i običaji list', () => {
     const kinds = page.get('[data-testid="intangible-filter-kind"]').findAll('button').map(b => b.text())
     expect(kinds).toEqual(['Sve', 'Priče', 'Običaji', 'Usmeni tekstovi'])
     expect(page.find('[data-testid="intangible-filter-type"]').exists()).toBe(false)
-    expect(page.get('[data-testid="intangible-contribute"]').attributes('href')).toBe('/potkalnicko-prigorje/doprinesi?vrsta=sjecanje')
+    expect(page.get('[data-testid="intangible-contribute"]').attributes('href')).toBe('/doprinesi?vrsta=sjecanje')
   })
 
   it('narrows by kind and then offers the types of that kind', async () => {
@@ -95,7 +95,7 @@ describe('record pages', () => {
     await vi.waitFor(() => expect(page.find('[data-testid="intangible-folk_text-page"]').exists()).toBe(true))
     expect(page.get('[data-testid="intangible-text-local"]').text()).toBe('Živio Martin, živilo vino!')
     expect(page.get('[data-testid="intangible-custom"]').text()).toContain('Martinje u Kalniku')
-    expect(page.get('[data-testid="intangible-words"]').find('a').attributes('href')).toBe('/potkalnicko-prigorje/govor/martin')
+    expect(page.get('[data-testid="intangible-words"]').find('a').attributes('href')).toBe('/govor/martin')
     expect(page.get('[data-testid="intangible-recorded-on"]').text()).toBe('1975.')
     expect(page.find('[data-testid="intangible-period"]').exists()).toBe(false)
   })
@@ -123,7 +123,7 @@ describe('themes and narrators', () => {
     expect(page.get('[data-testid="narrator-name"]').text()).toBe('Marija Horvat')
     expect(page.get('[data-testid="narrator-details"]').text()).toContain('Rođen/a 1938.')
     expect(page.get('[data-testid="narrator-details"]').text()).toContain('Preminuo/la')
-    expect(page.get('[data-testid="narrator-person"]').attributes('href')).toBe('/potkalnicko-prigorje/osobe/ivan-kalnican')
+    expect(page.get('[data-testid="narrator-person"]').attributes('href')).toBe('/osobe/ivan-kalnican')
     expect(page.get('[data-testid="narrator-told"]').text()).toContain('Martinjska zdravica')
     expect(page.get('[data-testid="narrator-collected"]').text()).toContain('Kalnička vještica')
     expect(page.find('[data-testid="narrator-anonymous"]').exists()).toBe(false)
@@ -144,16 +144,16 @@ describe('themes and narrators', () => {
 
 describe('records on place and person pages', () => {
   it('lists them on the settlement, municipality and person pages', async () => {
-    const settlement = await mountSuspended(Settlement, { route: { path: '/potkalnicko-prigorje/naselja/kalnik', params: { naselje: 'kalnik' } } })
+    const settlement = await mountSuspended(Settlement, { route: { path: '/naselja/kalnik', params: { naselje: 'kalnik' } } })
     await vi.waitFor(() => expect(settlement.find('[data-testid="settlement-intangible"]').exists()).toBe(true))
     expect(settlement.get('[data-testid="settlement-intangible"]').text()).toContain('Kalnička vještica')
     expect(settlement.get('[data-testid="settlement-intangible"]').text()).toContain('Priča · legenda/predaja')
 
-    const unit = await mountSuspended(Municipality, { route: { path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', params: { opcina: 'opcina-kalnik' } } })
+    const unit = await mountSuspended(Municipality, { route: { path: '/istrazi/opcina-kalnik', params: { opcina: 'opcina-kalnik' } } })
     await vi.waitFor(() => expect(unit.find('[data-testid="municipality-intangible"]').exists()).toBe(true))
     expect(unit.get('[data-testid="municipality-intangible"]').text()).toContain('Martinje u Kalniku')
 
-    const person = await mountSuspended(PersonPage, { route: { path: '/potkalnicko-prigorje/osobe/ivan-kalnican', params: { slug: 'ivan-kalnican' } } })
+    const person = await mountSuspended(PersonPage, { route: { path: '/osobe/ivan-kalnican', params: { slug: 'ivan-kalnican' } } })
     await vi.waitFor(() => expect(person.find('[data-testid="person-intangible"]').exists()).toBe(true))
     expect(person.get('[data-testid="person-intangible"]').text()).toContain('Kalnička vještica')
   })

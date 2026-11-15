@@ -5,7 +5,7 @@ import { clearNuxtData, clearNuxtState } from '#imports'
 import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
 import { PZ_HOME_STORAGE_KEY } from '../app/composables/usePzHome'
 import { CHALLENGE_LIST_STORAGE_KEY } from '../shared/utils/challengeList'
-import Home from '../app/pages/potkalnicko-prigorje/index.vue'
+import Home from '../app/pages/index.vue'
 import DailyWord from '../app/components/heritage/DailyWord.vue'
 import type { DailyWordPayload } from '../shared/utils/dailyWord'
 import type { ChallengeState } from '../shared/utils/challenge'
@@ -86,7 +86,7 @@ afterEach(() => {
 
 describe('Potkalnički zapisi home (WP1)', () => {
   it('orders main sections for SSR and drops the hero buttons', async () => {
-    const page = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
+    const page = await mountSuspended(Home, { route: '' })
     const ids = sectionOrder(page)
     const daily = ids.indexOf('daily-word')
     const learnPlay = ids.indexOf('learn-play-switch')
@@ -106,7 +106,7 @@ describe('Potkalnički zapisi home (WP1)', () => {
 
   it('shows the Igraj panel after mount when pz-home/v1 prefers igraj', async () => {
     localStorage.setItem(PZ_HOME_STORAGE_KEY, JSON.stringify({ version: 1, tab: 'igraj' }))
-    const page = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
+    const page = await mountSuspended(Home, { route: '' })
     expect(page.find('[data-testid="learn-play-panel-uci"]').exists()).toBe(true)
     await vi.waitFor(() => expect(page.find('[data-testid="learn-play-panel-igraj"]').isVisible()).toBe(true))
     expect(page.find('[data-testid="learn-play-panel-uci"]').isVisible()).toBe(false)
@@ -115,17 +115,17 @@ describe('Potkalnički zapisi home (WP1)', () => {
 
   it('keeps the remembered tab when the home page is mounted again in the same session', async () => {
     localStorage.setItem(PZ_HOME_STORAGE_KEY, JSON.stringify({ version: 1, tab: 'igraj' }))
-    const first = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
+    const first = await mountSuspended(Home, { route: '' })
     await vi.waitFor(() => expect(first.find('[data-testid="learn-play-panel-igraj"]').isVisible()).toBe(true))
     first.unmount()
-    const second = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
+    const second = await mountSuspended(Home, { route: '' })
     await vi.waitFor(() => expect(second.find('[data-testid="learn-play-panel-igraj"]').isVisible()).toBe(true))
     expect(second.find('[data-testid="learn-play-panel-uci"]').isVisible()).toBe(false)
   })
 
   it('falls back to the Uči panel when home storage is malformed', async () => {
     localStorage.setItem(PZ_HOME_STORAGE_KEY, '{not-json')
-    const page = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
+    const page = await mountSuspended(Home, { route: '' })
     await vi.waitFor(() => expect(page.find('[data-testid="learn-play-panel-uci"]').isVisible()).toBe(true))
     expect(page.find('[data-testid="learn-play-panel-igraj"]').isVisible()).toBe(false)
   })
@@ -157,7 +157,7 @@ describe('Potkalnički zapisi home (WP1)', () => {
       question: null,
       feedback: null
     } satisfies ChallengeState))
-    const page = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
+    const page = await mountSuspended(Home, { route: '' })
     await vi.waitFor(() => expect(page.find('[data-testid="challenge-resume-card"]').exists()).toBe(true))
     expect(page.text()).toContain('pitanje 4 od 10')
     expect(page.text()).toContain('Nastavi izazov')
@@ -170,7 +170,7 @@ describe('Potkalnički zapisi home (WP1)', () => {
       days: { '2026-11-11': { wordId: 'hiza', guesses: ['c'], done: true, solved: true, tries: 1, maxTries: 3 } }
     }))
     const page = await mountSuspended(DailyWord, {
-      route: '/potkalnicko-prigorje',
+      route: '',
       props: { compactWhenPlayed: true }
     })
     await expect.poll(() => page.find('[data-testid="daily-compact-row"]').exists(), { timeout: 5000 }).toBe(true)
@@ -185,7 +185,7 @@ describe('Potkalnički zapisi home (WP1)', () => {
       days: { '2026-11-11': { wordId: 'hiza', guesses: ['c'], done: true, solved: true, tries: 1, maxTries: 3 } }
     }))
     const page = await mountSuspended(DailyWord, {
-      route: '/potkalnicko-prigorje',
+      route: '',
       props: { compactWhenPlayed: true }
     })
     await expect.poll(() => page.find('[data-testid="daily-compact-row"]').exists(), { timeout: 5000 }).toBe(true)

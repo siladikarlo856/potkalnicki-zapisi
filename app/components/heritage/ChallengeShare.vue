@@ -26,7 +26,7 @@ const error = ref('')
 const nickname = ref('')
 const creating = ref(false)
 const { remember } = useChallengeList()
-const link = computed(() => createdCode.value ? origin.value + localePath(`/potkalnicko-prigorje/izazov/${createdCode.value}`) : '')
+const link = computed(() => createdCode.value ? origin.value + localePath(`/izazov/${createdCode.value}`) : '')
 const shareText = computed(() => {
   if (props.invite && link.value) {
     return challengeInviteShareText({

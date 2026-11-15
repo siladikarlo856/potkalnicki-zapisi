@@ -10,7 +10,7 @@ const subtopic = computed(() => (props.category ? wordSubtopicForCategory(props.
 
 const learnPath = computed(() => {
   const topic = subtopic.value?.id ?? 'rijeci'
-  return `/potkalnicko-prigorje/uci/sesija?teme=${topic}`
+  return `/uci/sesija?teme=${topic}`
 })
 
 const learnLabel = computed(() => {
@@ -22,8 +22,8 @@ const learnLabel = computed(() => {
 
 const steps = computed(() => [
   { id: 'learn' as const, icon: 'i-lucide-book-open', path: learnPath.value, label: learnLabel.value },
-  { id: 'quiz' as const, icon: 'i-lucide-zap', path: '/potkalnicko-prigorje/igre/kviz', label: t('daily.nextSteps.quiz') },
-  { id: 'challenge' as const, icon: 'i-lucide-swords', path: '/potkalnicko-prigorje/igre/kviz', label: t('daily.nextSteps.challenge') }
+  { id: 'quiz' as const, icon: 'i-lucide-zap', path: '/igre/kviz', label: t('daily.nextSteps.quiz') },
+  { id: 'challenge' as const, icon: 'i-lucide-swords', path: '/igre/kviz', label: t('daily.nextSteps.challenge') }
 ])
 </script>
 

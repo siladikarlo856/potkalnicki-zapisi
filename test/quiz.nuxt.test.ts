@@ -4,7 +4,7 @@ import { clearNuxtData, clearNuxtState, useNuxtApp } from '#imports'
 import type { CardPool } from '../shared/utils/learn/types'
 import { GAME_SCORES_KEY } from '../shared/utils/games/scores'
 import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
-import Quiz from '../app/pages/potkalnicko-prigorje/igre/kviz.vue'
+import Quiz from '../app/pages/igre/kviz.vue'
 import sampleWords from './fixtures/heritage/words.json'
 import sampleAreas from './fixtures/heritage/areas.json'
 
@@ -82,7 +82,7 @@ afterEach(() => {
 
 async function mountQuiz(lang: 'hr' = 'hr') {
   await useNuxtApp().$i18n.setLocale(lang)
-  wrapper = await mountSuspended(Quiz, { route: '/potkalnicko-prigorje/igre/kviz' })
+  wrapper = await mountSuspended(Quiz, { route: '/igre/kviz' })
   return wrapper
 }
 
@@ -229,7 +229,7 @@ describe('limited active words', () => {
 })
 
 describe.each([
-  { lang: 'hr' as const, summary: 'Kaj to znači? · 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 od 1', copied: 'Kopirano', path: '/potkalnicko-prigorje/igre/kviz' }
+  { lang: 'hr' as const, summary: 'Kaj to znači? · 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 od 1', copied: 'Kopirano', path: '/igre/kviz' }
 ])('$lang quiz result', ({ summary, replay, noMisses, counter, copied, path }) => {
   async function answerCurrent(page: Page, correct: boolean) {
     const entry = askedWord(page)

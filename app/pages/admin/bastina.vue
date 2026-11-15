@@ -74,7 +74,7 @@ const resource = defineAdminResource<HeritageItem, ItemForm>({
     heritageStatus: form.heritageStatus === '__none__' ? null : form.heritageStatus
   }).issues,
   label: item => item.name,
-  publicPath: item => item.settlementSlug ? localePath(`/potkalnicko-prigorje/bastina/${item.settlementSlug}/${item.slug}`) : undefined
+  publicPath: item => item.settlementSlug ? localePath(`/bastina/${item.settlementSlug}/${item.slug}`) : undefined
 })
 
 watch(categoryOptions, (options) => {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtState } from '#imports'
 import type { CardPool, PoolCard } from '../shared/utils/learn/types'
-import LearnSetup from '../app/pages/potkalnicko-prigorje/uci/index.vue'
+import LearnSetup from '../app/pages/uci/index.vue'
 import PzLearnPlaySwitch from '../app/components/pz/PzLearnPlaySwitch.vue'
 
 function word(id: string): PoolCard {
@@ -44,7 +44,7 @@ afterEach(() => wrapper?.unmount())
 
 describe('learn setup page', () => {
   it('shows topics and lengths as pressed-state chips and a start link that carries the choice', async () => {
-    wrapper = await mountSuspended(LearnSetup, { route: '/potkalnicko-prigorje/uci?mjesto=sopron' })
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci?mjesto=sopron' })
     await expect.poll(() => wrapper!.find('[data-testid="learn-setup"]').exists(), { timeout: 5000 }).toBe(true)
     const chips = wrapper!.findAll('[data-testid="learn-chip"]')
     const rijeci = chips.find(chip => chip.text().includes('Riječi'))!

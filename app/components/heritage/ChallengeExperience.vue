@@ -142,7 +142,7 @@ async function act(action: 'create' | 'join' | 'reveal' | 'answer' | 'continue',
       else if (action === 'join') remember(state.value, 'player')
       else update(state.value)
     }
-    if (action === 'create') await navigateTo(localePath(`/potkalnicko-prigorje/izazov/${state.value.code}`))
+    if (action === 'create') await navigateTo(localePath(`/izazov/${state.value.code}`))
   } catch (cause) {
     error.value = message(cause)
     // The answer may have reached the server even when its response was lost.
@@ -202,7 +202,7 @@ const optionsQuestion = computed(() => question.value
   : null)
 const optionsSelected = computed(() => feedback.value ? (feedback.value.selected ?? -1) : null)
 const lastQuestion = computed(() => (participant.value?.index ?? 0) + 1 >= (state.value?.questionCount ?? 0))
-const shareUrl = computed(() => state.value ? origin.value + localePath(`/potkalnicko-prigorje/izazov/${state.value.code}`) : '')
+const shareUrl = computed(() => state.value ? origin.value + localePath(`/izazov/${state.value.code}`) : '')
 const resultMessage = computed(() => state.value && participant.value
   ? `${t('pz.challenge.shareResultText', { title: text(state.value.title), points: participant.value.total })}\n${t('pz.share.invite')}\n${shareUrl.value}`
   : '')
@@ -214,7 +214,7 @@ function openShare() {
 // The one primary action of the screen, in the sticky bar on mobile and under the content from 1024px up.
 interface PrimaryAction { label: string, icon?: string, trailing?: string, to?: string, submit?: string, run?: () => unknown }
 const primary = computed((): PrimaryAction | null => {
-  if (state.value?.closed) return { label: t('pz.challenge.newChallenge'), icon: 'i-lucide-flag', to: localePath('/potkalnicko-prigorje/izazov') }
+  if (state.value?.closed) return { label: t('pz.challenge.newChallenge'), icon: 'i-lucide-flag', to: localePath('/izazov') }
   if (!participant.value) return state.value ? { label: t('challenge.enter'), trailing: 'i-lucide-arrow-right', submit: 'challenge-enter-form' } : null
   if (participant.value.phase === 'ready') {
     const first = participant.value.index === 0 || state.value!.rounds.slice(0, readyRound.value).reduce((n, r) => n + r.count, 0) === participant.value.index
@@ -246,7 +246,7 @@ onMounted(() => {
 <template>
   <UContainer class="max-w-3xl py-6 sm:py-10">
     <UButton
-      :to="localePath('/potkalnicko-prigorje')"
+      :to="localePath('')"
       color="neutral"
       variant="link"
       icon="i-lucide-arrow-left"
@@ -320,7 +320,7 @@ onMounted(() => {
         class="flex flex-wrap gap-2"
       >
         <UButton
-          :to="localePath(`/potkalnicko-prigorje/izazov/${state.code}/ljestvica`)"
+          :to="localePath(`/izazov/${state.code}/ljestvica`)"
           icon="i-lucide-trophy"
           color="neutral"
           variant="outline"
@@ -329,7 +329,7 @@ onMounted(() => {
           {{ t(state.closed ? 'challenge.final' : 'challenge.leaderboard') }}
         </UButton>
         <UButton
-          :to="localePath('/potkalnicko-prigorje/izazov')"
+          :to="localePath('/izazov')"
           color="neutral"
           variant="ghost"
         >
@@ -606,7 +606,7 @@ onMounted(() => {
               </template>
             </span>
             <NuxtLink
-              :to="localePath(`/potkalnicko-prigorje/izazov/${state!.code}/ljestvica`)"
+              :to="localePath(`/izazov/${state!.code}/ljestvica`)"
               class="pz-body-sm font-semibold underline"
             >
               {{ t('challenge.leaderboard') }}
@@ -662,7 +662,7 @@ onMounted(() => {
             />
           </div>
           <UButton
-            :to="localePath(`/potkalnicko-prigorje/izazov/${state!.code}/ljestvica`)"
+            :to="localePath(`/izazov/${state!.code}/ljestvica`)"
             icon="i-lucide-trophy"
             color="neutral"
             variant="outline"

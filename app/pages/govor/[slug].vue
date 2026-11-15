@@ -53,7 +53,7 @@ useSeoMeta({
   >
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_var(--pz-side-panel)] lg:gap-x-12">
       <header class="flex max-w-(--pz-measure) flex-col gap-3">
-        <PzBackPill :to="localePath(`${pzRoutes.home}/govor`)">
+        <PzBackPill :to="localePath(`/govor`)">
           {{ t('pz.speech.title') }}
         </PzBackPill>
         <p class="pz-overline text-muted">

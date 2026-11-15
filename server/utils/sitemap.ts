@@ -24,7 +24,7 @@ export const STATIC_SITEMAP_PATHS = [
   pzRoutes.privacy,
   pzRoutes.explore,
   pzRoutes.heritage,
-  `${pzRoutes.home}/govor`
+  `/govor`
 ]
 
 export interface SitemapEntry {

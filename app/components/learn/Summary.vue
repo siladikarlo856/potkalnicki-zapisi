@@ -27,13 +27,13 @@ const sessionPath = computed(() => {
   const q = new URLSearchParams()
   q.set('teme', props.session.topics.join(','))
   q.set('n', String(props.session.n))
-  return `/potkalnicko-prigorje/uci/sesija?${q}`
+  return `/uci/sesija?${q}`
 })
 
 const repeatPath = computed(() => {
   const q = new URLSearchParams()
   q.set('kartice', missed.value.join(','))
-  return `/potkalnicko-prigorje/uci/sesija?${q}`
+  return `/uci/sesija?${q}`
 })
 
 interface ReviewRow {

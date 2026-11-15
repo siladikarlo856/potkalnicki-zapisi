@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import Board from '../app/pages/potkalnicko-prigorje/izazov/[code]/ljestvica.vue'
+import Board from '../app/pages/izazov/[code]/ljestvica.vue'
 import { usePzTabBar } from '../app/composables/usePzTabBar'
 import type { ChallengeLeaderboard, ChallengeState } from '../shared/utils/challenge'
 
@@ -36,7 +36,7 @@ afterEach(() => {
 })
 
 async function mountBoard() {
-  wrapper = await mountSuspended(Board, { route: `/potkalnicko-prigorje/izazov/${code}/ljestvica` })
+  wrapper = await mountSuspended(Board, { route: `/izazov/${code}/ljestvica` })
   await expect.poll(() => wrapper!.find('table').exists()).toBe(true)
   return wrapper
 }
@@ -64,6 +64,6 @@ describe('challenge leaderboard page', () => {
     expect(page.find('[data-testid="challenge-close-date"]').exists()).toBe(false)
     const primary = page.get('[data-testid="challenge-board-primary"]')
     expect(primary.text()).toBe('Napravi novi izazov')
-    expect(primary.attributes('href')).toBe('/potkalnicko-prigorje/izazov')
+    expect(primary.attributes('href')).toBe('/izazov')
   })
 })

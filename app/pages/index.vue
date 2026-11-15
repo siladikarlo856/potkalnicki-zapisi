@@ -54,7 +54,7 @@ const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []
             class="ring-(--ui-border-accented)"
           />
           <UButton
-            :to="localePath('/potkalnicko-prigorje/o-projektu')"
+            :to="localePath('/o-projektu')"
             :label="t('pz.home.aboutCta')"
             trailing-icon="i-lucide-arrow-right"
             color="neutral"
@@ -113,7 +113,7 @@ const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []
         </p>
       </div>
       <UButton
-        :to="localePath('/potkalnicko-prigorje/doprinesi')"
+        :to="localePath('/doprinesi')"
         :label="t('pz.home.contributeCta')"
         icon="i-lucide-pen-line"
         color="neutral"

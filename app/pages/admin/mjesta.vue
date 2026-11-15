@@ -82,9 +82,9 @@ const resource = defineAdminResource<Area, AreaForm>({
   label: area => areaAdminLabel(area.kind, area.name),
   publicPath(area) {
     if (area.status !== 'published' || !area.slug) return undefined
-    if (area.kind === 'settlement') return `/potkalnicko-prigorje/naselja/${area.slug}`
+    if (area.kind === 'settlement') return `/naselja/${area.slug}`
     if (area.kind === 'town' || area.kind === 'municipality' || area.kind === 'region') {
-      return `/potkalnicko-prigorje/istrazi/${area.slug}`
+      return `/istrazi/${area.slug}`
     }
     return undefined
   }

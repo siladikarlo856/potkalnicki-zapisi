@@ -116,7 +116,7 @@ function toggleTopic(topic: { id: TopicId, status: string, parent?: TopicId, soo
 
 function startHref() {
   const teme = [...selected.value].join(',')
-  let href = localePath(`/potkalnicko-prigorje/uci/sesija?teme=${encodeURIComponent(teme)}&n=${n.value}`)
+  let href = localePath(`/uci/sesija?teme=${encodeURIComponent(teme)}&n=${n.value}`)
   if (placeSlug.value) href += `&mjesto=${encodeURIComponent(placeSlug.value)}`
   return href
 }
@@ -149,7 +149,7 @@ watch(placeSlug, () => {
 <template>
   <UContainer class="py-4 lg:py-6">
     <div class="mx-auto flex w-full max-w-(--pz-measure) flex-col gap-6">
-      <PzBackPill :to="localePath('/potkalnicko-prigorje')">
+      <PzBackPill :to="localePath('')">
         {{ t('heritage.title') }}
       </PzBackPill>
       <header class="flex flex-col gap-2">

@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData } from '#imports'
-import Opcine from '../app/pages/potkalnicko-prigorje/igre/opcine.vue'
-import SelaOpcine from '../app/pages/potkalnicko-prigorje/igre/sela-i-opcine.vue'
-import Nabroji from '../app/pages/potkalnicko-prigorje/igre/nabroji.vue'
+import Opcine from '../app/pages/igre/opcine.vue'
+import SelaOpcine from '../app/pages/igre/sela-i-opcine.vue'
+import Nabroji from '../app/pages/igre/nabroji.vue'
 import { fixtureCardPool } from './fixtures/gamePool'
 
 const pool = fixtureCardPool()
@@ -26,7 +26,7 @@ async function waitForStart() {
 
 describe('opcine game page', () => {
   it('starts a round and finishes after all answers', async () => {
-    wrapper = await mountSuspended(Opcine, { route: '/potkalnicko-prigorje/igre/opcine' })
+    wrapper = await mountSuspended(Opcine, { route: '/igre/opcine' })
     await waitForStart()
     await wrapper.get('[data-testid="game-start-button"]').trigger('click')
     expect(wrapper.find('[data-testid="game-shell-opcina"]').exists()).toBe(true)
@@ -43,7 +43,7 @@ describe('opcine game page', () => {
 
 describe('sela-i-opcine game page', () => {
   it('builds a board and finishes after Provjeri', async () => {
-    wrapper = await mountSuspended(SelaOpcine, { route: '/potkalnicko-prigorje/igre/sela-i-opcine' })
+    wrapper = await mountSuspended(SelaOpcine, { route: '/igre/sela-i-opcine' })
     await waitForStart()
     await wrapper.get('[data-testid="game-start-button"]').trigger('click')
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="sela-chips"]').exists()).toBe(true))
@@ -62,7 +62,7 @@ describe('sela-i-opcine game page', () => {
 
 describe('nabroji game page', () => {
   it('lists eight slots for Općina Kalnik and accepts sopron for Šopron', async () => {
-    wrapper = await mountSuspended(Nabroji, { route: '/potkalnicko-prigorje/igre/nabroji' })
+    wrapper = await mountSuspended(Nabroji, { route: '/igre/nabroji' })
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="nabroji-unit-opcina-kalnik"]').exists()).toBe(true))
     await wrapper.get('[data-testid="nabroji-unit-opcina-kalnik"]').trigger('click')
     expect(wrapper.findAll('[data-testid^="nabroji-slot-"]')).toHaveLength(8)

@@ -4,7 +4,7 @@ import { clearNuxtState } from '#imports'
 import type { CardPool, PoolCard } from '../shared/utils/learn/types'
 import { LEARN_STORAGE_KEY } from '../app/composables/useLearnState'
 import { buildLearnReviewQuestion } from '../shared/utils/learn/reviewQuestion'
-import LearnSession from '../app/pages/potkalnicko-prigorje/uci/sesija.vue'
+import LearnSession from '../app/pages/uci/sesija.vue'
 
 const T = '2026-11-04T12:00:00.000Z'
 
@@ -68,7 +68,7 @@ async function flipAndAnswer(page: Awaited<ReturnType<typeof mountSuspended>>, k
 describe('learn session page', () => {
   it('runs setup through ten answers to the summary', async () => {
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?teme=rijeci&n=10'
+      route: '/uci/sesija?teme=rijeci&n=10'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists(), { timeout: 5000 }).toBe(true)
     for (let i = 0; i < 10; i++) await flipAndAnswer(wrapper!, true)
@@ -80,7 +80,7 @@ describe('learn session page', () => {
 
   it('requeues a missed card exactly once in the queue', async () => {
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?teme=rijeci&n=3'
+      route: '/uci/sesija?teme=rijeci&n=3'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     await flipAndAnswer(wrapper!, false)
@@ -106,7 +106,7 @@ describe('learn session page', () => {
       lastN: 10
     }))
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?nastavi=1'
+      route: '/uci/sesija?nastavi=1'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     expect(wrapper!.text()).toContain('Kartica 4 od 10')
@@ -114,7 +114,7 @@ describe('learn session page', () => {
 
   it('preserves kartice query order and ignores invalid keys', async () => {
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?kartice=word:w2,word:w0,bad'
+      route: '/uci/sesija?kartice=word:w2,word:w0,bad'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     expect(wrapper!.text()).toContain('riječ2')
@@ -137,7 +137,7 @@ describe('learn session page', () => {
       lastN: 5
     }))
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?nastavi=1'
+      route: '/uci/sesija?nastavi=1'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-review-card"]').exists()).toBe(true)
     expect(wrapper!.text()).toContain('Odaberi točan odgovor')
@@ -168,7 +168,7 @@ describe('learn session page', () => {
       lastN: 5
     }))
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?nastavi=1'
+      route: '/uci/sesija?nastavi=1'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-review-card"]').exists()).toBe(true)
     const question = buildLearnReviewQuestion(pool, 'word:w0')!
@@ -183,7 +183,7 @@ describe('learn session page', () => {
 
   it('shows Ne znam and Znam only after the card is turned, with an explicit text position', async () => {
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?teme=rijeci&n=5'
+      route: '/uci/sesija?teme=rijeci&n=5'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('1 od 5')
@@ -199,7 +199,7 @@ describe('learn session page', () => {
 
   it('lists the missed cards with a link and a count in the summary', async () => {
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?kartice=word:w0,word:w1'
+      route: '/uci/sesija?kartice=word:w0,word:w1'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     await flipAndAnswer(wrapper!, true)
@@ -217,7 +217,7 @@ describe('learn session page', () => {
 
   it('keeps the mjesto query from the settlement page for the session', async () => {
     wrapper = await mountSuspended(LearnSession, {
-      route: '/potkalnicko-prigorje/uci/sesija?teme=rijeci&n=5&mjesto=sopron'
+      route: '/uci/sesija?teme=rijeci&n=5&mjesto=sopron'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     const stored = JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!)

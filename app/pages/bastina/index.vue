@@ -143,7 +143,7 @@ useSeoMeta({
             <PzHeritageCard
               class="w-full"
               :title="item.name"
-              :to="item.path ? localePath(item.path) : localePath(`/potkalnicko-prigorje/istrazi/${item.municipality.slug}`)"
+              :to="item.path ? localePath(item.path) : localePath(`/istrazi/${item.municipality.slug}`)"
               :settlement="locationLabel(item)"
               :municipality="item.municipality.label"
               :category="item.category.label"

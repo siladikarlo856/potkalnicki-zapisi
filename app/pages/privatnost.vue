@@ -88,7 +88,7 @@ function count(key: string) {
 
       <div>
         <UButton
-          :to="localePath('/potkalnicko-prigorje/doprinesi')"
+          :to="localePath('/doprinesi')"
           :label="t('privacy.back')"
           icon="i-lucide-arrow-left"
           color="neutral"

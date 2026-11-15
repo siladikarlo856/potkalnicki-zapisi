@@ -44,7 +44,7 @@ async function quickChallenge() {
       body: { nickname: name, generate: DEFAULT_GENERATE }
     })
     remember(state, 'creator')
-    await navigateTo(localePath(`/potkalnicko-prigorje/izazov/${state.code}`))
+    await navigateTo(localePath(`/izazov/${state.code}`))
   } catch (cause) {
     const failure = cause as { status?: number, statusCode?: number }
     error.value = (failure.status ?? failure.statusCode) === 429 ? t('challenge.limited') : t('challenge.createError')

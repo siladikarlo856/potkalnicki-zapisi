@@ -11,24 +11,24 @@ beforeEach(() => {
 
 describe('PzBottomNav', () => {
   it('renders four tab links in a labelled nav and marks the active one', async () => {
-    const nav = await mountSuspended(PzBottomNav, { route: '/potkalnicko-prigorje/istrazi/opcina-kalnik' })
+    const nav = await mountSuspended(PzBottomNav, { route: '/istrazi/opcina-kalnik' })
     const el = nav.find('nav[aria-label="Glavna navigacija"]')
     expect(el.exists()).toBe(true)
     const tabs = el.findAll('a')
     expect(tabs.map(tab => tab.text())).toEqual(['Početna', 'Igre', 'Istraži', 'Doprinesi'])
     expect(tabs.map(tab => tab.attributes('aria-current'))).toEqual([undefined, undefined, 'page', undefined])
-    expect(tabs[3]!.attributes('href')).toBe('/potkalnicko-prigorje/doprinesi')
+    expect(tabs[3]!.attributes('href')).toBe('/doprinesi')
   })
 
   it('marks Početna only on the home page and nothing on O projektu', async () => {
-    const home = await mountSuspended(PzBottomNav, { route: '/potkalnicko-prigorje' })
+    const home = await mountSuspended(PzBottomNav, { route: '/' })
     expect(home.findAll('a[aria-current="page"]').map(tab => tab.text())).toEqual(['Početna'])
-    const about = await mountSuspended(PzBottomNav, { route: '/potkalnicko-prigorje/o-projektu' })
+    const about = await mountSuspended(PzBottomNav, { route: '/o-projektu' })
     expect(about.findAll('a[aria-current="page"]')).toHaveLength(0)
   })
 
   it.each(['game', 'challenge', 'sheet'] as const)('hides while the %s hold is set and returns when released', async (reason) => {
-    const nav = await mountSuspended(PzBottomNav, { route: '/potkalnicko-prigorje/igre' })
+    const nav = await mountSuspended(PzBottomNav, { route: '/igre' })
     const { hold, release } = usePzTabBar()
     expect(nav.find('nav').exists()).toBe(true)
     hold(reason)
@@ -40,7 +40,7 @@ describe('PzBottomNav', () => {
   })
 
   it('stays hidden until every hold is released', async () => {
-    const nav = await mountSuspended(PzBottomNav, { route: '/potkalnicko-prigorje/igre' })
+    const nav = await mountSuspended(PzBottomNav, { route: '/igre' })
     const { hold, release } = usePzTabBar()
     hold('game')
     hold('sheet')
@@ -56,7 +56,7 @@ describe('PzBottomNav', () => {
     const field = document.createElement('input')
     const button = document.createElement('button')
     document.body.append(field, button)
-    const nav = await mountSuspended(PzBottomNav, { route: '/potkalnicko-prigorje/doprinesi' })
+    const nav = await mountSuspended(PzBottomNav, { route: '/doprinesi' })
     button.focus()
     await nextTick()
     expect(nav.find('nav').exists()).toBe(true)
@@ -93,7 +93,7 @@ describe('useHidePzTabBar', () => {
 
 describe('PzHeader', () => {
   it('lists all seven sections inline and in the menu, with the current one marked on desktop', async () => {
-    const header = await mountSuspended(PzHeader, { route: '/potkalnicko-prigorje/govor' })
+    const header = await mountSuspended(PzHeader, { route: '/govor' })
     const inline = header.find('[data-testid="pz-header-nav"]')
     expect(inline.findAll('a').map(link => link.text())).toEqual(['Igre', 'Istraži', 'Baština', 'Priče i običaji', 'Naš govor', 'Doprinesi', 'O projektu'])
     expect(inline.findAll('a[aria-current="page"]').map(link => link.text())).toEqual(['Naš govor'])
@@ -104,7 +104,7 @@ describe('PzHeader', () => {
   })
 
   it('is pinned only from lg up, where there is no tab bar', async () => {
-    const header = await mountSuspended(PzHeader, { route: '/potkalnicko-prigorje' })
+    const header = await mountSuspended(PzHeader, { route: '' })
     const classes = header.find('header').classes()
     expect(classes).toContain('lg:sticky')
     expect(classes).toContain('lg:top-0')

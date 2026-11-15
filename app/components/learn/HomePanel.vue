@@ -79,7 +79,7 @@ function startNewLesson() {
   const q = new URLSearchParams()
   q.set('teme', topics.join(','))
   q.set('n', String(homeN.value))
-  navigateTo(localePath(`/potkalnicko-prigorje/uci/sesija?${q}`))
+  navigateTo(localePath(`/uci/sesija?${q}`))
 }
 
 const topLevelTopics = computed(() =>
@@ -87,7 +87,7 @@ const topLevelTopics = computed(() =>
 
 const sessionHref = (query: Record<string, string>) => {
   const q = new URLSearchParams(query)
-  return localePath(`/potkalnicko-prigorje/uci/sesija?${q}`)
+  return localePath(`/uci/sesija?${q}`)
 }
 </script>
 
@@ -197,7 +197,7 @@ const sessionHref = (query: Record<string, string>) => {
         <p class="pz-body-sm text-muted">
           {{ t('pz.learn.newLessonMeta') }}
           <ULink
-            :to="localePath('/potkalnicko-prigorje/uci')"
+            :to="localePath('/uci')"
             class="inline-flex min-h-(--pz-tap-min) items-center gap-1 font-semibold text-primary"
           >
             {{ t('pz.learn.moreSettings') }}

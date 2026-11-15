@@ -44,6 +44,6 @@ Issues are managed with the self-hosted Gitea `tea` CLI:
 tea --repo ksiladi/potkalnicki-zapisi issues list
 ```
 
-The atlas keeps all public routes under `/potkalnicko-prigorje/**`, `/admin/**` and `/api/**`. `/` and `/en` redirect to `/potkalnicko-prigorje/`. Public canonical URLs, sitemap, Open Graph images and robots all use the atlas origin. Admin remains excluded from analytics and search indexing.
+The atlas keeps all public routes at the site root, alongside `/admin/**` and `/api/**`. `/` serves the home page and `/en` redirects to `/`. Public canonical URLs, sitemap, Open Graph images and robots all use the atlas origin. Admin remains excluded from analytics and search indexing.
 
 The portfolio repository owns the root domain and redirects old `/potkalnicko-prigorje/**` links to this host, preserving the path and query string.

@@ -104,7 +104,7 @@ async function readPublic(limit?: number) {
 
 describe.skipIf(!harness.enabled)('Potkalnički zapisi learning and challenge choice', () => {
   it('serves the play catalogue and friend challenge on the games hub', async () => {
-    const response = await request('/potkalnicko-prigorje/igre')
+    const response = await request('/igre')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
@@ -123,15 +123,15 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi learning and challenge ch
   })
 
   it('redirects legacy kartice URL to the learn setup page', async () => {
-    const response = await request('/potkalnicko-prigorje/igre/kartice', { redirect: 'manual' })
+    const response = await request('/igre/kartice', { redirect: 'manual' })
     expect(response.status).toBe(301)
-    expect(response.headers.get('location')).toContain('/potkalnicko-prigorje/uci?teme=rijeci')
+    expect(response.headers.get('location')).toContain('/uci?teme=rijeci')
   })
 })
 
 describe.skipIf(!harness.enabled)('Potkalnički zapisi app home', () => {
   it('renders the phase 2 hero, project scope teaser and contribute band', async () => {
-    const response = await request('/potkalnicko-prigorje')
+    const response = await request('')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
@@ -140,9 +140,9 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi app home', () => {
     expect(window.document.body.textContent).toContain('Otkrij priče koje čine Potkalničko prigorje.')
     expect(html).toContain('data-testid="learn-play-switch"')
     expect(html).toMatch(/\bUči\b/)
-    expect(html).toContain('/potkalnicko-prigorje/igre')
+    expect(html).toContain('/igre')
     expect(window.document.querySelector('#doprinos')).not.toBeNull()
-    expect(window.document.querySelector('a[href="/potkalnicko-prigorje/doprinesi"]')).not.toBeNull()
+    expect(window.document.querySelector('a[href="/doprinesi"]')).not.toBeNull()
     const scope = window.document.querySelector('[data-testid="obuhvat"]')
     expect(scope?.textContent).toContain('Pet općina')
     expect(scope?.textContent).toContain('Radni obuhvat projekta, ne službena granica prigorja.')
@@ -158,7 +158,7 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi app home', () => {
 
 describe.skipIf(!harness.enabled)('Potkalnički zapisi contribute and about pages', () => {
   it('renders the contribution type picker', async () => {
-    const picker = await request('/potkalnicko-prigorje/doprinesi')
+    const picker = await request('/doprinesi')
     expect(picker.status).toBe(200)
     const pickerHtml = await picker.text()
     const { Window } = await import('happy-dom')
@@ -174,7 +174,7 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi contribute and about page
   })
 
   it('documents the author on O projektu without a portfolio link', async () => {
-    const response = await request('/potkalnicko-prigorje/o-projektu')
+    const response = await request('/o-projektu')
     expect(response.status).toBe(200)
     const html = await response.text()
     expect(html).toContain('Karlo Siladi')
@@ -185,7 +185,7 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi contribute and about page
 
 describe.skipIf(!harness.enabled)('Potkalnički zapisi quiz catalog', () => {
   it('renders the play catalogue with the daily word first', async () => {
-    const response = await request('/potkalnicko-prigorje/igre')
+    const response = await request('/igre')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
@@ -205,7 +205,7 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi quiz catalog', () => {
 
 describe.skipIf(!harness.enabled)('word admin and public word APIs', () => {
   it('prerenderes learn routes with a client-side loading skeleton', async () => {
-    for (const path of ['/potkalnicko-prigorje/uci', '/potkalnicko-prigorje/uci/sesija']) {
+    for (const path of ['/uci', '/uci/sesija']) {
       const response = await request(path)
       expect(response.status).toBe(200)
       expect(await response.text()).toMatch(/Uči|Lekcija/)
@@ -375,7 +375,7 @@ describe.skipIf(!harness.enabled)('word admin and public word APIs', () => {
     expect((await db.from('heritage_words').update({ slug: newSlug }).eq('id', word.entry.id)).error).toBeNull()
     const redirect = await request('/api/heritage/words/stara-arhivska')
     expect(redirect.status).toBe(200)
-    expect(await redirect.json()).toEqual({ redirect: `/potkalnicko-prigorje/govor/${newSlug}` })
+    expect(await redirect.json()).toEqual({ redirect: `/govor/${newSlug}` })
   })
 
   it('includes public word archive paths in the sitemap', async () => {
@@ -386,8 +386,8 @@ describe.skipIf(!harness.enabled)('word admin and public word APIs', () => {
     const slug = 'sitemap-rijec'
     expect((await db.from('heritage_words').update({ slug }).eq('id', word.entry.id)).error).toBeNull()
     const sitemap = await (await fetch('/sitemap.xml')).text()
-    expect(sitemap).toContain(`${SITE_URL}/potkalnicko-prigorje/govor`)
-    expect(sitemap).toContain(`${SITE_URL}/potkalnicko-prigorje/govor/${slug}`)
+    expect(sitemap).toContain(`${SITE_URL}/govor`)
+    expect(sitemap).toContain(`${SITE_URL}/govor/${slug}`)
   })
 })
 
@@ -944,7 +944,7 @@ describe.skipIf(!harness.enabled)('server-only credentials', () => {
 
 describe.skipIf(!harness.enabled)('multiple-choice pages', () => {
   it('renders Croatian loading copy for the client-fetched quiz from the production server', async () => {
-    const response = await fetch('/potkalnicko-prigorje/igre/kviz')
+    const response = await fetch('/igre/kviz')
     expect(response.status).toBe(200)
     const html = await response.text()
     expect(html).toMatch(/<html[^>]+lang="hr-HR"/)
@@ -952,7 +952,7 @@ describe.skipIf(!harness.enabled)('multiple-choice pages', () => {
     expect(html).toContain('Učitavam pitanja…')
     expect(html).not.toContain('Trebamo još riječi')
     expect(html).toContain('role="status"')
-    expect(html).not.toContain('/potkalnicko-prigorje/igre/kartice')
+    expect(html).not.toContain('/igre/kartice')
   })
 })
 
@@ -969,7 +969,7 @@ describe.skipIf(!harness.enabled)('atlas SSR pages', () => {
   })
 
   it('keeps SEO on a heritage item page', async () => {
-    const path = '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka'
+    const path = '/bastina/kalnik/crkva-sv-brcka'
     const item = heritageItemByRoute('kalnik', 'crkva-sv-brcka')!
     const html = await (await fetch(path)).text()
     expect(metaContent(html, 'og:title')).toBe(`${item.name} · Potkalnički zapisi`)
@@ -984,7 +984,7 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
     const noindexPaths = new Set(getAtlas().heritage
       .filter(item => item.noindex && item.settlementCode)
-      .map(item => `/potkalnicko-prigorje/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`))
+      .map(item => `/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`))
     const content = await loadPublicContent(db)
     const personSlugs = harness.sql('select slug from public.persons where status = \'published\' and not noindex order by slug;').split('\n').filter(Boolean)
     const { data: wordRows } = await db.from('heritage_words').select('slug,updated_at').eq('active', true).not('slug', 'is', null)
@@ -996,18 +996,18 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(urls.sort()).toEqual(expected.sort())
     // The Priče i običaji list is always there; the pages of its records, narrators and themes depend on what the
     // database holds (test/publicIntangible.test.ts covers which of them the sitemap lists).
-    const intangibleRoot = 'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/price-i-obicaji'
+    const intangibleRoot = 'https://prigorje.karlo-siladi.from.hr/price-i-obicaji'
     expect(expected).toContain(intangibleRoot)
     expect(expected.filter(url => !url.startsWith(`${intangibleRoot}/`)).sort()).toEqual([
       intangibleRoot,
-      'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/govor',
-      'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/osobe',
-      ...personSlugs.map(slug => `https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/osobe/${slug}`),
-      ...wordEntries.map(w => `https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/govor/${w.slug}`),
+      'https://prigorje.karlo-siladi.from.hr/govor',
+      'https://prigorje.karlo-siladi.from.hr/osobe',
+      ...personSlugs.map(slug => `https://prigorje.karlo-siladi.from.hr/osobe/${slug}`),
+      ...wordEntries.map(w => `https://prigorje.karlo-siladi.from.hr/govor/${w.slug}`),
       ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path}`)
     ].sort())
     expect(sitemap).not.toContain('/heritage')
-    expect(sitemap).not.toContain('/en/potkalnicko-prigorje')
+    expect(sitemap).not.toContain('/en')
 
     const robots = await (await fetch('/robots.txt')).text()
     for (const path of ['/admin', '/api/']) {
@@ -1021,13 +1021,13 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
   })
 
   it.each([
-    { path: '/potkalnicko-prigorje', title: 'Potkalnički zapisi', description: 'Istraži mjesta', image: 'og.svg' },
-    { path: '/potkalnicko-prigorje/igre', title: 'Igraj · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
-    { path: '/potkalnicko-prigorje/doprinesi', title: 'Doprinesi · Potkalnički zapisi', description: 'Sve što pošalješ', image: 'og.svg' },
-    { path: '/potkalnicko-prigorje/o-projektu', title: 'O projektu · Potkalnički zapisi', description: 'digitalni zavičajni atlas', image: 'og.svg' },
-    { path: '/potkalnicko-prigorje/uci', title: 'Uči · Potkalnički zapisi', description: 'Odaberi teme', image: 'og.svg' },
-    { path: '/potkalnicko-prigorje/igre/kviz', title: 'Ponuđeni odgovori · Potkalnički zapisi', description: 'Pročitaj riječ', image: 'og.svg' },
-    { path: '/potkalnicko-prigorje/privatnost', title: 'Obavijest o privatnosti · Potkalnički zapisi', description: 'Koje podatke', image: 'og.svg' }
+    { path: '', title: 'Potkalnički zapisi', description: 'Istraži mjesta', image: 'og.svg' },
+    { path: '/igre', title: 'Igraj · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
+    { path: '/doprinesi', title: 'Doprinesi · Potkalnički zapisi', description: 'Sve što pošalješ', image: 'og.svg' },
+    { path: '/o-projektu', title: 'O projektu · Potkalnički zapisi', description: 'digitalni zavičajni atlas', image: 'og.svg' },
+    { path: '/uci', title: 'Uči · Potkalnički zapisi', description: 'Odaberi teme', image: 'og.svg' },
+    { path: '/igre/kviz', title: 'Ponuđeni odgovori · Potkalnički zapisi', description: 'Pročitaj riječ', image: 'og.svg' },
+    { path: '/privatnost', title: 'Obavijest o privatnosti · Potkalnički zapisi', description: 'Koje podatke', image: 'og.svg' }
   ])('sets localized sharing metadata on $path', async ({ path, title, description, image }) => {
     const response = await fetch(path)
     expect(response.status).toBe(200)
@@ -1038,21 +1038,28 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(metaContent(html, 'twitter:card')).toBe('summary_large_image')
   })
 
-  it.each(['/', '/en'])('redirects the portfolio roots to the Atlas home: %s', async (path) => {
-    const response = await fetch(path, { redirect: 'manual' })
+  it('serves the Atlas home at the root and keeps English as a redirect', async () => {
+    expect((await fetch('/', { redirect: 'manual' })).status).toBe(200)
+    const response = await fetch('/en', { redirect: 'manual' })
     expect(response.status).toBe(301)
-    expect(response.headers.get('location')).toContain('/potkalnicko-prigorje/')
+    expect(response.headers.get('location')).toBe('/')
+  })
+
+  it('redirects old prefixed paths to the root while preserving the query', async () => {
+    const response = await fetch('/potkalnicko-prigorje/igre?tema=rijeci&x=1', { redirect: 'manual' })
+    expect(response.status).toBe(301)
+    expect(response.headers.get('location')).toBe('/igre?tema=rijeci&x=1')
   })
 
   it('documents Cloudflare visit analytics on the privacy notice', async () => {
-    const html = await (await fetch('/potkalnicko-prigorje/privatnost', { headers: { accept: 'text/html' } })).text()
+    const html = await (await fetch('/privatnost', { headers: { accept: 'text/html' } })).text()
     expect(html).toContain('Cloudflare Web Analytics')
     expect(html).toContain('kolačiće')
     expect(html).toContain('2. studenoga 2026.')
   })
 
   it('loads Cloudflare Web Analytics only on public pages', async () => {
-    const publicHtml = await (await fetch('/potkalnicko-prigorje/', { headers: { accept: 'text/html' } })).text()
+    const publicHtml = await (await fetch('/', { headers: { accept: 'text/html' } })).text()
     const adminHtml = await (await fetch('/admin/prijava', { headers: { accept: 'text/html' } })).text()
     expect(publicHtml).toContain('https://static.cloudflareinsights.com/beacon.min.js')
     expect(publicHtml).toContain('56bd22857e3547448cffa5b62e2ffa7e')
@@ -1060,19 +1067,19 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
   })
 
   it('describes the games, device storage and word-linked contributions on the privacy notice', async () => {
-    const html = await (await fetch('/potkalnicko-prigorje/privatnost', { headers: { accept: 'text/html' } })).text()
+    const html = await (await fetch('/privatnost', { headers: { accept: 'text/html' } })).text()
     expect(html).toContain('Igre i podaci na uređaju')
     expect(html).toContain('samo u tvom pregledniku')
     expect(html).toContain('povezan s riječju na koju se odnosi')
   })
 
   it('does not show coming-soon hero badges on the atlas home', async () => {
-    const html = await (await fetch('/potkalnicko-prigorje', { headers: { accept: 'text/html' } })).text()
+    const html = await (await fetch('', { headers: { accept: 'text/html' } })).text()
     expect(html).not.toContain('i-lucide-construction')
     expect(html).not.toContain('i-lucide-sparkles')
   })
 
-  it.each(['/heritage', '/privacy', '/review', '/review-words', '/en/potkalnicko-prigorje'])('does not keep the retired page route %s', async (path) => {
+  it.each(['/heritage', '/privacy', '/review', '/review-words', '/en'])('does not keep the retired page route %s', async (path) => {
     expect((await fetch(path, { headers: { accept: 'text/html' } })).status).toBe(404)
   })
 

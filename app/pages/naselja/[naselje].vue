@@ -64,7 +64,7 @@ const municipalityWords = computed(() => localWords.value.length
       .slice(0, 3))
 
 function wordPath(slug: string | undefined) {
-  return localePath(`${pzRoutes.home}/govor/${slug}`)
+  return localePath(`/govor/${slug}`)
 }
 
 const learnTo = computed(() => localePath({ path: `${pzRoutes.learn}/sesija`, query: { teme: 'rijeci', mjesto: settlementSlug.value } }))

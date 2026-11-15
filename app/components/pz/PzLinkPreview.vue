@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // How a shared link looks in WhatsApp and Viber, drawn in the page: the deep sage card with the ridge, the brand line
-// and the title, then the link text under it. The real image is public/potkalnicko-prigorje/og.svg (1200×630, fixed
+// and the title, then the link text under it. The real image is public/og.svg (1200×630, fixed
 // colours because the viewer's theme is unknown); this is its in-page stand-in on the challenge share step.
 defineProps<{
   /** "Ivek te izaziva: Tko bolje zna naš kraj?" */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import Igre from '../app/pages/potkalnicko-prigorje/igre/index.vue'
+import Igre from '../app/pages/igre/index.vue'
 import type { DailyWordPayload } from '../shared/utils/dailyWord'
 
 const areas = [
@@ -41,7 +41,7 @@ registerEndpoint('/api/learn/pool', () => ({
 
 describe('Potkalnički zapisi play catalogue (WP2)', () => {
   it('renders the daily word anchor and play catalogue', async () => {
-    const page = await mountSuspended(Igre, { route: '/potkalnicko-prigorje/igre' })
+    const page = await mountSuspended(Igre, { route: '/igre' })
     expect(page.find('#rijec-dana').exists()).toBe(true)
     expect(page.find('[data-testid="play-catalog"]').exists()).toBe(true)
     expect(page.find('[data-testid="game-tile-rijec-dana"]').exists()).toBe(true)
@@ -49,7 +49,7 @@ describe('Potkalnički zapisi play catalogue (WP2)', () => {
   })
 
   it('filters tiles when a topic chip is selected after mount', async () => {
-    const page = await mountSuspended(Igre, { route: '/potkalnicko-prigorje/igre?tema=mjesta' })
+    const page = await mountSuspended(Igre, { route: '/igre?tema=mjesta' })
     await expect.poll(() => page.find('[data-testid="play-filter-mjesta"]').exists(), { timeout: 3000 }).toBe(true)
     await page.get('[data-testid="play-filter-mjesta"]').trigger('click')
     await expect.poll(() => page.find('[data-testid="play-empty-state"]').exists(), { timeout: 3000 }).toBe(true)
@@ -57,7 +57,7 @@ describe('Potkalnički zapisi play catalogue (WP2)', () => {
   })
 
   it('shows riječi games when the rijeci filter is applied', async () => {
-    const page = await mountSuspended(Igre, { route: '/potkalnicko-prigorje/igre' })
+    const page = await mountSuspended(Igre, { route: '/igre' })
     await page.get('[data-testid="play-filter-rijeci"]').trigger('click')
     await expect.poll(() => page.find('[data-testid="game-tile-znacenje"]').exists(), { timeout: 3000 }).toBe(true)
     expect(page.find('[data-testid="game-tile-znacenje"]').exists()).toBe(true)

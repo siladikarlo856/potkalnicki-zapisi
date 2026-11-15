@@ -5,7 +5,7 @@ import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
 import DailyWord from '../app/components/heritage/DailyWord.vue'
 import DailyStatus from '../app/components/heritage/DailyStatus.vue'
 import DailyStats from '../app/components/heritage/DailyStats.vue'
-import Hub from '../app/pages/potkalnicko-prigorje/igre/index.vue'
+import Hub from '../app/pages/igre/index.vue'
 import type { DailyProgress, DailyWordPayload } from '../shared/utils/dailyWord'
 
 const payload: DailyWordPayload = {
@@ -45,7 +45,7 @@ afterEach(() => {
 
 async function mountDaily(lang: 'hr' | 'en') {
   await useNuxtApp().$i18n.setLocale(lang)
-  wrapper = await mountSuspended(DailyWord, { route: lang === 'en' ? '/en' : '/potkalnicko-prigorje/igre' })
+  wrapper = await mountSuspended(DailyWord, { route: lang === 'en' ? '/en' : '/igre' })
   await expect.poll(() => wrapper!.findAll('[data-option-id]').length + wrapper!.findAll('[data-testid="daily-reveal"]').length, { timeout: 5000 }).toBeGreaterThan(0)
   return wrapper
 }
@@ -83,15 +83,15 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
     await page.get('[data-option-id="c"]').trigger('click')
     const steps = page.get('[data-testid="daily-next-steps"]')
     expect(steps.findAll('a').map(link => link.text())).toEqual(c.next)
-    expect(steps.get('[data-testid="daily-next-learn"]').attributes('href')).toContain('/potkalnicko-prigorje/uci/sesija?teme=rijeci-kuca')
-    expect(steps.get('[data-testid="daily-next-quiz"]').attributes('href')).toContain('/potkalnicko-prigorje/igre/kviz')
-    expect(steps.get('[data-testid="daily-next-challenge"]').attributes('href')).toContain('/potkalnicko-prigorje/igre/kviz')
+    expect(steps.get('[data-testid="daily-next-learn"]').attributes('href')).toContain('/uci/sesija?teme=rijeci-kuca')
+    expect(steps.get('[data-testid="daily-next-quiz"]').attributes('href')).toContain('/igre/kviz')
+    expect(steps.get('[data-testid="daily-next-challenge"]').attributes('href')).toContain('/igre/kviz')
   })
 
   it('shares the exact spoiler-free text with encoded WhatsApp and Viber links', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
-    const link = 'https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/igre#rijec-dana'
+    const link = 'https://prigorje.karlo-siladi.from.hr/igre#rijec-dana'
     const page = await mountDaily(lang)
     expect(page.find('[data-testid="daily-share"]').exists()).toBe(false)
     await page.get('[data-option-id="a"]').trigger('click')
@@ -110,7 +110,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
   it('shares X/3 with three red squares after a miss', async () => {
     const page = await mountDaily(lang)
     for (const id of ['a', 'b', 'd']) await page.get(`[data-option-id="${id}"]`).trigger('click')
-    expect(page.get('[data-testid="daily-share-text"]').element.textContent?.trim()).toBe('Riječ dana #12: X/3\n🟥🟥🟥\nhttps://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/igre#rijec-dana')
+    expect(page.get('[data-testid="daily-share-text"]').element.textContent?.trim()).toBe('Riječ dana #12: X/3\n🟥🟥🟥\nhttps://prigorje.karlo-siladi.from.hr/igre#rijec-dana')
     expect(page.get('[data-testid="daily-stats"] [data-today="true"]').text()).toContain(lang === 'hr' ? 'Nije uspjelo' : 'Missed')
   })
 
@@ -124,7 +124,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
   it('shows the flagship status line for unplayed, streak and played states', async () => {
     await useNuxtApp().$i18n.setLocale(lang)
     // First-time visitor: only the invitation.
-    wrapper = await mountSuspended(DailyStatus, { route: lang === 'en' ? '/en' : '/potkalnicko-prigorje/igre' })
+    wrapper = await mountSuspended(DailyStatus, { route: lang === 'en' ? '/en' : '/igre' })
     await expect.poll(() => wrapper!.find('[data-testid="daily-status"]').exists(), { timeout: 5000 }).toBe(true)
     expect(wrapper.get('[data-testid="daily-status"]').text()).toContain(c.waiting)
     expect(wrapper.find('[data-testid="daily-status-streak"]').exists()).toBe(false)
@@ -133,7 +133,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
     // Running streak, today unplayed: the streak and a link to the section.
     seed({ '2026-11-08': win(1, '2026-11-08'), '2026-11-09': win(1, '2026-11-09'), '2026-11-10': win(2, '2026-11-10') })
     clearNuxtState(stateKeys)
-    wrapper = await mountSuspended(DailyStatus, { route: lang === 'en' ? '/en' : '/potkalnicko-prigorje/igre' })
+    wrapper = await mountSuspended(DailyStatus, { route: lang === 'en' ? '/en' : '/igre' })
     await expect.poll(() => wrapper!.find('[data-testid="daily-status"]').exists(), { timeout: 5000 }).toBe(true)
     expect(wrapper.get('[data-testid="daily-status-streak"]').text()).toContain(c.streakWord)
     const play = wrapper.get('[data-testid="daily-status-play"]')
@@ -144,7 +144,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
     // Played today in two tries: the result, the extended streak and the countdown.
     seed({ '2026-11-08': win(1, '2026-11-08'), '2026-11-09': win(1, '2026-11-09'), '2026-11-10': win(2, '2026-11-10'), '2026-11-11': win(2, '2026-11-11') })
     clearNuxtState(stateKeys)
-    wrapper = await mountSuspended(DailyStatus, { route: lang === 'en' ? '/en' : '/potkalnicko-prigorje/igre' })
+    wrapper = await mountSuspended(DailyStatus, { route: lang === 'en' ? '/en' : '/igre' })
     await expect.poll(() => wrapper!.find('[data-testid="daily-status-result"]').exists(), { timeout: 5000 }).toBe(true)
     const played = wrapper.get('[data-testid="daily-status"]').text()
     expect(played).toContain(c.status)
@@ -157,7 +157,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
 describe('daily status in the Words flagship card', () => {
   it('updates inside the daily word section when today is played on the games hub', async () => {
     await useNuxtApp().$i18n.setLocale('hr')
-    wrapper = await mountSuspended(Hub, { route: '/potkalnicko-prigorje/igre' })
+    wrapper = await mountSuspended(Hub, { route: '/igre' })
     const dailySection = () => wrapper!.get('#rijec-dana')
     await expect.poll(() => dailySection().find('[data-option-id]').exists(), { timeout: 5000 }).toBe(true)
     await wrapper.get('[data-option-id="a"]').trigger('click')

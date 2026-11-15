@@ -12,19 +12,19 @@ export const pzNavSections = {
 
 export function pzHeaderNavItems() {
   const items: { label: string, to: string }[] = []
-  if (pzNavSections.games) items.push({ label: 'Igre', to: `${pzRoutes.home}/igre` })
-  if (pzNavSections.explore) items.push({ label: 'Istraži', to: `${pzRoutes.home}/istrazi` })
-  if (pzNavSections.heritage) items.push({ label: 'Baština', to: `${pzRoutes.home}/bastina` })
+  if (pzNavSections.games) items.push({ label: 'Igre', to: pzRoutes.games })
+  if (pzNavSections.explore) items.push({ label: 'Istraži', to: pzRoutes.explore })
+  if (pzNavSections.heritage) items.push({ label: 'Baština', to: pzRoutes.heritage })
   if (pzNavSections.intangible) items.push({ label: 'Priče i običaji', to: pzRoutes.intangible })
-  if (pzNavSections.speech) items.push({ label: 'Naš govor', to: `${pzRoutes.home}/govor` })
-  if (pzNavSections.contribute) items.push({ label: 'Doprinesi', to: `${pzRoutes.home}/doprinesi` })
-  if (pzNavSections.about) items.push({ label: 'O projektu', to: `${pzRoutes.home}/o-projektu` })
+  if (pzNavSections.speech) items.push({ label: 'Naš govor', to: '/govor' })
+  if (pzNavSections.contribute) items.push({ label: 'Doprinesi', to: pzRoutes.contribute })
+  if (pzNavSections.about) items.push({ label: 'O projektu', to: pzRoutes.about })
   return items
 }
 
 export function pzFooterNavItems(privacyEmail: string) {
   return [
-    { label: 'O projektu', to: `${pzRoutes.home}/o-projektu` },
+    { label: 'O projektu', to: pzRoutes.about },
     { label: 'Privatnost', to: pzRoutes.privacy },
     { label: 'Kontakt', to: `mailto:${privacyEmail}` }
   ] as const
@@ -34,7 +34,7 @@ export type PzTabKey = 'home' | 'games' | 'explore' | 'contribute'
 
 /** The four mobile tabs, in order. `label` is the Croatian copy; `icon` is a Lucide icon. */
 export const pzTabs: readonly { key: PzTabKey, label: string, to: string, icon: string }[] = [
-  { key: 'home', label: 'Početna', to: pzRoutes.home, icon: 'i-lucide-house' },
+  { key: 'home', label: 'Početna', to: '/', icon: 'i-lucide-house' },
   { key: 'games', label: 'Igre', to: pzRoutes.games, icon: 'i-lucide-gamepad' },
   { key: 'explore', label: 'Istraži', to: pzRoutes.explore, icon: 'i-lucide-compass' },
   { key: 'contribute', label: 'Doprinesi', to: pzRoutes.contribute, icon: 'i-lucide-pen-line' }
@@ -56,10 +56,10 @@ function under(path: string, root: string) {
  */
 export function pzTabForPath(path: string): PzTabKey | null {
   const p = normalisePath(path)
-  if (p === pzRoutes.home) return 'home'
+  if (p === '/') return 'home'
   if (under(p, pzRoutes.games) || under(p, pzRoutes.learn)) return 'games'
   if (under(p, pzRoutes.contribute)) return 'contribute'
-  if ([pzRoutes.explore, pzRoutes.heritage, pzRoutes.intangible, `${pzRoutes.home}/govor`, `${pzRoutes.home}/naselja`, pzRoutes.persons].some(root => under(p, root))) return 'explore'
+  if ([pzRoutes.explore, pzRoutes.heritage, pzRoutes.intangible, '/govor', '/naselja', pzRoutes.persons].some(root => under(p, root))) return 'explore'
   return null
 }
 
@@ -70,6 +70,6 @@ export function pzSectionForPath(path: string): string | null {
   const hit = items.find(item => under(p, item.to))
   if (hit) return hit.to
   const tab = pzTabForPath(p)
-  if (tab === 'explore' && !under(p, pzRoutes.heritage) && !under(p, pzRoutes.intangible) && !under(p, `${pzRoutes.home}/govor`)) return pzRoutes.explore
+  if (tab === 'explore' && !under(p, pzRoutes.heritage) && !under(p, pzRoutes.intangible) && !under(p, '/govor')) return pzRoutes.explore
   return null
 }
