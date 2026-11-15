@@ -48,7 +48,7 @@ describe.skipIf(!db.enabled)('public read layer on Postgres', () => {
     const content = await loadPublicContent(service)
     expect(routable).toHaveLength(235)
     for (const path of routable) {
-      const [, , section, a, b] = path.split('/')
+      const [, section, a, b] = path.split('/')
       const result = section === 'istrazi'
         ? resolveMunicipality(content, a!)
         : section === 'naselja' ? resolveSettlement(content, a!) : resolveHeritageItem(content, a!, b!)
