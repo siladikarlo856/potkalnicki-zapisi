@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChallengeLeaderboard, ChallengeState, ChallengeText } from '../../../../../shared/utils/challenge'
+import type { ChallengeLeaderboard, ChallengeState, ChallengeText } from '../../../../shared/utils/challenge'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
