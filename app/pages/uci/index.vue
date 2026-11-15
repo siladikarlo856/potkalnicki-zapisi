@@ -149,7 +149,7 @@ watch(placeSlug, () => {
 <template>
   <UContainer class="py-4 lg:py-6">
     <div class="mx-auto flex w-full max-w-(--pz-measure) flex-col gap-6">
-      <PzBackPill :to="localePath('')">
+      <PzBackPill :to="localePath('/')">
         {{ t('heritage.title') }}
       </PzBackPill>
       <header class="flex flex-col gap-2">

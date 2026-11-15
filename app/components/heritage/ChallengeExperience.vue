@@ -246,7 +246,7 @@ onMounted(() => {
 <template>
   <UContainer class="max-w-3xl py-6 sm:py-10">
     <UButton
-      :to="localePath('')"
+      :to="localePath('/')"
       color="neutral"
       variant="link"
       icon="i-lucide-arrow-left"
