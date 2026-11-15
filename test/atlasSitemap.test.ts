@@ -18,7 +18,7 @@ describe('atlas sitemap parity (in-memory snapshot)', () => {
       'https://prigorje.karlo-siladi.from.hr/govor',
       'https://prigorje.karlo-siladi.from.hr/osobe',
       'https://prigorje.karlo-siladi.from.hr/price-i-obicaji',
-      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path}`)
+      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path || '/'}`)
     ]
     expect(urls.sort()).toEqual(expected.sort())
   })

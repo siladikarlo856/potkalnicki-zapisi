@@ -305,7 +305,7 @@ describe('content sitemap', () => {
   it('lists static pages, /osobe, /price-i-obicaji, live places and indexable item pages with lastmod', () => {
     const entries = sitemapEntries(content)
     expect(entries.slice(0, 3)).toEqual([
-      { path: '' },
+      { path: '/' },
       { path: '/igre' },
       { path: '/doprinesi' }
     ])
