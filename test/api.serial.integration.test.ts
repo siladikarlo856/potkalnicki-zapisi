@@ -1051,6 +1051,14 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     expect(response.headers.get('location')).toBe('/igre?tema=rijeci&x=1')
   })
 
+  it('never redirects old prefixed paths to another host', async () => {
+    for (const path of ['/potkalnicko-prigorje//evil.com/x', '/potkalnicko-prigorje/\\evil.com', '/potkalnicko-prigorje///evil.com']) {
+      const response = await fetch(path, { redirect: 'manual' })
+      expect(response.status).toBe(301)
+      expect(response.headers.get('location')!.startsWith('//')).toBe(false)
+    }
+  })
+
   it('documents Cloudflare visit analytics on the privacy notice', async () => {
     const html = await (await fetch('/privatnost', { headers: { accept: 'text/html' } })).text()
     expect(html).toContain('Cloudflare Web Analytics')
