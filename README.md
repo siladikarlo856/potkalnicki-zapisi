@@ -46,4 +46,4 @@ tea --repo ksiladi/potkalnicki-zapisi issues list
 
 The atlas keeps all public routes at the site root, alongside `/admin/**` and `/api/**`. `/` serves the home page and `/en` redirects to `/`. Public canonical URLs, sitemap, Open Graph images and robots all use the atlas origin. Admin remains excluded from analytics and search indexing.
 
-The portfolio repository owns the root domain and redirects old `/potkalnicko-prigorje/**` links to this host, preserving the path and query string.
+The portfolio repository owns the root domain and redirects old `/potkalnicko-prigorje/**` links to this host, preserving the path and query string. The atlas in turn answers those prefixed paths with a 301 to the same path at the root, keeping the query string, so shared links keep working.
