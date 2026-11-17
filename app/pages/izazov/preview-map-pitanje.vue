@@ -14,7 +14,7 @@ watch(theme, (value) => {
 }, { immediate: true })
 useHead(() => ({
   htmlAttrs: { class: theme.value === 'dark' ? 'dark' : undefined },
-  link: [{ rel: 'preload', as: 'image', href: '/potkalnicko-prigorje/karta/karta.webp' }]
+  link: [{ rel: 'preload', as: 'image', href: '/karta/karta.webp' }]
 }))
 
 const municipalities: PoolMunicipality[] = [{

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData, clearNuxtState } from '#imports'
 import Shell from '../app/components/games/Shell.vue'
-import KakSeVeli from '../app/pages/potkalnicko-prigorje/igre/kak-se-veli.vue'
+import KakSeVeli from '../app/pages/igre/kak-se-veli.vue'
 import { GAME_SCORES_KEY } from '../shared/utils/games/scores'
 import type { GameQuestion } from '../shared/utils/games/types'
 import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
@@ -33,7 +33,7 @@ const question = (n: number, withPath = false): GameQuestion => ({
   options: [{ hr: 'A', en: 'A' }, { hr: 'B', en: 'B' }, { hr: 'C', en: 'C' }],
   correct: n % 3,
   explanation: { hr: `Objašnjenje ${n}.`, en: `Explanation ${n}.` },
-  ...(withPath ? { archivePath: '/potkalnicko-prigorje/naselja/apatovec' } : {})
+  ...(withPath ? { archivePath: '/naselja/apatovec' } : {})
 })
 const questions = [question(0, true), question(1), question(2)]
 const OPTION = '[data-testid^="game-option-"]'
@@ -281,7 +281,7 @@ describe('GameShell game kit', () => {
 
 describe('Kak se to veli?', () => {
   it('opens on a start screen with Srednje selected and starts a ten-question round', async () => {
-    wrapper = await mountSuspended(KakSeVeli, { route: '/potkalnicko-prigorje/igre/kak-se-veli' })
+    wrapper = await mountSuspended(KakSeVeli, { route: '/igre/kak-se-veli' })
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="game-start"]').exists()).toBe(true))
     const levels = ['lako', 'srednje', 'tesko'].map(id => wrapper!.get(`[data-testid="game-level-${id}"]`))
     expect(levels.map(level => level.text())).toEqual(['Lako', 'Srednje', 'Teško'])

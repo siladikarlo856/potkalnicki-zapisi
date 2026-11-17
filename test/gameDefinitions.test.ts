@@ -5,7 +5,7 @@ import { CHALLENGEABLE_GAMES, GAME_DEFINITIONS, gameDefinition } from '../shared
 import { GAME_CATALOGUE } from '../shared/utils/games/catalogue'
 import { pzRoutes } from '../shared/utils/appRoutes'
 
-const igreDir = fileURLToPath(new URL('../app/pages/potkalnicko-prigorje/igre/', import.meta.url))
+const igreDir = fileURLToPath(new URL('../app/pages/igre/', import.meta.url))
 const igrePages = readdirSync(igreDir).filter(file => file.endsWith('.vue') && file !== 'index.vue')
 const pageSource = (file: string) => readFileSync(`${igreDir}${file}`, 'utf8')
 /** The igre page file a catalogue path opens, if it is one. */

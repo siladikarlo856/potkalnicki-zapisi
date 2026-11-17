@@ -14,7 +14,7 @@ Where sources disagree (dates, dedication, chapel or church), the description sa
 
 ## Photos
 
-Every photo comes from Wikimedia Commons under a licence on the allowlist (public domain, CC0, CC BY or CC BY-SA, any 2.0 to 4.0 version). Most are by Fraxinus (taken in 2016 and 2017, CC BY-SA 4.0). For each photo the dataset records the Commons file, the SHA-1 of the reviewed file version, the author, the author's page, the licence and the file page. The site shows that credit under the photo on the item page and on `/potkalnicko-prigorje/o-projektu/fotografije`.
+Every photo comes from Wikimedia Commons under a licence on the allowlist (public domain, CC0, CC BY or CC BY-SA, any 2.0 to 4.0 version). Most are by Fraxinus (taken in 2016 and 2017, CC BY-SA 4.0). For each photo the dataset records the Commons file, the SHA-1 of the reviewed file version, the author, the author's page, the licence and the file page. The site shows that credit under the photo on the item page and on `/o-projektu/fotografije`.
 
 The import does not link to Commons. It checks that the file on Commons still has the reviewed SHA-1 and the reviewed licence, downloads Commons' own 1600 px and 480 px JPEG renderings and uploads them through `POST /api/admin/images`, so the site serves its own copies. A file that changed on Commons since review is skipped and reported; the rest of the item is still imported.
 

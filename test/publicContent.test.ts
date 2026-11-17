@@ -188,7 +188,7 @@ describe('heritage photos in the snapshot', () => {
   it('lists every photo of a live item on the credits page, never one of an archived item', () => {
     const { photos } = photoCredits(withImages(MEDIA))
     expect(photos.map(photo => [photo.item.name, photo.author])).toEqual([['Crkva sv. Ane', 'Ivan Horvat'], ['Crkva sv. Ane', 'Župa']])
-    expect(photos[0]!.item).toEqual({ id: ID.ana, name: 'Crkva sv. Ane', path: '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane' })
+    expect(photos[0]!.item).toEqual({ id: ID.ana, name: 'Crkva sv. Ane', path: '/bastina/krizevci/crkva-sv-ane' })
   })
 
   it('shows no photos when the Storage URL is not configured or the table is not there yet', () => {
@@ -200,7 +200,7 @@ describe('heritage photos in the snapshot', () => {
 describe('public route resolution', () => {
   it('resolves towns and municipalities by current, old and archived slug', () => {
     expect(resolveMunicipality(content, 'grad-krizevci')).toMatchObject({ status: 'ok', value: { id: ID.town } })
-    expect(resolveMunicipality(content, 'grad-stari')).toEqual({ status: 'redirect', path: '/potkalnicko-prigorje/istrazi/grad-krizevci' })
+    expect(resolveMunicipality(content, 'grad-stari')).toEqual({ status: 'redirect', path: '/istrazi/grad-krizevci' })
     expect(resolveMunicipality(content, 'opcina-stara')).toEqual({ status: 'gone' })
     expect(resolveMunicipality(content, 'opcina-vani')).toEqual({ status: 'not_found' })
     // Slug history is per URL namespace: an old town slug does not answer for a settlement and vice versa.
@@ -210,13 +210,13 @@ describe('public route resolution', () => {
 
   it('resolves settlements, including ones under an archived municipality', () => {
     expect(resolveSettlement(content, 'krizevci')).toMatchObject({ status: 'ok', value: { id: ID.krizevci } })
-    expect(resolveSettlement(content, 'stari-krizevci')).toEqual({ status: 'redirect', path: '/potkalnicko-prigorje/naselja/krizevci' })
+    expect(resolveSettlement(content, 'stari-krizevci')).toEqual({ status: 'redirect', path: '/naselja/krizevci' })
     for (const slug of ['staro-selo', 'pod-arhivom', 'bivse']) expect(resolveSettlement(content, slug), slug).toEqual({ status: 'gone' })
     for (const slug of ['vanjsko', 'nepostojece']) expect(resolveSettlement(content, slug), slug).toEqual({ status: 'not_found' })
   })
 
   it('redirects old settlement and item slugs and moved items to the current item page', () => {
-    const current = '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane'
+    const current = '/bastina/krizevci/crkva-sv-ane'
     expect(resolveHeritageItem(content, 'krizevci', 'crkva-sv-ane')).toMatchObject({ status: 'ok', value: { id: ID.ana } })
     expect(resolveHeritageItem(content, 'stari-krizevci', 'crkva-sv-ane')).toEqual({ status: 'redirect', path: current })
     expect(resolveHeritageItem(content, 'krizevci', 'stara-crkva')).toEqual({ status: 'redirect', path: current })
@@ -247,15 +247,15 @@ describe('public atlas API shapes', () => {
       region: content.region,
       totals: { municipalities: 2, settlements: 3, items: 4, settlementsWithItems: 3 },
       municipalities: [
-        { id: ID.town, slug: 'grad-krizevci', name: 'Križevci', label: 'Grad Križevci', kind: 'town', path: '/potkalnicko-prigorje/istrazi/grad-krizevci', stats: { settlements: 2, items: 2, settlementsWithItems: 2 } },
-        { id: ID.kalnik, slug: 'opcina-kalnik', name: 'Kalnik', label: 'Općina Kalnik', kind: 'municipality', path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', stats: { settlements: 1, items: 2, settlementsWithItems: 1 } }
+        { id: ID.town, slug: 'grad-krizevci', name: 'Križevci', label: 'Grad Križevci', kind: 'town', path: '/istrazi/grad-krizevci', stats: { settlements: 2, items: 2, settlementsWithItems: 2 } },
+        { id: ID.kalnik, slug: 'opcina-kalnik', name: 'Kalnik', label: 'Općina Kalnik', kind: 'municipality', path: '/istrazi/opcina-kalnik', stats: { settlements: 1, items: 2, settlementsWithItems: 1 } }
       ]
     })
   })
 
   it('builds the municipality page with settlement counts and filterable categories only', () => {
     const page = municipalityPage(content, content.municipalityById.get(ID.kalnik)!)
-    expect(page.settlements).toEqual([{ id: ID.kalnikSettlement, slug: 'kalnik', name: 'Kalnik', code: null, path: '/potkalnicko-prigorje/naselja/kalnik', itemCount: 1 }])
+    expect(page.settlements).toEqual([{ id: ID.kalnikSettlement, slug: 'kalnik', name: 'Kalnik', code: null, path: '/naselja/kalnik', itemCount: 1 }])
     expect(page.categories).toEqual([{ key: 'chapel', label: 'Kapela', count: 1 }])
   })
 
@@ -267,7 +267,7 @@ describe('public atlas API shapes', () => {
       id: ID.ana, slug: 'crkva-sv-ane', name: 'Crkva sv. Ane', category: { key: 'church', label: 'Crkva' },
       municipality: { id: ID.town, slug: 'grad-krizevci', label: 'Grad Križevci' },
       settlement: { id: ID.krizevci, slug: 'krizevci', name: 'Križevci' },
-      locality: null, verification: 'verified', noindex: false, path: '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane', thumb: null
+      locality: null, verification: 'verified', noindex: false, path: '/bastina/krizevci/crkva-sv-ane', thumb: null
     }])
   })
 
@@ -291,7 +291,7 @@ describe('public atlas API shapes', () => {
   it('finds correction targets by old id or UUID and tells archived from unknown', () => {
     expect(contentTarget(content, 'heritage_item', 'krizevci-crkva-sv-ane')).toMatchObject({ status: 'ok', value: { kind: 'heritage_item', item: { id: ID.ana, ref: 'krizevci-crkva-sv-ane' } } })
     expect(contentTarget(content, 'area', 'krizevci')).toMatchObject({ status: 'ok', value: { area: { id: ID.town, areaKind: 'town', label: 'Grad Križevci' } } })
-    expect(contentTarget(content, 'area', '000299')).toMatchObject({ status: 'ok', value: { area: { id: ID.apatovec, areaKind: 'settlement', label: 'Apatovec', path: '/potkalnicko-prigorje/naselja/apatovec' } } })
+    expect(contentTarget(content, 'area', '000299')).toMatchObject({ status: 'ok', value: { area: { id: ID.apatovec, areaKind: 'settlement', label: 'Apatovec', path: '/naselja/apatovec' } } })
     expect(contentTarget(content, 'source', 'registar')).toEqual({ status: 'ok', value: { kind: 'source', source: { id: ID.source, title: 'Registar', type: 'official_registry', url: 'https://example.com/r' } } })
     expect(contentTarget(content, 'heritage_item', 'staro')).toEqual({ status: 'gone' })
     expect(contentTarget(content, 'source', ID.archivedSource)).toEqual({ status: 'gone' })
@@ -305,24 +305,24 @@ describe('content sitemap', () => {
   it('lists static pages, /osobe, /price-i-obicaji, live places and indexable item pages with lastmod', () => {
     const entries = sitemapEntries(content)
     expect(entries.slice(0, 3)).toEqual([
-      { path: '/potkalnicko-prigorje' },
-      { path: '/potkalnicko-prigorje/igre' },
-      { path: '/potkalnicko-prigorje/doprinesi' }
+      { path: '/' },
+      { path: '/igre' },
+      { path: '/doprinesi' }
     ])
     expect(entries.slice(9, 13)).toEqual([
-      { path: '/potkalnicko-prigorje/bastina' },
-      { path: '/potkalnicko-prigorje/govor' },
-      { path: '/potkalnicko-prigorje/osobe' },
-      { path: '/potkalnicko-prigorje/price-i-obicaji' }
+      { path: '/bastina' },
+      { path: '/govor' },
+      { path: '/osobe' },
+      { path: '/price-i-obicaji' }
     ])
     expect(entries.slice(13)).toEqual([
-      { path: '/potkalnicko-prigorje/istrazi/grad-krizevci', lastmod: '2026-10-30' },
-      { path: '/potkalnicko-prigorje/istrazi/opcina-kalnik', lastmod: '2026-11-01' },
-      { path: '/potkalnicko-prigorje/naselja/apatovec', lastmod: '2026-11-01' },
-      { path: '/potkalnicko-prigorje/naselja/kalnik', lastmod: '2026-11-01' },
-      { path: '/potkalnicko-prigorje/naselja/krizevci', lastmod: '2026-11-01' },
-      { path: '/potkalnicko-prigorje/bastina/kalnik/bivsa', lastmod: '2026-11-01' },
-      { path: '/potkalnicko-prigorje/bastina/krizevci/crkva-sv-ane', lastmod: '2026-11-01' }
+      { path: '/istrazi/grad-krizevci', lastmod: '2026-10-30' },
+      { path: '/istrazi/opcina-kalnik', lastmod: '2026-11-01' },
+      { path: '/naselja/apatovec', lastmod: '2026-11-01' },
+      { path: '/naselja/kalnik', lastmod: '2026-11-01' },
+      { path: '/naselja/krizevci', lastmod: '2026-11-01' },
+      { path: '/bastina/kalnik/bivsa', lastmod: '2026-11-01' },
+      { path: '/bastina/krizevci/crkva-sv-ane', lastmod: '2026-11-01' }
     ])
   })
 
@@ -332,7 +332,7 @@ describe('content sitemap', () => {
       + '  <url>\n    <loc>https://x.test/a?b=1&amp;c=2</loc>\n  </url>\n'
       + '  <url>\n    <loc>https://x.test/d</loc>\n    <lastmod>2026-11-02</lastmod>\n  </url>\n</urlset>\n')
     expect(contentSitemap(content)).toBe(contentSitemap(content))
-    expect(contentSitemap(content)).toContain('<loc>https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje/naselja/krizevci</loc>')
+    expect(contentSitemap(content)).toContain('<loc>https://prigorje.karlo-siladi.from.hr/naselja/krizevci</loc>')
   })
 })
 

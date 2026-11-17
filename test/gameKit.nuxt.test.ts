@@ -5,7 +5,7 @@ import HeritageMatch from '../app/components/games/HeritageMatch.vue'
 import WordFlipCard from '../app/components/heritage/WordFlipCard.vue'
 import type { WordEntry } from '../app/types/heritage'
 import Feedback from '../app/components/games/Feedback.vue'
-import BezGreske from '../app/pages/potkalnicko-prigorje/igre/bez-greske.vue'
+import BezGreske from '../app/pages/igre/bez-greske.vue'
 import { usePzTabBar } from '../app/composables/usePzTabBar'
 import type { HeritageMatchBoard } from '../shared/utils/games/heritageMatch'
 import { fixtureCardPool } from './fixtures/gamePool'
@@ -106,7 +106,7 @@ describe('MatchGroup (HeritageMatch)', () => {
 
 describe('Bez greške', () => {
   it('shows feedback after an answer and only moves on with Dalje', async () => {
-    wrapper = await mountSuspended(BezGreske, { route: '/potkalnicko-prigorje/igre/bez-greske' })
+    wrapper = await mountSuspended(BezGreske, { route: '/igre/bez-greske' })
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="bez-prompt"]').exists()).toBe(true))
     vi.useFakeTimers()
     const prompt = wrapper.get('[data-testid="bez-prompt"]').text()

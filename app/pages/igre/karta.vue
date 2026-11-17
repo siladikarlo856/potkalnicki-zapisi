@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { gameDefinition } from '~~/shared/utils/games/definitions'
-import { pzRoutes } from '~~/shared/utils/appRoutes'
 import { mulberry32 } from '~~/shared/utils/games/rng'
 import { pickPlaceTarget } from '~~/shared/utils/games/distractors'
 import { distanceKm, distanceScore, project } from '~~/shared/utils/games/mapFrame'
@@ -184,7 +183,7 @@ useSeoMeta({
           >
             <template #links>
               <UButton
-                :to="localePath(`${pzRoutes.home}/naselja/${target.slug}`)"
+                :to="localePath(`/naselja/${target.slug}`)"
                 :label="t('pz.play.openRecord')"
                 icon="i-lucide-map-pin"
                 color="neutral"

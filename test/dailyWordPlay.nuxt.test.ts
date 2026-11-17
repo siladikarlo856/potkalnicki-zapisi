@@ -4,7 +4,7 @@ import { createError } from 'h3'
 import { clearNuxtData, clearNuxtState, useNuxtApp } from '#imports'
 import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
 import DailyWord from '../app/components/heritage/DailyWord.vue'
-import Hub from '../app/pages/potkalnicko-prigorje/igre/index.vue'
+import Hub from '../app/pages/igre/index.vue'
 import type { DailyWordPayload } from '../shared/utils/dailyWord'
 
 const areas = [
@@ -50,7 +50,7 @@ const stateKeys = ['heritage-daily-progress', 'heritage-daily-progress-loaded', 
 async function mountDaily(lang: 'hr' | 'en') {
   await useNuxtApp().$i18n.setLocale(lang)
   // The English interface follows the route, so mount under /en.
-  wrapper = await mountSuspended(DailyWord, { route: lang === 'en' ? '/en' : '/potkalnicko-prigorje/igre' })
+  wrapper = await mountSuspended(DailyWord, { route: lang === 'en' ? '/en' : '/igre' })
   return wrapper
 }
 const optionIds = (page: NonNullable<typeof wrapper>) => page.findAll('[data-option-id]').map(option => option.attributes('data-option-id'))
@@ -240,7 +240,7 @@ describe('daily word device storage', () => {
 
 describe('daily word placement', () => {
   it('is the first section of the games hub, ahead of the play catalogue', async () => {
-    const page = await mountSuspended(Hub, { route: '/potkalnicko-prigorje/igre' })
+    const page = await mountSuspended(Hub, { route: '/igre' })
     const daily = page.element.querySelector('#rijec-dana')!
     const catalog = page.element.querySelector('[data-testid="play-catalog"]')!
     expect(daily).not.toBeNull()
@@ -250,7 +250,7 @@ describe('daily word placement', () => {
   })
 
   it('lists the daily word in the catalogue with a link to the section', async () => {
-    const page = await mountSuspended(Hub, { route: '/potkalnicko-prigorje/igre' })
+    const page = await mountSuspended(Hub, { route: '/igre' })
     const tile = page.get('[data-testid="game-tile-rijec-dana"]')
     expect(tile.exists()).toBe(true)
     expect(tile.attributes('href')).toContain('#rijec-dana')

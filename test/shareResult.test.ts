@@ -8,7 +8,7 @@ describe('resultShareMessage', () => {
     headline: 'Kak se veli? · 3/5',
     results,
     invite: 'Možeš li bolje? Igraj i ti:',
-    url: 'https://example.test/potkalnicko-prigorje/igre/kak-se-veli'
+    url: 'https://example.test/igre/kak-se-veli'
   })
 
   it('is the headline, one row of squares, an invitation and the link, each on its own line', () => {
@@ -16,7 +16,7 @@ describe('resultShareMessage', () => {
       'Kak se veli? · 3/5',
       '🟩🟩🟥🟩🟥',
       'Možeš li bolje? Igraj i ti:',
-      'https://example.test/potkalnicko-prigorje/igre/kak-se-veli'
+      'https://example.test/igre/kak-se-veli'
     ])
   })
 
@@ -37,7 +37,7 @@ describe('resultShareMessage', () => {
 })
 
 describe('og.svg', () => {
-  const svg = readFileSync(new URL('../public/potkalnicko-prigorje/og.svg', import.meta.url), 'utf8')
+  const svg = readFileSync(new URL('../public/og.svg', import.meta.url), 'utf8')
 
   it('spells the Croatian text correctly', () => {
     expect(svg).toContain('Potkalnički zapisi')

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData, clearNuxtState } from '#imports'
-import GdjeJeCrkva from '../app/pages/potkalnicko-prigorje/igre/gdje-je-crkva.vue'
-import Spoji from '../app/pages/potkalnicko-prigorje/igre/spoji.vue'
+import GdjeJeCrkva from '../app/pages/igre/gdje-je-crkva.vue'
+import Spoji from '../app/pages/igre/spoji.vue'
 import { fixtureCardPool } from './fixtures/gamePool'
 
 const pool = fixtureCardPool()
@@ -38,7 +38,7 @@ afterEach(() => {
 
 describe('Gdje je ta crkva?', () => {
   it('shows the verification badge and accepts a correct answer', async () => {
-    wrapper = await mountSuspended(GdjeJeCrkva, { route: '/potkalnicko-prigorje/igre/gdje-je-crkva' })
+    wrapper = await mountSuspended(GdjeJeCrkva, { route: '/igre/gdje-je-crkva' })
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="game-start"]').exists()).toBe(true))
     await wrapper.get('[data-testid="game-start-button"]').trigger('click')
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="church-status-badge"]').exists()).toBe(true))
@@ -52,7 +52,7 @@ describe('Gdje je ta crkva?', () => {
   })
 
   it('widens topics to all bastina', async () => {
-    wrapper = await mountSuspended(GdjeJeCrkva, { route: '/potkalnicko-prigorje/igre/gdje-je-crkva' })
+    wrapper = await mountSuspended(GdjeJeCrkva, { route: '/igre/gdje-je-crkva' })
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="church-topic-wide"]').exists()).toBe(true))
     await wrapper.get('[data-testid="church-topic-wide"]').trigger('click')
     expect(wrapper.get('[data-testid="church-topic-wide"]').classes().join(' ')).toMatch(/primary/)
@@ -61,7 +61,7 @@ describe('Gdje je ta crkva?', () => {
 
 describe('Spoji crkvu i selo', () => {
   it('pairs correctly and rejects a wrong pair', async () => {
-    wrapper = await mountSuspended(Spoji, { route: '/potkalnicko-prigorje/igre/spoji' })
+    wrapper = await mountSuspended(Spoji, { route: '/igre/spoji' })
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="match-start-button"]').exists()).toBe(true))
     await wrapper.get('[data-testid="match-start-button"]').trigger('click')
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="heritage-match-board"]').exists()).toBe(true))

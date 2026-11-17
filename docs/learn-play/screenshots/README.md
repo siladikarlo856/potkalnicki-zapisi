@@ -1,13 +1,13 @@
 WP15 phone screenshots (390×844) for map challenge questions.
 
-**Map asset:** `public/potkalnicko-prigorje/karta/karta.webp` must be a real Positron export from `scripts/map/render.html` (see `scripts/map/README.md`). A flat gray placeholder produces useless captures.
+**Map asset:** `public/karta/karta.webp` must be a real Positron export from `scripts/map/render.html` (see `scripts/map/README.md`). A flat gray placeholder produces useless captures.
 
 Regenerate locally:
 
 ```bash
 pnpm dev --host 127.0.0.1 --port 3456
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-BASE='http://127.0.0.1:3456/potkalnicko-prigorje/izazov/preview-map-pitanje'
+BASE='http://127.0.0.1:3456/izazov/preview-map-pitanje'
 "$CHROME" --headless=new --hide-scrollbars --window-size=390,844 \
   --run-all-compositor-stages-before-draw --virtual-time-budget=60000 \
   --screenshot=docs/learn-play/screenshots/wp15-challenge-map-light-390.png \

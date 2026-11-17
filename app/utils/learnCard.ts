@@ -25,7 +25,7 @@ export function wordArchivePath(word: PoolWord): string | undefined {
 }
 
 export function settlementArchivePath(slug: string): string {
-  return `/potkalnicko-prigorje/naselja/${slug}`
+  return `/naselja/${slug}`
 }
 
 export function personArchivePath(slug: string): string {

@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import Home from '../app/pages/potkalnicko-prigorje/index.vue'
-import Settlement from '../app/pages/potkalnicko-prigorje/naselja/[naselje].vue'
-import HeritageList from '../app/pages/potkalnicko-prigorje/bastina/index.vue'
-import HeritageItem from '../app/pages/potkalnicko-prigorje/bastina/[naselje]/[slug].vue'
-import SpeechWord from '../app/pages/potkalnicko-prigorje/govor/[slug].vue'
-import Contribute from '../app/pages/potkalnicko-prigorje/doprinesi/index.vue'
+import Home from '../app/pages/index.vue'
+import Settlement from '../app/pages/naselja/[naselje].vue'
+import HeritageList from '../app/pages/bastina/index.vue'
+import HeritageItem from '../app/pages/bastina/[naselje]/[slug].vue'
+import SpeechWord from '../app/pages/govor/[slug].vue'
+import Contribute from '../app/pages/doprinesi/index.vue'
 import type { AtlasHeritageItemResponse, AtlasSettlementResponse } from '../shared/types/publicAtlas'
 import type { WordPageResponse } from '../shared/types/publicSpeech'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
@@ -18,15 +18,15 @@ registerEndpoint('/api/heritage/daily', () => {
   throw createError({ statusCode: 404, statusMessage: 'not-started' })
 })
 
-const KALNIK_ITEM = '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka'
+const KALNIK_ITEM = '/bastina/kalnik/crkva-sv-brcka'
 
 // A village with no heritage item yet: the page leads with what is known and one invitation.
 const thinSettlement: AtlasSettlementResponse = {
   settlement: {
-    id: 's-sopron', slug: 'sopron', name: 'Šopron', code: null, path: '/potkalnicko-prigorje/naselja/sopron',
+    id: 's-sopron', slug: 'sopron', name: 'Šopron', code: null, path: '/naselja/sopron',
     centroid: null, credits: [], updatedAt: '2026-11-02T10:00:00.000Z'
   },
-  municipality: { id: 'm-kalnik', slug: 'opcina-kalnik', name: 'Kalnik', label: 'Općina Kalnik', kind: 'municipality', path: '/potkalnicko-prigorje/istrazi/opcina-kalnik' },
+  municipality: { id: 'm-kalnik', slug: 'opcina-kalnik', name: 'Kalnik', label: 'Općina Kalnik', kind: 'municipality', path: '/istrazi/opcina-kalnik' },
   items: [],
   persons: []
 }
@@ -65,7 +65,7 @@ function mount(component: Parameters<typeof mountSuspended>[0], path: string, pa
 
 describe('Home', () => {
   it('has the ridge hero, the wheat Riječ dana slot and exactly one inverted slab', async () => {
-    const page = await mountSuspended(Home, { route: '/potkalnicko-prigorje' })
+    const page = await mountSuspended(Home, { route: '' })
     expect(page.find('[data-testid="home-hero"] [data-testid="pz-ridge"]').exists()).toBe(true)
     expect(page.find('h1').classes()).toContain('pz-display')
     expect(page.find('h1').classes()).toContain('lg:pz-display-lg')
@@ -79,7 +79,7 @@ describe('Home', () => {
 
 describe('Settlement', () => {
   it('rich: leads with Riječi iz ovog sela as the primary action', async () => {
-    const page = await mount(Settlement, '/potkalnicko-prigorje/naselja/kalnik', { naselje: 'kalnik' })
+    const page = await mount(Settlement, '/naselja/kalnik', { naselje: 'kalnik' })
     await vi.waitFor(() => expect(page.find('[data-testid="settlement-heritage-list"]').exists()).toBe(true))
     expect(page.find('[data-testid="settlement-page"]').attributes('data-state')).toBe('rich')
     expect(page.find('[data-testid="pz-empty-state"]').exists()).toBe(false)
@@ -90,7 +90,7 @@ describe('Settlement', () => {
   })
 
   it('thin: shows the empty state with an invitation and Dodaj zapis as the primary action, never a zero', async () => {
-    const page = await mount(Settlement, '/potkalnicko-prigorje/naselja/sopron', { naselje: 'sopron' })
+    const page = await mount(Settlement, '/naselja/sopron', { naselje: 'sopron' })
     await vi.waitFor(() => expect(page.find('[data-testid="pz-empty-state"]').exists()).toBe(true))
     expect(page.find('[data-testid="settlement-page"]').attributes('data-state')).toBe('thin')
     expect(page.text()).toContain('Za naselje Šopron još skupljamo zapise.')
@@ -105,7 +105,7 @@ describe('Settlement', () => {
 
 describe('Heritage list', () => {
   it('lists HeritageCard items with a count line and category chips that are toggle buttons', async () => {
-    const page = await mountSuspended(HeritageList, { route: '/potkalnicko-prigorje/bastina' })
+    const page = await mountSuspended(HeritageList, { route: '/bastina' })
     await vi.waitFor(() => expect(page.findAll('[data-testid="pz-heritage-card"]').length).toBeGreaterThan(1))
     expect(page.find('[data-testid="heritage-count"]').text()).toMatch(/^\d+ zapis/)
     const chips = page.findAll('[data-testid="heritage-filter-category"] button')
@@ -129,7 +129,7 @@ describe('Heritage item', () => {
   })
 
   it('shows the protection tag only when the record itself says it is protected', async () => {
-    const page = await mount(HeritageItem, '/potkalnicko-prigorje/bastina/kalnik/zasticena', { naselje: 'kalnik', slug: 'zasticena' })
+    const page = await mount(HeritageItem, '/bastina/kalnik/zasticena', { naselje: 'kalnik', slug: 'zasticena' })
     await vi.waitFor(() => expect(page.find('[data-testid="pz-fact-panel-trust"]').exists()).toBe(true))
     const trust = page.get('[data-testid="pz-fact-panel-trust"]')
     expect(trust.get('[data-testid="protection-tag-protected"]').text()).toBe('Zaštićeno kulturno dobro Z-1234')
@@ -151,7 +151,7 @@ describe('Heritage item', () => {
 
 describe('Word page', () => {
   it('shows the headword, the forms with settlement names (never ids) and Uči ovu riječ as the primary action', async () => {
-    const page = await mount(SpeechWord, '/potkalnicko-prigorje/govor/jejce', { slug: 'jejce' })
+    const page = await mount(SpeechWord, '/govor/jejce', { slug: 'jejce' })
     await vi.waitFor(() => expect(page.find('[data-testid="speech-word-page"]').exists()).toBe(true))
     expect(page.find('h1').classes()).toContain('pz-headword')
     const forms = page.findAll('[data-testid="pz-variant"]')
@@ -167,7 +167,7 @@ describe('Word page', () => {
   })
 
   it('opens Kod nas se kaže drugačije in a sheet', async () => {
-    const page = await mount(SpeechWord, '/potkalnicko-prigorje/govor/jejce', { slug: 'jejce' })
+    const page = await mount(SpeechWord, '/govor/jejce', { slug: 'jejce' })
     await vi.waitFor(() => expect(page.find('[data-testid="speech-different-here-mobile"]').exists()).toBe(true))
     await page.get('[data-testid="speech-different-here-mobile"]').trigger('click')
     await vi.waitFor(() => expect(document.body.querySelector('[role="dialog"]')).not.toBeNull())
@@ -178,9 +178,9 @@ describe('Word page', () => {
 
 describe('Contribute', () => {
   it('offers the types as tiles and marks optional fields "(nije obavezno)"', async () => {
-    const picker = await mountSuspended(Contribute, { route: '/potkalnicko-prigorje/doprinesi' })
+    const picker = await mountSuspended(Contribute, { route: '/doprinesi' })
     expect(picker.findAll('[data-testid="contribute-type-picker"] li').length).toBe(7)
-    const form = await mountSuspended(Contribute, { route: '/potkalnicko-prigorje/doprinesi?vrsta=rijec' })
+    const form = await mountSuspended(Contribute, { route: '/doprinesi?vrsta=rijec' })
     await vi.waitFor(() => expect(form.find('[data-testid="contribute-form"]').exists()).toBe(true))
     expect(form.find('form').exists()).toBe(true)
     expect(form.text()).toContain('Tvoje ime (nije obavezno)')

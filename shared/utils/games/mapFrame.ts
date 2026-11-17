@@ -15,21 +15,21 @@ export const MAP_LAYERS = [
   {
     id: 'karta' as const,
     label: 'Karta',
-    src: '/potkalnicko-prigorje/karta/karta.webp',
+    src: '/karta/karta.webp',
     attribution: '© OpenStreetMap suradnici · OpenFreeMap',
     available: true
   },
   {
     id: 'reljef' as const,
     label: 'Reljef',
-    src: '/potkalnicko-prigorje/karta/reljef.webp',
+    src: '/karta/reljef.webp',
     attribution: '© OpenStreetMap suradnici · reljef: Terrain-Tiles (AWS open data)',
     available: true
   },
   {
     id: 'satelit' as const,
     label: 'Satelit',
-    src: '/potkalnicko-prigorje/karta/satelit.webp',
+    src: '/karta/satelit.webp',
     attribution: 'Ortofoto © Državna geodetska uprava (DOF 2023)',
     available: false
   }

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import PzHeritageCard from '../app/components/pz/PzHeritageCard.vue'
-import HeritageItem from '../app/pages/potkalnicko-prigorje/bastina/[naselje]/[slug].vue'
-import PhotoCredits from '../app/pages/potkalnicko-prigorje/o-projektu/fotografije.vue'
+import HeritageItem from '../app/pages/bastina/[naselje]/[slug].vue'
+import PhotoCredits from '../app/pages/o-projektu/fotografije.vue'
 import { buildPublicContent, type ItemImageRow } from '../server/utils/publicContent'
 import { heritageItemDetail, photoCredits, resolveHeritageItem } from '../server/utils/publicAtlas'
 import { fakeRowsWithIntangible } from './helpers/fakeIntangible'
@@ -33,7 +33,7 @@ registerEndpoint('/api/atlas/photos', () => photoCredits(content))
 describe('heritage photos', () => {
   it('shows the main photo large with its full credit and the others with theirs', async () => {
     const page = await mountSuspended(HeritageItem, {
-      route: { path: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } }
+      route: { path: '/bastina/kalnik/crkva-sv-brcka', params: { naselje: 'kalnik', slug: 'crkva-sv-brcka' } }
     })
     await vi.waitFor(() => expect(page.find('[data-testid="heritage-photos"]').exists()).toBe(true))
     const images = page.findAll('[data-testid="heritage-photos"] img')
@@ -57,7 +57,7 @@ describe('heritage photos', () => {
 
   it('puts the one-line credit under a card photo', async () => {
     const card = await mountSuspended(PzHeritageCard, {
-      props: { title: 'Crkva sv. Brcka', to: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', image: `${MEDIA}/thumb.webp`, imageCredit: 'Foto: Ivan Horvat, CC BY-SA 4.0' }
+      props: { title: 'Crkva sv. Brcka', to: '/bastina/kalnik/crkva-sv-brcka', image: `${MEDIA}/thumb.webp`, imageCredit: 'Foto: Ivan Horvat, CC BY-SA 4.0' }
     })
     expect(card.find('img').attributes('src')).toBe(`${MEDIA}/thumb.webp`)
     expect(card.find('[data-testid="pz-heritage-card-credit"]').text()).toBe('Foto: Ivan Horvat, CC BY-SA 4.0')
@@ -67,11 +67,11 @@ describe('heritage photos', () => {
   })
 
   it('lists every photo with its item and credit on the credits page', async () => {
-    const page = await mountSuspended(PhotoCredits, { route: '/potkalnicko-prigorje/o-projektu/fotografije' })
+    const page = await mountSuspended(PhotoCredits, { route: '/o-projektu/fotografije' })
     await vi.waitFor(() => expect(page.find('[data-testid="photo-credits"]').exists()).toBe(true))
     const rows = page.findAll('[data-testid="photo-credits"] li')
     expect(rows).toHaveLength(2)
-    expect(rows[0]!.find('a').attributes('href')).toBe('/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka')
+    expect(rows[0]!.find('a').attributes('href')).toBe('/bastina/kalnik/crkva-sv-brcka')
     expect(rows.map(row => row.find('[data-testid="pz-photo-credit"]').text().replace(/\s+/g, ' '))).toEqual([
       'Oko 1910. · Foto: Ivan Horvat, CC BY-SA 4.0 · izvor',
       'Foto: Župa Kalnik, Uz dopuštenje autora'

@@ -28,7 +28,7 @@ export interface QuestionGenerator<Target extends PoolCard = PoolCard> {
   question(target: Target, context: QuestionContext): QuestionBody | null
 }
 
-export const atlasSettlementPath = (slug: string) => `${pzRoutes.home}/naselja/${slug}`
+export const atlasSettlementPath = (slug: string) => `/naselja/${slug}`
 export const atlasPersonPath = (slug: string) => `${pzRoutes.persons}/${slug}`
 
 function cardsOfKind<Kind extends PoolCard['kind']>(pool: CardPool, kind: Kind, topics: TopicId[]): Extract<PoolCard, { kind: Kind }>[] {

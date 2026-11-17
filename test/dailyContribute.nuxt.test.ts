@@ -61,7 +61,7 @@ async function type(element: HTMLInputElement | HTMLTextAreaElement, value: stri
 
 async function mountFinished() {
   await useNuxtApp().$i18n.setLocale('hr')
-  wrapper = await mountSuspended(DailyWord, { route: '/potkalnicko-prigorje/igre', attachTo: document.body })
+  wrapper = await mountSuspended(DailyWord, { route: '/igre', attachTo: document.body })
   await vi.waitFor(() => expect(wrapper!.findAll('[data-option-id]').length).toBeGreaterThan(0))
   return wrapper
 }
@@ -118,7 +118,7 @@ describe('contributions from the daily word', () => {
       version: 1, days: { '2026-11-11': { wordId: 'old', guesses: ['b', 'a'], done: true, solved: true, tries: 2, maxTries: 3 } }
     }))
     await useNuxtApp().$i18n.setLocale('hr')
-    const page = await mountSuspended(DailyWord, { route: '/potkalnicko-prigorje/igre' })
+    const page = await mountSuspended(DailyWord, { route: '/igre' })
     wrapper = page
     await vi.waitFor(() => expect(page.find('[data-testid="daily-replaced"]').exists()).toBe(true))
     expect(page.find('[data-testid="daily-contribute"]').exists()).toBe(false)

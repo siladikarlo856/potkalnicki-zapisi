@@ -10,7 +10,7 @@ import type { PublicContent, SnapshotItem, SnapshotMunicipality, SnapshotPerson,
 // and publicIntangible.ts can both use them without importing each other.
 
 export const atlasMunicipalityPath = (slug: string) => `${pzRoutes.explore}/${slug}`
-export const atlasSettlementPath = (slug: string) => `${pzRoutes.home}/naselja/${slug}`
+export const atlasSettlementPath = (slug: string) => `/naselja/${slug}`
 export const atlasPersonPath = (slug: string) => `${pzRoutes.persons}/${slug}`
 export const atlasItemPath = (settlementSlug: string, slug: string) => `${pzRoutes.heritage}/${settlementSlug}/${slug}`
 

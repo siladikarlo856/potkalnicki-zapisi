@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData, clearNuxtState } from '#imports'
-import TkoJeTo from '../app/pages/potkalnicko-prigorje/igre/tko-je-to.vue'
+import TkoJeTo from '../app/pages/igre/tko-je-to.vue'
 import Tile from '../app/components/games/Tile.vue'
 import { GAME_CATALOGUE } from '../shared/utils/games/catalogue'
 import { pzRoutes } from '../shared/utils/appRoutes'

@@ -103,10 +103,10 @@ describe('PzEmptyState', () => {
       props: {
         placeName: 'Šopronu',
         municipality: 'Općina Sveti Petar Orehovec',
-        nearby: [{ label: 'Kalnik', to: '/potkalnicko-prigorje/naselja/kalnik' }],
+        nearby: [{ label: 'Kalnik', to: '/naselja/kalnik' }],
         contributeTypes: [
-          { label: 'Dodaj zapis', to: '/potkalnicko-prigorje/doprinesi?vrsta=bastina&naselje=sopron', icon: 'i-lucide-landmark' },
-          { label: 'Dodaj riječ', to: '/potkalnicko-prigorje/doprinesi?vrsta=rijec&naselje=sopron', icon: 'i-lucide-message-circle' }
+          { label: 'Dodaj zapis', to: '/doprinesi?vrsta=bastina&naselje=sopron', icon: 'i-lucide-landmark' },
+          { label: 'Dodaj riječ', to: '/doprinesi?vrsta=rijec&naselje=sopron', icon: 'i-lucide-message-circle' }
         ]
       }
     })
@@ -123,9 +123,9 @@ describe('PzFactPanel', () => {
   it('says "nepoznato" for unknown facts instead of hiding them, and fills the slots', async () => {
     wrapper = await mountSuspended(PzFactPanel, {
       props: {
-        facts: [{ label: 'Naselje', value: 'Kalnik', to: '/potkalnicko-prigorje/naselja/kalnik' }, { label: 'Godina', value: null }],
+        facts: [{ label: 'Naselje', value: 'Kalnik', to: '/naselja/kalnik' }, { label: 'Godina', value: null }],
         sources: [{ label: 'Ivan Horvat, Kalnik, 2004.' }],
-        play: { to: '/potkalnicko-prigorje/igre/kviz' }
+        play: { to: '/igre/kviz' }
       },
       slots: { trust: () => 'Provjereno', actions: () => 'Predloži ispravak' }
     })
@@ -150,7 +150,7 @@ describe('PzFactPanel', () => {
 describe('cards', () => {
   it('HeritageCard is one link, named by the title', async () => {
     wrapper = await mountSuspended(PzHeritageCard, {
-      props: { title: 'Crkva sv. Brcka', to: '/potkalnicko-prigorje/bastina/kalnik/crkva-sv-brcka', settlement: 'Kalnik', municipality: 'Općina Kalnik', category: 'Crkva' },
+      props: { title: 'Crkva sv. Brcka', to: '/bastina/kalnik/crkva-sv-brcka', settlement: 'Kalnik', municipality: 'Općina Kalnik', category: 'Crkva' },
       slots: { trust: () => 'Provjereno' }
     })
     const links = wrapper.findAll('a')
@@ -165,7 +165,7 @@ describe('cards', () => {
 
   it('WordCard is one link, named by the headword, and shows a plural-correct variants line', async () => {
     wrapper = await mountSuspended(PzWordCard, {
-      props: { headword: 'jejce', to: '/potkalnicko-prigorje/govor/jejce', type: 'imenica', meaning: 'jaje', variantCount: 3, settlementCount: 21 }
+      props: { headword: 'jejce', to: '/govor/jejce', type: 'imenica', meaning: 'jaje', variantCount: 3, settlementCount: 21 }
     })
     expect(wrapper.findAll('a')).toHaveLength(1)
     expect(wrapper.find('a').attributes('aria-labelledby')).toBe(wrapper.find('h3').attributes('id'))
@@ -183,7 +183,7 @@ describe('cards', () => {
 
   it('GameCard is one link, named by the title', async () => {
     wrapper = await mountSuspended(PzGameCard, {
-      props: { title: 'Kaj to znači?', blurb: 'Odaberi značenje riječi.', to: '/potkalnicko-prigorje/igre/kviz', questions: 10, minutes: 3 }
+      props: { title: 'Kaj to znači?', blurb: 'Odaberi značenje riječi.', to: '/igre/kviz', questions: 10, minutes: 3 }
     })
     expect(wrapper.findAll('a')).toHaveLength(1)
     expect(wrapper.find('a').attributes('aria-labelledby')).toBe(wrapper.find('h3').attributes('id'))
@@ -193,7 +193,7 @@ describe('cards', () => {
 
   it('GameCard coming soon has no link, says Uskoro and is aria-disabled', async () => {
     wrapper = await mountSuspended(PzGameCard, {
-      props: { title: 'Legende', to: '/potkalnicko-prigorje/igre/legende', soon: true }
+      props: { title: 'Legende', to: '/igre/legende', soon: true }
     })
     expect(wrapper.find('a').exists()).toBe(false)
     expect(wrapper.text()).toContain('Uskoro')

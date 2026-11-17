@@ -38,7 +38,7 @@ describe('game catalogue', () => {
       topic: 'rijeci' as const,
       format: 'odabir' as const,
       minutes: 1,
-      path: '/potkalnicko-prigorje/igre/kviz',
+      path: '/igre/kviz',
       status: 'live' as const,
       challengeable: false,
       needs: { kind: 'word' as const, min: 3 }

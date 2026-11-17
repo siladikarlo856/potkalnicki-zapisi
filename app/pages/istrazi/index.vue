@@ -24,7 +24,7 @@ const entries = computed(() => [
   { key: 'places', to: `${localePath(pzRoutes.explore)}#opcine`, icon: 'i-lucide-map-pin', label: t('pz.explore.entryPlaces'), count: overview.value?.totals.settlements },
   { key: 'heritage', to: localePath(pzRoutes.heritage), icon: 'i-lucide-church', label: t('pz.explore.entryHeritage'), count: overview.value?.totals.items },
   { key: 'intangible', to: localePath(pzRoutes.intangible), icon: 'i-lucide-scroll-text', label: t('pz.explore.entryIntangible'), count: undefined },
-  { key: 'speech', to: localePath(`${pzRoutes.home}/govor`), icon: 'i-lucide-book-open', label: t('pz.explore.entrySpeech'), count: undefined }
+  { key: 'speech', to: localePath(`/govor`), icon: 'i-lucide-book-open', label: t('pz.explore.entrySpeech'), count: undefined }
 ])
 
 const municipalities = computed(() => (overview.value?.municipalities ?? []).map(m => ({

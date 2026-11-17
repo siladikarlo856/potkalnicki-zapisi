@@ -79,7 +79,7 @@ const localePath = useLocalePath()
     >
       <template #privacy>
         <ULink
-          :to="localePath('/potkalnicko-prigorje/privatnost')"
+          :to="localePath('/privatnost')"
           :target="privacyInNewTab ? '_blank' : undefined"
           class="text-primary underline underline-offset-2"
         >

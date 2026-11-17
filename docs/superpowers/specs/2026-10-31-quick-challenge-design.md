@@ -6,16 +6,16 @@ Add a one-tap Quick challenge entry to the Challenge side of the heritage games 
 
 ## Architecture
 
-The existing `/potkalnicko-prigorje/igre/kviz` page remains the Quick challenge runtime. Its current question generator consumes the active Words catalog, shuffles the available questions, and applies the shared `QUIZ_LENGTH` cap of 10. This is the only playable question source in the current application, so v1 is Words-focused without adding new question content or an unsupported cross-topic adapter.
+The existing `/igre/kviz` page remains the Quick challenge runtime. Its current question generator consumes the active Words catalog, shuffles the available questions, and applies the shared `QUIZ_LENGTH` cap of 10. This is the only playable question source in the current application, so v1 is Words-focused without adding new question content or an unsupported cross-topic adapter.
 
-The `/potkalnicko-prigorje` games hub Challenge card becomes a small chooser with two entries:
+The `/` games hub Challenge card becomes a small chooser with two entries:
 
-- Quick challenge: an enabled localized link to `/potkalnicko-prigorje/igre/kviz`, starting the existing game immediately.
+- Quick challenge: an enabled localized link to `/igre/kviz`, starting the existing game immediately.
 - Custom challenge: a localized disabled control labeled Coming soon, with no route or configuration behavior.
 
 ## Data flow
 
-The visitor opens `/potkalnicko-prigorje/igre`, selects Quick challenge, and navigates directly to `/potkalnicko-prigorje/igre/kviz`. The existing page fetches active words, generates multiple-choice questions, limits the round to at most 10 questions, and handles answer feedback, results, missed-word replay and result sharing unchanged.
+The visitor opens `/igre`, selects Quick challenge, and navigates directly to `/igre/kviz`. The existing page fetches active words, generates multiple-choice questions, limits the round to at most 10 questions, and handles answer feedback, results, missed-word replay and result sharing unchanged.
 
 ## Error handling
 

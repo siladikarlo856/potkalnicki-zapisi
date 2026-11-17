@@ -10,8 +10,8 @@ useHead({
   htmlAttrs: { 'data-site': 'pz' },
   titleTemplate: title => !title || title === 'Potkalnički zapisi' ? 'Potkalnički zapisi' : `${title} · Potkalnički zapisi`,
   link: [
-    { key: 'site-icon', rel: 'icon', type: 'image/svg+xml', href: '/potkalnicko-prigorje/favicon.svg' },
-    { key: 'site-apple-icon', rel: 'apple-touch-icon', href: '/potkalnicko-prigorje/apple-touch-icon.svg' }
+    { key: 'site-icon', rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+    { key: 'site-apple-icon', rel: 'apple-touch-icon', href: '/apple-touch-icon.svg' }
   ],
   script: [{ 'type': 'module', 'src': 'https://static.cloudflareinsights.com/beacon.min.js', 'data-cf-beacon': JSON.stringify({ token: cloudflareAnalyticsToken }) }]
 })
@@ -21,7 +21,7 @@ useSeoMeta({
   ogDescription: 'Priče, ljudi i baština našega kraja.',
   ogSiteName: 'Potkalnički zapisi',
   ogType: 'website',
-  ogImage: `${baseUrl}/potkalnicko-prigorje/og.svg`,
+  ogImage: `${baseUrl}/og.svg`,
   ogImageWidth: 1200,
   ogImageHeight: 630,
   ogImageAlt: 'Potkalnički zapisi - Priče, ljudi i baština našega kraja.',

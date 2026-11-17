@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import SpeechIndex from '../app/pages/potkalnicko-prigorje/govor/index.vue'
-import SpeechWord from '../app/pages/potkalnicko-prigorje/govor/[slug].vue'
+import SpeechIndex from '../app/pages/govor/index.vue'
+import SpeechWord from '../app/pages/govor/[slug].vue'
 import type { WordPageResponse } from '../shared/types/publicSpeech'
 import type { PublicWords } from '../shared/utils/word'
 
@@ -34,7 +34,7 @@ const listPayload: PublicWords = {
 const detailPayload: WordPageResponse = {
   word: listPayload.words[0]!,
   areas: [],
-  related: [{ slug: 'kaj', headword: 'kaj', meaning: 'što', path: '/potkalnicko-prigorje/govor/kaj' }]
+  related: [{ slug: 'kaj', headword: 'kaj', meaning: 'što', path: '/govor/kaj' }]
 }
 
 registerEndpoint('/api/heritage/words', () => listPayload)
@@ -42,7 +42,7 @@ registerEndpoint('/api/heritage/words/hiza', () => detailPayload)
 
 describe('Potkalnički zapisi speech pages', () => {
   it('lists words grouped by letter with search', async () => {
-    const page = await mountSuspended(SpeechIndex, { route: '/potkalnicko-prigorje/govor' })
+    const page = await mountSuspended(SpeechIndex, { route: '/govor' })
     await vi.waitFor(() => expect(page.find('[data-testid="speech-index"]').exists()).toBe(true))
     expect(page.text()).toContain('Naš govor')
     expect(page.get('[data-testid="speech-letter-H"]').text()).toContain('hiža')
@@ -54,7 +54,7 @@ describe('Potkalnički zapisi speech pages', () => {
 
   it('renders a word archive page with meaning, variants, related words and learn link', async () => {
     const page = await mountSuspended(SpeechWord, {
-      route: { path: '/potkalnicko-prigorje/govor/hiza', params: { slug: 'hiza' } }
+      route: { path: '/govor/hiza', params: { slug: 'hiza' } }
     })
     await vi.waitFor(() => expect(page.find('[data-testid="speech-word-page"]').exists()).toBe(true))
     expect(page.text()).toContain('hiža')

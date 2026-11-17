@@ -5,7 +5,7 @@
 import { commonsLicense, datasetIssues, imageValue, needsPhoto, planItem } from './plan.mjs'
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php'
-const USER_AGENT = 'PotkalnickiZapisiImport/1.0 (heritage content import; https://prigorje.karlo-siladi.from.hr/potkalnicko-prigorje)'
+const USER_AGENT = 'PotkalnickiZapisiImport/1.0 (heritage content import; https://prigorje.karlo-siladi.from.hr)'
 /** The long side of the copies made from a Commons file, as the admin screen makes them (app/utils/imageResize.ts). */
 export const PHOTO_SIDES = { large: 1600, thumb: 480 }
 /** The upload endpoint's per-file cap (server/utils/heritageImages.ts). */

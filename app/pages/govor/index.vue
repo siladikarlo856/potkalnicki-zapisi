@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { PublicWords } from '~~/shared/utils/word'
 import { contentFold } from '~~/shared/utils/content/common'
-import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -82,7 +81,7 @@ useSeoMeta({
           >
             <ULink
               v-if="word.slug"
-              :to="localePath(`${pzRoutes.home}/govor/${word.slug}`)"
+              :to="localePath(`/govor/${word.slug}`)"
               class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
             >
               <span class="font-medium text-highlighted">{{ word.headword }}</span>

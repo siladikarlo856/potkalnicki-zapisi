@@ -88,7 +88,7 @@ useSeoMeta({
             <UButton
               block
               class="mt-3"
-              :to="localePath(`${pzRoutes.home}/naselja/${picked.slug}`)"
+              :to="localePath(`/naselja/${picked.slug}`)"
               :label="t('pz.map.openSettlement')"
               trailing-icon="i-lucide-arrow-right"
             />
