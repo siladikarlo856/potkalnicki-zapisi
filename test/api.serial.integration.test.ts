@@ -991,7 +991,7 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
       .filter(row => row.slug)
       .map(row => ({ slug: String(row.slug), updatedAt: String(row.updated_at ?? new Date().toISOString()) }))
     const expected = sitemapEntries(content, wordEntries)
-      .map(entry => SITE_URL + entry.path)
+      .map(entry => SITE_URL + (entry.path || '/'))
     expect(urls.sort()).toEqual(expected.sort())
     // The Priče i običaji list is always there; the pages of its records, narrators and themes depend on what the
     // database holds (test/publicIntangible.test.ts covers which of them the sitemap lists).
@@ -1003,7 +1003,7 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
       'https://prigorje.karlo-siladi.from.hr/osobe',
       ...personSlugs.map(slug => `https://prigorje.karlo-siladi.from.hr/osobe/${slug}`),
       ...wordEntries.map(w => `https://prigorje.karlo-siladi.from.hr/govor/${w.slug}`),
-      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path}`)
+      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path || '/'}`)
     ].sort())
     expect(sitemap).not.toContain('/heritage')
     expect(sitemap).not.toContain('/en')
