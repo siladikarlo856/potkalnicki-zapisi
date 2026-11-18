@@ -49,16 +49,18 @@ async function patch<T extends { id: string, revision: number }>(kind: string, e
 }
 
 describe.skipIf(!db.enabled)('intangible heritage over real Postgres', () => {
-  it('seeds the three type lists with the agreed values and no sample content', () => {
+  it('seeds the three type lists with the agreed values and the reviewed sample content', () => {
     const labels = (table: string) => sql(`select string_agg(label_hr, ' | ' order by sort) from ${table}`)
     expect(labels('story_types')).toBe('legenda/predaja | mitska predaja | bajka | šaljiva priča | životna priča')
     expect(labels('custom_types')).toBe('godišnji običaji | životni običaji | rad i svakodnevica | vjera i pobožnost | društveni život')
     expect(labels('folk_text_types')).toBe('pjesma | molitva | poslovica/izreka | zagonetka | brojalica | kletva/blagoslov | zdravica')
     expect(sql(`select count(*) from story_types where id <> public.content_uuid('story_type:' || key)`)).toBe('0')
-    expect(sql('select (select count(*) from occasions) + (select count(*) from themes)')).toBe('0')
+    expect(sql(`select count(*) from occasions`)).toBe('0')
+    expect(sql(`select count(*) from themes`)).toBe('1')
+    expect(sql(`select count(*) from themes where slug = 'iz-mamine-poruke'`)).toBe('1')
     expect(sql(`select count(*) from stories`)).toBe('0')
-    expect(sql(`select count(*) from customs`)).toBe('0')
-    expect(sql(`select count(*) from folk_texts`)).toBe('0')
+    expect(sql(`select count(*) from customs`)).toBe('3')
+    expect(sql(`select count(*) from folk_texts`)).toBe('87')
     expect(sql(`select count(distinct actor) || ' ' || min(actor) from content_revisions where entity_kind in ('story_type', 'custom_type', 'folk_text_type')`)).toBe('1 import')
   })
 
