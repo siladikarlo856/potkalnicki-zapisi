@@ -13,7 +13,12 @@ const isPotkalnicko = !isAdmin && !pathname.startsWith('/api')
 const layoutName = isAdmin ? 'admin' : 'potkalnicko'
 
 const notFound = computed(() => props.error.statusCode === 404)
-const title = computed(() => notFound.value ? t('error.notFound.title') : t('error.generic.title'))
+const removed = computed(() => props.error.statusCode === 410)
+const state = computed(() => removed.value ? 'removed' : notFound.value ? 'notFound' : 'generic')
+const title = computed(() => t(`error.${state.value}.title`))
+// A removed record points back to the list of its section (the first path segment), or the places list.
+const firstSegment = pathname.split('/').filter(Boolean)[0]
+const sectionList = firstSegment && pathname.split('/').filter(Boolean).length > 1 ? `/${firstSegment}/` : '/mjesta/'
 
 useHead({
   // Same BCP 47 tag (hr-HR / en-GB) that app.vue gets from useLocaleHead.
@@ -40,7 +45,7 @@ useThemeColor(isPotkalnicko ? '#FDF9F0' : undefined, isPotkalnicko ? '#14140F' :
         tabindex="-1"
         class="focus:outline-none"
         :error="error"
-        :icon="notFound ? 'i-lucide-map-pin-off' : 'i-lucide-triangle-alert'"
+        :icon="removed ? 'i-lucide-archive-x' : notFound ? 'i-lucide-map-pin-off' : 'i-lucide-triangle-alert'"
         :ui="{ root: 'px-4 py-16', links: 'flex-wrap gap-3 print:hidden' }"
       >
         <template #statusMessage>
@@ -48,11 +53,19 @@ useThemeColor(isPotkalnicko ? '#FDF9F0' : undefined, isPotkalnicko ? '#14140F' :
         </template>
 
         <template #message>
-          {{ notFound ? t('error.notFound.description') : t('error.generic.description') }}
+          {{ t(`error.${state}.description`) }}
         </template>
 
         <template #links>
           <UButton
+            v-if="removed"
+            :label="t('error.removed.back')"
+            icon="i-lucide-list"
+            :to="sectionList"
+            size="lg"
+          />
+          <UButton
+            v-else
             :label="t('error.home')"
             icon="i-lucide-house"
             :to="isAdmin ? '/admin' : '/'"
