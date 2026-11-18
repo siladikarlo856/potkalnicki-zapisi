@@ -25,7 +25,16 @@ export function alphabetLetter(word: string): string | undefined {
   return [...HR_ALPHABET].sort((a, b) => b.length - a.length).find(letter => upper.startsWith(letter))
 }
 
-/** "1 zapis", "2 zapisa", "5 zapisa": Croatian count with its noun (singular only for 1, 21, 31 …, not 11). */
+/** A counted noun: singular, the form after 2–4, and the form after 5 or more when it differs (filtar, filtra, filtara). */
+export type PzNoun = [one: string, few: string, other?: string]
+
+/** The noun form that agrees with `n`: "filtar" for 1, "filtra" for 2–4, "filtara" for 5 (singular for 21, not 11). */
+export function nounFor(n: number, [one, few, other = few]: PzNoun): string {
+  const form = pluralFormHr(n)
+  return form === 'one' ? one : form === 'few' ? few : other
+}
+
+/** "1 zapis", "2 zapisa", "5 zapisa": Croatian count with its noun. */
 export function countNoun(n: number, one: string, other: string): string {
-  return `${n} ${pluralFormHr(n) === 'one' ? one : other}`
+  return `${n} ${nounFor(n, [one, other])}`
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { PzNoun } from '~/utils/pzText'
 // The strip above a list: the count ("143 zapisa", role="status", never hidden), the "Filteri" button with a
 // count badge below 1024px, the sort select, and the active filters as removable chips with "Očisti sve" at every
 // width. From 1024px the `rail` slot (groups of choices) is always visible beside the list; below, the consumer opens
@@ -10,8 +11,8 @@ export interface PzActiveFilter {
 
 const props = defineProps<{
   count: number
-  /** Singular and genitive plural of the noun that is counted. */
-  noun?: [one: string, other: string]
+  /** The noun that is counted, inflected (default zapis, zapisa). */
+  noun?: PzNoun
   sortOptions?: Array<{ value: string, label: string }>
   activeFilters?: PzActiveFilter[]
 }>()
@@ -19,7 +20,7 @@ const props = defineProps<{
 const emit = defineEmits<{ 'open-filters': [], 'remove': [id: string], 'clear': [] }>()
 const sort = defineModel<string>('sort')
 
-const countText = computed(() => countNoun(props.count, props.noun?.[0] ?? 'zapis', props.noun?.[1] ?? 'zapisa'))
+const countText = computed(() => `${props.count} ${nounFor(props.count, props.noun ?? ['zapis', 'zapisa'])}`)
 const activeCount = computed(() => props.activeFilters?.length ?? 0)
 </script>
 
@@ -47,7 +48,7 @@ const activeCount = computed(() => props.activeFilters?.length ?? 0)
         Filteri
         <PzBadge
           :count="activeCount"
-          noun="aktivna filtra"
+          :noun="['aktivni filtar', 'aktivna filtra', 'aktivnih filtara']"
         />
       </UButton>
       <USelect

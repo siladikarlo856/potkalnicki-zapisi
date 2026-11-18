@@ -24,7 +24,7 @@ import PzLoadMore from '../app/components/pz/PzLoadMore.vue'
 import PzAlphabetIndex from '../app/components/pz/PzAlphabetIndex.vue'
 import PzSchematicMap from '../app/components/pz/PzSchematicMap.vue'
 import PzShareOptions from '../app/components/pz/PzShareOptions.vue'
-import { alphabetLetter, countNoun, foldHr, HR_ALPHABET } from '../app/utils/pzText'
+import { alphabetLetter, countNoun, foldHr, HR_ALPHABET, type PzNoun } from '../app/utils/pzText'
 
 // The Reljef content and trust components, each against its design-system specification.
 
@@ -163,9 +163,12 @@ describe('PzBadge', () => {
   it('hides at zero and adds hidden text for the noun', async () => {
     const zero = await mountSuspended(PzBadge, { props: { count: 0 } })
     expect(zero.find('[data-testid="pz-badge"]').exists()).toBe(false)
-    const two = await mountSuspended(PzBadge, { props: { count: 2, noun: 'aktivna filtra' } })
+    const noun: PzNoun = ['aktivni filtar', 'aktivna filtra', 'aktivnih filtara']
+    const two = await mountSuspended(PzBadge, { props: { count: 2, noun } })
     expect(two.text()).toBe('2 aktivna filtra')
     expect(two.find('.sr-only').text()).toBe('aktivna filtra')
+    expect((await mountSuspended(PzBadge, { props: { count: 1, noun } })).text()).toBe('1 aktivni filtar')
+    expect((await mountSuspended(PzBadge, { props: { count: 5, noun } })).text()).toBe('5 aktivnih filtara')
   })
 
   it('has default, attention and quiet variants and carries words without a count', async () => {
@@ -189,11 +192,13 @@ describe('PzChip', () => {
   })
 
   it('is a link with a count', async () => {
-    const chip = await mountSuspended(PzChip, { props: { to: '/mjesta/kalnik/', count: 12, countNoun: 'zapisa' }, slots: { default: 'Kalnik' } })
+    const chip = await mountSuspended(PzChip, { props: { to: '/mjesta/kalnik/', count: 12, countNoun: ['zapis', 'zapisa'] }, slots: { default: 'Kalnik' } })
     expect(chip.element.tagName).toBe('A')
     expect(chip.attributes('href')).toBe('/mjesta/kalnik/')
     expect(chip.attributes('aria-pressed')).toBeUndefined()
     expect(chip.text()).toBe('Kalnik12 zapisa')
+    const single = await mountSuspended(PzChip, { props: { selected: false, count: 1, countNoun: ['zapis', 'zapisa'] }, slots: { default: 'Kalnik' } })
+    expect(single.find('.sr-only').text()).toBe('zapis')
   })
 
   it('is removable with hidden text and a close icon', async () => {
@@ -413,6 +418,9 @@ describe('PzSearchField', () => {
     const field = await mountSuspended(PzSearchField)
     expect(field.attributes('role')).toBe('search')
     expect(field.find('label.sr-only').exists()).toBe(true)
+    const labelFor = field.find('label.sr-only').attributes('for')
+    expect(labelFor).toBeTruthy()
+    expect(field.find('input').attributes('id')).toBe(labelFor)
     expect(field.find('input').attributes('type')).toBe('search')
     expect(field.find('input').attributes('placeholder')).toBe('Mjesto, građevina, osoba, priča, riječ')
   })

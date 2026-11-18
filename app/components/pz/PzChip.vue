@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { PzNoun } from '~/utils/pzText'
 // Chip: toggle a filter (button with aria-pressed), link to a place or theme (`to`), or show an active filter that
 // can be removed (`removable`). Always interactive; a non-interactive label is a PzKindTag.
 // Selected is an ink fill plus a check icon, so it never depends on colour alone.
@@ -10,8 +11,8 @@ const props = defineProps<{
   /** Active filter: ends with an x and hidden text ", ukloni filtar". */
   removable?: boolean
   count?: number
-  /** Hidden text after the count where it would be unclear ("zapisa"). */
-  countNoun?: string
+  /** Hidden text after the count where it would be unclear, inflected: ['zapis', 'zapisa']. */
+  countNoun?: PzNoun
   /** Admin, fine pointer: 30px high. */
   dense?: boolean
 }>()
@@ -19,6 +20,7 @@ const props = defineProps<{
 const kind = computed(() => props.to ? 'link' : props.removable ? 'removable' : 'toggle')
 const isToggle = computed(() => kind.value === 'toggle' && props.selected !== undefined)
 const isSelected = computed(() => props.selected === true)
+const nounText = computed(() => props.count !== undefined && props.countNoun ? nounFor(props.count, props.countNoun) : '')
 
 const base = 'relative inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3.5 text-[0.9375rem] font-semibold whitespace-nowrap no-underline cursor-pointer'
 const classes = computed(() => [
@@ -43,9 +45,9 @@ const classes = computed(() => [
       v-if="count !== undefined"
       class="text-sm font-medium tabular-nums opacity-80"
     >{{ count }}<span
-      v-if="countNoun"
+      v-if="nounText"
       class="sr-only"
-    >{{ ' ' + countNoun }}</span></small>
+    >{{ ' ' + nounText }}</span></small>
   </NuxtLink>
   <button
     v-else
@@ -66,9 +68,9 @@ const classes = computed(() => [
       v-if="count !== undefined"
       class="text-sm font-medium tabular-nums opacity-80"
     >{{ count }}<span
-      v-if="countNoun"
+      v-if="nounText"
       class="sr-only"
-    >{{ ' ' + countNoun }}</span></small>
+    >{{ ' ' + nounText }}</span></small>
     <template v-if="removable">
       <UIcon
         name="i-lucide-x"

@@ -20,6 +20,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ search: [query: string], submit: [query: string] }>()
 const query = defineModel<string>({ default: '' })
+const inputId = useId()
 const input = useTemplateRef<{ inputRef: HTMLInputElement | null }>('input')
 
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -65,10 +66,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
   >
     <label
       class="sr-only"
-      :for="`${$.uid}-search`"
+      :for="inputId"
     >{{ label }}</label>
     <UInput
-      :id="`${$.uid}-search`"
+      :id="inputId"
       ref="input"
       v-model="query"
       type="search"
