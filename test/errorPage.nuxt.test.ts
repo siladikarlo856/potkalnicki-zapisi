@@ -22,6 +22,14 @@ describe('error page', () => {
     expect(page.findAll('a').find(link => link.text() === 'Na popis')?.attributes('href')).toBe('/mjesta/')
   })
 
+  it('points an old /potkalnicko-prigorje/ address of a removed settlement to the places list', async () => {
+    // The old prefix 301s to the home page, so linking to it would not lead to any section list.
+    const page = await mountSuspended(ErrorPage, {
+      props: { error: { statusCode: 410, url: '/potkalnicko-prigorje/naselja/nestalo-selo' } as never }
+    })
+    expect(page.findAll('a').find(link => link.text() === 'Na popis')?.attributes('href')).toBe('/mjesta/')
+  })
+
   it('keeps the not-found state for a 404', async () => {
     const page = await mountSuspended(ErrorPage, {
       props: { error: { statusCode: 404, url: '/nepostojeca-adresa/' } as never }

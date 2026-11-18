@@ -16,9 +16,13 @@ const notFound = computed(() => props.error.statusCode === 404)
 const removed = computed(() => props.error.statusCode === 410)
 const state = computed(() => removed.value ? 'removed' : notFound.value ? 'notFound' : 'generic')
 const title = computed(() => t(`error.${state.value}.title`))
-// A removed record points back to the list of its section (the first path segment), or the places list.
-const firstSegment = pathname.split('/').filter(Boolean)[0]
-const sectionList = firstSegment && pathname.split('/').filter(Boolean).length > 1 ? `/${firstSegment}/` : '/mjesta/'
+// A removed record points back to the list of its section, or the places list. An old
+// /potkalnicko-prigorje/... address is read without that prefix; `naselja` and unknown sections fall back.
+const recordSections = new Set(['mjesta', 'bastina', 'osobe', 'price-i-obicaji', 'govor'])
+const segments = pathname.split('/').filter(Boolean)
+const sectionSegments = segments[0] === 'potkalnicko-prigorje' ? segments.slice(1) : segments
+const section = sectionSegments.length > 1 ? sectionSegments[0] : undefined
+const sectionList = section && recordSections.has(section) ? `/${section}/` : '/mjesta/'
 
 useHead({
   // Same BCP 47 tag (hr-HR / en-GB) that app.vue gets from useLocaleHead.
