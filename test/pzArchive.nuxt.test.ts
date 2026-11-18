@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import Home from '../app/pages/index.vue'
-import Settlement from '../app/pages/naselja/[naselje].vue'
+import Settlement from '../app/pages/mjesta/[opcina]/[naselje].vue'
 import HeritageList from '../app/pages/bastina/index.vue'
 import HeritageItem from '../app/pages/bastina/[naselje]/[slug].vue'
 import SpeechWord from '../app/pages/govor/[slug].vue'
@@ -23,10 +23,10 @@ const KALNIK_ITEM = '/bastina/kalnik/crkva-sv-brcka'
 // A village with no heritage item yet: the page leads with what is known and one invitation.
 const thinSettlement: AtlasSettlementResponse = {
   settlement: {
-    id: 's-sopron', slug: 'sopron', name: 'Šopron', code: null, path: '/naselja/sopron',
+    id: 's-sopron', slug: 'sopron', name: 'Šopron', code: null, path: '/mjesta/opcina-kalnik/sopron/',
     centroid: null, credits: [], updatedAt: '2026-11-02T10:00:00.000Z'
   },
-  municipality: { id: 'm-kalnik', slug: 'opcina-kalnik', name: 'Kalnik', label: 'Općina Kalnik', kind: 'municipality', path: '/istrazi/opcina-kalnik' },
+  municipality: { id: 'm-kalnik', slug: 'opcina-kalnik', name: 'Kalnik', label: 'Općina Kalnik', kind: 'municipality', path: '/mjesta/opcina-kalnik/' },
   items: [],
   persons: []
 }
@@ -79,7 +79,7 @@ describe('Home', () => {
 
 describe('Settlement', () => {
   it('rich: leads with Riječi iz ovog sela as the primary action', async () => {
-    const page = await mount(Settlement, '/naselja/kalnik', { naselje: 'kalnik' })
+    const page = await mount(Settlement, '/mjesta/opcina-kalnik/kalnik/', { opcina: 'opcina-kalnik', naselje: 'kalnik' })
     await vi.waitFor(() => expect(page.find('[data-testid="settlement-heritage-list"]').exists()).toBe(true))
     expect(page.find('[data-testid="settlement-page"]').attributes('data-state')).toBe('rich')
     expect(page.find('[data-testid="pz-empty-state"]').exists()).toBe(false)
@@ -90,7 +90,7 @@ describe('Settlement', () => {
   })
 
   it('thin: shows the empty state with an invitation and Dodaj zapis as the primary action, never a zero', async () => {
-    const page = await mount(Settlement, '/naselja/sopron', { naselje: 'sopron' })
+    const page = await mount(Settlement, '/mjesta/opcina-kalnik/sopron/', { opcina: 'opcina-kalnik', naselje: 'sopron' })
     await vi.waitFor(() => expect(page.find('[data-testid="pz-empty-state"]').exists()).toBe(true))
     expect(page.find('[data-testid="settlement-page"]').attributes('data-state')).toBe('thin')
     expect(page.text()).toContain('Za naselje Šopron još skupljamo zapise.')

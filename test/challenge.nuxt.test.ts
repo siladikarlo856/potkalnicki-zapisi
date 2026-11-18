@@ -58,9 +58,9 @@ describe('hr early challenge sharing', () => {
     expect(wrapper.find('[data-testid="challenge-finish"]').exists()).toBe(false)
     // After "Kreni" the sticky action bar takes the tab bar's place.
     expect(usePzTabBar().holds.value).toEqual(['challenge'])
-    expect(wrapper.get('[data-testid="challenge-scoreboard-link"]').attributes('href')).toBe(`/izazov/${code}/ljestvica`)
+    expect(wrapper.get('[data-testid="challenge-scoreboard-link"]').attributes('href')).toBe(`/izazov/${code}/ljestvica/`)
     expect(wrapper.text()).toContain('Otvoren do')
-    expect(wrapper.find('a[href="/izazov"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/izazov/"]').exists()).toBe(true)
     const link = wrapper.get('[data-testid="challenge-share"] input[readonly]').element as HTMLInputElement
     expect(link.value).toContain(`/izazov/${code}`)
     await wrapper.get('[data-testid="challenge-copy"]').trigger('click')

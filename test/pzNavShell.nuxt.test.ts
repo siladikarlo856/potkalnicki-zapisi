@@ -11,13 +11,13 @@ beforeEach(() => {
 
 describe('PzBottomNav', () => {
   it('renders four tab links in a labelled nav and marks the active one', async () => {
-    const nav = await mountSuspended(PzBottomNav, { route: '/istrazi/opcina-kalnik' })
+    const nav = await mountSuspended(PzBottomNav, { route: '/mjesta/opcina-kalnik/' })
     const el = nav.find('nav[aria-label="Glavna navigacija"]')
     expect(el.exists()).toBe(true)
     const tabs = el.findAll('a')
     expect(tabs.map(tab => tab.text())).toEqual(['Početna', 'Igre', 'Istraži', 'Doprinesi'])
     expect(tabs.map(tab => tab.attributes('aria-current'))).toEqual([undefined, undefined, 'page', undefined])
-    expect(tabs[3]!.attributes('href')).toBe('/doprinesi')
+    expect(tabs[3]!.attributes('href')).toBe('/doprinesi/')
   })
 
   it('marks Početna only on the home page and nothing on O projektu', async () => {

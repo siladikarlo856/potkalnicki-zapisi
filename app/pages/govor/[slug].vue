@@ -22,7 +22,7 @@ const variantOpen = ref(false)
 const verification = computed<AtlasItemStatus>(() => word.value?.status === 'verified' ? 'verified' : 'unverified')
 
 const learnLink = computed(() => word.value
-  ? localePath(`${pzRoutes.learn}/sesija?kartice=${encodeURIComponent(`word:${word.value.id}`)}`)
+  ? localePath(`${pzRoutes.learnSession}?kartice=${encodeURIComponent(`word:${word.value.id}`)}`)
   : undefined)
 
 const areaNames = computed(() => new Map((payload.value?.areas ?? []).map(area => [area.id, area.name])))
@@ -53,7 +53,7 @@ useSeoMeta({
   >
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_var(--pz-side-panel)] lg:gap-x-12">
       <header class="flex max-w-(--pz-measure) flex-col gap-3">
-        <PzBackPill :to="localePath(`/govor`)">
+        <PzBackPill :to="localePath(pzRoutes.speech)">
           {{ t('pz.speech.title') }}
         </PzBackPill>
         <p class="pz-overline text-muted">

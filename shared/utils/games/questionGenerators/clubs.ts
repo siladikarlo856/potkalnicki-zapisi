@@ -39,7 +39,7 @@ export const klubMjestoQuestions: QuestionGenerator<PoolClub> = {
         hr: `U ${loc} igra ${target.name}.`,
         en: `${target.name} plays in ${loc}.`
       },
-      archivePath: atlasSettlementPath(target.settlementSlug)
+      archivePath: atlasSettlementPath(pool, target.municipalityId, target.settlementSlug)
     }
   }
 }
@@ -102,7 +102,7 @@ export const klubOdakleQuestions: QuestionGenerator<PoolClub> = {
         hr: `${target.name} dolazi iz naselja ${target.settlementName}.`,
         en: `${target.name} is from ${target.settlementName}.`
       },
-      archivePath: atlasSettlementPath(target.settlementSlug)
+      archivePath: atlasSettlementPath(pool, target.municipalityId, target.settlementSlug)
     }
   }
 }

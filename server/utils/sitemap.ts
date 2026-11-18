@@ -19,12 +19,12 @@ export const STATIC_SITEMAP_PATHS = [
   pzRoutes.contribute,
   pzRoutes.about,
   pzRoutes.learn,
-  `${pzRoutes.learn}/sesija`,
+  pzRoutes.learnSession,
   pzRoutes.quiz,
   pzRoutes.privacy,
-  pzRoutes.explore,
+  pzRoutes.places,
   pzRoutes.heritage,
-  `/govor`
+  pzRoutes.speech
 ]
 
 export interface SitemapEntry {
@@ -45,7 +45,7 @@ export function sitemapEntries(content: PublicContent, words: readonly WordSitem
     ...content.intangible.themes.filter(t => content.intangible.recordsByTheme.has(t.id)).map(t => ({ path: themePath(t.slug), lastmod: day(t.updatedAt) })),
     ...content.intangible.narrators.filter(n => !n.noindex).map(n => ({ path: narratorPath(n.slug), lastmod: day(n.updatedAt) })),
     ...content.municipalities.map(m => ({ path: atlasMunicipalityPath(m.slug), lastmod: day(m.updatedAt) })),
-    ...content.settlements.map(s => ({ path: atlasSettlementPath(s.slug), lastmod: day(s.updatedAt) })),
+    ...content.settlements.map(s => ({ path: atlasSettlementPath(content, s), lastmod: day(s.updatedAt) })),
     ...content.items.flatMap((item) => {
       const path = heritageItemPath(content, item)
       return path && !item.noindex ? [{ path, lastmod: day(item.updatedAt) }] : []

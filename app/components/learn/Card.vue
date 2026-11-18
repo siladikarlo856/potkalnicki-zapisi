@@ -32,7 +32,7 @@ const openPath = computed(() => {
     const path = wordArchivePath(card)
     return path ? localePath(path) : undefined
   }
-  if (card.kind === 'place') return localePath(settlementArchivePath(card.slug))
+  if (card.kind === 'place') return localePath(settlementArchivePath(props.pool, card))
   if (card.kind === 'person') return localePath(personArchivePath(card.slug))
   return localePath(card.path)
 })

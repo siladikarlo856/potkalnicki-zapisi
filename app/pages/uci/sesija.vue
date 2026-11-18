@@ -272,7 +272,7 @@ watch(() => status.value, (s) => {
       >
         {{ t('pz.learn.title') }}
       </h1>
-      <PzBackPill :to="localePath('/uci')">
+      <PzBackPill :to="localePath(pzRoutes.learn)">
         {{ t('pz.learn.title') }}
       </PzBackPill>
 
@@ -306,7 +306,7 @@ watch(() => status.value, (s) => {
           {{ t('pz.learn.sessionUnavailable') }}
         </p>
         <UButton
-          :to="localePath('/uci')"
+          :to="localePath(pzRoutes.learn)"
           :label="t('pz.learn.title')"
           class="mt-4"
         />

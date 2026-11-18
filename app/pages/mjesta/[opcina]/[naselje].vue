@@ -16,6 +16,11 @@ const { data: page } = await useAtlasFetch<AtlasSettlementResponse>(
   () => `/api/atlas/settlements/${settlementSlug.value}`
 )
 
+// A settlement lives under its own municipality; the same village under another one answers 301 to the right address.
+if (page.value && route.params.opcina !== page.value.municipality.slug) {
+  await navigateTo(localePath(page.value.settlement.path), { redirectCode: 301, replace: true })
+}
+
 const correctionOpen = ref(false)
 const proposalOpen = ref(false)
 const formatDate = (iso: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'long' }).format(new Date(iso))
@@ -44,7 +49,7 @@ const nearby = computed(() => (siblings.value?.settlements ?? [])
   .slice(0, 8)
   .map(other => ({
     label: other.itemCount ? `${other.name} · ${t('pz.explore.settlementItemCount', { count: other.itemCount })}` : other.name,
-    to: settlementPath(other.slug)
+    to: settlementPath(municipality.value!.slug, other.slug)
   })))
 
 // Words said in this village (the same area id as the settlement), and, for a thin page, words from the municipality.
@@ -64,10 +69,10 @@ const municipalityWords = computed(() => localWords.value.length
       .slice(0, 3))
 
 function wordPath(slug: string | undefined) {
-  return localePath(`/govor/${slug}`)
+  return localePath(slug ? wordArchivePagePath(slug) : pzRoutes.speech)
 }
 
-const learnTo = computed(() => localePath({ path: `${pzRoutes.learn}/sesija`, query: { teme: 'rijeci', mjesto: settlementSlug.value } }))
+const learnTo = computed(() => localePath({ path: pzRoutes.learnSession, query: { teme: 'rijeci', mjesto: settlementSlug.value } }))
 const contributeTypes = usePzContributeTypes(() => ({ settlement: settlementSlug.value }))
 const contributeTo = computed(() => localePath(pzRoutes.contribute))
 

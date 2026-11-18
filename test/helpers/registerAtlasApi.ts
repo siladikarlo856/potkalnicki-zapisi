@@ -149,9 +149,9 @@ export function registerAtlasApiEndpoints() {
     if (!list) throw createError({ statusCode: 400, statusMessage: 'Unknown filter' })
     return list
   })
-  registerEndpoint('/api/atlas/intangible/prica/kalnicka-vjestica', () => intangibleResponse('prica', 'kalnicka-vjestica'))
-  registerEndpoint('/api/atlas/intangible/obicaj/martinje-u-kalniku', () => intangibleResponse('obicaj', 'martinje-u-kalniku'))
-  registerEndpoint('/api/atlas/intangible/usmeni-tekst/martinjska-zdravica', () => intangibleResponse('usmeni-tekst', 'martinjska-zdravica'))
+  registerEndpoint('/api/atlas/intangible/price/kalnicka-vjestica', () => intangibleResponse('price', 'kalnicka-vjestica'))
+  registerEndpoint('/api/atlas/intangible/obicaji/martinje-u-kalniku', () => intangibleResponse('obicaji', 'martinje-u-kalniku'))
+  registerEndpoint('/api/atlas/intangible/narodni-tekstovi/martinjska-zdravica', () => intangibleResponse('narodni-tekstovi', 'martinjska-zdravica'))
   registerEndpoint('/api/atlas/themes/vino', () => themeResponse('vino'))
   registerEndpoint('/api/atlas/themes/prazna', () => themeResponse('prazna'))
   registerEndpoint('/api/atlas/narrators/marija-horvat', () => narratorResponse('marija-horvat'))

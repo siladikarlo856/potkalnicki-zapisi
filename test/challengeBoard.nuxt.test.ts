@@ -64,6 +64,6 @@ describe('challenge leaderboard page', () => {
     expect(page.find('[data-testid="challenge-close-date"]').exists()).toBe(false)
     const primary = page.get('[data-testid="challenge-board-primary"]')
     expect(primary.text()).toBe('Napravi novi izazov')
-    expect(primary.attributes('href')).toBe('/izazov')
+    expect(primary.attributes('href')).toBe('/izazov/')
   })
 })

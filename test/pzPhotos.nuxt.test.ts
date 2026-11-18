@@ -57,7 +57,7 @@ describe('heritage photos', () => {
 
   it('puts the one-line credit under a card photo', async () => {
     const card = await mountSuspended(PzHeritageCard, {
-      props: { title: 'Crkva sv. Brcka', to: '/bastina/kalnik/crkva-sv-brcka', image: `${MEDIA}/thumb.webp`, imageCredit: 'Foto: Ivan Horvat, CC BY-SA 4.0' }
+      props: { title: 'Crkva sv. Brcka', to: '/bastina/kalnik/crkva-sv-brcka/', image: `${MEDIA}/thumb.webp`, imageCredit: 'Foto: Ivan Horvat, CC BY-SA 4.0' }
     })
     expect(card.find('img').attributes('src')).toBe(`${MEDIA}/thumb.webp`)
     expect(card.find('[data-testid="pz-heritage-card-credit"]').text()).toBe('Foto: Ivan Horvat, CC BY-SA 4.0')
@@ -71,7 +71,7 @@ describe('heritage photos', () => {
     await vi.waitFor(() => expect(page.find('[data-testid="photo-credits"]').exists()).toBe(true))
     const rows = page.findAll('[data-testid="photo-credits"] li')
     expect(rows).toHaveLength(2)
-    expect(rows[0]!.find('a').attributes('href')).toBe('/bastina/kalnik/crkva-sv-brcka')
+    expect(rows[0]!.find('a').attributes('href')).toBe('/bastina/kalnik/crkva-sv-brcka/')
     expect(rows.map(row => row.find('[data-testid="pz-photo-credit"]').text().replace(/\s+/g, ' '))).toEqual([
       'Oko 1910. · Foto: Ivan Horvat, CC BY-SA 4.0 · izvor',
       'Foto: Župa Kalnik, Uz dopuštenje autora'

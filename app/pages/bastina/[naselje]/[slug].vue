@@ -64,7 +64,7 @@ const facts = computed(() => heritageItem.value
       {
         label: t('pz.heritage.fieldLocation'),
         value: locationLine() || null,
-        to: heritageItem.value.settlement ? settlementPath(heritageItem.value.settlement.slug) : undefined
+        to: heritageItem.value.settlement ? settlementPath(heritageItem.value.municipality.slug, heritageItem.value.settlement.slug) : undefined
       },
       { label: t('pz.heritage.fieldMunicipality'), value: heritageItem.value.municipality.label, to: municipalityPath(heritageItem.value.municipality.slug) },
       { label: t('pz.heritage.fieldPeriod'), value: heritageItem.value.period }
@@ -97,7 +97,7 @@ const verificationHelp = computed(() => ({
       <header class="flex max-w-(--pz-measure) flex-col gap-3">
         <PzBackPill
           v-if="heritageItem.settlement"
-          :to="settlementPath(heritageItem.settlement.slug)"
+          :to="settlementPath(heritageItem.municipality.slug, heritageItem.settlement.slug)"
         >
           {{ heritageItem.settlement.name }}
         </PzBackPill>

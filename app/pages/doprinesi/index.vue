@@ -115,7 +115,7 @@ const prefillWord = computed(() => {
 })
 
 function cardTo(kind: PickerKind) {
-  const path = '/doprinesi'
+  const path = pzRoutes.contribute
   if (kind === 'word' || kind === 'memory') return localePath({ path, query: { ...route.query, vrsta: kind === 'word' ? 'rijec' : 'sjecanje' } })
   if (kind === 'correction') return localePath({ path, query: { vrsta: 'ispravak' } })
   if (kind === 'photo') return undefined
@@ -123,7 +123,7 @@ function cardTo(kind: PickerKind) {
 }
 
 function pick(kind: ContributionKind, id: string) {
-  return navigateTo(localePath({ path: '/doprinesi', query: suggestQuery('correction', kind, { id }) }))
+  return navigateTo(localePath({ path: pzRoutes.contribute, query: suggestQuery('correction', kind, { id }) }))
 }
 
 function pickerTitle(kind: PickerKind) {
@@ -218,7 +218,7 @@ useSeoMeta({
       >
         <template #actions>
           <UButton
-            :to="localePath('/doprinesi')"
+            :to="localePath(pzRoutes.contribute)"
             :label="t('pz.contribute.back')"
             color="neutral"
             variant="subtle"
@@ -232,7 +232,7 @@ useSeoMeta({
         data-testid="contribute-form"
       >
         <UButton
-          :to="localePath('/doprinesi')"
+          :to="localePath(pzRoutes.contribute)"
           :label="t('pz.contribute.back')"
           icon="i-lucide-arrow-left"
           color="neutral"

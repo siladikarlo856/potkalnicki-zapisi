@@ -52,10 +52,10 @@ export function intangibleExcerpt(record: SnapshotIntangible, max = 180) {
 
 export function placeRef(content: PublicContent, areaId: string): PublicPlaceRef | null {
   const settlement = content.settlementById.get(areaId)
-  if (settlement) return { id: settlement.id, name: settlement.name, path: atlasSettlementPath(settlement.slug) }
+  if (settlement) return { id: settlement.id, name: settlement.name, path: atlasSettlementPath(content, settlement) }
   const municipality = content.municipalityById.get(areaId)
   if (municipality) return { id: municipality.id, name: municipality.label, path: atlasMunicipalityPath(municipality.slug) }
-  if (content.region && content.region.id === areaId) return { id: content.region.id, name: content.region.name, path: pzRoutes.explore }
+  if (content.region && content.region.id === areaId) return { id: content.region.id, name: content.region.name, path: pzRoutes.places }
   return null
 }
 

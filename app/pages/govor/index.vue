@@ -81,7 +81,7 @@ useSeoMeta({
           >
             <ULink
               v-if="word.slug"
-              :to="localePath(`/govor/${word.slug}`)"
+              :to="localePath(wordArchivePagePath(word.slug))"
               class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
             >
               <span class="font-medium text-highlighted">{{ word.headword }}</span>

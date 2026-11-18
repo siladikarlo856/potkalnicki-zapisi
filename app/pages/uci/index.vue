@@ -116,7 +116,7 @@ function toggleTopic(topic: { id: TopicId, status: string, parent?: TopicId, soo
 
 function startHref() {
   const teme = [...selected.value].join(',')
-  let href = localePath(`/uci/sesija?teme=${encodeURIComponent(teme)}&n=${n.value}`)
+  let href = localePath(`${pzRoutes.learnSession}?teme=${encodeURIComponent(teme)}&n=${n.value}`)
   if (placeSlug.value) href += `&mjesto=${encodeURIComponent(placeSlug.value)}`
   return href
 }

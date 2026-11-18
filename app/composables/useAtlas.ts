@@ -1,16 +1,19 @@
+import { municipalityPagePath, pzPath, pzRoutes, settlementPagePath } from '~~/shared/utils/appRoutes'
+
 export function useAtlas() {
   const localePath = useLocalePath()
 
-  function settlementPath(slug: string) {
-    return localePath(`/naselja/${slug}`)
+  /** A settlement page hangs off its municipality: /mjesta/[opcina]/[naselje]/. */
+  function settlementPath(municipalitySlug: string, slug: string) {
+    return localePath(settlementPagePath(municipalitySlug, slug))
   }
 
   function municipalityPath(slug: string) {
-    return localePath(`/istrazi/${slug}`)
+    return localePath(municipalityPagePath(slug))
   }
 
   function itemPath(settlementSlug: string, itemSlug: string) {
-    return localePath(`/bastina/${settlementSlug}/${itemSlug}`)
+    return localePath(pzPath(pzRoutes.heritage, settlementSlug, itemSlug))
   }
 
   return { settlementPath, municipalityPath, itemPath }

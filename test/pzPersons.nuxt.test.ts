@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import PersonsIndex from '../app/pages/osobe/index.vue'
 import PersonPage from '../app/pages/osobe/[slug].vue'
-import Settlement from '../app/pages/naselja/[naselje].vue'
-import Municipality from '../app/pages/istrazi/[opcina].vue'
+import Settlement from '../app/pages/mjesta/[opcina]/[naselje].vue'
+import Municipality from '../app/pages/mjesta/[opcina]/index.vue'
 import HeritageItem from '../app/pages/bastina/[naselje]/[slug].vue'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
 
@@ -38,7 +38,7 @@ describe('Potkalnički zapisi person pages', () => {
     const places = page.get('[data-testid="person-places"]')
     expect(places.text()).toContain('Rođen/a')
     expect(places.text()).toContain('Umro/la')
-    expect(places.find('a[href="/naselja/kalnik"]').exists()).toBe(true)
+    expect(places.find('a[href="/mjesta/opcina-kalnik/kalnik/"]').exists()).toBe(true)
     expect(page.get('[data-testid="person-heritage"]').text()).toContain('kapela mu je posvećena')
     expect(page.get('[data-testid="person-open-questions"]').text()).toContain('1849. ili 1850.')
     expect(page.get('[data-testid="person-sources"]').text()).toContain('Registar kulturnih dobara')
@@ -48,14 +48,14 @@ describe('Potkalnički zapisi person pages', () => {
 
   it('lists persons on the settlement, unit and heritage item pages', async () => {
     const settlement = await mountSuspended(Settlement, {
-      route: { path: '/naselja/kalnik', params: { naselje: 'kalnik' } }
+      route: { path: '/mjesta/opcina-kalnik/kalnik/', params: { opcina: 'opcina-kalnik', naselje: 'kalnik' } }
     })
     await vi.waitFor(() => expect(settlement.find('[data-testid="settlement-persons"]').exists()).toBe(true))
     expect(settlement.text()).toContain('Osobe iz ovog mjesta')
     expect(settlement.get('[data-testid="settlement-persons"]').text()).toContain('Ivan Kalničan')
 
     const unit = await mountSuspended(Municipality, {
-      route: { path: '/istrazi/opcina-kalnik', params: { opcina: 'opcina-kalnik' } }
+      route: { path: '/mjesta/opcina-kalnik/', params: { opcina: 'opcina-kalnik' } }
     })
     await vi.waitFor(() => expect(unit.find('[data-testid="municipality-persons"]').exists()).toBe(true))
     expect(unit.get('[data-testid="municipality-persons"]').text()).toContain('Ivan Kalničan')
@@ -70,7 +70,7 @@ describe('Potkalnički zapisi person pages', () => {
 
   it('hides the person section on a place without persons', async () => {
     const unit = await mountSuspended(Municipality, {
-      route: { path: '/istrazi/opcina-gornja-rijeka', params: { opcina: 'opcina-gornja-rijeka' } }
+      route: { path: '/mjesta/opcina-gornja-rijeka/', params: { opcina: 'opcina-gornja-rijeka' } }
     })
     await vi.waitFor(() => expect(unit.find('[data-testid="settlement-list"]').exists()).toBe(true))
     expect(unit.find('[data-testid="municipality-persons"]').exists()).toBe(false)

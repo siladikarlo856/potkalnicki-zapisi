@@ -21,8 +21,8 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const id = useId()
 
-const activeTo = computed(() => props.active ? localePath(`${pzRoutes.challenge}/${props.active.code}`) : '')
-const boardTo = computed(() => props.active ? localePath(`${pzRoutes.challenge}/${props.active.code}/ljestvica`) : '')
+const activeTo = computed(() => props.active ? localePath(pzPath(pzRoutes.challenge, props.active.code)) : '')
+const boardTo = computed(() => props.active ? localePath(pzPath(pzRoutes.challenge, props.active.code, 'ljestvica')) : '')
 const target = computed(() => activeTo.value || props.to || localePath(pzRoutes.challenge))
 </script>
 

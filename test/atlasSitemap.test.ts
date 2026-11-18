@@ -13,12 +13,12 @@ describe('atlas sitemap parity (in-memory snapshot)', () => {
   it('matches prerender routes minus noindex item pages', () => {
     const noindexPaths = new Set(atlas.heritage
       .filter(item => item.noindex && item.settlementCode)
-      .map(item => `/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}`))
+      .map(item => `/bastina/${settlementByCode(item.settlementCode!)!.slug}/${item.slug}/`))
     const expected = [
-      'https://prigorje.karlo-siladi.from.hr/govor',
-      'https://prigorje.karlo-siladi.from.hr/osobe',
-      'https://prigorje.karlo-siladi.from.hr/price-i-obicaji',
-      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path || '/'}`)
+      'https://prigorje.karlo-siladi.from.hr/govor/',
+      'https://prigorje.karlo-siladi.from.hr/osobe/',
+      'https://prigorje.karlo-siladi.from.hr/price-i-obicaji/',
+      ...atlasPrerenderRoutes.filter(path => !noindexPaths.has(path)).map(path => `https://prigorje.karlo-siladi.from.hr${path}`)
     ]
     expect(urls.sort()).toEqual(expected.sort())
   })

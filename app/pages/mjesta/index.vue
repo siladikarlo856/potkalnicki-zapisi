@@ -21,10 +21,10 @@ const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atla
 // Four equal entries open the hub: places (the list below), Baština, Priče i običaji and Naš govor. The word and
 // record counts are not part of the overview, so those two show no number.
 const entries = computed(() => [
-  { key: 'places', to: `${localePath(pzRoutes.explore)}#opcine`, icon: 'i-lucide-map-pin', label: t('pz.explore.entryPlaces'), count: overview.value?.totals.settlements },
+  { key: 'places', to: `${localePath(pzRoutes.places)}#opcine`, icon: 'i-lucide-map-pin', label: t('pz.explore.entryPlaces'), count: overview.value?.totals.settlements },
   { key: 'heritage', to: localePath(pzRoutes.heritage), icon: 'i-lucide-church', label: t('pz.explore.entryHeritage'), count: overview.value?.totals.items },
   { key: 'intangible', to: localePath(pzRoutes.intangible), icon: 'i-lucide-scroll-text', label: t('pz.explore.entryIntangible'), count: undefined },
-  { key: 'speech', to: localePath(`/govor`), icon: 'i-lucide-book-open', label: t('pz.explore.entrySpeech'), count: undefined }
+  { key: 'speech', to: localePath(pzRoutes.speech), icon: 'i-lucide-book-open', label: t('pz.explore.entrySpeech'), count: undefined }
 ])
 
 const municipalities = computed(() => (overview.value?.municipalities ?? []).map(m => ({

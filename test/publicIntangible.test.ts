@@ -64,8 +64,8 @@ describe('intangible heritage in the public snapshot', () => {
 
   it('labels a record with an archived type but leaves that type out of the filters', () => {
     expect(intangible.recordByRoute.has('story/prica-stare-vrste')).toBe(true)
-    expect(intangibleList(content, { kind: 'prica' })!.types.map(t => t.key)).toEqual(['legenda'])
-    expect(intangibleList(content, { kind: 'prica', type: 'stara' })).toBeNull()
+    expect(intangibleList(content, { kind: 'price' })!.types.map(t => t.key)).toEqual(['legenda'])
+    expect(intangibleList(content, { kind: 'price', type: 'stara' })).toBeNull()
   })
 
   it('keeps only links to what is public', () => {
@@ -161,8 +161,8 @@ describe('narrators and consent', () => {
 
   it('drops an old narrator slug that gives away an unnamed narrator, and keeps the others', () => {
     expect(resolveNarrator(content, 'ivan-novak')).toEqual({ status: 'not_found' })
-    expect(resolveNarrator(content, 'kazivac-r-1950')).toEqual({ status: 'redirect', path: '/price-i-obicaji/kazivac/kazivac-r-1950-kalnik' })
-    expect(resolveNarrator(content, 'marija-h')).toEqual({ status: 'redirect', path: '/price-i-obicaji/kazivac/marija-horvat' })
+    expect(resolveNarrator(content, 'kazivac-r-1950')).toEqual({ status: 'redirect', path: '/price-i-obicaji/kazivaci/kazivac-r-1950-kalnik/' })
+    expect(resolveNarrator(content, 'marija-h')).toEqual({ status: 'redirect', path: '/price-i-obicaji/kazivaci/marija-horvat/' })
   })
 
   it('answers gone for an archived narrator and not found for an unknown one', () => {
@@ -216,35 +216,35 @@ describe('narrators and consent', () => {
 
 describe('record pages', () => {
   it('resolves live records by kind segment and slug', () => {
-    expect(resolveIntangible(content, 'prica', 'kalnicka-vjestica').status).toBe('ok')
-    expect(resolveIntangible(content, 'obicaj', 'martinje-u-kalniku').status).toBe('ok')
-    expect(resolveIntangible(content, 'usmeni-tekst', 'martinjska-zdravica').status).toBe('ok')
+    expect(resolveIntangible(content, 'price', 'kalnicka-vjestica').status).toBe('ok')
+    expect(resolveIntangible(content, 'obicaji', 'martinje-u-kalniku').status).toBe('ok')
+    expect(resolveIntangible(content, 'narodni-tekstovi', 'martinjska-zdravica').status).toBe('ok')
     // A slug is only unique within its kind.
-    expect(resolveIntangible(content, 'obicaj', 'kalnicka-vjestica')).toEqual({ status: 'not_found' })
+    expect(resolveIntangible(content, 'obicaji', 'kalnicka-vjestica')).toEqual({ status: 'not_found' })
     expect(resolveIntangible(content, 'nepoznato', 'kalnicka-vjestica')).toEqual({ status: 'not_found' })
   })
 
   it('follows slug history and answers gone for archived records', () => {
-    expect(resolveIntangible(content, 'prica', 'stara-vjestica')).toEqual({ status: 'redirect', path: '/price-i-obicaji/prica/kalnicka-vjestica' })
-    expect(resolveIntangible(content, 'prica', 'skinuta-prica')).toEqual({ status: 'gone' })
-    expect(resolveIntangible(content, 'prica', 'skinuta-stara')).toEqual({ status: 'gone' })
-    expect(resolveIntangible(content, 'obicaj', 'napusteni-obicaj')).toEqual({ status: 'gone' })
-    expect(resolveIntangible(content, 'prica', 'prica-bez-vrste')).toEqual({ status: 'not_found' })
+    expect(resolveIntangible(content, 'price', 'stara-vjestica')).toEqual({ status: 'redirect', path: '/price-i-obicaji/price/kalnicka-vjestica/' })
+    expect(resolveIntangible(content, 'price', 'skinuta-prica')).toEqual({ status: 'gone' })
+    expect(resolveIntangible(content, 'price', 'skinuta-stara')).toEqual({ status: 'gone' })
+    expect(resolveIntangible(content, 'obicaji', 'napusteni-obicaj')).toEqual({ status: 'gone' })
+    expect(resolveIntangible(content, 'price', 'prica-bez-vrste')).toEqual({ status: 'not_found' })
   })
 
   it('shapes a Story with everything the page shows', () => {
     const detail = intangibleDetail(content, intangible.recordById.get(IH.story)!)
     expect(detail).toMatchObject({
-      kind: 'story', kindLabel: 'Priča', typeLabel: 'legenda/predaja', title: 'Kalnička vještica', path: '/price-i-obicaji/prica/kalnicka-vjestica',
+      kind: 'story', kindLabel: 'Priča', typeLabel: 'legenda/predaja', title: 'Kalnička vještica', path: '/price-i-obicaji/price/kalnicka-vjestica/',
       textLocal: 'Kaj je bilo, bilo je.\nI vu Kalniku.', textStandard: 'Što je bilo, bilo je.', period: 'u turska vremena',
       recordedOn: '12. ožujka 1987.', verification: 'verified', credits: [{ name: 'Ana Pošiljateljica', kind: 'memory' }]
     })
     expect(detail.recordedIn.map(p => p.name)).toEqual(['Kalnik'])
     expect(detail.about.map(p => p.name)).toEqual(['Potkalničko prigorje'])
-    expect(detail.about[0]!.path).toBe('/istrazi')
+    expect(detail.about[0]!.path).toBe('/mjesta/')
     expect(detail.authors.map(a => a.slug)).toEqual(['ivan-kalnican'])
     expect(detail.heritage.map(h => h.name)).toEqual(['Crkva sv. Brcka'])
-    expect(detail.themes.map(t => t.path)).toEqual(['/price-i-obicaji/tema/vino'])
+    expect(detail.themes.map(t => t.path)).toEqual(['/price-i-obicaji/teme/vino/'])
     expect(detail.sources.map(s => s.title)).toEqual(['Registar kulturnih dobara Republike Hrvatske'])
     expect(detail.excerpt).toBe('Što je bilo, bilo je.')
   })
@@ -263,7 +263,7 @@ describe('record pages', () => {
   it('shapes a Folk text with its Custom and Words, and no period of its own', () => {
     const detail = intangibleDetail(content, intangible.recordById.get(IH.folk)!)
     expect(detail.custom).toMatchObject({ title: 'Martinje u Kalniku', kindLabel: 'Običaj' })
-    expect(detail.words).toEqual([{ id: IH.word, headword: 'Martin', path: '/govor/martin' }])
+    expect(detail.words).toEqual([{ id: IH.word, headword: 'Martin', path: '/govor/martin/' }])
     expect(detail.period).toBeNull()
     expect(detail.recordedOn).toBe('1975.')
     expect(detail.excerpt).toBe('Živio Martin, živilo vino!')
@@ -294,9 +294,9 @@ describe('record pages', () => {
   })
 
   it('knows the kind segments', () => {
-    expect(intangibleKindFromSlug('prica')).toBe('story')
-    expect(intangibleKindFromSlug('obicaj')).toBe('custom')
-    expect(intangibleKindFromSlug('usmeni-tekst')).toBe('folk_text')
+    expect(intangibleKindFromSlug('price')).toBe('story')
+    expect(intangibleKindFromSlug('obicaji')).toBe('custom')
+    expect(intangibleKindFromSlug('narodni-tekstovi')).toBe('folk_text')
     expect(intangibleKindFromSlug('story')).toBeNull()
   })
 })
@@ -305,15 +305,15 @@ describe('the list and its filters', () => {
   it('lists every live record with its facets', () => {
     const list = intangibleList(content)!
     expect(list.total).toBe(6)
-    expect(list.kinds.map(k => [k.slug, k.count])).toEqual([['prica', 3], ['obicaj', 1], ['usmeni-tekst', 2]])
+    expect(list.kinds.map(k => [k.slug, k.count])).toEqual([['price', 3], ['obicaji', 1], ['narodni-tekstovi', 2]])
     expect(list.types).toEqual([])
     expect(list.themes).toEqual([{ slug: 'vino', label: 'Vino', count: 4 }])
     expect(list.places.map(p => [p.slug, p.count])).toEqual([['grad-krizevci', 1], ['opcina-kalnik', 3], ['potkalnicko-prigorje', 1]])
   })
 
   it('filters by kind, then type', () => {
-    expect(intangibleList(content, { kind: 'obicaj' })!.records.map(r => r.slug)).toEqual(['martinje-u-kalniku'])
-    const stories = intangibleList(content, { kind: 'prica', type: 'legenda' })!
+    expect(intangibleList(content, { kind: 'obicaji' })!.records.map(r => r.slug)).toEqual(['martinje-u-kalniku'])
+    const stories = intangibleList(content, { kind: 'price', type: 'legenda' })!
     expect(stories.records.map(r => r.slug).sort()).toEqual(['kalnicka-vjestica', 'skrivena-prica'])
     expect(stories.types).toEqual([{ key: 'legenda', label: 'legenda/predaja', count: 2 }])
   })
@@ -328,16 +328,16 @@ describe('the list and its filters', () => {
 
   it('counts each facet over what the other filters leave', () => {
     const list = intangibleList(content, { place: 'opcina-kalnik' })!
-    expect(list.kinds.map(k => [k.slug, k.count])).toEqual([['prica', 1], ['obicaj', 1], ['usmeni-tekst', 1]])
-    const crkvica = intangibleList(content, { kind: 'obicaj', place: 'grad-krizevci' })!
+    expect(list.kinds.map(k => [k.slug, k.count])).toEqual([['price', 1], ['obicaji', 1], ['narodni-tekstovi', 1]])
+    const crkvica = intangibleList(content, { kind: 'obicaji', place: 'grad-krizevci' })!
     expect(crkvica.total).toBe(0)
-    expect(crkvica.kinds.map(k => k.slug)).toEqual(['prica', 'obicaj'])
+    expect(crkvica.kinds.map(k => k.slug)).toEqual(['price', 'obicaji'])
   })
 
   it('refuses a filter that names nothing public', () => {
     expect(intangibleList(content, { kind: 'story' })).toBeNull()
     expect(intangibleList(content, { type: 'legenda' })).toBeNull()
-    expect(intangibleList(content, { kind: 'obicaj', type: 'legenda' })).toBeNull()
+    expect(intangibleList(content, { kind: 'obicaji', type: 'legenda' })).toBeNull()
     expect(intangibleList(content, { theme: 'arhivirana' })).toBeNull()
     expect(intangibleList(content, { place: 'opcina-vani' })).toBeNull()
   })
@@ -348,20 +348,20 @@ describe('the list and its filters', () => {
     const empty = buildPublicContent(rows, {})
     expect(intangibleList(empty)).toEqual({ records: [], total: 0, kinds: [], types: [], themes: [], places: [] })
     expect(municipalityPage(empty, empty.municipalities[0]!).intangible).toEqual([])
-    expect(resolveIntangible(empty, 'prica', 'kalnicka-vjestica')).toEqual({ status: 'not_found' })
+    expect(resolveIntangible(empty, 'price', 'kalnicka-vjestica')).toEqual({ status: 'not_found' })
   })
 })
 
 describe('themes', () => {
   it('lists a theme\'s records across kinds, by title', () => {
     const page = themePage(content, intangible.themeBySlug.get('vino')!)
-    expect(page.theme).toMatchObject({ label: 'Vino', description: 'Što se pilo i sadilo.', path: '/price-i-obicaji/tema/vino' })
+    expect(page.theme).toMatchObject({ label: 'Vino', description: 'Što se pilo i sadilo.', path: '/price-i-obicaji/teme/vino/' })
     expect(page.records.map(r => r.kindLabel)).toEqual(['Priča', 'Običaj', 'Usmeni tekst', 'Priča'])
     expect(themePage(content, intangible.themeBySlug.get('prazna')!).records).toEqual([])
   })
 
   it('follows slug history and answers gone for an archived theme', () => {
-    expect(resolveTheme(content, 'vinogradi')).toEqual({ status: 'redirect', path: '/price-i-obicaji/tema/vino' })
+    expect(resolveTheme(content, 'vinogradi')).toEqual({ status: 'redirect', path: '/price-i-obicaji/teme/vino/' })
     expect(resolveTheme(content, 'arhivirana')).toEqual({ status: 'gone' })
     expect(resolveTheme(content, 'nema')).toEqual({ status: 'not_found' })
   })
@@ -395,20 +395,20 @@ describe('sitemap', () => {
   const paths = sitemapEntries(content).map(entry => entry.path)
 
   it('lists the page, indexable records, narrators and themes with records', () => {
-    expect(paths).toContain('/price-i-obicaji')
-    expect(paths).toContain('/price-i-obicaji/prica/kalnicka-vjestica')
-    expect(paths).toContain('/price-i-obicaji/obicaj/martinje-u-kalniku')
-    expect(paths).toContain('/price-i-obicaji/usmeni-tekst/martinjska-zdravica')
-    expect(paths).toContain('/price-i-obicaji/kazivac/marija-horvat')
-    expect(paths).toContain('/price-i-obicaji/kazivac/kazivac-r-1950-kalnik')
-    expect(paths).toContain('/price-i-obicaji/tema/vino')
+    expect(paths).toContain('/price-i-obicaji/')
+    expect(paths).toContain('/price-i-obicaji/price/kalnicka-vjestica/')
+    expect(paths).toContain('/price-i-obicaji/obicaji/martinje-u-kalniku/')
+    expect(paths).toContain('/price-i-obicaji/narodni-tekstovi/martinjska-zdravica/')
+    expect(paths).toContain('/price-i-obicaji/kazivaci/marija-horvat/')
+    expect(paths).toContain('/price-i-obicaji/kazivaci/kazivac-r-1950-kalnik/')
+    expect(paths).toContain('/price-i-obicaji/teme/vino/')
   })
 
   it('leaves out noindex, archived, empty and hidden pages', () => {
-    expect(paths).not.toContain('/price-i-obicaji/prica/skrivena-prica')
-    expect(paths).not.toContain('/price-i-obicaji/prica/skinuta-prica')
-    expect(paths).not.toContain('/price-i-obicaji/tema/prazna')
-    expect(paths).not.toContain('/price-i-obicaji/tema/arhivirana')
+    expect(paths).not.toContain('/price-i-obicaji/price/skrivena-prica/')
+    expect(paths).not.toContain('/price-i-obicaji/price/skinuta-prica/')
+    expect(paths).not.toContain('/price-i-obicaji/teme/prazna/')
+    expect(paths).not.toContain('/price-i-obicaji/teme/arhivirana/')
     expect(paths.some(path => path.includes('josip-kovac') || path.includes('ivan-novak') || path.includes('stara-kazivacica'))).toBe(false)
   })
 })

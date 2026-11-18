@@ -26,7 +26,7 @@ useSeoMeta({
       data-testid="photo-credits-page"
     >
       <header>
-        <PzBackPill :to="localePath('/o-projektu')">
+        <PzBackPill :to="localePath(pzRoutes.about)">
           {{ t('pz.about.title') }}
         </PzBackPill>
         <h1 class="mt-4 text-3xl font-bold tracking-tight text-highlighted sm:text-4xl">
