@@ -33,7 +33,8 @@ useSeoMeta({
   <div
     :class="tabBarHidden ? undefined : 'pb-[calc(var(--pz-tabbar-h)+env(safe-area-inset-bottom))] lg:pb-0 print:pb-0'"
   >
-    <PzHeader />
+    <AppHeader />
+    <SectionStrip />
     <UMain
       id="main-content"
       tabindex="-1"
@@ -42,6 +43,6 @@ useSeoMeta({
       <slot />
     </UMain>
     <PzFooter />
-    <PzBottomNav />
+    <BottomNav />
   </div>
 </template>

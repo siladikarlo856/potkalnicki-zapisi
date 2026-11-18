@@ -1,14 +1,73 @@
 import { pzRoutes } from './appRoutes'
 
 export const pzNavSections = {
-  games: true,
+  archive: true,
   explore: true,
+  places: true,
   heritage: true,
+  stories: true,
   intangible: true,
+  persons: true,
   speech: true,
+  dailyWord: true,
+  learn: true,
+  games: true,
+  challenges: true,
   contribute: true,
   about: true
 } as const
+
+export const pzSectionGroups = [
+  {
+    label: 'Arhiv',
+    to: '/arhiv/',
+    items: [
+      { label: 'Mjesta', to: '/mjesta/' },
+      { label: 'Baština', to: '/bastina/' },
+      { label: 'Priče i običaji', to: '/price-i-obicaji/' },
+      { label: 'Osobe', to: '/osobe/' },
+      { label: 'Govor', to: '/govor/' }
+    ]
+  },
+  {
+    label: 'Igraj i uči',
+    to: '/igraj/',
+    items: [
+      { label: 'Riječ dana', to: '/rijec-dana/' },
+      { label: 'Uči', to: '/uci/' },
+      { label: 'Igre', to: '/igre/' },
+      { label: 'Izazovi', to: '/izazov/' }
+    ]
+  }
+] as const
+
+export const pzBottomNavItems = [
+  { key: 'home', label: 'Početna', to: '/', icon: 'i-lucide-house' },
+  { key: 'archive', label: 'Arhiv', to: '/arhiv/', icon: 'i-lucide-library-big' },
+  { key: 'search', label: 'Traži', to: '/trazi/', icon: 'i-lucide-search' },
+  { key: 'play', label: 'Igraj', to: '/igraj/', icon: 'i-lucide-dices' },
+  { key: 'contribute', label: 'Doprinesi', to: '/doprinesi/', icon: 'i-lucide-pen-line' }
+] as const
+
+function pathMatches(path: string, to: string) {
+  const p = path.replace(/^\/en(?=\/|$)/, '').replace(/\/+$/, '') || '/'
+  const target = to.replace(/\/+$/, '') || '/'
+  return p === target || p.startsWith(`${target}/`)
+}
+
+export function pzBottomNavForPath(path: string) {
+  if (path === '/') return 'home'
+  if (pathMatches(path, '/arhiv') || pathMatches(path, '/mjesta') || pathMatches(path, '/bastina') || pathMatches(path, '/price-i-obicaji') || pathMatches(path, '/osobe') || pathMatches(path, '/govor')) return 'archive'
+  if (pathMatches(path, '/trazi')) return 'search'
+  if (pathMatches(path, '/igraj') || pathMatches(path, '/rijec-dana') || pathMatches(path, '/uci') || pathMatches(path, '/igre') || pathMatches(path, '/izazov')) return 'play'
+  if (pathMatches(path, '/doprinesi')) return 'contribute'
+  return null
+}
+
+export function pzCurrentSection(path: string) {
+  const items = pzSectionGroups.flatMap(group => [...group.items]) as readonly { label: string, to: string }[]
+  return items.find(item => pathMatches(path, item.to))?.to ?? null
+}
 
 export function pzHeaderNavItems() {
   const items: { label: string, to: string }[] = []
