@@ -21,6 +21,13 @@ const memoryTo = computed(() => localePath({ path: pzRoutes.contribute, query: {
 const periodLabelKey = computed(() => record.value?.kind === 'custom' ? 'pz.intangible.practised' : 'pz.intangible.setIn')
 const sources = computed(() => (record.value?.sources ?? []).map(source => ({ label: source.title, href: source.url ?? undefined })))
 const description = computed(() => record.value?.excerpt?.slice(0, 160) || t('pz.intangible.intro'))
+const sensitiveRevealed = ref(false)
+const categoryLabel = computed(() => {
+  if (!record.value) return ''
+  return record.value.kind === 'folk_text'
+    ? record.value.typeLabel
+    : `${record.value.kindLabel} · ${record.value.typeLabel}`
+})
 
 useSeoMeta({
   title: () => record.value?.title ?? '',
@@ -46,7 +53,7 @@ useSeoMeta({
           class="pz-overline text-muted"
           data-testid="intangible-overline"
         >
-          {{ record.kindLabel }} · {{ record.typeLabel }}
+          {{ categoryLabel }}
         </p>
         <h1 class="pz-h1 wrap-anywhere text-highlighted lg:pz-display">
           {{ record.title }}
@@ -219,7 +226,50 @@ useSeoMeta({
 
       <div class="flex min-w-0 max-w-(--pz-measure) flex-col gap-8">
         <section
-          v-if="record.textLocal"
+          v-if="record.sensitive"
+          class="flex flex-col gap-3 rounded-lg border border-warning/50 bg-warning/10 p-4"
+          data-testid="intangible-sensitive"
+        >
+          <div class="flex flex-col gap-1">
+            <h2 class="pz-h2 text-highlighted">
+              {{ t('pz.intangible.sensitiveTitle') }}
+            </h2>
+            <p class="pz-body-sm text-default">
+              {{ t('pz.intangible.sensitiveHint') }}
+            </p>
+          </div>
+          <UButton
+            v-if="!sensitiveRevealed"
+            :label="t('pz.intangible.sensitiveReveal')"
+            color="neutral"
+            variant="outline"
+            class="self-start"
+            data-testid="intangible-sensitive-reveal"
+            @click="sensitiveRevealed = true"
+          />
+        </section>
+
+        <section
+          v-if="record.steps.length"
+          class="flex flex-col gap-3"
+          data-testid="intangible-steps"
+        >
+          <h2 class="pz-h2 text-highlighted">
+            {{ t('pz.intangible.steps') }}
+          </h2>
+          <ol class="flex flex-col gap-3 ps-6">
+            <li
+              v-for="(step, index) in record.steps"
+              :key="index"
+              class="pz-body list-decimal ps-2 text-default"
+            >
+              {{ step }}
+            </li>
+          </ol>
+        </section>
+
+        <section
+          v-if="record.textLocal && (!record.sensitive || sensitiveRevealed)"
           class="flex flex-col gap-2"
         >
           <h2 class="pz-h2 text-highlighted">
@@ -235,7 +285,7 @@ useSeoMeta({
         </section>
 
         <section
-          v-if="record.textStandard"
+          v-if="record.textStandard && (!record.sensitive || sensitiveRevealed)"
           class="flex flex-col gap-2"
         >
           <h2 class="pz-h2 text-highlighted">

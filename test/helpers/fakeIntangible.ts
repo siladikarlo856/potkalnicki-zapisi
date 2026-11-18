@@ -111,6 +111,7 @@ export function fakeIntangibleRows(): IntangibleRows {
       custom: [
         record(IH.custom, 'Martinje u Kalniku', 'martinje-u-kalniku', IH.customType, {
           occasion_id: IH.occasion, description: 'Mošt se krstio u vino.', quotes: ['Sveti Martin, krsti vino!', 5, ' '],
+          steps: ['Natoči mošt.', 'Izgovori zdravicu.'],
           period: null, period_unit: 'decade', period_value: 1960, recorded_precision: 'month', recorded_year: 1990, recorded_month: 11
         }),
         record(IH.customArchived, 'Napušteni običaj', 'napusteni-obicaj', IH.customType, { description: 'Više se ne radi.', status: 'archived' })

@@ -50,6 +50,8 @@ export interface PublicIntangibleListItem extends PublicIntangibleRef {
   themes: PublicThemeRef[]
   narrators: PublicNarratorRef[]
   verification: AtlasItemStatus
+  /** A public record whose wording is held behind an explicit reader reveal. */
+  sensitive?: boolean
 }
 
 export interface PublicIntangible extends PublicIntangibleListItem {
@@ -57,6 +59,8 @@ export interface PublicIntangible extends PublicIntangibleListItem {
   textStandard: string | null
   description: string | null
   quotes: string[]
+  /** Ordered actions for a multi-step Custom, such as a palm game. */
+  steps: string[]
   /** Set in (stories) or Practised (customs), in the words people use or the approximate era */
   period: string | null
   /** "12. ožujka 1987.", only as precise as it is known */

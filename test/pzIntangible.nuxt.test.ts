@@ -23,7 +23,8 @@ describe('Priče i običaji list', () => {
     expect(list).toContain('Kalnička vještica')
     expect(list).toContain('Priča · legenda/predaja')
     expect(list).toContain('Običaj · godišnji običaji')
-    expect(list).toContain('Usmeni tekst · pjesma')
+    expect(list).toContain('pjesma')
+    expect(list).not.toContain('Usmeni tekst · pjesma')
     expect(list).toContain('Što je bilo, bilo je.')
     expect(list).not.toContain('Skinuta priča')
     expect(page.get('[data-testid="intangible-count"]').text()).toBe('6 zapisa')
@@ -93,6 +94,7 @@ describe('record pages', () => {
       route: { path: `${ROOT}/usmeni-tekst/martinjska-zdravica`, params: { kind: 'usmeni-tekst', slug: 'martinjska-zdravica' } }
     })
     await vi.waitFor(() => expect(page.find('[data-testid="intangible-folk_text-page"]').exists()).toBe(true))
+    expect(page.get('[data-testid="intangible-overline"]').text()).toBe('pjesma')
     expect(page.get('[data-testid="intangible-text-local"]').text()).toBe('Živio Martin, živilo vino!')
     expect(page.get('[data-testid="intangible-custom"]').text()).toContain('Martinje u Kalniku')
     expect(page.get('[data-testid="intangible-words"]').find('a').attributes('href')).toBe('/govor/martin')

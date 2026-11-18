@@ -64,6 +64,10 @@ const quotes = computed(() => props.state.quotes ?? [])
 function setQuote(index: number, value: string) {
   patch({ quotes: quotes.value.map((quote, position) => position === index ? value : quote) })
 }
+const steps = computed(() => props.state.steps ?? [])
+function setStep(index: number, value: string) {
+  patch({ steps: steps.value.map((step, position) => position === index ? value : step) })
+}
 </script>
 
 <template>
@@ -242,6 +246,50 @@ function setQuote(index: number, value: string) {
               type="button"
               :disabled="quotes.length >= INTANGIBLE_MAX.quotes"
               @click="patch({ quotes: [...quotes, ''] })"
+            />
+          </div>
+        </div>
+      </UFormField>
+      <UFormField
+        name="steps"
+        label="Koraci"
+        hint="Neobavezno"
+        description="Radnje običaja redom, npr. za igru na dlanu."
+      >
+        <div class="flex flex-col gap-2">
+          <UFormField
+            v-for="(step, index) in steps"
+            :key="index"
+            :name="`steps.${index}`"
+          >
+            <div class="flex gap-2">
+              <UInput
+                :model-value="step"
+                :maxlength="INTANGIBLE_LIMITS.step"
+                :aria-label="`Korak ${index + 1}`"
+                class="w-full"
+                @update:model-value="value => setStep(index, String(value))"
+              />
+              <UButton
+                icon="i-lucide-x"
+                color="neutral"
+                variant="ghost"
+                type="button"
+                :aria-label="`Ukloni korak ${index + 1}`"
+                @click="patch({ steps: removeEntry(steps, index) })"
+              />
+            </div>
+          </UFormField>
+          <div>
+            <UButton
+              label="Dodaj korak"
+              icon="i-lucide-plus"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              type="button"
+              :disabled="steps.length >= INTANGIBLE_MAX.steps"
+              @click="patch({ steps: [...steps, ''] })"
             />
           </div>
         </div>

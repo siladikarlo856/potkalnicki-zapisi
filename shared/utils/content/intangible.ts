@@ -17,6 +17,7 @@ export const INTANGIBLE_LIMITS = {
   period: 200,
   researchNotes: 5000,
   quote: 500,
+  step: 500,
   wordId: 200
 } as const
 
@@ -28,6 +29,7 @@ export const INTANGIBLE_MAX = {
   themes: 12,
   sources: 10,
   quotes: 10,
+  steps: 20,
   words: 30
 } as const
 

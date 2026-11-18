@@ -253,6 +253,7 @@ describe('record pages', () => {
     const detail = intangibleDetail(content, intangible.recordById.get(IH.custom)!)
     expect(detail).toMatchObject({
       kind: 'custom', occasion: 'Martinje', description: 'Mošt se krstio u vino.', quotes: ['Sveti Martin, krsti vino!'],
+      steps: ['Natoči mošt.', 'Izgovori zdravicu.'],
       period: '1960-ih (približno)', recordedOn: 'studeni 1990.'
     })
     expect(detail.folkTexts.map(f => f.title)).toEqual(['Martinjska zdravica'])
@@ -285,6 +286,11 @@ describe('record pages', () => {
     expect(excerpt.endsWith('…')).toBe(true)
     expect(excerpt.length).toBeLessThanOrEqual(31)
     expect(intangibleExcerpt({ ...record, textStandard: null, textLocal: null })).toBeNull()
+  })
+
+  it('keeps the wording of a sensitive record out of its excerpt', () => {
+    const record = { ...intangible.recordById.get(IH.story)!, textStandard: 'grubi tekst', textLocal: 'grubi tekst', sensitive: true }
+    expect(intangibleExcerpt(record)).toBe('Priča · grublji jezik')
   })
 
   it('knows the kind segments', () => {

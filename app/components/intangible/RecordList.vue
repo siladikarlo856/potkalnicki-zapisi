@@ -10,6 +10,9 @@ defineProps<{
 
 const localePath = useLocalePath()
 const ICONS = { story: 'i-lucide-scroll-text', custom: 'i-lucide-calendar-days', folk_text: 'i-lucide-music' } as const
+const categoryLabel = (record: PublicIntangibleListItem) => record.kind === 'folk_text'
+  ? record.typeLabel
+  : `${record.kindLabel} · ${record.typeLabel}`
 </script>
 
 <template>
@@ -28,9 +31,19 @@ const ICONS = { story: 'i-lucide-scroll-text', custom: 'i-lucide-calendar-days',
         :to="localePath(record.path)"
         :settlement="record.places.map(place => place.name).join(', ') || undefined"
         :description="record.excerpt ?? undefined"
-        :category="`${record.kindLabel} · ${record.typeLabel}`"
+        :category="categoryLabel(record)"
         :icon="ICONS[record.kind]"
-      />
+      >
+        <template #trust>
+          <span
+            v-if="record.sensitive"
+            class="pz-label rounded-full border border-warning/60 bg-warning/10 px-2 py-1 text-default"
+            data-testid="intangible-sensitive-badge"
+          >
+            Grublji jezik
+          </span>
+        </template>
+      </PzHeritageCard>
     </li>
   </ul>
 </template>
