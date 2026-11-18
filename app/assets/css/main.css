@@ -1,362 +1,74 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-html[data-site="pz"] {
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --ui-primary: #4E6357;
-  --ui-text-dimmed: #6B695C;
-  --ui-text-muted: #48473A;
-  --ui-text-toned: #48473A;
-  --ui-text: #1C1C16;
-  --ui-text-highlighted: #1C1C16;
-  --ui-text-inverted: #FFFFFF;
-  --ui-bg: #FDF9F0;
-  --ui-bg-muted: #F7F3EA;
-  --ui-bg-elevated: #F7F3EA;
-  --ui-bg-accented: #D1E8D9;
-  --ui-bg-inverted: #374B40;
-  --ui-border: #CAC7B6;
-  --ui-border-muted: #CAC7B6;
-  --ui-border-accented: #797769;
-  --ui-border-inverted: #374B40;
-
-  /* Status colours: teal, brick and ochre instead of Nuxt UI's greens and reds, which clash with sage. */
-  --ui-success: #1D6470;
-  --ui-error: #A0402A;
-  --ui-warning: #7F5310;
-  --pz-success-soft: #D5EAEC;
-  --pz-error-soft: #F7E0D8;
-  --pz-warning-soft: #F8E9CC;
-
-  /* Wheat is a fill, never a text colour on paper. */
-  --pz-wheat: #FADFB0;
-  --focus-ring: #374B40;
-
-  /* Radii: controls md, cards lg, sheets and the hero slab xl, badges sm. */
-  --pz-radius-sm: 4px;
-  --pz-radius-md: 8px;
-  --pz-radius-lg: 12px;
-  --pz-radius-xl: 20px;
-
-  /* Sizes, used as max-w-(--pz-measure), min-h-(--pz-tap-min) and so on. */
-  --pz-tap-min: 44px;
-  --pz-option-min: 56px;
-  --pz-header-h: 56px;
-  --pz-tabbar-h: 64px;
-  --pz-measure: 680px;
-  --pz-game-col: 560px;
-  --pz-side-panel: 340px;
-  --pz-page-max: 1200px;
-
-  /* Shadows only add depth to a surface that already has a border. */
-  --pz-shadow-sheet: 0 -8px 24px rgba(28, 28, 22, 0.12);
-  --pz-shadow-lift: 0 2px 6px rgba(28, 28, 22, 0.08);
+/* Reljef colour scales. */
+@theme static {
+  --color-bukva-50: #EEF6F0; --color-bukva-100: #DCEBDF; --color-bukva-200: #B9DBC3; --color-bukva-300: #96D6B1; --color-bukva-400: #7CC79C; --color-bukva-500: #3F8F65; --color-bukva-600: #2B7450; --color-bukva-700: #1D5B3E; --color-bukva-800: #17492F; --color-bukva-900: #16301F; --color-bukva-950: #0A1F14;
+  --color-oker-50: #FDF6E7; --color-oker-100: #F6E7C4; --color-oker-200: #F2D6A4; --color-oker-300: #EDBD6A; --color-oker-400: #E7A545; --color-oker-500: #E0A030; --color-oker-600: #D39325; --color-oker-700: #8A5200; --color-oker-800: #5E3A05; --color-oker-900: #3A2C10; --color-oker-950: #2A1C00;
+  --color-kamen-50: #F3F4EE; --color-kamen-100: #E6E9DF; --color-kamen-200: #CDD4C6; --color-kamen-300: #A1AEA5; --color-kamen-400: #73807A; --color-kamen-500: #6C7B71; --color-kamen-600: #4C5950; --color-kamen-700: #2D3932; --color-kamen-800: #202A25; --color-kamen-900: #171F1B; --color-kamen-950: #0F1512;
+  --color-crvena-50: #FDF3F1; --color-crvena-100: #F9E3E0; --color-crvena-200: #F4C4BE; --color-crvena-300: #F0958C; --color-crvena-400: #E06A5F; --color-crvena-500: #C9463B; --color-crvena-600: #A3261F; --color-crvena-700: #861C17; --color-crvena-800: #5F1410; --color-crvena-900: #3B1714; --color-crvena-950: #3A0A06;
+  --color-plava-50: #F2F6FB; --color-plava-100: #DFE9F4; --color-plava-200: #BFD6EE; --color-plava-300: #9CC3F0; --color-plava-400: #6A9BD3; --color-plava-500: #3F74B3; --color-plava-600: #1D4F86; --color-plava-700: #183F6B; --color-plava-800: #152F4E; --color-plava-900: #1A2C42; --color-plava-950: #0C1B2C;
+  --font-sans: 'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Bricolage Grotesque', 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --shadow-pz-1: 0 1px 2px rgb(21 32 26 / .06), 0 2px 8px rgb(21 32 26 / .06);
+  --shadow-pz-2: 0 2px 6px rgb(21 32 26 / .08), 0 10px 28px rgb(21 32 26 / .14);
+  --shadow-pz-3: 0 4px 12px rgb(21 32 26 / .10), 0 20px 56px rgb(21 32 26 / .24);
+  --ease-pz: cubic-bezier(.2, 0, 0, 1); --ease-pz-exit: cubic-bezier(.4, 0, 1, 1);
 }
 
-html.dark[data-site="pz"] {
-  --ui-primary: #B5CCBD;
-  --ui-text-dimmed: #A5A293;
-  --ui-text-muted: #CAC7B6;
-  --ui-text-toned: #CAC7B6;
-  --ui-text: #E6E2D9;
-  --ui-text-highlighted: #E6E2D9;
-  --ui-text-inverted: #21342A;
-  --ui-bg: #14140F;
-  --ui-bg-muted: #1C1C16;
-  --ui-bg-elevated: #1C1C16;
-  --ui-bg-accented: #374B40;
-  --ui-bg-inverted: #D1E8D9;
-  --ui-border: #48473A;
-  --ui-border-muted: #48473A;
-  --ui-border-accented: #A5A293;
-  --ui-border-inverted: #D1E8D9;
-
-  --ui-success: #8CCFD9;
-  --ui-error: #F2A48E;
-  --ui-warning: #E9C27A;
-  --pz-success-soft: #17343A;
-  --pz-error-soft: #3E211A;
-  --pz-warning-soft: #3A2E17;
-  --pz-wheat: #4A3A1E;
-  --focus-ring: #D1E8D9;
-
-  --pz-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5);
-  --pz-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-
-html[data-site="pz"] :is(h1, h2, h3, .font-serif) {
-  font-family: var(--font-serif);
-}
-
-/*
- * Nuxt UI's vertical page sections centre their heading block. The design
- * keeps section headings left-aligned, so the pz site undoes the centring.
- * This rule is unlayered, so it beats the component's layered utilities.
- */
-html[data-site="pz"] [data-slot="root"][data-orientation="vertical"] > [data-slot="container"] > [data-slot="wrapper"] {
-  > [data-slot="header"] > :is([data-slot="title"], [data-slot="description"]) {
-    text-align: left;
-  }
-
-  > [data-slot="header"] > :is([data-slot="headline"], [data-slot="leading"]),
-  > [data-slot="footer"] > [data-slot="links"] {
-    justify-content: flex-start;
-  }
-}
-
-/*
- * Focus: a 3px ring at 2px offset on everything focusable, in the pz ring
- * colour, and wheat on inverted slabs where the ring colour would vanish.
- * Unlayered, so it wins over Nuxt UI's own focus-visible utilities.
- */
-html[data-site="pz"] :is(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"]), [role="button"], [role="tab"], [role="option"], [role="menuitem"], [role="switch"], [role="checkbox"], [role="radio"]):focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-html[data-site="pz"] .bg-inverted :is(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"]), [role="button"], [role="tab"], [role="option"], [role="menuitem"], [role="switch"], [role="checkbox"], [role="radio"]):focus-visible {
-  outline-color: var(--pz-wheat);
-}
-
-/*
- * Target size: every button, tab, field and button-shaped link is at least --pz-tap-min (44px) tall, whatever the
- * Nuxt UI size says. Links inside running text are inline, so min-height does not touch them.
- */
-html[data-site="pz"] :is(button, [role="tab"], select, input:not([type="checkbox"], [type="radio"], [type="hidden"]), textarea, a[class*="inline-flex"]) {
-  min-height: var(--pz-tap-min);
-}
-
-/*
- * A sticky action bar must never cover the focused element: while PzStickyActionBar is on the page it
- * publishes its height, and the page keeps that much scroll padding at the bottom.
- */
-html[data-site="pz"] {
-  scroll-padding-bottom: var(--pz-actionbar-h, 0px);
-}
-
-/*
- * Answer feedback fades in over 150ms. Nothing else moves: no sound, no shake, no confetti, and no fade under
- * reduced motion.
- */
-@keyframes pz-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@utility pz-fade-in {
-  animation: pz-fade-in 150ms ease-out;
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-  }
-}
-
-/*
- * Sheets (PzBottomSheet) slide in; under reduced motion they appear instantly.
- */
-@media (prefers-reduced-motion: reduce) {
-  html[data-site="pz"] :is([data-vaul-drawer], [data-vaul-overlay], [role="dialog"], [data-slot="overlay"]) {
-    animation-duration: 0s !important;
-    transition-duration: 0s !important;
-  }
-}
-
-/* Skeleton pulses are off under reduced motion. */
-@media (prefers-reduced-motion: reduce) {
-  html[data-site="pz"] :is(.animate-pulse, [data-slot="base"].animate-pulse) {
-    animation: none;
-  }
-}
-
-/*
- * The 13 Potkalnički zapisi type styles. Serif is for names (titles, headwords),
- * Inter for interface and reading copy. The classes are opt-in, so adding them
- * changes nothing until a pz component uses one.
- */
-@utility pz-display-lg {
-  font-family: var(--font-serif);
-  font-size: 56px;
-  line-height: 60px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-@utility pz-display {
-  font-family: var(--font-serif);
-  font-size: 36px;
-  line-height: 40px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-@utility pz-headword {
-  font-family: var(--font-serif);
-  font-size: 48px;
-  line-height: 52px;
-  font-weight: 700;
-}
-
-@utility pz-h1 {
-  font-family: var(--font-serif);
-  font-size: 32px;
-  line-height: 38px;
-  font-weight: 600;
-}
-
-@utility pz-h2 {
-  font-family: var(--font-serif);
-  font-size: 24px;
-  line-height: 30px;
-  font-weight: 600;
-}
-
-@utility pz-h3 {
-  font-family: var(--font-serif);
-  font-size: 19px;
-  line-height: 24px;
-  font-weight: 600;
-}
-
-@utility pz-lead {
-  font-family: var(--font-sans);
-  font-size: 18px;
-  line-height: 28px;
-  font-weight: 400;
-}
-
-@utility pz-body {
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-}
-
-@utility pz-body-sm {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 400;
-}
-
-@utility pz-label {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 20px;
-  font-weight: 600;
-}
-
-@utility pz-caption {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 500;
-}
-
-@utility pz-overline {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-@utility pz-numeral {
-  font-family: var(--font-sans);
-  font-size: 28px;
-  line-height: 32px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-/*
- * Nuxt UI's dimmed text, used for form placeholders such as "Odaberi vrstu",
- * is only 2.6:1 in light mode and 3.7:1 in dark mode. No lighter shade than
- * the muted one reaches 4.5:1 on white, so dimmed text matches muted text.
- * .dark sits on <html> too, so this resolves to the dark muted shade there.
- */
 :root {
-  --ui-text-dimmed: var(--ui-text-muted);
+  color-scheme: light;
+  --ui-primary: var(--ui-color-primary-700); --ui-success: var(--ui-color-success-700); --ui-warning: var(--ui-color-warning-700); --ui-error: var(--ui-color-error-600); --ui-secondary: var(--ui-color-neutral-600); --ui-info: var(--ui-color-neutral-600);
+  --ui-text: #15201A; --ui-text-highlighted: #15201A; --ui-text-toned: #4C5950; --ui-text-muted: #4C5950; --ui-text-dimmed: #4C5950; --ui-text-inverted: #FFFFFF;
+  --ui-bg: #FFFFFF; --ui-bg-muted: #F3F4EE; --ui-bg-elevated: #E6E9DF; --ui-bg-accented: #CDD4C6; --ui-bg-inverted: #15201A;
+  --ui-border: #CDD4C6; --ui-border-muted: #CDD4C6; --ui-border-accented: #73807A; --ui-border-inverted: #15201A; --ui-radius: .5rem; --ui-container: 76rem; --ui-header-height: 3.5rem;
+  --pz-bg: #F3F4EE; --pz-raised: #FFFFFF; --pz-primary-hover: #17492F; --pz-primary-soft: #DCEBDF; --pz-accent: #E0A030; --pz-accent-hover: #D39325; --pz-on-accent: #2A1C00; --pz-accent-well: #F2D6A4; --pz-focus: #1D4F86; --pz-prot: #1D4F86; --pz-prot-bg: #DFE9F4; --pz-on-prot: #FFFFFF; --pz-pend: #4A5560; --pz-pend-bg: #E4E7E2; --pz-ok: #1D5B3E; --pz-ok-bg: #DCEBDF; --pz-warn: #8A5200; --pz-warn-bg: #F6E7C4; --pz-error: #A3261F; --pz-error-bg: #F9E3E0; --pz-on-error: #FFFFFF; --pz-scrim: rgb(15 21 18 / .56);
+  --pz-map-1: #CFE0CF; --pz-map-2: #DDE8D4; --pz-map-3: #E9E6C9; --pz-map-4: #C5D9CC; --pz-map-line: #1D5B3E;
+  --pz-space-1: 4px; --pz-space-2: 8px; --pz-space-3: 12px; --pz-space-4: 16px; --pz-space-5: 20px; --pz-space-6: 24px; --pz-space-8: 32px; --pz-space-10: 40px; --pz-space-12: 48px; --pz-space-16: 64px; --pz-space-24: 96px;
+  --pz-radius-xs: 4px; --pz-radius-sm: 8px; --pz-radius-md: 12px; --pz-radius-lg: 16px; --pz-radius-xl: 24px; --pz-duration-fast: 120ms; --pz-duration-base: 200ms; --pz-duration-slow: 320ms;
+  --pz-tap-min: var(--pz-size-target); --pz-option-min: 56px; --pz-header-h: 56px; --pz-tabbar-h: 64px; --pz-game-col: var(--pz-size-game); --pz-side-panel: var(--pz-size-side-panel); --pz-page-max: var(--pz-size-container);
+  --pz-wheat: var(--pz-accent-well); --pz-success-soft: var(--pz-ok-bg); --pz-warning-soft: var(--pz-warn-bg); --pz-error-soft: var(--pz-error-bg); --focus-ring: var(--pz-focus);
+  --pz-shadow-sheet: 0 -8px 24px rgb(21 32 26 / .12); --pz-shadow-lift: 0 2px 6px rgb(21 32 26 / .08);
+  --pz-size-target: 44px; --pz-size-control: 44px; --pz-size-control-lg: 52px; --pz-size-control-sm: 36px; --pz-size-bottom-bar: 65px; --pz-size-container: 1216px; --pz-size-side-panel: 352px; --pz-size-filter-rail: 264px; --pz-size-game: 600px; --pz-size-sheet: 560px; --pz-measure: 66ch;
 }
 
-/*
- * Windows High Contrast and other forced-colours modes drop box-shadow, which
- * is how Nuxt UI draws the edges of inputs, outline buttons, alerts and cards
- * (ring, ring-2), and solid buttons lose their filled background. They also
- * paint the CSS-mask icons' currentColor background as Canvas, so the form
- * fields lost their edges and every icon vanished. The outline sits in the
- * base layer, so the 3px focus-visible outlines still win.
- */
-@layer base {
-  @media (forced-colors: active) {
-    .ring,
-    .ring-2,
-    :is(a, button):is(.bg-primary, .bg-inverted) {
-      outline: 1px solid;
-      outline-offset: -1px;
-    }
-  }
+.dark {
+  color-scheme: dark;
+  --ui-primary: var(--ui-color-primary-400); --ui-success: var(--ui-color-success-400); --ui-warning: var(--ui-color-warning-300); --ui-error: var(--ui-color-error-300); --ui-secondary: var(--ui-color-neutral-300); --ui-info: var(--ui-color-neutral-300);
+  --ui-text: #E6EDE7; --ui-text-highlighted: #E6EDE7; --ui-text-toned: #A1AEA5; --ui-text-muted: #A1AEA5; --ui-text-dimmed: #A1AEA5; --ui-text-inverted: #0A1F14;
+  --ui-bg: #171F1B; --ui-bg-muted: #0F1512; --ui-bg-elevated: #202A25; --ui-bg-accented: #2D3932; --ui-bg-inverted: #E6EDE7; --ui-border: #2D3932; --ui-border-muted: #2D3932; --ui-border-accented: #6C7B71; --ui-border-inverted: #E6EDE7;
+  --pz-bg: #0F1512; --pz-raised: #1D2722; --pz-primary-hover: #96D6B1; --pz-primary-soft: #16301F; --pz-accent: #E7A545; --pz-accent-hover: #F0B55E; --pz-accent-well: #F3D09A; --pz-focus: #9CC3F0; --pz-prot: #9CC3F0; --pz-prot-bg: #1A2C42; --pz-on-prot: #0C1B2C; --pz-pend: #B9C1C9; --pz-pend-bg: #262B29; --pz-ok: #7CC79C; --pz-ok-bg: #16301F; --pz-warn: #EDBD6A; --pz-warn-bg: #3A2C10; --pz-error: #F0958C; --pz-error-bg: #3B1714; --pz-on-error: #3A0A06; --pz-scrim: rgb(0 0 0 / .66);
+  --pz-wheat: #4A3A1E; --pz-shadow-sheet: 0 -8px 24px rgb(0 0 0 / .5); --pz-shadow-lift: 0 2px 6px rgb(0 0 0 / .4);
+  --pz-map-1: #1E3327; --pz-map-2: #24392A; --pz-map-3: #33361F; --pz-map-4: #1B2E26; --pz-map-line: #7CC79C;
 }
 
-/* Icons take the system colour of their link, button or text, not their own text-* colour. */
-@media (forced-colors: active) {
-  .iconify {
-    forced-color-adjust: preserve-parent-color;
-    color: inherit;
-  }
+html { scroll-padding-bottom: var(--pz-actionbar-h, 0px); }
+html[data-site="pz"] :is(button, [role="tab"], select, input:not([type="checkbox"], [type="radio"], [type="hidden"]), textarea, a[class*="inline-flex"]) { min-height: var(--pz-tap-min); }
+body { background: var(--pz-bg); color: var(--ui-text); overflow-wrap: break-word; }
+:is(h1, h2, h3, h4, h5, h6) { font-family: var(--font-display); font-weight: 700; text-wrap: balance; hyphens: auto; }
+:is(p, li, dd) { hyphens: auto; }
+:focus-visible { outline: 3px solid var(--pz-focus); outline-offset: 2px; }
+:is(.bg-inverted, [class~="bg-(--ui-bg-inverted)"]) :focus-visible { outline-color: var(--pz-bg); }
+:is(.bg-accent, [class~="bg-(--pz-accent)"]) :focus-visible { outline-color: var(--pz-on-accent); }
+@media (forced-colors: active) { :focus-visible, :is(.bg-inverted, [class~="bg-(--ui-bg-inverted)"], .bg-accent, [class~="bg-(--pz-accent)"]) :focus-visible { outline-color: Highlight; } :is(button, a, input, select, textarea, [role='button'], [role='tab'], [role='option']):not(:focus-visible) { outline: 1px solid; } [role='progressbar'] { outline: 1px solid; } [role='progressbar'] > [data-slot='indicator'] { background: Highlight; } [data-slot='overlay'] { background: Canvas; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+@keyframes pz-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-  /* The word game's progress bar is background-only, so give it an edge and a filled part. */
-  [role='progressbar'] {
-    outline: 1px solid;
-    outline-offset: -1px;
-  }
+@utility pz-display { font-family: var(--font-display); font-size: 2.125rem; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; @media (min-width: 1024px) { font-size: 3rem; line-height: 1.08; } }
+@utility pz-h1 { font-family: var(--font-display); font-size: 1.75rem; line-height: 1.2; font-weight: 700; @media (min-width: 1024px) { font-size: 2.25rem; line-height: 1.15; } }
+@utility pz-h2 { font-family: var(--font-display); font-size: 1.375rem; line-height: 1.25; font-weight: 700; @media (min-width: 1024px) { font-size: 1.625rem; } }
+@utility pz-h3 { font-family: var(--font-display); font-size: 1.1875rem; line-height: 1.3; font-weight: 700; @media (min-width: 1024px) { font-size: 1.25rem; } }
+@utility pz-lead { font-size: 1.125rem; line-height: 1.55; max-width: 60ch; @media (min-width: 1024px) { font-size: 1.25rem; } }
+@utility pz-reading { font-size: 1.0625rem; line-height: 1.65; max-width: 66ch; @media (min-width: 1024px) { font-size: 1.125rem; line-height: 1.7; } }
+@utility pz-overline { font-size: .75rem; line-height: 1.35; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+@utility pz-fade-in { animation: pz-fade-in 200ms var(--ease-pz); }
+@utility pz-display-lg { font-family: var(--font-display); font-size: 3rem; line-height: 1.08; font-weight: 700; letter-spacing: -.02em; }
+@utility pz-headword { font-family: var(--font-display); font-size: 3rem; line-height: 1.08; font-weight: 700; }
+@utility pz-body { font-size: 1rem; line-height: 1.5; }
+@utility pz-body-sm { font-size: .875rem; line-height: 1.45; }
+@utility pz-label { font-size: .9375rem; line-height: 1.4; font-weight: 700; }
+@utility pz-caption { font-size: .8125rem; line-height: 1.4; }
+@utility pz-numeral { font-variant-numeric: tabular-nums; font-size: 1.75rem; line-height: 1.15; font-weight: 700; }
 
-  [role='progressbar'] > [data-slot='indicator'] {
-    forced-color-adjust: none;
-    background-color: CanvasText;
-  }
-}
-
-/*
- * Paper is white and browsers drop backgrounds when printing, so dark mode's
- * white headings and light-grey text printed faint or not at all. Print uses
- * the light palette (Nuxt UI's :root values) whatever the screen mode.
- */
-@media print {
-  .dark {
-    color-scheme: light;
-    --ui-primary: var(--ui-color-primary-700);
-    --ui-text-dimmed: var(--ui-color-neutral-500);
-    --ui-text-muted: var(--ui-color-neutral-500);
-    --ui-text-toned: var(--ui-color-neutral-600);
-    --ui-text: var(--ui-color-neutral-700);
-    --ui-text-highlighted: var(--ui-color-neutral-900);
-    --ui-text-inverted: #fff;
-    --ui-bg: #fff;
-    --ui-bg-muted: var(--ui-color-neutral-50);
-    --ui-bg-elevated: var(--ui-color-neutral-100);
-    --ui-bg-accented: var(--ui-color-neutral-200);
-    --ui-bg-inverted: var(--ui-color-neutral-900);
-    --ui-border: var(--ui-color-neutral-200);
-    --ui-border-muted: var(--ui-color-neutral-200);
-    --ui-border-accented: var(--ui-color-neutral-300);
-    --ui-border-inverted: var(--ui-color-neutral-900);
-  }
-
-  /* White labels on solid buttons and the KS monogram need their fill, or they print white on white. */
-  .bg-primary,
-  .bg-inverted {
-    print-color-adjust: exact;
-  }
-
-  /* Icons are masks filled with background-color, which printing drops, so every icon vanished. */
-  .iconify {
-    print-color-adjust: exact;
-  }
-
-  /* The Siladi Dizajn button prints its address, since a link can't be followed on paper. */
-  [data-print-url]::after {
-    content: '(' attr(data-print-url) ')';
-  }
-}
+@media print { .dark { color-scheme: light; --ui-primary: var(--ui-color-primary-700); --ui-text: var(--ui-color-neutral-700); --ui-text-highlighted: var(--ui-color-neutral-900); --ui-bg: #fff; --ui-bg-muted: var(--ui-color-neutral-50); --ui-bg-elevated: var(--ui-color-neutral-100); --ui-border: var(--ui-color-neutral-200); } .bg-primary, .bg-inverted, .iconify { print-color-adjust: exact; } [data-print-url]::after { content: '(' attr(data-print-url) ')'; } }
