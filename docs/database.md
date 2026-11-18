@@ -363,7 +363,7 @@ Five migrations add the database foundation and first seed for intangible herita
 1. `20261108000000_intangible_heritage.sql`: the tables, triggers, constraints, RLS and the Memory plumbing below.
 2. `20261108010000_intangible_heritage_save.sql`: the save functions.
 3. `20261108020000_seed_intangible_types.sql`: the type lists.
-4. `20261118000000_seed_mamine_poruke.sql`: adds `customs.steps` and `folk_texts.sensitive` (below) and seeds the reviewed Mama WhatsApp batch (theme, source, two Narrators with no public name, Customs and Folk texts).
+4. `20261118000000_seed_mamine_poruke.sql`: adds `customs.steps` and `folk_texts.sensitive` (below) and seeds the reviewed Mama WhatsApp batch (the Igre na dlanu theme, source, two Narrators with no public name, Customs and Folk texts).
 5. `20261118000001_custom_steps_save.sql`: `content_custom_save` writes `steps`.
 
 **Tables.** Everything is server-only: RLS on, nothing granted to `public`, `anon` or `authenticated`, `service_role` only.
