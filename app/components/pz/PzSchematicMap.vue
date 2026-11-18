@@ -23,7 +23,7 @@ const description = computed(() => {
   const area = MAP_AREAS.find(a => a.id === props.selected)
   return area
     ? `Shematska karta s istaknutim područjem: ${area.name}`
-    : 'Shematska karta četiriju općina s grebenom Kalnika'
+    : 'Shematska karta triju općina i grada Križevaca s grebenom Kalnika'
 })
 </script>
 
