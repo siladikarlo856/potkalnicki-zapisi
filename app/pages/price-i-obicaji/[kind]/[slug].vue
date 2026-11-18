@@ -283,12 +283,7 @@ useSeoMeta({
           class="flex flex-col gap-2"
         >
           <h2 class="pz-h2 text-highlighted">
-            <template v-if="record.kind === 'folk_text' && record.verification === 'in_review'">
-              {{ t('pz.intangible.textStandardDraft') }}
-            </template>
-            <template v-else>
-              {{ t('pz.intangible.textStandard') }}
-            </template>
+            {{ t('pz.intangible.textStandard') }}
           </h2>
           <p
             class="pz-body whitespace-pre-line text-default"
