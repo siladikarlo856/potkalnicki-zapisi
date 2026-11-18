@@ -9,6 +9,9 @@ import type { MaybeRefOrGetter } from 'vue'
  * - `sheet`: a bottom sheet is open. `PzBottomSheet` calls
  *   `useHidePzTabBar(open, 'sheet')` with its open state.
  * - `keyboard`: the on-screen keyboard is up (set by `PzBottomNav`).
+ *
+ * Dropping the site header and footer is separate: `RoundBar` sets the `pz-round-shell-active` state
+ * while it is rendered, and the layout reads it.
  */
 export type PzTabBarHold = 'game' | 'challenge' | 'sheet' | 'keyboard'
 

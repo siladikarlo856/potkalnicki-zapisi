@@ -2,6 +2,7 @@
 // Below 1024px the fixed tab bar sits over the bottom, so the page reserves its height plus the
 // safe-area inset. A hidden bar frees the space for the sticky action bar.
 const { hidden: tabBarHidden } = usePzTabBar()
+const roundActive = useState('pz-round-shell-active', () => false)
 const baseUrl = useRuntimeConfig().public.i18n.baseUrl
 const cloudflareAnalyticsToken = useRuntimeConfig().public.cloudflareAnalyticsToken
 
@@ -33,7 +34,10 @@ useSeoMeta({
   <div
     :class="tabBarHidden ? undefined : 'pb-[calc(var(--pz-tabbar-h)+env(safe-area-inset-bottom))] lg:pb-0 print:pb-0'"
   >
-    <PzHeader />
+    <template v-if="!roundActive">
+      <AppHeader />
+      <SectionStrip />
+    </template>
     <UMain
       id="main-content"
       tabindex="-1"
@@ -41,7 +45,7 @@ useSeoMeta({
     >
       <slot />
     </UMain>
-    <PzFooter />
-    <PzBottomNav />
+    <PzFooter v-if="!roundActive" />
+    <BottomNav />
   </div>
 </template>

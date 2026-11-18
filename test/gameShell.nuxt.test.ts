@@ -75,7 +75,7 @@ describe('GameShell', () => {
 
   it('shows the header, the options and the score', async () => {
     const page = await mountShell()
-    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 3')
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 0')
     expect(page.get('[data-testid="game-prompt"]').text()).toBe('Pitanje 0?')
     expect(page.findAll(OPTION)).toHaveLength(3)
@@ -114,7 +114,7 @@ describe('GameShell', () => {
     expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).cards['word:w0'].known).toBe(1)
     focus.mockClear()
     await page.get('[data-testid="game-next"]').trigger('click')
-    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 2 od 3')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('2 od 3')
     expect(page.get('[data-testid="game-prompt"]').text()).toBe('Pitanje 1?')
     expect(page.find('[data-testid="game-feedback"]').exists()).toBe(false)
     expect(focus.mock.contexts.some(element => (element as HTMLElement).id === 'game-question')).toBe(true)
@@ -175,7 +175,7 @@ describe('GameShell', () => {
       await page.get('[data-testid="game-next"]').trigger('click')
     }
     await page.get('[data-testid="game-replay-missed"]').trigger('click')
-    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 3')
     for (let i = 0; i < 3; i++) {
       // Options are reshuffled, so find the correct one from the prompt's question.
       const n = Number(page.get('[data-testid="game-prompt"]').text().match(/\d/)![0])
@@ -194,7 +194,7 @@ describe('GameShell', () => {
     const page = await mountShell()
     await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
     await page.setProps({ questions: [question(2), question(1)] })
-    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 2')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 2')
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 0')
   })
 })
@@ -245,8 +245,8 @@ describe('GameShell game kit', () => {
 
   it('names the progress with a text label next to the bar', async () => {
     const page = await mountShell()
-    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')
-    expect(page.get('[role="progressbar"]').exists()).toBe(true)
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 3')
+    expect(page.get('[data-testid="game-progress"][role="progressbar"]').exists()).toBe(true)
   })
 
   it('never advances by itself: Dalje is the only way on', async () => {
@@ -255,10 +255,10 @@ describe('GameShell game kit', () => {
       const page = await mountShell()
       await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
       await vi.advanceTimersByTimeAsync(60_000)
-      expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 3')
+      expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 3')
       expect(page.find('[data-testid="game-feedback"]').exists()).toBe(true)
       await page.get('[data-testid="game-next"]').trigger('click')
-      expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 2 od 3')
+      expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('2 od 3')
     } finally {
       vi.useRealTimers()
     }
@@ -292,7 +292,7 @@ describe('Kak se to veli?', () => {
     await wrapper.get('[data-testid="game-start-button"]').trigger('click')
     expect(wrapper.find('[data-testid="game-start"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="game-prompt"]').text()).toMatch(/^Kak se kod nas veli „značenje \d”\?$/)
-    expect(wrapper.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 5')
+    expect(wrapper.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 5')
     expect(wrapper.findAll(OPTION).length).toBeGreaterThanOrEqual(2)
   })
 })

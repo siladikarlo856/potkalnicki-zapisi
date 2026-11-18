@@ -105,22 +105,21 @@ const locales = [
   { lang: 'hr' as const, loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi', progress: 'Odgovorena pitanja', error: 'Pitanja trenutačno nisu dostupna.', retry: 'Pokušaj opet' }
 ]
 
-describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, progress, error, retry }) => {
+describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, error, retry }) => {
   it('loads active words into a playable question with four options and progress', async () => {
     const page = await mountQuiz(lang)
     await expect.poll(() => page.findAll(OPTION).length).toBe(4)
     const entry = askedWord(page)
     expect(page.get('[data-testid="game-prompt"]').text()).toBe(`Što znači riječ „${entry.headword}”?`)
-    expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe(progress)
-    expect(page.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('0')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuenow')).toBe('1')
     expect(page.findAll(OPTION).map(optionText).sort()).toEqual(seeds.map(word => word.meaning[lang]).sort())
     expect(page.text()).not.toContain(loading)
     expect(page.text()).not.toContain(empty)
-    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 4')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 4')
     // The pool also drives answer handling, feedback and moving to the next question.
     const focus = vi.spyOn(HTMLElement.prototype, 'focus')
     await page.get(`[data-testid="game-option-${pickIndex(page, true)}"]`).trigger('click')
-    expect(page.get('[role="progressbar"]').attributes('aria-valuenow')).toBe('1')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuenow')).toBe('1')
     expect(storedWord(entry.id).known).toBe(1)
     expect(page.text()).toContain('Odgovoreno ukupno: 1')
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 1')
@@ -130,7 +129,7 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, pr
     expect(page.findAll(OPTION).every(option => option.attributes('aria-disabled') === 'true')).toBe(true)
     await page.get('[data-testid="game-next"]').trigger('click')
     expect(askedWord(page).id).not.toBe(entry.id)
-    expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 2 od 4')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('2 od 4')
     focus.mockRestore()
   })
 
@@ -224,12 +223,12 @@ describe('limited active words', () => {
     setActive(seeds[3]!.id, false)
     const page = await mountQuiz()
     await expect.poll(() => page.findAll(OPTION).length).toBe(3)
-    expect(page.get('[role="progressbar"]').attributes('aria-label')).toBe('Odgovorena pitanja')
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 3')
   })
 })
 
 describe.each([
-  { lang: 'hr' as const, summary: 'Kaj to znači? · 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: 'Pitanje 1 od 1', copied: 'Kopirano', path: '/igre/kviz' }
+  { lang: 'hr' as const, summary: 'Kaj to znači? · 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: '1 od 1', copied: 'Kopirano', path: '/igre/kviz' }
 ])('$lang quiz result', ({ summary, replay, noMisses, counter, copied, path }) => {
   async function answerCurrent(page: Page, correct: boolean) {
     const entry = askedWord(page)
@@ -280,7 +279,7 @@ describe.each([
     const replayButton = page.get('[data-testid="game-replay-missed"]')
     expect(replayButton.text()).toBe(replay)
     await replayButton.trigger('click')
-    expect(page.get('[data-testid="game-progress"]').text()).toBe(counter)
+    expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe(counter)
     expect(askedWord(page).id).toBe(missedEntry.id)
     await answerCurrent(page, true)
     await expect.poll(() => page.find('[data-testid="game-misses"]').exists()).toBe(true)
@@ -322,7 +321,7 @@ describe.each([
       const page = await mountQuiz()
       await expect.poll(() => page.findAll(OPTION).length).toBe(4)
       // 13 active words, one round of ten.
-      expect(page.get('[data-testid="game-progress"]').text()).toBe('Pitanje 1 od 10')
+      expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 10')
     } finally {
       for (const entry of extras) catalogue.delete(entry.id)
     }

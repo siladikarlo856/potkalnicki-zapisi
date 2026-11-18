@@ -43,7 +43,8 @@
   --pz-map-1: #1E3327; --pz-map-2: #24392A; --pz-map-3: #33361F; --pz-map-4: #1B2E26; --pz-map-line: #7CC79C;
 }
 
-html { scroll-padding-bottom: var(--pz-actionbar-h, 0px); }
+html { scroll-padding-top: calc(var(--pz-header-h) + env(safe-area-inset-top)); scroll-padding-bottom: var(--pz-actionbar-h, 0px); }
+[id] { scroll-margin-top: calc(var(--pz-header-h) + env(safe-area-inset-top) + 8px); scroll-margin-bottom: calc(var(--pz-actionbar-h, 0px) + env(safe-area-inset-bottom) + 8px); }
 html[data-site="pz"] :is(button, [role="tab"], select, input:not([type="checkbox"], [type="radio"], [type="hidden"]), textarea, a[class*="inline-flex"]) { min-height: var(--pz-tap-min); }
 body { background: var(--pz-bg); color: var(--ui-text); overflow-wrap: break-word; }
 :is(h1, h2, h3, h4, h5, h6) { font-family: var(--font-display); font-weight: 700; text-wrap: balance; hyphens: auto; }
