@@ -10,7 +10,7 @@ import type { MaybeRefOrGetter } from 'vue'
  *   `useHidePzTabBar(open, 'sheet')` with its open state.
  * - `keyboard`: the on-screen keyboard is up (set by `PzBottomNav`).
  */
-export type PzTabBarHold = 'game' | 'challenge' | 'sheet' | 'keyboard'
+export type PzTabBarHold = 'game' | 'challenge' | 'round' | 'sheet' | 'keyboard'
 
 export function usePzTabBar() {
   const holds = useState<PzTabBarHold[]>('pz-tabbar-holds', () => [])

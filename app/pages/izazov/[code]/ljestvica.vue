@@ -23,7 +23,6 @@ const owner = computed(() => find(code)?.role === 'creator' || Boolean(state.val
 const roundCount = computed(() => state.value?.rounds.length ?? Math.max(0, ...board.value.rows.map(row => row.rounds.length)))
 useSeoMeta({ title: () => t('challenge.leaderboard'), robots: 'noindex, nofollow' })
 // The sticky action bar owns the bottom of this screen, so the tab bar steps aside once it is there.
-useHidePzTabBar(() => Boolean(state.value), 'challenge')
 
 async function load(more = false) {
   loading.value = true

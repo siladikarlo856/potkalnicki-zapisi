@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { pzSectionGroups, pzCurrentSection } from '~~/shared/utils/pzNav'
+import { pzSectionGroupForPath, pzCurrentSection } from '~~/shared/utils/pzNav'
 
 const route = useRoute()
 const localePath = useLocalePath()
-const group = computed(() => pzSectionGroups.find(item => route.path.startsWith(item.to.replace(/\/$/, ''))))
+const group = computed(() => pzSectionGroupForPath(route.path))
 const active = computed(() => pzCurrentSection(route.path))
 </script>
 

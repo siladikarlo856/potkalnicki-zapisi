@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { pzSectionGroups, pzCurrentSection } from '~~/shared/utils/pzNav'
+import { pzSectionGroups, pzCurrentSection, pathMatches } from '~~/shared/utils/pzNav'
 
 const route = useRoute()
 const localePath = useLocalePath()
@@ -48,7 +48,7 @@ onMounted(() => {
             :key="item.to"
             :to="localePath(item.to)"
             class="min-h-(--pz-tap-min) rounded-full px-3 py-2 text-sm font-semibold text-muted hover:bg-elevated"
-            :class="{ 'bg-primary text-inverted': route.path === item.to || (item.to !== '/' && route.path.startsWith(item.to)) }"
+            :class="{ 'bg-primary text-inverted': pathMatches(route.path, item.to) }"
           >{{ item.label }}</NuxtLink>
         </nav>
         <form

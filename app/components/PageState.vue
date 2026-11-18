@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const localePath = useLocalePath()
 const props = withDefaults(defineProps<{ kind?: 'not-found' | 'removed' | 'moved' | 'offline' | 'error' | 'empty', title?: string, description?: string }>(), { kind: 'error' })
 defineEmits<{ retry: [] }>()
 const copy = { 'not-found': ['Ove stranice nema', 'Adresa je možda krivo prepisana ili poveznica više ne vrijedi.'], 'removed': ['Ovaj je zapis uklonjen', 'Ovaj zapis više nije dostupan.'], 'moved': ['Ovaj zapis ima novu adresu', 'Otvori zapis na novoj adresi.'], 'offline': ['Nema veze', 'Prikazujemo ono što je već učitano.'], 'error': ['Nešto je pošlo po krivu', 'Nije do tebe. Pokušaj ponovno.'], 'empty': ['Nema zapisa za ove filtre', 'Očisti filtre ili pokušaj s drugim odabirom.'] } as const
@@ -25,7 +26,7 @@ const text = computed(() => [props.title ?? copy[props.kind][0], props.descripti
       <slot name="actions">
         <UButton
           v-if="kind === 'not-found' || kind === 'empty'"
-          to="/arhiv/"
+          :to="localePath('/arhiv/')"
           label="Otvori arhiv"
         /><UButton
           v-else
