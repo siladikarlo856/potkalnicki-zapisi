@@ -41,6 +41,7 @@ function cut(text: string | null, max: number) {
 
 /** The start of what the record says: a Custom's description, a Folk text's exact wording, a Story's retelling. */
 export function intangibleExcerpt(record: SnapshotIntangible, max = 180) {
+  if (record.sensitive) return `${INTANGIBLE_KIND_LABELS[record.kind]} · grublji jezik`
   const text = record.kind === 'custom'
     ? record.description
     : record.kind === 'folk_text'

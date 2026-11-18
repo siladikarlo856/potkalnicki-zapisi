@@ -226,15 +226,15 @@ useSeoMeta({
         >
           <div class="flex flex-col gap-1">
             <h2 class="pz-h2 text-highlighted">
-              Grublji jezik u izvornom zapisu
+              {{ t('pz.intangible.sensitiveTitle') }}
             </h2>
             <p class="pz-body-sm text-default">
-              Zapis ostaje javno dostupan kao dio obiteljskog govora. Izvorni tekst možeš otvoriti kad želiš.
+              {{ t('pz.intangible.sensitiveHint') }}
             </p>
           </div>
           <UButton
             v-if="!sensitiveRevealed"
-            label="Prikaži izvorni tekst"
+            :label="t('pz.intangible.sensitiveReveal')"
             color="neutral"
             variant="outline"
             class="self-start"
@@ -249,7 +249,7 @@ useSeoMeta({
           data-testid="intangible-steps"
         >
           <h2 class="pz-h2 text-highlighted">
-            Koraci
+            {{ t('pz.intangible.steps') }}
           </h2>
           <ol class="flex flex-col gap-3 ps-6">
             <li
@@ -283,8 +283,8 @@ useSeoMeta({
           class="flex flex-col gap-2"
         >
           <h2 class="pz-h2 text-highlighted">
-            <template v-if="record.verification !== 'verified'">
-              Nacrt standardnog značenja · U provjeri
+            <template v-if="record.kind === 'folk_text' && record.verification === 'in_review'">
+              {{ t('pz.intangible.textStandardDraft') }}
             </template>
             <template v-else>
               {{ t('pz.intangible.textStandard') }}
@@ -312,13 +312,6 @@ useSeoMeta({
             data-testid="intangible-description"
           >
             {{ record.description }}
-          </p>
-          <p
-            v-if="record.slug === 'rijeci-za-utjehu-kad-se-dijete-udari'"
-            class="pz-body-sm text-muted italic"
-            data-testid="intangible-not-medical-advice"
-          >
-            Ovo je kulturni zapis riječi i postupka, nije medicinski savjet.
           </p>
         </section>
 

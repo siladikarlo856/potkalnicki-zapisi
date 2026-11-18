@@ -288,6 +288,11 @@ describe('record pages', () => {
     expect(intangibleExcerpt({ ...record, textStandard: null, textLocal: null })).toBeNull()
   })
 
+  it('keeps the wording of a sensitive record out of its excerpt', () => {
+    const record = { ...intangible.recordById.get(IH.story)!, textStandard: 'grubi tekst', textLocal: 'grubi tekst', sensitive: true }
+    expect(intangibleExcerpt(record)).toBe('Priča · grublji jezik')
+  })
+
   it('knows the kind segments', () => {
     expect(intangibleKindFromSlug('prica')).toBe('story')
     expect(intangibleKindFromSlug('obicaj')).toBe('custom')
