@@ -32,11 +32,21 @@ function leave() {
       </p><div class="hidden min-w-32 flex-1 sm:block">
         <UProgress
           :model-value="current / total * 100"
-          aria-label="Napredak"
+          aria-hidden="true"
         />
-      </div><span class="pz-caption tabular-nums">{{ current }}/{{ total }}</span><span
+      </div><span
+        role="progressbar"
+        class="pz-caption tabular-nums"
+        data-testid="game-progress"
+        aria-label="Napredak"
+        :aria-valuemin="1"
+        :aria-valuemax="total"
+        :aria-valuenow="current"
+        :aria-valuetext="`${current} od ${total}`"
+      ><span aria-hidden="true">{{ current }}/{{ total }}</span></span><span
         v-if="score !== undefined"
         class="pz-caption tabular-nums"
+        data-testid="game-score"
       >Bodovi: {{ score }}</span>
     </UContainer>
   </header>
