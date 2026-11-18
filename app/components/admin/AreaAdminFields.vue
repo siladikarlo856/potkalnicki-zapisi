@@ -96,15 +96,15 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
     :description="parentHint"
   >
     <USelectMenu
-      :model-value="nullToUndefined(form.parentId)"
-      @update:model-value="form.parentId = undefinedToNull($event) ?? null"
       v-model:search-term="parentSearch"
+      :model-value="nullToUndefined(form.parentId)"
       :items="parentItems"
       value-key="value"
       searchable
       :loading="parentLoading"
       placeholder="Pretraži i odaberi…"
       class="w-full"
+      @update:model-value="form.parentId = undefinedToNull($event) ?? null"
     />
   </UFormField>
   <div
@@ -118,9 +118,9 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
     >
       <UInput
         :model-value="nullToUndefined(form.officialCode)"
-        @update:model-value="form.officialCode = undefinedToNull($event) ?? null"
         :maxlength="AREA_LIMITS.officialCode"
         class="w-full font-mono"
+        @update:model-value="form.officialCode = undefinedToNull($event) ?? null"
       />
     </UFormField>
     <UFormField
@@ -130,10 +130,10 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
     >
       <UInput
         :model-value="nullToUndefined(form.geonamesId)"
-        @update:model-value="form.geonamesId = undefinedToNull($event) ?? null"
         :maxlength="AREA_LIMITS.geonamesId"
         inputmode="numeric"
         class="w-full font-mono"
+        @update:model-value="form.geonamesId = undefinedToNull($event) ?? null"
       />
     </UFormField>
   </div>
@@ -186,11 +186,11 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
   >
     <UTextarea
       :model-value="nullToUndefined(form.description)"
-      @update:model-value="form.description = undefinedToNull($event) ?? null"
       :maxlength="AREA_LIMITS.description"
       :rows="3"
       autoresize
       class="w-full"
+      @update:model-value="form.description = undefinedToNull($event) ?? null"
     />
   </UFormField>
 </template>

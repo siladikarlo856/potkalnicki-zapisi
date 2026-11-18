@@ -122,11 +122,18 @@ defineExpose({ answer, next })
     :data-testid="`game-shell-${gameId}`"
   >
     <template v-if="question">
+      <RoundBar
+        :title="roundTitle"
+        :current="index + 1"
+        :total="round.length"
+        :score="score"
+      />
       <GamesProgress
         :current="index + 1"
         :total="round.length"
         :results="results"
         :score="score"
+        class="hidden"
       />
 
       <section

@@ -265,6 +265,14 @@ onMounted(() => {
       v-else
       class="flex flex-col gap-6"
     >
+      <RoundBar
+        v-if="state && participant && !closed && question"
+        :title="text(state.title)"
+        :current="(participant.index ?? 0) + 1"
+        :total="state.questionCount"
+        :score="participant.total"
+        :exit-to="localePath(`/izazov/${state.code}/`)"
+      />
       <header class="relative flex flex-col gap-3 overflow-hidden rounded-(--pz-radius-xl) py-2">
         <PzRidge
           v-if="!participant"
