@@ -6,11 +6,12 @@ import type { MaybeRefOrGetter } from 'vue'
  *
  * - `game`: a game round is in play (set by `games/Shell.vue`).
  * - `challenge`: the challenge flow after "Kreni" (set by `heritage/ChallengeExperience.vue`).
+ * - `round`: a `RoundBar` is rendered; the layout also drops its site header and footer.
  * - `sheet`: a bottom sheet is open. `PzBottomSheet` calls
  *   `useHidePzTabBar(open, 'sheet')` with its open state.
  * - `keyboard`: the on-screen keyboard is up (set by `PzBottomNav`).
  */
-export type PzTabBarHold = 'game' | 'challenge' | 'sheet' | 'keyboard'
+export type PzTabBarHold = 'game' | 'challenge' | 'round' | 'sheet' | 'keyboard'
 
 export function usePzTabBar() {
   const holds = useState<PzTabBarHold[]>('pz-tabbar-holds', () => [])

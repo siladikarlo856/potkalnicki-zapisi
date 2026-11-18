@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{ title: string, current: number, total: number, score?: number, exitTo?: string }>()
 const open = ref(false)
+useHidePzTabBar(true, 'round')
 const localePath = useLocalePath()
 
 function leave() {
