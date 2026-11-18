@@ -42,7 +42,9 @@ body { background: var(--pz-bg); color: var(--ui-text); overflow-wrap: break-wor
 :is(h1, h2, h3, h4, h5, h6) { font-family: var(--font-display); font-weight: 700; text-wrap: balance; hyphens: auto; }
 :is(p, li, dd) { hyphens: auto; }
 :focus-visible { outline: 3px solid var(--pz-focus); outline-offset: 2px; }
-@media (forced-colors: active) { :focus-visible { outline-color: Highlight; } :is(button, a, input, select, textarea, [role='button'], [role='tab'], [role='option']) { outline: 1px solid; } [role='progressbar'] { outline: 1px solid; } [role='progressbar'] > [data-slot='indicator'] { background: Highlight; } [data-slot='overlay'] { background: Canvas; } }
+:is(.bg-inverted, [class~="bg-(--ui-bg-inverted)"]) :focus-visible { outline-color: var(--pz-bg); }
+:is(.bg-accent, [class~="bg-(--pz-accent)"]) :focus-visible { outline-color: var(--pz-on-accent); }
+@media (forced-colors: active) { :focus-visible, :is(.bg-inverted, [class~="bg-(--ui-bg-inverted)"], .bg-accent, [class~="bg-(--pz-accent)"]) :focus-visible { outline-color: Highlight; } :is(button, a, input, select, textarea, [role='button'], [role='tab'], [role='option']) { outline: 1px solid; } [role='progressbar'] { outline: 1px solid; } [role='progressbar'] > [data-slot='indicator'] { background: Highlight; } [data-slot='overlay'] { background: Canvas; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 @keyframes pz-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
