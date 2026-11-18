@@ -10,6 +10,9 @@ defineProps<{
 
 const localePath = useLocalePath()
 const ICONS = { story: 'i-lucide-scroll-text', custom: 'i-lucide-calendar-days', folk_text: 'i-lucide-music' } as const
+const categoryLabel = (record: PublicIntangibleListItem) => record.kind === 'folk_text'
+  ? record.typeLabel
+  : `${record.kindLabel} · ${record.typeLabel}`
 </script>
 
 <template>
@@ -28,7 +31,7 @@ const ICONS = { story: 'i-lucide-scroll-text', custom: 'i-lucide-calendar-days',
         :to="localePath(record.path)"
         :settlement="record.places.map(place => place.name).join(', ') || undefined"
         :description="record.excerpt ?? undefined"
-        :category="`${record.kindLabel} · ${record.typeLabel}`"
+        :category="categoryLabel(record)"
         :icon="ICONS[record.kind]"
       >
         <template #trust>

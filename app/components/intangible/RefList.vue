@@ -8,6 +8,9 @@ defineProps<{
 }>()
 
 const localePath = useLocalePath()
+const categoryLabel = (record: PublicIntangibleRef) => record.kind === 'folk_text'
+  ? record.typeLabel
+  : `${record.kindLabel} · ${record.typeLabel}`
 </script>
 
 <template>
@@ -24,7 +27,7 @@ const localePath = useLocalePath()
         class="flex min-h-(--pz-tap-min) flex-col justify-center px-4 py-3 text-sm hover:bg-elevated/40"
       >
         <span class="font-medium wrap-anywhere text-highlighted">{{ record.title }}</span>
-        <span class="text-muted">{{ record.kindLabel }} · {{ record.typeLabel }}</span>
+        <span class="text-muted">{{ categoryLabel(record) }}</span>
       </ULink>
     </li>
   </ul>

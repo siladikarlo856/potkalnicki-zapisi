@@ -10,8 +10,8 @@ alter table public.folk_texts
   add column if not exists sensitive boolean not null default false;
 
 insert into public.themes (id, slug, label_hr, label_en, description, sort, status) values (
-  public.content_uuid('theme:iz-mamine-poruke'), 'iz-mamine-poruke', 'Iz mamine poruke', 'From Mama''s message',
-  'Usmeni tekstovi i dječji običaji zabilježeni u obiteljskoj WhatsApp poruci od 10. do 17. studenoga 2026.', 100, 'published'
+  public.content_uuid('theme:igre-na-dlanu'), 'igre-na-dlanu', 'Igre na dlanu', 'Palm games',
+  'Igre u kojima se djetetu po dlanu izvode pokreti i izgovaraju riječi.', 100, 'published'
 ) on conflict (id) do nothing;
 
 insert into public.sources (id, title, type, note, status) values (
@@ -164,8 +164,8 @@ select id, public.content_uuid('narrator:karlo-siladi'), 'collector', 1 from pub
 where slug in ('kriz-kraz-matijas-igra-na-dlanu', 'u-plavom-loncicu-igra-prstima', 'rijeci-za-utjehu-kad-se-dijete-udari')
 on conflict do nothing;
 insert into public.custom_themes (custom_id, theme_id, position)
-select id, public.content_uuid('theme:iz-mamine-poruke'), 0 from public.customs
-where slug in ('kriz-kraz-matijas-igra-na-dlanu', 'u-plavom-loncicu-igra-prstima', 'rijeci-za-utjehu-kad-se-dijete-udari')
+select id, public.content_uuid('theme:igre-na-dlanu'), 0 from public.customs
+where slug in ('kriz-kraz-matijas-igra-na-dlanu', 'u-plavom-loncicu-igra-prstima')
 on conflict do nothing;
 insert into public.custom_sources (custom_id, source_id, position)
 select id, public.content_uuid('source:iz-mamine-poruke'), 0 from public.customs
@@ -177,9 +177,6 @@ select id, public.content_uuid('narrator:mama'), 'narrator', 0 from public.folk_
 on conflict do nothing;
 insert into public.folk_text_narrators (folk_text_id, narrator_id, role, position)
 select id, public.content_uuid('narrator:karlo-siladi'), 'collector', 1 from public.folk_texts where slug like 'iz-mamine-poruke-%'
-on conflict do nothing;
-insert into public.folk_text_themes (folk_text_id, theme_id, position)
-select id, public.content_uuid('theme:iz-mamine-poruke'), 0 from public.folk_texts where slug like 'iz-mamine-poruke-%'
 on conflict do nothing;
 insert into public.folk_text_sources (folk_text_id, source_id, position)
 select id, public.content_uuid('source:iz-mamine-poruke'), 0 from public.folk_texts where slug like 'iz-mamine-poruke-%'

@@ -22,6 +22,12 @@ const periodLabelKey = computed(() => record.value?.kind === 'custom' ? 'pz.inta
 const sources = computed(() => (record.value?.sources ?? []).map(source => ({ label: source.title, href: source.url ?? undefined })))
 const description = computed(() => record.value?.excerpt?.slice(0, 160) || t('pz.intangible.intro'))
 const sensitiveRevealed = ref(false)
+const categoryLabel = computed(() => {
+  if (!record.value) return ''
+  return record.value.kind === 'folk_text'
+    ? record.value.typeLabel
+    : `${record.value.kindLabel} · ${record.value.typeLabel}`
+})
 
 useSeoMeta({
   title: () => record.value?.title ?? '',
@@ -47,7 +53,7 @@ useSeoMeta({
           class="pz-overline text-muted"
           data-testid="intangible-overline"
         >
-          {{ record.kindLabel }} · {{ record.typeLabel }}
+          {{ categoryLabel }}
         </p>
         <h1 class="pz-h1 wrap-anywhere text-highlighted lg:pz-display">
           {{ record.title }}
