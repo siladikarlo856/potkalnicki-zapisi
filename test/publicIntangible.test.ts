@@ -253,6 +253,7 @@ describe('record pages', () => {
     const detail = intangibleDetail(content, intangible.recordById.get(IH.custom)!)
     expect(detail).toMatchObject({
       kind: 'custom', occasion: 'Martinje', description: 'Mošt se krstio u vino.', quotes: ['Sveti Martin, krsti vino!'],
+      steps: ['Natoči mošt.', 'Izgovori zdravicu.'],
       period: '1960-ih (približno)', recordedOn: 'studeni 1990.'
     })
     expect(detail.folkTexts.map(f => f.title)).toEqual(['Martinjska zdravica'])

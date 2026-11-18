@@ -58,6 +58,8 @@ export interface IntangibleRow {
   text_standard?: string | null
   description?: string | null
   quotes?: unknown
+  steps?: unknown
+  sensitive?: boolean
   period?: string | null
   period_unit?: string | null
   period_value?: number | null
@@ -155,6 +157,8 @@ export interface SnapshotIntangible {
   textStandard: string | null
   description: string | null
   quotes: string[]
+  steps?: string[]
+  sensitive?: boolean
   period: string | null
   periodUnit: 'decade' | 'century' | null
   periodValue: number | null
@@ -386,6 +390,8 @@ export function buildIntangible<H extends { kind: string, slug: string, entity_i
         textStandard: r.text_standard ?? null,
         description: r.description ?? null,
         quotes: quotes(r.quotes),
+        steps: kind === 'custom' ? quotes(r.steps) : [],
+        sensitive: kind === 'folk_text' && r.sensitive === true,
         period: r.period ?? null,
         periodUnit: r.period_unit && PERIOD_UNITS.has(r.period_unit) ? r.period_unit as 'decade' | 'century' : null,
         periodValue: r.period_value ?? null,
@@ -485,8 +491,8 @@ async function readAll<T>(read: (from: number, to: number) => Page<T>) {
 const RECORD_COMMON = 'id,title,slug,type_id,recorded_precision,recorded_year,recorded_month,recorded_day,verification,noindex,credits,status,updated_at'
 const RECORD_COLUMNS: Record<IntangibleKind, string> = {
   story: `${RECORD_COMMON},text_local,text_standard,period,period_unit,period_value`,
-  custom: `${RECORD_COMMON},occasion_id,description,quotes,period,period_unit,period_value`,
-  folk_text: `${RECORD_COMMON},custom_id,text_local,text_standard`
+  custom: `${RECORD_COMMON},occasion_id,description,quotes,steps,period,period_unit,period_value`,
+  folk_text: `${RECORD_COMMON},custom_id,text_local,text_standard,sensitive`
 }
 const TABLES: Record<IntangibleKind, string> = { story: 'stories', custom: 'customs', folk_text: 'folk_texts' }
 const TYPE_TABLES: Record<IntangibleKind, string> = { story: 'story_types', custom: 'custom_types', folk_text: 'folk_text_types' }

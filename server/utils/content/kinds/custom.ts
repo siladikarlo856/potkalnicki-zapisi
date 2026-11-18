@@ -14,6 +14,7 @@ export const customKind = defineContentKind({
     occasionId: 'occasion_id',
     description: 'description',
     quotes: 'quotes',
+    steps: 'steps',
     period: 'period',
     periodUnit: 'period_unit',
     periodValue: 'period_value',

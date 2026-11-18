@@ -225,6 +225,7 @@ export const HISTORY_FIELDS: Record<ContentKind, Record<string, HistoryFieldMeta
     occasionId: { label: 'Prigoda' },
     description: { label: 'Opis' },
     quotes: { label: 'Citati' },
+    steps: { label: 'Koraci' },
     ...INTANGIBLE_COMMON_FIELDS,
     period: { label: 'Vrijeme prakse' },
     periodUnit: { label: 'Približno razdoblje', values: PERIOD_UNIT_LABELS },

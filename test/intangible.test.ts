@@ -256,10 +256,21 @@ describe('Set in and Practised periods', () => {
 describe('validateCustom', () => {
   const custom = (extra: Record<string, unknown> = {}) => ({ title: 'Martinje u Kalniku', typeId: TYPE, description: 'Na Martinje se krstio mošt.', ...extra })
 
-  it('has an optional occasion, a description needed only to publish, and ordered quotes', () => {
-    const { value, issues } = validateCustom(custom({ occasionId: AREA, quotes: ['  Mošt se krsti!  ', '', 'Vino je gospodin.'], period: 'do 1960-ih' }))
+  it('has an optional occasion, a description needed only to publish, and ordered quotes and steps', () => {
+    const { value, issues } = validateCustom(custom({
+      occasionId: AREA,
+      quotes: ['  Mošt se krsti!  ', '', 'Vino je gospodin.'],
+      steps: ['  Prvi korak. ', '', 'Drugi korak.'],
+      period: 'do 1960-ih'
+    }))
     expect(issues).toEqual([])
-    expect(value).toMatchObject({ slug: 'martinje-u-kalniku', occasionId: AREA, quotes: ['Mošt se krsti!', 'Vino je gospodin.'], period: 'do 1960-ih' })
+    expect(value).toMatchObject({
+      slug: 'martinje-u-kalniku',
+      occasionId: AREA,
+      quotes: ['Mošt se krsti!', 'Vino je gospodin.'],
+      steps: ['Prvi korak.', 'Drugi korak.'],
+      period: 'do 1960-ih'
+    })
     expect(validateCustom(custom()).value.occasionId).toBeNull()
     expect(validateCustom({ title: 'Običaj', typeId: TYPE }).issues).toEqual([])
     expect(paths(validateCustom({ title: 'Običaj', typeId: TYPE, status: 'published' }).issues)).toEqual(['description'])
@@ -270,6 +281,8 @@ describe('validateCustom', () => {
     expect(paths(validateCustom(custom({ quotes: 'x' })).issues)).toEqual(['quotes'])
     expect(paths(validateCustom(custom({ quotes: Array.from({ length: 11 }, () => 'q') })).issues)).toEqual(['quotes'])
     expect(paths(validateCustom(custom({ quotes: ['x'.repeat(INTANGIBLE_LIMITS.quote + 1)] })).issues)).toEqual(['quotes.0'])
+    expect(paths(validateCustom(custom({ steps: 'x' })).issues)).toEqual(['steps'])
+    expect(paths(validateCustom(custom({ steps: ['x'.repeat(INTANGIBLE_LIMITS.step + 1)] })).issues)).toEqual(['steps.0'])
   })
 })
 

@@ -14,6 +14,8 @@ export interface CustomValue extends IntangibleLinks {
   description: string | null
   /** Short quotes in local speech, in order. */
   quotes: string[]
+  /** Ordered actions for a custom that is taught as a multi-step practice. */
+  steps: string[]
   /** Practised (Vrijeme prakse): the period the custom was alive, in the words people use. */
   period: string | null
   periodUnit: PeriodUnit | null
@@ -49,6 +51,21 @@ function parseQuotes(check: ReturnType<typeof issueCollector>, value: unknown) {
   return quotes
 }
 
+function parseSteps(check: ReturnType<typeof issueCollector>, value: unknown) {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) {
+    check.add('steps', 'Koraci moraju biti popis.')
+    return []
+  }
+  if (value.length > INTANGIBLE_MAX.steps) check.add('steps', `Najviše ${INTANGIBLE_MAX.steps} koraka.`)
+  const steps: string[] = []
+  for (const [index, entry] of value.entries()) {
+    const text = check.optional(`steps.${index}`, entry, INTANGIBLE_LIMITS.step, 'Korak')
+    if (text) steps.push(text)
+  }
+  return steps
+}
+
 /** Validates and projects a custom for the admin API. */
 export function validateCustom(input: unknown): ContentValidation<CustomValue> {
   const check = issueCollector()
@@ -62,6 +79,14 @@ export function validateCustom(input: unknown): ContentValidation<CustomValue> {
   if (common.status === 'published' && !hasText(description)) check.add('description', 'Objavljen običaj treba opis.')
   const period = parsePeriod(check.add, body, check.optional, 'Vrijeme prakse')
 
-  const value: CustomValue = { ...common, typeId, occasionId, description, quotes: parseQuotes(check, body.quotes), ...period }
+  const value: CustomValue = {
+    ...common,
+    typeId,
+    occasionId,
+    description,
+    quotes: parseQuotes(check, body.quotes),
+    steps: parseSteps(check, body.steps),
+    ...period
+  }
   return { value, issues: check.issues }
 }

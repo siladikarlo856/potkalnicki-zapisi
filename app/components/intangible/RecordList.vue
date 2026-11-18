@@ -30,7 +30,17 @@ const ICONS = { story: 'i-lucide-scroll-text', custom: 'i-lucide-calendar-days',
         :description="record.excerpt ?? undefined"
         :category="`${record.kindLabel} · ${record.typeLabel}`"
         :icon="ICONS[record.kind]"
-      />
+      >
+        <template #trust>
+          <span
+            v-if="record.sensitive"
+            class="pz-label rounded-full border border-warning/60 bg-warning/10 px-2 py-1 text-default"
+            data-testid="intangible-sensitive-badge"
+          >
+            Grublji jezik
+          </span>
+        </template>
+      </PzHeritageCard>
     </li>
   </ul>
 </template>

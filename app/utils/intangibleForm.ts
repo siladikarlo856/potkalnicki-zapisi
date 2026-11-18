@@ -16,6 +16,7 @@ export type IntangibleFormState = IntangibleCommon & Partial<Period> & {
   occasionId?: string | null
   description?: string | null
   quotes?: string[]
+  steps?: string[]
   customId?: string | null
   wordIds?: string[]
 }
@@ -35,7 +36,7 @@ function blankCommon(): IntangibleCommon {
 const NO_PERIOD: Period = { period: null, periodUnit: null, periodValue: null }
 
 export const blankStory = (): StoryValue => ({ ...blankCommon(), typeId: '', textLocal: null, textStandard: null, ...NO_PERIOD })
-export const blankCustom = (): CustomValue => ({ ...blankCommon(), typeId: '', occasionId: null, description: null, quotes: [], ...NO_PERIOD })
+export const blankCustom = (): CustomValue => ({ ...blankCommon(), typeId: '', occasionId: null, description: null, quotes: [], steps: [], ...NO_PERIOD })
 export const blankFolkText = (): FolkTextValue => ({ ...blankCommon(), typeId: '', customId: null, textLocal: null, textStandard: null, wordIds: [] })
 
 function commonOf(record: IntangibleCommon): IntangibleCommon {
@@ -67,7 +68,8 @@ export const storyToForm = (story: Story): StoryValue => ({
 })
 
 export const customToForm = (custom: Custom): CustomValue => ({
-  ...commonOf(custom), typeId: custom.typeId, occasionId: custom.occasionId, description: custom.description, quotes: [...(custom.quotes ?? [])], ...periodOf(custom)
+  ...commonOf(custom), typeId: custom.typeId, occasionId: custom.occasionId, description: custom.description,
+  quotes: [...(custom.quotes ?? [])], steps: [...(custom.steps ?? [])], ...periodOf(custom)
 })
 
 export const folkTextToForm = (folkText: FolkText): FolkTextValue => ({

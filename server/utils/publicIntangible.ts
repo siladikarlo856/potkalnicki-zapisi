@@ -120,7 +120,8 @@ export function intangibleListItem(content: PublicContent, record: SnapshotIntan
     places: placeRefs(content, record, 'recorded_in'),
     themes: themeRefs(content, record),
     narrators: narratorRefs(content, record, 'narrator'),
-    verification: record.verification
+    verification: record.verification,
+    sensitive: record.sensitive ?? false
   }
 }
 
@@ -136,6 +137,7 @@ export function intangibleDetail(content: PublicContent, record: SnapshotIntangi
     textStandard: record.textStandard,
     description: record.description,
     quotes: record.quotes,
+    steps: record.steps ?? [],
     period: record.kind === 'folk_text' ? null : periodLabel(record.period, record.periodUnit, record.periodValue),
     recordedOn: formatRecordedOn({
       precision: record.recordedPrecision, year: record.recordedYear, month: record.recordedMonth, day: record.recordedDay
