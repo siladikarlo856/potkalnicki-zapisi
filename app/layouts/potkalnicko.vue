@@ -2,8 +2,7 @@
 // Below 1024px the fixed tab bar sits over the bottom, so the page reserves its height plus the
 // safe-area inset. A hidden bar frees the space for the sticky action bar.
 const { hidden: tabBarHidden } = usePzTabBar()
-const { holds } = usePzTabBar()
-const roundActive = computed(() => holds.value.includes('round'))
+const roundActive = useState('pz-round-shell-active', () => false)
 const baseUrl = useRuntimeConfig().public.i18n.baseUrl
 const cloudflareAnalyticsToken = useRuntimeConfig().public.cloudflareAnalyticsToken
 

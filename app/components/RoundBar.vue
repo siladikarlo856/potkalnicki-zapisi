@@ -1,7 +1,13 @@
 <script setup lang="ts">
 const props = defineProps<{ title: string, current: number, total: number, score?: number, exitTo?: string }>()
 const open = ref(false)
-useHidePzTabBar(true, 'round')
+const roundShellActive = useState('pz-round-shell-active', () => false)
+onMounted(() => {
+  roundShellActive.value = true
+})
+onScopeDispose(() => {
+  roundShellActive.value = false
+})
 const localePath = useLocalePath()
 
 function leave() {
