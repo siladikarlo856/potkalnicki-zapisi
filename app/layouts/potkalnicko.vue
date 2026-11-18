@@ -3,7 +3,7 @@
 // safe-area inset. A hidden bar frees the space for the sticky action bar.
 const { hidden: tabBarHidden } = usePzTabBar()
 const { holds } = usePzTabBar()
-const roundActive = computed(() => holds.value.includes('round'))
+const roundActive = computed(() => holds.value.includes('game') || holds.value.includes('challenge'))
 const baseUrl = useRuntimeConfig().public.i18n.baseUrl
 const cloudflareAnalyticsToken = useRuntimeConfig().public.cloudflareAnalyticsToken
 
