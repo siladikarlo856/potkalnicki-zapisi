@@ -11,9 +11,17 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  app: {
+    head: { htmlAttrs: { lang: 'hr' } }
+  },
+
   css: ['~/assets/css/main.css'],
 
   ui: {
+    theme: {
+      colors: ['primary', 'secondary', 'success', 'info', 'warning', 'error', 'neutral'],
+      defaultVariants: { color: 'primary', size: 'xl' }
+    },
     experimental: {
       // Generate styles only for Nuxt UI components found in the current application.
       componentDetection: true
@@ -95,17 +103,13 @@ export default defineNuxtConfig({
     }
   },
 
-  // @nuxt/fonts (loaded by Nuxt UI) finds the families in main.css. Source Serif 4 needs the
-  // optical-size axis asked for by name, and the weights are pinned to the ones the pz type scale uses.
+  // @nuxt/fonts (loaded by Nuxt UI) self-hosts both Reljef families.
   fonts: {
     families: [
-      { name: 'Inter', weights: [400, 500, 600, 700] },
-      {
-        name: 'Source Serif 4',
-        weights: [400, 600, 700],
-        providerOptions: { google: { experimental: { variableAxis: { opsz: [['8', '60']] } } } }
-      }
-    ]
+      { name: 'Atkinson Hyperlegible Next', weights: [400, 600, 700], styles: ['normal', 'italic'] },
+      { name: 'Bricolage Grotesque', weights: [700, 800] }
+    ],
+    defaults: { subsets: ['latin', 'latin-ext'] }
   },
 
   i18n: {
@@ -117,5 +121,7 @@ export default defineNuxtConfig({
       { code: 'hr', language: 'hr-HR', name: 'Hrvatski', file: 'hr.json' },
       { code: 'en', language: 'en-GB', name: 'English', file: 'en.json' }
     ]
-  }
+  },
+
+  icon: { clientBundle: { scan: true } }
 })
