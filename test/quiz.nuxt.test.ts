@@ -105,7 +105,7 @@ const locales = [
   { lang: 'hr' as const, loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi', progress: 'Odgovorena pitanja', error: 'Pitanja trenutačno nisu dostupna.', retry: 'Pokušaj opet' }
 ]
 
-describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, progress, error, retry }) => {
+describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, error, retry }) => {
   it('loads active words into a playable question with four options and progress', async () => {
     const page = await mountQuiz(lang)
     await expect.poll(() => page.findAll(OPTION).length).toBe(4)
