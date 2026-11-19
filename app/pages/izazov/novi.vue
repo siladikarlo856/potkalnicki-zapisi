@@ -203,7 +203,10 @@ watch(publishedSets, (sets) => {
             :data-set-id="set.id"
             @click="selectedSetId = set.id"
           >
-            <span class="font-semibold text-highlighted">{{ set.title.hr }}</span>
+            <span class="flex flex-wrap items-center gap-2">
+              <span class="font-semibold text-highlighted">{{ set.title.hr }}</span>
+              <PzSampleLabel v-if="set.sample" />
+            </span>
             <span class="mt-1 block text-sm text-muted">{{ set.rounds.map(r => `${r.topic.hr} (${r.count})`).join(' · ') }}</span>
           </button>
         </div>
