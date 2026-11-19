@@ -92,6 +92,8 @@ const proposalPrefill = computed(() => {
   return prefill
 })
 
+const proposalDraftKey = computed(() => `doprinesi/proposal/${proposalRequest.value?.kind}/${proposalRequest.value?.settlement ?? ''}/${proposalRequest.value?.municipality ?? ''}`)
+
 const selectedKind = computed(() => {
   const raw = route.query.vrsta
   if (raw === 'rijec' || raw === 'rijec-izraz') return 'word' as const
@@ -250,14 +252,15 @@ useSeoMeta({
         />
         <HeritageSuggestForm
           v-else-if="proposalRequest"
-          :key="`proposal-${proposalRequest.kind}-${JSON.stringify(proposalPrefill)}`"
+          :key="`${proposalDraftKey}-${JSON.stringify(proposalPrefill)}`"
           :kind="proposalRequest.kind"
           mode="proposal"
           :prefill="proposalPrefill"
-          :draft-key="`doprinesi/proposal/${proposalRequest.kind}`"
+          :draft-key="proposalDraftKey"
         />
         <HeritageSubmissionForm
           v-else-if="selectedKind"
+          :key="`doprinesi/submission/${selectedKind}`"
           :word="prefillWord"
           :fixed-type="fixedType"
           hide-type-picker
