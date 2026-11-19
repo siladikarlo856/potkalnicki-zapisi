@@ -46,6 +46,12 @@ useSeoMeta({
       <PzBackPill :to="localePath(pzRoutes.intangible)">
         {{ t('pz.intangible.title') }}
       </PzBackPill>
+      <div
+        class="grid size-16 place-items-center rounded-full bg-accented font-display text-2xl font-bold text-primary"
+        aria-hidden="true"
+      >
+        {{ narrator.label.split(/\s+/).map(part => part[0]).slice(0, 2).join('').toLocaleUpperCase('hr') }}
+      </div>
       <p class="pz-overline text-muted">
         {{ t('pz.intangible.narrator.overline') }}
       </p>
@@ -83,7 +89,7 @@ useSeoMeta({
       </ul>
       <dl
         v-if="narrator.settlement || narrator.person"
-        class="pz-body flex flex-col gap-1"
+        class="pz-body grid gap-2 sm:grid-cols-2"
       >
         <div
           v-if="narrator.settlement"

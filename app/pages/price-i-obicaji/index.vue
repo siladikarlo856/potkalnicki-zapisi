@@ -46,6 +46,17 @@ const theme = computed({ get: () => filters.value.theme ?? ALL, set: value => se
 const place = computed({ get: () => filters.value.place ?? ALL, set: value => setFilter('place', value === ALL ? '' : value) })
 
 const memoryTo = computed(() => localePath({ path: pzRoutes.contribute, query: { vrsta: 'sjecanje' } }))
+const themes = computed(() => page.value?.themes ?? [])
+const narrators = computed(() => {
+  const byId = new Map<string, { id: string, label: string, path: string, count: number }>()
+  for (const record of page.value?.records ?? []) {
+    for (const narrator of record.narrators) {
+      const current = byId.get(narrator.id)
+      byId.set(narrator.id, { ...narrator, count: (current?.count ?? 0) + 1 })
+    }
+  }
+  return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label, 'hr'))
+})
 
 useSeoMeta({
   title: () => t('pz.intangible.seoTitle'),
@@ -219,6 +230,51 @@ useSeoMeta({
           class="mt-2 min-h-(--pz-tap-min) max-w-full justify-start self-start text-start whitespace-normal ring-(--ui-border-accented)"
           data-testid="intangible-contribute"
         />
+
+        <section
+          v-if="themes.length"
+          class="flex flex-col gap-3 border-t border-default pt-5"
+          data-testid="intangible-themes"
+        >
+          <h2 class="pz-h2 text-highlighted">
+            Teme
+          </h2>
+          <ul class="flex flex-wrap gap-2">
+            <li
+              v-for="themeOption in themes"
+              :key="themeOption.slug"
+            >
+              <NuxtLink
+                :to="localePath(`/price-i-obicaji/teme/${themeOption.slug}/`)"
+                class="inline-flex min-h-8 items-center rounded-full border border-accented px-3 text-sm text-default no-underline hover:bg-muted"
+              >{{ themeOption.label }}</NuxtLink>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          v-if="narrators.length"
+          class="flex flex-col gap-3 border-t border-default pt-5"
+          data-testid="intangible-narrators"
+        >
+          <h2 class="pz-h2 text-highlighted">
+            Kazivači
+          </h2>
+          <ul class="grid gap-2 sm:grid-cols-2">
+            <li
+              v-for="narrator in narrators"
+              :key="narrator.id"
+            >
+              <NuxtLink
+                :to="localePath(narrator.path)"
+                class="flex items-center justify-between rounded-(--pz-radius-md) border border-default px-4 py-3 text-default no-underline hover:bg-muted"
+              >
+                <span>{{ narrator.label }}</span>
+                <span class="text-sm text-muted">{{ narrator.count }} zapisa</span>
+              </NuxtLink>
+            </li>
+          </ul>
+        </section>
       </div>
     </div>
   </div>

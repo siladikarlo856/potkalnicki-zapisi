@@ -61,28 +61,33 @@ useHead(() => ({
 <template>
   <div
     v-if="person"
+    class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-8 px-4 py-6 lg:px-12 lg:py-12"
     data-testid="person-page"
   >
-    <UPageHero
-      :title="person.name"
-      :ui="{ container: 'py-12 sm:py-16' }"
-    >
-      <template #headline>
-        <span data-testid="person-eyebrow">{{ t('pz.persons.person') }} · {{ person.place }}</span>
-      </template>
-      <template #description>
-        <p
-          v-if="person.role"
-          class="text-muted"
-        >
-          {{ person.role }}
-        </p>
-        <div class="mt-4 flex flex-wrap items-center gap-2">
-          <PzVerificationBadge :verification="person.verification" />
-          <span class="text-sm text-muted tabular-nums">{{ person.years }}</span>
-        </div>
-      </template>
-    </UPageHero>
+    <header class="flex max-w-(--pz-measure) flex-col gap-3">
+      <PzBackPill :to="localePath(pzRoutes.persons)">
+        {{ t('pz.persons.back') }}
+      </PzBackPill>
+      <p
+        class="pz-overline text-muted"
+        data-testid="person-eyebrow"
+      >
+        {{ t('pz.persons.person') }} · {{ person.place }}
+      </p>
+      <h1 class="pz-h1 wrap-anywhere text-highlighted lg:pz-display">
+        {{ person.name }}
+      </h1>
+      <p
+        v-if="person.role"
+        class="pz-body text-muted"
+      >
+        {{ person.role }}
+      </p>
+      <div class="flex flex-wrap items-center gap-2">
+        <PzVerificationBadge :verification="person.verification" />
+        <span class="pz-body-sm text-muted tabular-nums">{{ person.years }}</span>
+      </div>
+    </header>
 
     <UPageSection :ui="{ root: 'border-t border-default' }">
       <p
@@ -191,26 +196,9 @@ useHead(() => ({
       :title="t('pz.persons.sources')"
       :ui="{ root: 'border-t border-default' }"
     >
-      <ul
-        class="list-disc space-y-2 pl-5 text-sm text-default"
-        data-testid="person-sources"
-      >
-        <li
-          v-for="source in person.sources"
-          :key="source.id"
-        >
-          <ULink
-            v-if="source.url"
-            :to="source.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-primary"
-          >
-            {{ source.title }}
-          </ULink>
-          <span v-else>{{ source.title }}</span>
-        </li>
-      </ul>
+      <div data-testid="person-sources">
+        <PzSourceList :sources="person.sources.map(source => source.title)" />
+      </div>
     </UPageSection>
 
     <UPageSection :ui="{ root: 'border-t border-default' }">

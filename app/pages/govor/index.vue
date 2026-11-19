@@ -35,6 +35,8 @@ const groups = computed(() => {
     }))
 })
 
+const availableLetters = computed(() => groups.value.map(group => group.letter))
+
 useSeoMeta({
   title: () => `${t('pz.speech.seoTitle')} · Potkalnički zapisi`,
   description: () => t('pz.home.discovery.speech.description')
@@ -42,19 +44,30 @@ useSeoMeta({
 </script>
 
 <template>
-  <div data-testid="speech-index">
-    <UPageHero
+  <div
+    class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-6 px-4 py-6 lg:px-12 lg:py-12"
+    data-testid="speech-index"
+  >
+    <PageHead
       :title="t('pz.speech.title')"
-      :description="t('pz.home.discovery.speech.description')"
-      :ui="{ container: 'py-12 sm:py-16' }"
+      :lead="t('pz.home.discovery.speech.description')"
     />
 
-    <UPageSection :ui="{ root: 'border-t border-default' }">
+    <section
+      class="flex max-w-(--pz-measure) flex-col gap-5"
+      aria-label="Rječnik"
+    >
       <UInput
         v-model="query"
         :placeholder="t('pz.speech.searchPlaceholder')"
         icon="i-lucide-search"
         data-testid="speech-search"
+        type="search"
+      />
+      <PzAlphabetIndex
+        v-if="!query"
+        :available="availableLetters"
+        label="Riječi po početnom slovu"
       />
 
       <p
@@ -79,14 +92,14 @@ useSeoMeta({
             v-for="word in group.words"
             :key="word.id"
           >
-            <ULink
+            <PzWordRow
               v-if="word.slug"
               :to="localePath(wordArchivePagePath(word.slug))"
-              class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm hover:bg-elevated/40"
-            >
-              <span class="font-medium text-highlighted">{{ word.headword }}</span>
-              <span class="text-muted">{{ word.meaning.hr }}</span>
-            </ULink>
+              :word="word.headword"
+              :meaning="word.meaning.hr"
+              :pos="word.partOfSpeech"
+              class="px-4"
+            />
             <div
               v-else
               class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm"
@@ -97,6 +110,6 @@ useSeoMeta({
           </li>
         </ul>
       </div>
-    </UPageSection>
+    </section>
   </div>
 </template>

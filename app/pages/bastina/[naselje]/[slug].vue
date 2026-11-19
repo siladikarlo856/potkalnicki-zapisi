@@ -237,6 +237,12 @@ const verificationHelp = computed(() => ({
           />
         </section>
 
+        <PzSourceList
+          :sources="heritageItem.sources.map(source => source.title)"
+          :add-to="localePath({ path: pzRoutes.contribute, query: { vrsta: 'izvor', zapis: heritageItem.ref } })"
+          data-testid="heritage-sources"
+        />
+
         <div class="flex flex-col gap-1">
           <p
             v-if="heritageItem.credits.length"

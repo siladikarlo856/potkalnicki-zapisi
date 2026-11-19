@@ -18,6 +18,7 @@ const { data: page } = await useAtlasFetch<AtlasPersonListResponse>(
 const proposalOpen = ref(false)
 const units = computed(() => [{ slug: '', label: t('pz.persons.filterAll') }, ...(page.value?.municipalities ?? [])])
 const playReady = computed(() => (page.value?.total ?? 0) >= 4)
+const availableLetters = computed(() => [...new Set((page.value?.persons ?? []).map(person => person.name.split(/\s+/).at(-1)?.[0]?.toLocaleUpperCase('hr') ?? ''))])
 
 function selectUnit(slug: string) {
   router.replace({ query: slug ? { opcina: slug } : {} })
@@ -30,14 +31,17 @@ useSeoMeta({
 </script>
 
 <template>
-  <div v-if="page">
-    <UPageHero
+  <div
+    v-if="page"
+    class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-6 px-4 py-6 lg:px-12 lg:py-12"
+    data-testid="persons-page"
+  >
+    <PageHead
       :title="t('pz.persons.title')"
-      :description="t('pz.persons.intro')"
-      :ui="{ container: 'py-12 sm:py-16' }"
+      :lead="t('pz.persons.intro')"
     />
 
-    <UPageSection :ui="{ root: 'border-t border-default' }">
+    <section class="flex flex-col gap-5">
       <div
         v-if="page.municipalities.length > 1 || unit"
         class="mb-4 flex flex-wrap gap-2"
@@ -58,6 +62,12 @@ useSeoMeta({
         />
       </div>
 
+      <PzAlphabetIndex
+        v-if="availableLetters.length"
+        :available="availableLetters"
+        label="Osobe po prezimenu"
+      />
+
       <PersonsList
         v-if="page.persons.length"
         :persons="page.persons"
@@ -71,9 +81,9 @@ useSeoMeta({
       >
         {{ unit ? t('pz.persons.emptyUnit') : t('pz.persons.empty') }}
       </p>
-    </UPageSection>
+    </section>
 
-    <UPageSection :ui="{ root: 'border-t border-default' }">
+    <section class="flex flex-col gap-4 border-t border-default pt-6">
       <div class="flex flex-wrap gap-3">
         <UButton
           v-if="playReady"
@@ -108,6 +118,6 @@ useSeoMeta({
         kind="person"
         mode="proposal"
       />
-    </UPageSection>
+    </section>
   </div>
 </template>
