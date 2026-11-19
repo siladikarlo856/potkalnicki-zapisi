@@ -64,7 +64,8 @@ const deleteOpen = ref(false)
 const isPage = computed(() => props.mode === 'page')
 const isEdit = computed(() => !!props.entityId)
 const title = computed(() => isEdit.value ? props.resource.labels.edit : props.resource.labels.create)
-const dirty = computed(() => !loading.value && JSON.stringify(state.value) !== baseline.value)
+// A closed editor has nothing to lose: its blank state never counts as changes, so the list's own navigation is not held back.
+const dirty = computed(() => open.value && !loading.value && JSON.stringify(state.value) !== baseline.value)
 const status = computed<ContentStatus>(() => entity.value?.status ?? 'draft')
 const readOnly = computed(() => entity.value?.status === 'archived')
 
@@ -223,6 +224,8 @@ useAdminEditing(() => open.value, () => pendingResave?.())
 async function save(revisionOverride?: number) {
   const exit = pendingExit
   pendingExit = undefined
+  // A conflict is settled in the diff ("Učitaj najnovije" or saving over it), never by an ordinary save.
+  if (conflict.value && revisionOverride === undefined) return
   saving.value = true
   failure.value = ''
   saveFailed.value = false
@@ -411,7 +414,7 @@ const saveBarActions = computed<SaveBarAction[]>(() => {
   const actions: SaveBarAction[] = []
   if (entity.value) actions.push({ key: 'discard', label: 'Odbaci', variant: 'ghost', disabled: !dirty.value || busy })
   else actions.push({ key: 'another', label: 'Spremi i dodaj novo', variant: 'ghost', disabled: loading.value || busy })
-  if (!entity.value || status.value === 'draft') actions.push({ key: 'draft', label: 'Spremi skicu', variant: 'secondary', disabled: loading.value || busy })
+  if (!entity.value || status.value === 'draft') actions.push({ key: 'draft', label: 'Spremi skicu', variant: 'secondary', disabled: loading.value || busy || !!conflict.value })
   actions.push({
     key: 'primary',
     label: primaryAction.value.label,
