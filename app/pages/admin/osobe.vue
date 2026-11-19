@@ -14,6 +14,7 @@ const verificationOptions = PERSON_VERIFICATIONS.map(value => ({ label: PERSON_V
 const resource = defineAdminResource<Person, PersonForm>({
   kind: 'person',
   icon: 'i-lucide-user-round',
+  editor: 'page',
   dialogWidth: 'wide',
   labels: {
     title: 'Osobe',
@@ -71,9 +72,6 @@ const resource = defineAdminResource<Person, PersonForm>({
     </template>
     <template #placesLabel-cell="{ row }">
       {{ row.placesLabel ?? '—' }}
-    </template>
-    <template #verification-cell="{ row }">
-      {{ PERSON_VERIFICATION_LABELS[row.verification] ?? row.verification }}
     </template>
     <template #fields="{ state: form, entity }">
       <AdminPersonFields

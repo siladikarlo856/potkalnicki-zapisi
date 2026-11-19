@@ -100,7 +100,7 @@ function removeSeason(index: number) {
   <h3 class="text-sm font-semibold text-highlighted">
     Osnovno
   </h3>
-  <UFormField
+  <AdminFormField
     name="name"
     label="Ime"
     required
@@ -111,8 +111,8 @@ function removeSeason(index: number) {
       class="w-full"
       autofocus
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="sport"
     label="Sport"
     required
@@ -122,8 +122,8 @@ function removeSeason(index: number) {
       :maxlength="CLUB_LIMITS.sport"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="verification"
     label="Status provjere"
     required
@@ -133,8 +133,8 @@ function removeSeason(index: number) {
       :items="verificationOptions"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="slug"
     label="Slug"
     required
@@ -154,8 +154,8 @@ function removeSeason(index: number) {
         @click="suggestSlug"
       />
     </div>
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="fullName"
     label="Puni naziv"
   >
@@ -164,8 +164,8 @@ function removeSeason(index: number) {
       :maxlength="CLUB_LIMITS.fullName"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="settlementId"
     label="Naselje"
     required
@@ -179,8 +179,8 @@ function removeSeason(index: number) {
       placeholder="Pretraži naselja"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="foundedYear"
     label="Godina osnivanja"
   >
@@ -190,8 +190,8 @@ function removeSeason(index: number) {
       class="w-full"
       @update:model-value="(raw) => { const n = Number(raw); patch({ foundedYear: raw === '' || raw === undefined || !Number.isFinite(n) ? null : n }) }"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="homeGround"
     label="Domaći teren"
   >
@@ -200,7 +200,7 @@ function removeSeason(index: number) {
       :maxlength="CLUB_LIMITS.homeGround"
       class="w-full"
     />
-  </UFormField>
+  </AdminFormField>
 
   <h3 class="pt-2 text-sm font-semibold text-highlighted">
     Sezone i lige
@@ -213,38 +213,38 @@ function removeSeason(index: number) {
     :key="index"
     class="my-3 space-y-2 rounded-lg border border-default p-3"
   >
-    <UFormField label="Sezona">
+    <AdminFormField label="Sezona">
       <UInput
         :model-value="season.season"
         placeholder="2026/27"
         @update:model-value="updateSeason(index, { season: String($event) })"
       />
-    </UFormField>
-    <UFormField label="Natjecanje">
+    </AdminFormField>
+    <AdminFormField label="Natjecanje">
       <UInput
         :model-value="season.competition"
         @update:model-value="updateSeason(index, { competition: String($event) })"
       />
-    </UFormField>
-    <UFormField label="Ekipa">
+    </AdminFormField>
+    <AdminFormField label="Ekipa">
       <UInput
         :model-value="season.team"
         @update:model-value="updateSeason(index, { team: String($event) })"
       />
-    </UFormField>
-    <UFormField label="Izvor (URL)">
+    </AdminFormField>
+    <AdminFormField label="Izvor (URL)">
       <UInput
         :model-value="season.sourceUrl ?? ''"
         @update:model-value="updateSeason(index, { sourceUrl: String($event) || null })"
       />
-    </UFormField>
-    <UFormField label="Provjereno">
+    </AdminFormField>
+    <AdminFormField label="Provjereno">
       <UInput
         type="date"
         :model-value="season.checkedAt"
         @update:model-value="updateSeason(index, { checkedAt: String($event) })"
       />
-    </UFormField>
+    </AdminFormField>
     <UButton
       label="Ukloni sezonu"
       color="error"
@@ -266,7 +266,7 @@ function removeSeason(index: number) {
   <h3 class="pt-2 text-sm font-semibold text-highlighted">
     Izvori
   </h3>
-  <UFormField
+  <AdminFormField
     name="sourceIds"
     label="Izvori"
     description="Objava zahtijeva barem jedan izvor."
@@ -280,12 +280,12 @@ function removeSeason(index: number) {
       placeholder="Pretraži izvore"
       class="w-full"
     />
-  </UFormField>
+  </AdminFormField>
 
   <h3 class="pt-2 text-sm font-semibold text-highlighted">
     Bilješke
   </h3>
-  <UFormField
+  <AdminFormField
     name="researchNotes"
     label="Bilješke istraživanja (privatno)"
   >
@@ -296,11 +296,11 @@ function removeSeason(index: number) {
       autoresize
       class="w-full"
     />
-  </UFormField>
-  <UFormField name="noindex">
+  </AdminFormField>
+  <AdminFormField name="noindex">
     <UCheckbox
       v-model="noindex"
       label="Ne indeksirati u igrama (noindex)"
     />
-  </UFormField>
+  </AdminFormField>
 </template>

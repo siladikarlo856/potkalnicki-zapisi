@@ -120,7 +120,8 @@ function mountInApp(component: unknown, route: string, props: Record<string, unk
   return mountSuspended({ setup: () => () => h(UApp, null, { default: () => h(component as never, props) }) }, { attachTo: document.body, route })
 }
 const dialogs = () => [...document.body.querySelectorAll<HTMLElement>('[role="dialog"]')]
-const dialog = () => dialogs().at(-1)
+// The main resources edit on a page (in place of the list); the lookup lists in a dialog.
+const dialog = () => document.querySelector<HTMLElement>('[data-testid="admin-editor-page"]') ?? dialogs().at(-1)
 const buttonIn = (root: ParentNode | undefined, label: string) =>
   [...(root?.querySelectorAll('button') ?? [])].find(item => item.textContent?.trim().startsWith(label)) as HTMLButtonElement | undefined
 async function type(element: HTMLInputElement | HTMLTextAreaElement, value: string) {
@@ -168,26 +169,25 @@ describe('admin Priče', () => {
     expect(dialog()!.querySelector<HTMLInputElement>('[data-test="admin-recorded-year"]')?.value).toBe('1984')
     expect(dialog()!.querySelector('[data-test="admin-recorded-day"]')).toBeNull()
 
-    buttonIn(dialog(), 'Spremi')!.click()
+    // Nothing changed yet: the primary button is disabled and says so ("Sve je spremljeno").
+    expect(buttonIn(dialog(), 'Objavi izmjene')!.disabled).toBe(true)
+    expect(dialog()!.textContent).toContain('Sve je spremljeno')
+
+    // The first source moved down: the order is what is saved, with the rest of the form as it was.
+    dialog()!.querySelector<HTMLButtonElement>('button[aria-label^="Pomakni izvor dolje: Rukopis"]')!.click()
+    await vi.waitFor(() => expect(dialog()!.textContent!.indexOf('Snimka 2026.')).toBeLessThan(dialog()!.textContent!.indexOf('Rukopis župnika')))
+    await vi.waitFor(() => expect(dialog()!.textContent).toContain('Nespremljene izmjene u 1 polju'))
+    buttonIn(dialog(), 'Objavi izmjene')!.click()
     await vi.waitFor(() => expect(calls.find(call => call.method === 'PATCH')).toBeDefined())
     expect(calls.find(call => call.method === 'PATCH')?.body).toMatchObject({
-      title: 'Bela Kata', typeId: TYPE, status: 'published', revision: 3, sourceIds: [SOURCE_A, SOURCE_B],
+      title: 'Bela Kata', typeId: TYPE, status: 'published', revision: 3, sourceIds: [SOURCE_B, SOURCE_A],
       recordedPrecision: 'month', recordedYear: 1984, recordedMonth: 3, recordedDay: null,
       periodUnit: 'decade', periodValue: 1960, narrators: [{ narratorId: NARRATOR, role: 'narrator' }],
       areaLinks: [{ areaId: AREA, relation: 'recorded_in' }, { areaId: AREA, relation: 'about' }]
     })
-
-    // The same dialog, with the first source moved down: the order is what is saved.
-    await vi.waitFor(() => expect(useRoute().query.uredi).toBeUndefined())
-    calls.length = 0
-    await useRouter().replace({ query: { uredi: STORY } })
-    await vi.waitFor(() => {
-      for (const label of ['Rukopis župnika', 'Snimka 2026. (skica)']) expect(dialog()?.textContent).toContain(label)
-    }, { timeout: 5000 })
-    dialog()!.querySelector<HTMLButtonElement>('button[aria-label^="Pomakni izvor dolje: Rukopis"]')!.click()
-    await vi.waitFor(() => expect(dialog()!.textContent!.indexOf('Snimka 2026.')).toBeLessThan(dialog()!.textContent!.indexOf('Rukopis župnika')))
-    buttonIn(dialog(), 'Spremi')!.click()
-    await vi.waitFor(() => expect(calls.find(call => call.method === 'PATCH')?.body).toMatchObject({ sourceIds: [SOURCE_B, SOURCE_A] }))
+    // The editor page stays open on the record, which now reads as saved.
+    await vi.waitFor(() => expect(dialog()!.textContent).toContain('Objavljeno maloprije'))
+    expect(useRoute().query.uredi).toBe(STORY)
   })
 
   it('asks for a title and a type before sending a new story', async () => {

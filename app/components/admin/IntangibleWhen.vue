@@ -44,7 +44,7 @@ function setUnit(value: string) {
       Vrijeme
     </legend>
 
-    <UFormField
+    <AdminFormField
       name="recordedPrecision"
       label="Zabilježeno"
       description="Kad je zapis zabilježen. Upiši samo ono što se zna: ako je poznata samo godina, ne pogađaj dan."
@@ -56,13 +56,13 @@ function setUnit(value: string) {
         data-test="admin-recorded-precision"
         @update:model-value="value => setPrecision(String(value))"
       />
-    </UFormField>
+    </AdminFormField>
 
     <div
       v-if="precision"
       class="grid gap-4 sm:grid-cols-3"
     >
-      <UFormField
+      <AdminFormField
         name="recordedYear"
         label="Godina"
         required
@@ -75,8 +75,8 @@ function setUnit(value: string) {
           data-test="admin-recorded-year"
           @update:model-value="value => emit('patch', { recordedYear: numberOrNull(value) })"
         />
-      </UFormField>
-      <UFormField
+      </AdminFormField>
+      <AdminFormField
         v-if="showMonth"
         name="recordedMonth"
         label="Mjesec"
@@ -90,8 +90,8 @@ function setUnit(value: string) {
           data-test="admin-recorded-month"
           @update:model-value="value => emit('patch', { recordedMonth: numberOrNull(value) })"
         />
-      </UFormField>
-      <UFormField
+      </AdminFormField>
+      <AdminFormField
         v-if="precision === 'day'"
         name="recordedDay"
         label="Dan"
@@ -107,14 +107,14 @@ function setUnit(value: string) {
           data-test="admin-recorded-day"
           @update:model-value="value => emit('patch', { recordedDay: numberOrNull(value) })"
         />
-      </UFormField>
+      </AdminFormField>
     </div>
 
     <template v-if="periodLabel">
-      <UFormField
+      <AdminFormField
         name="period"
         :label="periodLabel"
-        hint="Neobavezno"
+        optional
         description="Razdoblje riječima kako ga ljudi kazuju, npr. „u turska vremena“ ili „do šezdesetih“."
       >
         <UInput
@@ -123,12 +123,12 @@ function setUnit(value: string) {
           class="w-full"
           @update:model-value="value => emit('patch', { period: String(value).trim() ? String(value) : null })"
         />
-      </UFormField>
+      </AdminFormField>
       <div class="grid gap-4 sm:grid-cols-2">
-        <UFormField
+        <AdminFormField
           name="periodUnit"
           label="Približno razdoblje"
-          hint="Neobavezno"
+          optional
           description="Služi samo za redoslijed zapisa po vremenu."
         >
           <USelect
@@ -138,8 +138,8 @@ function setUnit(value: string) {
             data-test="admin-period-unit"
             @update:model-value="value => setUnit(String(value))"
           />
-        </UFormField>
-        <UFormField
+        </AdminFormField>
+        <AdminFormField
           v-if="unit"
           name="periodValue"
           :label="unit === 'decade' ? 'Desetljeće (prva godina)' : 'Stoljeće'"
@@ -155,7 +155,7 @@ function setUnit(value: string) {
             data-test="admin-period-value"
             @update:model-value="value => emit('patch', { periodValue: numberOrNull(value) })"
           />
-        </UFormField>
+        </AdminFormField>
       </div>
     </template>
   </fieldset>

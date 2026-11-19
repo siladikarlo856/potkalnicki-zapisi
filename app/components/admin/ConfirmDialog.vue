@@ -40,6 +40,7 @@ const emit = defineEmits<{ close: [confirmed: boolean] }>()
         :label="cancelLabel"
         color="neutral"
         variant="ghost"
+        autofocus
         data-test="admin-confirm-cancel"
         @click="emit('close', false)"
       />

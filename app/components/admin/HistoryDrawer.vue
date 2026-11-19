@@ -73,6 +73,14 @@ function isCurrent(revision: HistoryRevision) {
   return !!history.value?.exists && revision.id === revisions.value[0]?.id && revision.action !== 'delete'
 }
 
+/** "prva objava", "izmijenjena 2 polja": what a revision did, in a few words. */
+function summary(revision: HistoryRevision) {
+  if (revision.action === 'insert') return 'prva objava'
+  if (revision.action === 'delete') return 'obrisano'
+  const count = revision.changes.length
+  return `${pluralFormHr(count) === 'few' ? 'izmijenjena' : 'izmijenjeno'} ${count} ${nounFor(count, ['polje', 'polja', 'polja'])}`
+}
+
 const ACTION_COLORS: Record<HistoryAction, 'success' | 'info' | 'error'> = { insert: 'success', update: 'info', delete: 'error' }
 
 function formatDate(value: string) {
@@ -83,11 +91,11 @@ async function restore(revision: HistoryRevision) {
   if (!history.value) return
   const exists = history.value.exists
   if (!await confirm({
-    title: exists ? `Vratiti verziju ${revision.revision}?` : `Vratiti obrisani zapis?`,
+    title: exists ? `Želiš li vratiti inačicu od ${shortDate(revision.createdAt)}?` : `Vratiti obrisani zapis?`,
     description: exists
       ? 'Zapis dobiva vrijednosti iz te verzije kao novu reviziju. Povijest ostaje sačuvana, pa i ovo možeš poništiti.'
       : 'Zapis će se ponovno stvoriti s vrijednostima iz te verzije, pod istim identifikatorom.',
-    confirmLabel: 'Vrati',
+    confirmLabel: exists ? 'Vrati inačicu' : 'Vrati zapis',
     color: 'warning',
     icon: 'i-lucide-history'
   })) return
@@ -115,9 +123,9 @@ async function restore(revision: HistoryRevision) {
 <template>
   <USlideover
     v-model:open="open"
-    :title="history ? `Povijest: ${history.label}` : 'Povijest'"
-    :description="description"
-    :ui="{ content: 'sm:max-w-lg' }"
+    title="Povijest izmjena"
+    :description="history ? `${history.label} · ${description}` : description"
+    :ui="{ content: 'sm:max-w-[520px]' }"
     data-test="admin-history"
   >
     <template #body>
@@ -169,7 +177,7 @@ async function restore(revision: HistoryRevision) {
             <span class="text-sm font-medium text-highlighted">Revizija {{ revision.revision }}</span>
             <UBadge
               v-if="isCurrent(revision)"
-              label="Trenutna verzija"
+              label="trenutačna inačica"
               color="neutral"
               variant="outline"
             />
@@ -181,7 +189,7 @@ async function restore(revision: HistoryRevision) {
             </time>
           </div>
           <p class="text-xs text-muted">
-            {{ HISTORY_ACTOR_LABELS[revision.actor] ?? revision.actor }}<template v-if="revision.submissionId">
+            {{ summary(revision) }} · {{ HISTORY_ACTOR_LABELS[revision.actor] ?? revision.actor }}<template v-if="revision.submissionId">
               · iz priloga #{{ revision.submissionId }}
             </template>
           </p>
@@ -194,7 +202,7 @@ async function restore(revision: HistoryRevision) {
 
           <UButton
             v-if="!isCurrent(revision)"
-            :label="history?.exists ? 'Vrati ovu verziju' : 'Vrati zapis u ovoj verziji'"
+            :label="history?.exists ? 'Vrati ovu inačicu' : 'Vrati zapis u ovoj inačici'"
             icon="i-lucide-history"
             color="neutral"
             variant="outline"

@@ -22,7 +22,7 @@ function patch(partial: Partial<KeyedListForm>) {
 </script>
 
 <template>
-  <UFormField
+  <AdminFormField
     name="labelHr"
     label="Naziv (hr)"
     required
@@ -34,11 +34,11 @@ function patch(partial: Partial<KeyedListForm>) {
       autofocus
       @update:model-value="value => patch({ labelHr: String(value) })"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="labelEn"
     label="Naziv (en)"
-    hint="Neobavezno"
+    optional
   >
     <UInput
       :model-value="state.labelEn"
@@ -46,8 +46,8 @@ function patch(partial: Partial<KeyedListForm>) {
       class="w-full"
       @update:model-value="value => patch({ labelEn: String(value) })"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="key"
     label="Ključ"
     required
@@ -59,8 +59,8 @@ function patch(partial: Partial<KeyedListForm>) {
       class="w-full font-mono text-sm"
       @update:model-value="value => patch({ key: String(value) })"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="sort"
     label="Redoslijed"
     description="Manji broj ide ranije u izborniku."
@@ -71,5 +71,5 @@ function patch(partial: Partial<KeyedListForm>) {
       class="w-full"
       @update:model-value="value => patch({ sort: Number(value) || 0 })"
     />
-  </UFormField>
+  </AdminFormField>
 </template>

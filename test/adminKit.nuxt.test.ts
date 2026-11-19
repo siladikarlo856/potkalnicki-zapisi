@@ -109,6 +109,7 @@ afterEach(async () => {
   calls.length = 0
   patchResponses = []
   references = { blocking: false, groups: [] }
+  localStorage.clear()
   await useRouter().replace({ query: {} })
 })
 
@@ -154,7 +155,7 @@ describe('admin CRUD kit: Izvori', () => {
     expect(wrapper.text()).toContain('2 zapisa')
     expect(calls[0]).toMatchObject({ method: 'GET', path: '/api/admin/content/source', query: { page: '1', size: '25', sort: 'title' } })
 
-    await type(wrapper.find<HTMLInputElement>('input[data-test="admin-search"]').element, 'cakovec')
+    await type(wrapper.find<HTMLInputElement>('input[type="search"]').element, 'cakovec')
     await vi.waitFor(() => expect(useRoute().query.q).toBe('cakovec'))
     await vi.waitFor(() => expect(calls.at(-1)?.query).toMatchObject({ q: 'cakovec', page: '1' }))
   })
@@ -186,7 +187,7 @@ describe('admin CRUD kit: Izvori', () => {
       title: 'Registar kulturnih dobara RH', type: 'official_registry', url: source.url, note: '', status: 'published', revision: 3
     }))
     await vi.waitFor(() => expect(useRoute().query.uredi).toBeUndefined())
-    expect(document.body.textContent).toContain('Spremljeno')
+    expect(document.body.textContent).toContain('Objavljeno maloprije')
   })
 
   it('offers reload or overwrite on a revision conflict', async () => {
@@ -200,7 +201,7 @@ describe('admin CRUD kit: Izvori', () => {
     buttonIn(dialog(), 'Spremi')!.click()
     await vi.waitFor(() => expect(dialog()?.querySelector('[data-test="admin-conflict"]')).not.toBeNull())
 
-    buttonIn(dialog()!.querySelector('[data-test="admin-conflict"]')!, 'Prepiši')!.click()
+    buttonIn(dialog()!.querySelector('[data-test="admin-conflict"]')!, 'Spremi moju svejedno')!.click()
     const patches = () => calls.filter(call => call.method === 'PATCH').map(call => call.body as { revision: number, title: string })
     await vi.waitFor(() => expect(patches().map(body => body.revision)).toEqual([3, 4]))
     expect(patches()[1]!.title).toBe('Moja izmjena')
@@ -211,14 +212,15 @@ describe('admin CRUD kit: Izvori', () => {
     await vi.waitFor(() => expect(dialog()?.querySelector<HTMLInputElement>('input')?.value).toBe(source.title))
     await type(dialog()!.querySelector<HTMLInputElement>('input')!, 'Nespremljeno')
     buttonIn(dialog(), 'Odustani')!.click()
-    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Odbaciti promjene?'))
-    buttonIn(dialog(), 'Nastavi uređivati')!.click()
+    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Imaš nespremljene izmjene'))
+    expect(dialog()?.textContent).toContain('Izmjene u 1 polju izgubit će se ako sada odeš.')
+    buttonIn(dialog(), 'Ostani')!.click()
     await vi.waitFor(() => expect(dialogs()).toHaveLength(1))
     expect(useRoute().query.uredi).toBe(ID)
 
     buttonIn(dialog(), 'Odustani')!.click()
-    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Odbaciti promjene?'))
-    buttonIn(dialog(), 'Odbaci promjene')!.click()
+    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Imaš nespremljene izmjene'))
+    buttonIn(dialog(), 'Odbaci izmjene')!.click()
     await vi.waitFor(() => expect(useRoute().query.uredi).toBeUndefined())
     expect(calls.filter(call => call.method === 'PATCH')).toEqual([])
   })

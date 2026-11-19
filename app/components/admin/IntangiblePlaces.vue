@@ -53,7 +53,7 @@ function remove(index: number) {
           {{ group.hint }}
         </p>
       </div>
-      <UFormField
+      <AdminFormField
         v-for="row in group.rows"
         :key="row.index"
         :name="`areaLinks.${row.index}.areaId`"
@@ -75,7 +75,7 @@ function remove(index: number) {
             @click="remove(row.index)"
           />
         </div>
-      </UFormField>
+      </AdminFormField>
       <div>
         <UButton
           :label="`Dodaj mjesto: ${group.label.toLowerCase()}`"

@@ -3,8 +3,8 @@ import type { ContentKind } from '~~/shared/utils/content/common'
 import type { HistoryAction, HistoryChange } from '~~/shared/utils/content/history'
 import { expandHistoryChange, historyFieldMeta } from '~~/shared/utils/content/history'
 
-// The fields one revision changed, each as "before → after". A creation lists only the values it
-// started with and a deletion the values the row had when it was removed.
+// The fields one revision changed, as the DiffView shows them. A creation lists only the values it started with and a
+// deletion the values the row had when it was removed.
 const props = defineProps<{
   kind: ContentKind
   action: HistoryAction
@@ -16,41 +16,9 @@ const rows = computed(() => props.changes.flatMap(change => expandHistoryChange(
 </script>
 
 <template>
-  <p
-    v-if="!rows.length"
-    class="text-sm text-muted"
-  >
-    Bez promjena u uređivanim poljima.
-  </p>
-  <dl
-    v-else
-    class="flex flex-col gap-3"
-    data-test="history-changes"
-  >
-    <div
-      v-for="row in rows"
-      :key="row.key"
-      class="flex flex-col gap-1"
-      :data-test="`history-change-${row.key}`"
-    >
-      <dt class="text-xs font-medium uppercase tracking-wide text-muted">
-        {{ row.label }}
-      </dt>
-      <dd class="flex flex-col gap-1 text-sm">
-        <div
-          v-if="action !== 'insert'"
-          class="rounded-md bg-error/10 px-2 py-1 whitespace-pre-wrap break-words text-error"
-          :class="{ 'line-through decoration-error/50': !row.beforeEmpty && action === 'update' }"
-        >
-          <span class="sr-only">Prije: </span>{{ row.before }}
-        </div>
-        <div
-          v-if="action !== 'delete'"
-          class="rounded-md bg-success/10 px-2 py-1 whitespace-pre-wrap break-words text-success"
-        >
-          <span class="sr-only">Poslije: </span>{{ row.after }}
-        </div>
-      </dd>
-    </div>
-  </dl>
+  <AdminDiffView
+    :rows="rows"
+    :hide-old="action === 'insert'"
+    :hide-new="action === 'delete'"
+  />
 </template>

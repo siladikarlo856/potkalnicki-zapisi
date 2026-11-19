@@ -16,6 +16,7 @@ const verificationOptions = CLUB_VERIFICATIONS.map(value => ({ label: CLUB_VERIF
 const resource = defineAdminResource<Club, ClubForm>({
   kind: 'club',
   icon: 'i-lucide-trophy',
+  editor: 'page',
   dialogWidth: 'wide',
   labels: {
     title: 'Klubovi',
@@ -76,9 +77,6 @@ const resource = defineAdminResource<Club, ClubForm>({
       </template>
       <template #seasonSummary-cell="{ row }">
         {{ row.seasonSummary ?? '—' }}
-      </template>
-      <template #verification-cell="{ row }">
-        {{ CLUB_VERIFICATION_LABELS[row.verification] ?? row.verification }}
       </template>
       <template #fields="{ state: form, entity }">
         <AdminClubFields
