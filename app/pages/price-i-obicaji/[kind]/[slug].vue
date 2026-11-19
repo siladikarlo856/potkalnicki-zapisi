@@ -317,6 +317,17 @@ useSeoMeta({
         </section>
 
         <section
+          v-if="record.kind === 'folk_text' && record.textLocal && record.textStandard"
+          class="flex flex-col gap-3"
+          data-testid="intangible-verse"
+        >
+          <PzVerse
+            :dialect="record.textLocal"
+            :rendering="record.textStandard"
+          />
+        </section>
+
+        <section
           v-if="record.quotes.length"
           class="flex flex-col gap-3"
         >
@@ -331,12 +342,10 @@ useSeoMeta({
               v-for="(quote, index) in record.quotes"
               :key="index"
             >
-              <blockquote
-                class="pz-body border-s-4 border-accented ps-4 whitespace-pre-line text-default italic"
-                lang="hr"
-              >
-                {{ quote }}
-              </blockquote>
+              <PzQuote
+                :dialect="quote"
+                :rendering="record.textStandard ?? undefined"
+              />
             </li>
           </ul>
         </section>
@@ -456,6 +465,11 @@ useSeoMeta({
             </li>
           </ul>
         </section>
+
+        <PzSourceList
+          :sources="record.sources.map(source => source.title)"
+          data-testid="intangible-source-list"
+        />
 
         <UButton
           :label="t('pz.intangible.contributeMemory')"

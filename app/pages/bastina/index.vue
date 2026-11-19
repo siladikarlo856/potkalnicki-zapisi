@@ -124,7 +124,7 @@ useSeoMeta({
           {{ t('pz.heritage.listHeading') }}
         </h2>
         <p
-          class="pz-body-sm text-muted"
+          class="font-bold tabular-nums"
           role="status"
           data-testid="heritage-count"
         >

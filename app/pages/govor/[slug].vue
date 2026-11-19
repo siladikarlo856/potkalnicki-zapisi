@@ -149,18 +149,10 @@ useSeoMeta({
               :key="index"
               class="border-s-2 border-accented ps-4"
             >
-              <p
-                class="pz-body italic"
-                lang="hr"
-              >
-                „{{ example.text }}“
-              </p>
-              <p
-                v-if="example.translation"
-                class="pz-body-sm text-muted"
-              >
-                {{ example.translation }}
-              </p>
+              <PzQuote
+                :dialect="example.text"
+                :rendering="example.translation"
+              />
               <p
                 v-if="exampleSettlement(example.areaId)"
                 class="pz-caption font-normal text-muted"
