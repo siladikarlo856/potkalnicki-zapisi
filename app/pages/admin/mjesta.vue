@@ -3,6 +3,7 @@ import {
   AREA_KIND_LAU, AREA_KIND_LABELS, AREA_LIMITS, areaAdminLabel, areaKindNeedsSlug,
   validateArea, type Area, type AreaKind, type AreaValue
 } from '~~/shared/utils/content/area'
+import { municipalityPagePath, pzPath, settlementPagePath } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
@@ -82,9 +83,13 @@ const resource = defineAdminResource<Area, AreaForm>({
   label: area => areaAdminLabel(area.kind, area.name),
   publicPath(area) {
     if (area.status !== 'published' || !area.slug) return undefined
-    if (area.kind === 'settlement') return `/naselja/${area.slug}`
+    if (area.kind === 'settlement') {
+      const parentSlug = area.parentId ? parentSlugs.get(area.parentId) : undefined
+      // Until the parent towns and municipalities load, the old address still 301s to the canonical one.
+      return parentSlug ? settlementPagePath(parentSlug, area.slug) : pzPath('naselja', area.slug)
+    }
     if (area.kind === 'town' || area.kind === 'municipality' || area.kind === 'region') {
-      return `/istrazi/${area.slug}`
+      return municipalityPagePath(area.slug)
     }
     return undefined
   }
@@ -111,11 +116,15 @@ watch(activeTab, (tab) => {
 }, { immediate: true })
 
 const parentLabels = ref(new Map<string, string>())
+const parentSlugs = new Map<string, string>()
 
 onMounted(async () => {
   for (const kind of ['country', 'county', AREA_KIND_LAU] as const) {
     const result = await $fetch<{ rows: Area[] }>('/api/admin/content/area', { query: { kind, size: 100, sort: 'name' } })
-    for (const row of result.rows) parentLabels.value.set(row.id, areaAdminLabel(row.kind, row.name))
+    for (const row of result.rows) {
+      parentLabels.value.set(row.id, areaAdminLabel(row.kind, row.name))
+      if (row.slug) parentSlugs.set(row.id, row.slug)
+    }
   }
 })
 
@@ -200,10 +209,10 @@ const slugManual = ref(false)
       >
         <UInput
           :model-value="state.slug ?? undefined"
-          @update:model-value="state.slug = ($event && String($event).trim()) ? String($event) : null"
           :maxlength="AREA_LIMITS.slug"
           class="w-full font-mono"
           placeholder="auto iz naziva"
+          @update:model-value="state.slug = ($event && String($event).trim()) ? String($event) : null"
           @input="slugManual = true"
         />
       </UFormField>
