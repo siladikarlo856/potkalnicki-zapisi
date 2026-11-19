@@ -10,7 +10,7 @@ import { nounFor } from '~/utils/pzText'
 // challenge. Still the normal shell: the round bar only appears once the round has started.
 const props = withDefaults(defineProps<{
   gameId: GameId
-  /** Questions in a round. */
+  /** Maximum questions in a round; available content can make it shorter. */
   questions?: number
   instructions?: readonly string[]
   /** False for a game that has no difficulty. */
