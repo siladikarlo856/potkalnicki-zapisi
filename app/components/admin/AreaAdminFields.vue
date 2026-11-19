@@ -96,15 +96,15 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
     :description="parentHint"
   >
     <USelectMenu
-      :model-value="nullToUndefined(form.parentId)"
-      @update:model-value="form.parentId = undefinedToNull($event) ?? null"
       v-model:search-term="parentSearch"
+      :model-value="nullToUndefined(form.parentId)"
       :items="parentItems"
       value-key="value"
       searchable
       :loading="parentLoading"
       placeholder="Pretraži i odaberi…"
       class="w-full"
+      @update:model-value="form.parentId = undefinedToNull($event) ?? null"
     />
   </AdminFormField>
   <div
@@ -118,9 +118,9 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
     >
       <UInput
         :model-value="nullToUndefined(form.officialCode)"
-        @update:model-value="form.officialCode = undefinedToNull($event) ?? null"
         :maxlength="AREA_LIMITS.officialCode"
         class="w-full font-mono"
+        @update:model-value="form.officialCode = undefinedToNull($event) ?? null"
       />
     </AdminFormField>
     <AdminFormField
@@ -130,10 +130,10 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
     >
       <UInput
         :model-value="nullToUndefined(form.geonamesId)"
-        @update:model-value="form.geonamesId = undefinedToNull($event) ?? null"
         :maxlength="AREA_LIMITS.geonamesId"
         inputmode="numeric"
         class="w-full font-mono"
+        @update:model-value="form.geonamesId = undefinedToNull($event) ?? null"
       />
     </AdminFormField>
   </div>
