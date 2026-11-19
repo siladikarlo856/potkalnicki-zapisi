@@ -1022,11 +1022,11 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
   it.each([
     { path: '', title: 'Potkalnički zapisi', description: 'Istraži mjesta', image: 'og.svg' },
     { path: '/igre/', title: 'Igraj · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
-    { path: '/doprinesi/', title: 'Doprinesi · Potkalnički zapisi', description: 'Sve što pošalješ', image: 'og.svg' },
-    { path: '/o-projektu/', title: 'O projektu · Potkalnički zapisi', description: 'digitalni zavičajni atlas', image: 'og.svg' },
+    { path: '/doprinesi/', title: 'Doprinesi · Potkalnički zapisi', description: 'Zapiši ono što znaš', image: 'og.svg' },
+    { path: '/o-projektu/', title: 'O projektu · Potkalnički zapisi', description: 'Digitalni arhiv kraja pod Kalnikom.', image: 'og.svg' },
     { path: '/uci/', title: 'Uči · Potkalnički zapisi', description: 'Odaberi teme', image: 'og.svg' },
     { path: '/igre/kviz/', title: 'Ponuđeni odgovori · Potkalnički zapisi', description: 'Pročitaj riječ', image: 'og.svg' },
-    { path: '/privatnost/', title: 'Obavijest o privatnosti · Potkalnički zapisi', description: 'Koje podatke', image: 'og.svg' }
+    { path: '/privatnost/', title: 'Privatnost · Potkalnički zapisi', description: 'Kratko i jasno', image: 'og.svg' }
   ])('sets localized sharing metadata on $path', async ({ path, title, description, image }) => {
     const response = await fetch(path)
     expect(response.status).toBe(200)
@@ -1057,11 +1057,11 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     }
   })
 
-  it('documents Cloudflare visit analytics on the privacy notice', async () => {
+  it('states the privacy policy on the privacy notice', async () => {
     const html = await (await fetch('/privatnost/', { headers: { accept: 'text/html' } })).text()
-    expect(html).toContain('Cloudflare Web Analytics')
-    expect(html).toContain('kolačiće')
-    expect(html).toContain('2. studenoga 2026.')
+    expect(html).toContain('Kratko i jasno: nemamo korisničke račune')
+    expect(html).toContain('Nema oglasa ni oglasnih kolačića.')
+    expect(html).toContain('Nema praćenja među stranicama.')
   })
 
   it('loads Cloudflare Web Analytics only on public pages', async () => {
@@ -1074,9 +1074,9 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
 
   it('describes the games, device storage and word-linked contributions on the privacy notice', async () => {
     const html = await (await fetch('/privatnost/', { headers: { accept: 'text/html' } })).text()
-    expect(html).toContain('Igre i podaci na uređaju')
-    expect(html).toContain('samo u tvom pregledniku')
-    expect(html).toContain('povezan s riječju na koju se odnosi')
+    expect(html).toContain('Što ostaje na tvom uređaju')
+    expect(html).toContain('Ovo se sprema samo u tvoj preglednik i ne šalje se nikamo:')
+    expect(html).toContain('nedovršen prilog')
   })
 
   it('does not show coming-soon hero badges on the atlas home', async () => {
@@ -1090,8 +1090,8 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
   })
 
   it.each([
-    { path: '/missing-page', lang: 'hr-HR', title: 'Stranica nije pronađena', home: 'Na početnu' },
-    { path: '/en/missing-page', lang: 'en-GB', title: 'Page not found', home: 'Back to home' },
+    { path: '/missing-page', lang: 'hr-HR', title: 'Ove stranice nema', home: 'Na početnu' },
+    { path: '/en/missing-page', lang: 'en-GB', title: 'Ove stranice nema', home: 'Na početnu' },
     { path: '/admin/nema-stranice', lang: 'hr-HR', title: 'Stranica nije pronađena', home: 'Na početnu', admin: true }
   ])('returns a localized, non-indexable 404 for $path', async ({ path, lang, title, home, admin }) => {
     const response = await fetch(path, { headers: { accept: 'text/html' } })
