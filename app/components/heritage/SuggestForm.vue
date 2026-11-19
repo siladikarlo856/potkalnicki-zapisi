@@ -84,8 +84,15 @@ function readDraft() {
 
 function saveDraft() {
   if (!import.meta.client || !draftStorageKey.value || sendState.value === 'sent') return
+  const base = startValues()
+  const changed: Record<string, string | undefined> = {}
+  for (const [key, value] of Object.entries(values)) if (value !== base[key] && (value || base[key])) changed[key] = value
+  if (!Object.keys(changed).length && !state.note && !state.name && !state.contact && !placeQuery.value) {
+    clearDraft()
+    return
+  }
   try {
-    window.localStorage.setItem(draftStorageKey.value, JSON.stringify({ values, state: { note: state.note, name: state.name, contact: state.contact }, placeQuery: placeQuery.value }))
+    window.localStorage.setItem(draftStorageKey.value, JSON.stringify({ values: changed, state: { note: state.note, name: state.name, contact: state.contact }, placeQuery: placeQuery.value }))
   } catch {
     // Ignore private browsing and full storage.
   }

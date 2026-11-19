@@ -80,7 +80,10 @@ function readDraft() {
 
 function saveDraft() {
   if (!import.meta.client || !draftStorageKey.value || sendState.value === 'sent') return
-  if (!state.text && !state.name && !state.contact && !placeQuery.value && !state.type) return
+  if (!state.text && !state.name && !state.contact && !placeQuery.value && !state.type) {
+    clearDraft()
+    return
+  }
   try {
     const draft: ContributionDraft = { text: state.text, type: state.type, placeId: state.placeId, placeQuery: placeQuery.value, name: state.name, contact: state.contact }
     window.localStorage.setItem(draftStorageKey.value, JSON.stringify(draft))
