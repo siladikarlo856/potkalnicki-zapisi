@@ -95,7 +95,7 @@ describe.skipIf(!db.enabled)('real challenge HTTP and Postgres behavior', () => 
       expect(own.me).not.toHaveProperty('id')
       expect(own.rows.every(row => !('id' in row))).toBe(true)
     }
-    const stranger = await fetch(path(game, 'leaderboard'), { headers: { cookie: `heritage_${game.code}=${'z'.repeat(43)}`, 'x-forwarded-for': '192.0.2.200' } })
+    const stranger = await fetch(path(game, 'leaderboard'), { headers: { 'cookie': `heritage_${game.code}=${'z'.repeat(43)}`, 'x-forwarded-for': '192.0.2.200' } })
     expect(stranger.status).toBe(200)
     expect((await stranger.json() as ChallengeLeaderboard).me).toBeNull()
   })

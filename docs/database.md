@@ -275,6 +275,12 @@ Apply it through the normal migration-first workflow. The previously deployed ap
 
 Rollout: migrate first. A previously deployed app ignores the extra key on the question object and keeps playing plain multiple-choice challenges. The new app treats a missing `display` as a text-only question. Existing snapshots without `display` are unchanged. Deploy the app only after the migration so map challenges receive coordinates during play. Merge this migration only on the captain's word (it replaces `heritage_challenge_state`).
 
+## Challenge scoreboard completed count and own result
+
+`20261119000000_challenge_scoreboard_completed_count.sql` replaces `public.heritage_challenge_scoreboard(text, integer)` with `(p_code text, p_offset integer, p_hash text)`. Besides the 50-row page it returns `completedCount` (participants with a finished attempt, across all pages) and `me`: the caller's own row and rank, found by the participant token hash, whatever page it falls on, with `sharedRank` when another participant has the same total. `p_hash` may be null, which gives `me: null`.
+
+Rollout: migrate first. The new app calls the three-argument function, so deploy it only after the migration; the previous app calls the two-argument one, which the migration drops, so its scoreboard fails until the new app is live.
+
 ## Retiring the content files (contract)
 
 The last step of the content admin plan (PR 14) retires everything the database replaced. It ships one small migration and no destructive one.

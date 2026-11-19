@@ -29,6 +29,7 @@ export function usePzTabBar() {
     const held = owners.value[owner]?.filter(item => item !== reason)
     if (!held) return
     if (held.length) owners.value[owner] = held
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- drop this caller's entry so the reactive record stays small
     else delete owners.value[owner]
   }
 
