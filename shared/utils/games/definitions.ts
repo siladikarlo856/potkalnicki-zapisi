@@ -46,7 +46,7 @@ const DEFINITIONS = {
   'rijec-dana': {
     label: { hr: 'Riječ dana', en: 'Word of the day' },
     challengeable: false,
-    catalogue: { blurb: 'Pogodi značenje današnje riječi iz našeg kraja.', topic: 'rijeci', format: 'dnevna', minutes: 2, path: pzRoutes.daily, status: 'live' }
+    catalogue: { blurb: 'Pogodi današnju riječ iz tri traga', topic: 'rijeci', format: 'dnevna', minutes: 2, path: pzRoutes.daily, status: 'live' }
   },
   'znacenje': {
     label: { hr: 'Kaj to znači?', en: 'What does it mean?' },
