@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends ContentEntity, F extends object">
 import type { FormError, FormErrorEvent } from '@nuxt/ui'
+import type { RouteLocationNormalized } from 'vue-router'
 import type { InboxDetail } from '~~/shared/types/inbox'
 import type { ContentEntity, ContentIssue, ContentStatus } from '~~/shared/utils/content/common'
 import { CONTENT_STATUS_LABELS } from '~~/shared/utils/content/common'
@@ -357,10 +358,14 @@ async function requestClose() {
 }
 
 // The page editor also guards navigation to other screens and closing the tab.
+/** Goes where a held-back navigation was going without adding a history entry: back, when it was the entry before. */
+function goTo(to: RouteLocationNormalized) {
+  return window.history.state?.back === to.fullPath ? router.back() : router.replace(to.fullPath)
+}
 if (isPage.value) {
-  onBeforeRouteLeave(to => mayLeave(() => router.push(to.fullPath)))
+  onBeforeRouteLeave(to => mayLeave(() => goTo(to)))
   // Going back to the list (or to another record) in the same page asks too.
-  onBeforeRouteUpdate((to, from) => to.query.uredi === from.query.uredi && to.query.novo === from.query.novo ? true : mayLeave(() => router.push(to.fullPath)))
+  onBeforeRouteUpdate((to, from) => to.query.uredi === from.query.uredi && to.query.novo === from.query.novo ? true : mayLeave(() => goTo(to)))
   onMounted(() => window.addEventListener('beforeunload', onBeforeUnload))
   onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
 }
