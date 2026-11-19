@@ -3,17 +3,23 @@ import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { GameId, GameQuestion } from '~~/shared/utils/games/types'
 import type { QuizChallengeInput } from '~~/shared/utils/challenge'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
+import { challengeCreateQueryForGame } from '~~/shared/utils/challengeCreateForm'
 import { resultShareMessage } from '~/utils/shareResult'
+import { nounFor } from '~/utils/pzText'
+import type { DotState } from '~/utils/questionDots'
 
-// End screen of a round (ScreenResult): the score as a numeral over a row of squares, a one-line verdict, then
-// "Izazovi prijatelje s ovom rundom" as the one primary action, "Podijeli rezultat" as a secondary that opens the
-// share sheet, the misses (each with a link to its record and a correction) and the replay buttons.
 // Words and answers never go into the shared text: only the headline, the squares and an invitation.
 const props = defineProps<{
   gameId: GameId
   title: string
   questions: GameQuestion[]
   results: boolean[]
+  /** Which questions were skipped (a skipped question is not right). */
+  skipped?: boolean[]
+  /** How long the round took. */
+  seconds?: number
+  /** The best score before this round, to say when it is beaten. */
+  previousBest?: { score: number, max: number } | null
   /** A round of only the missed questions is practice: it is neither shared nor turned into a challenge. */
   practice?: boolean
   /** Only `znacenje`: keeps the creator's own round ("Moja runda"). */
@@ -30,15 +36,34 @@ const misses = computed(() => props.questions.filter((_, index) => props.results
 const definition = computed(() => gameDefinition(props.gameId))
 const canChallenge = computed(() => !props.practice && definition.value.challengeable && total.value > 0)
 const canShare = computed(() => !props.practice && total.value > 0)
-// With a creator round the primary opens the create form in place; otherwise it goes to the challenge page.
-const challengeHref = computed(() => localePath(pzRoutes.challenge))
+const challengeQuery = computed(() => challengeCreateQueryForGame(props.gameId))
+const challengeHref = computed(() => localePath(challengeQuery.value
+  ? { path: pzRoutes.challengeNew, query: challengeQuery.value }
+  : pzRoutes.challenge))
 const challengeOpen = ref(false)
 const shareOpen = ref(false)
 const origin = ref('')
-const verdict = computed(() => {
+const newBest = computed(() => {
+  if (props.practice || !props.previousBest || !total.value) return false
+  return correct.value / total.value > props.previousBest.score / props.previousBest.max
+})
+const sentence = computed(() => {
   if (!total.value) return ''
-  const ratio = correct.value / total.value
-  return t(ratio >= 0.8 ? 'pz.play.verdictHigh' : ratio >= 0.5 ? 'pz.play.verdictMid' : 'pz.play.verdictLow')
+  if (correct.value === total.value) return !props.practice && (props.previousBest === null || newBest.value) ? 'Sve točno. Novi najbolji rezultat.' : 'Sve točno.'
+  const missed = misses.value.length
+  if (correct.value / total.value < 0.5) return 'Ovo nije lako ni onima koji su ovdje odrasli. Pročitaj zapise pa pokušaj ponovno.'
+  return `${correct.value} od ${total.value} točno. ${missed} ${nounFor(missed, ['pitanje', 'pitanja'])} vrijedi ponoviti.${newBest.value ? ' Novi najbolji rezultat.' : ''}`
+})
+const dots = computed<DotState[]>(() => props.results.map((right, i) => props.skipped?.[i] ? 'skipped' : right ? 'right' : 'wrong'))
+const { scores } = useGameScores()
+const stats = computed(() => {
+  const best = scores.value.best[props.gameId]
+  const seconds = props.seconds ?? 0
+  return [
+    { value: `${correct.value}/${total.value}`, label: 'točnih' },
+    { value: `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, label: 'vrijeme' },
+    { value: best ? `${best.score}/${best.max}` : '–', label: 'najbolji rezultat' }
+  ]
 })
 const headline = computed(() => `${props.title} · ${correct.value}/${total.value}`)
 const shareUrl = computed(() => origin.value + localePath(definition.value.catalogue?.path ?? pzRoutes.games))
@@ -60,27 +85,34 @@ onMounted(() => {
     class="flex flex-col gap-6"
     data-testid="game-result"
   >
-    <PzShareResult
+    <ResultSummary
       ref="summary"
-      :caption="t('pz.play.resultCaption', { title })"
-      :results="results"
-    >
-      <p
-        v-if="verdict"
-        class="pz-lead"
-        data-testid="game-result-verdict"
-      >
-        {{ verdict }}
-      </p>
-    </PzShareResult>
+      :caption="`${title} · rezultat`"
+      :correct="correct"
+      :total="total"
+      :sentence="sentence"
+      :states="dots"
+      :stats="stats"
+    />
 
     <div class="flex flex-col gap-3">
+      <UButton
+        :label="'Igraj ponovno'"
+        icon="i-lucide-shuffle"
+        size="xl"
+        color="primary"
+        block
+        data-testid="game-replay"
+        @click="emit('restart')"
+      />
       <template v-if="canChallenge">
         <UButton
           v-if="quizPayload"
           :label="t('pz.play.challengeFriends')"
           icon="i-lucide-flag"
-          size="xl"
+          color="neutral"
+          variant="outline"
+          size="lg"
           block
           :aria-expanded="challengeOpen"
           data-testid="game-make-challenge"
@@ -89,9 +121,11 @@ onMounted(() => {
         <UButton
           v-else
           :to="challengeHref"
-          :label="t('pz.play.challengeFriends')"
+          :label="challengeQuery ? 'Izazovi prijatelje ovom igrom' : 'Izazovi prijatelje'"
           icon="i-lucide-flag"
-          size="xl"
+          color="neutral"
+          variant="outline"
+          size="lg"
           block
           data-testid="game-make-challenge"
         />
@@ -125,7 +159,7 @@ onMounted(() => {
         id="game-misses-title"
         class="pz-h2 text-highlighted"
       >
-        {{ t('pz.play.missesTitle') }}
+        Ponovi i pročitaj
       </h2>
       <p
         v-if="!misses.length"
@@ -177,16 +211,6 @@ onMounted(() => {
           block
           data-testid="game-replay-missed"
           @click="emit('replay-missed')"
-        />
-        <UButton
-          :label="t('pz.play.newRound')"
-          icon="i-lucide-shuffle"
-          :color="canChallenge ? 'neutral' : 'primary'"
-          :variant="canChallenge ? 'outline' : 'solid'"
-          size="lg"
-          block
-          data-testid="game-replay"
-          @click="emit('restart')"
         />
       </div>
     </section>

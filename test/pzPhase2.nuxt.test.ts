@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { mountSuspended } from '@nuxt/test-utils/runtime'
+import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import Doprinesi from '../app/pages/doprinesi/index.vue'
 import Igre from '../app/pages/igre/index.vue'
 import About from '../app/pages/o-projektu/index.vue'
 
+registerEndpoint('/api/learn/pool', () => ({ version: 1, generatedAt: '', cards: [], municipalities: [], settlements: [], topics: [] }))
+
 describe('Potkalnički zapisi phase 2 routes', () => {
-  it('renders the games hub with the play catalogue and friend challenge', async () => {
+  it('renders the games list with the play catalogue', async () => {
     const page = await mountSuspended(Igre, { route: '/igre' })
-    expect(page.find('[data-testid="friend-challenge-card"]').exists()).toBe(true)
-    expect(page.find('[data-testid="play-catalog"]').exists()).toBe(true)
+    await expect.poll(() => page.find('[data-testid="play-catalog"]').exists(), { timeout: 3000 }).toBe(true)
   })
 
   it('shows the contribution form when a type is selected', async () => {

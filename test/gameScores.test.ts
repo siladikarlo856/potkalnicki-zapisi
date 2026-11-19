@@ -19,8 +19,16 @@ describe('pz-games/v1 best scores', () => {
     expect(withBestScore(state, 'rijec', 3, 5, 'day2')).toBe(state)
     state = withBestScore(state, 'rijec', 4, 5, 'day3')
     expect(state.best.rijec).toEqual({ score: 4, max: 5, at: 'day3' })
-    expect(withBestScore(state, 'znacenje', 0, 10, 'day4')).toBe(state)
+    expect(withBestScore(state, 'rijec', 0, 10, 'day4')).toBe(state)
     expect(withBestScore(state, 'znacenje', 1, 10, 'day4').best.znacenje).toEqual({ score: 1, max: 10, at: 'day4' })
     expect(withBestScore(state, 'opcina', 0, 0, 'day4')).toBe(state)
+  })
+
+  it('saves a first zero, reloads it, keeps zero ties and accepts a later improvement', () => {
+    const state = withBestScore(emptyGameScores(), 'znacenje', 0, 10, 'day1')
+    expect(state.best.znacenje).toEqual({ score: 0, max: 10, at: 'day1' })
+    expect(decodeGameScores(JSON.stringify(state))).toEqual(state)
+    expect(withBestScore(state, 'znacenje', 0, 5, 'day2')).toBe(state)
+    expect(withBestScore(state, 'znacenje', 1, 10, 'day3').best.znacenje).toEqual({ score: 1, max: 10, at: 'day3' })
   })
 })

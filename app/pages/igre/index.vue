@@ -1,231 +1,203 @@
 <script setup lang="ts">
 import {
-  liveTopicsInCatalogue,
+  GAME_GROUPS,
+  GAME_TYPE_LABELS,
+  gameGroupOf,
+  gameTypeOf,
+  isListedGame,
   soonGames,
   visibleGames
 } from '~~/shared/utils/games/catalogue'
-import { challengeListGroup } from '~~/shared/utils/challengeList'
+import { countNoun } from '~/utils/pzText'
+import type { GameType } from '~~/shared/utils/games/catalogue'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
+import { TOPICS } from '~~/shared/utils/learn/topics'
 
+// /igre/: every game, grouped by what it trains, with chips by question type. The daily word and the learning
+// cards have their own screens; challenges are reached from a game's start page and from /izazov/.
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
 
-const { t } = useI18n()
-const localePath = useLocalePath()
+const GAMES_DESCRIPTION = 'Trinaest kratkih igara o riječima, mjestima, baštini i ljudima ovoga kraja.'
 const route = useRoute()
 const router = useRouter()
+const { pool, status, error, refresh } = useCardPool()
 
-const { pool } = useCardPool()
-const { items, refreshItem, resetRefreshBudget, newPlayersFor } = useChallengeList()
+const loading = computed(() => !error.value && (status.value === 'idle' || status.value === 'pending'))
 
-const stripItems = computed(() =>
-  items.value.filter(item => challengeListGroup(item) !== 'finished').slice(0, 3)
-)
-
-onMounted(() => {
-  resetRefreshBudget()
-  for (const item of stripItems.value) {
-    void refreshItem(item.code, { fetchLeaderboard: item.role === 'creator' })
-  }
+// Old topic addresses (?tema=rijeci) still narrow the list; the chips filter by question type (?vrsta=).
+const legacyTopic = computed(() => typeof route.query.tema === 'string' ? route.query.tema : undefined)
+const activeTopic = computed(() => legacyTopic.value && legacyTopic.value !== 'sve'
+  ? TOPICS.find(topic => topic.id === legacyTopic.value)?.label ?? legacyTopic.value
+  : undefined)
+const type = computed<GameType | undefined>(() => {
+  const value = route.query.vrsta
+  return typeof value === 'string' && value in GAME_TYPE_LABELS ? value as GameType : undefined
 })
 
-const filterApplied = ref(false)
-const selectedTopic = ref<string | undefined>(undefined)
+const playable = computed(() => visibleGames(pool.value, legacyTopic.value).filter(isListedGame))
+const filtered = computed(() => type.value ? playable.value.filter(game => gameTypeOf(game) === type.value) : playable.value)
+const typeChips = computed(() => (Object.keys(GAME_TYPE_LABELS) as GameType[])
+  .map(id => ({ id, label: GAME_TYPE_LABELS[id], count: playable.value.filter(game => gameTypeOf(game) === id).length }))
+  .filter(chip => chip.count > 0))
+const groups = computed(() => GAME_GROUPS
+  .map(group => ({ ...group, games: filtered.value.filter(game => gameGroupOf(game) === group.id) }))
+  .filter(group => group.games.length > 0))
+const soon = computed(() => type.value ? [] : soonGames())
+const soonHref = `${pzRoutes.contribute}?vrsta=sjecanje`
 
-const baseFilterTopics = [
-  { id: 'sve', labelKey: 'pz.play.filterAll' },
-  { id: 'rijeci', label: 'Riječi' },
-  { id: 'mjesta', label: 'Mjesta' },
-  { id: 'bastina', label: 'Baština' }
-] as const
-
-const extraFilterTopics = computed(() => {
-  const baseIds = new Set(['rijeci', 'mjesta', 'bastina'])
-  const labels: Record<string, string> = {
-    osobe: 'Osobe',
-    legende: 'Legende i priče',
-    mjesovito: 'Mješovito'
-  }
-  return liveTopicsInCatalogue()
-    .filter(id => !baseIds.has(id))
-    .map(id => ({ id, label: labels[id] ?? id }))
-})
-
-onMounted(() => {
-  const tema = route.query.tema
-  if (typeof tema === 'string' && tema.length > 0) {
-    selectedTopic.value = tema
-    filterApplied.value = true
-  }
-})
-
-function selectTopic(id: string) {
-  const next = id === 'sve' ? undefined : id
-  selectedTopic.value = next
-  filterApplied.value = true
+function choose(next: GameType | undefined) {
   const query = { ...route.query }
-  if (next) query.tema = next
-  else delete query.tema
-  router.replace({ query })
+  if (next && next !== type.value) query.vrsta = next
+  else delete query.vrsta
+  void router.replace({ query })
 }
 
-const activeTopic = computed(() => (filterApplied.value ? selectedTopic.value : undefined))
-
-const liveGames = computed(() => visibleGames(pool.value, activeTopic.value))
-
-const soonEntries = soonGames()
-
-const memoryHref = `${pzRoutes.contribute}?vrsta=sjecanje`
-
-const emptyTopicMessages: Record<string, { textKey: string, linkKey: string, href: string }> = {
-  mjesta: {
-    textKey: 'pz.play.emptyMjesta',
-    linkKey: 'pz.play.emptyMjestaLink',
-    href: pzRoutes.games
-  },
-  bastina: {
-    textKey: 'pz.play.emptyBastina',
-    linkKey: 'pz.play.emptyBastinaLink',
-    href: pzRoutes.games
-  }
+function clearTopic() {
+  const query = { ...route.query }
+  delete query.tema
+  void router.replace({ query })
 }
-
-const emptyState = computed(() => {
-  const topic = activeTopic.value
-  if (!topic || liveGames.value.length > 0) return null
-  return emptyTopicMessages[topic] ?? {
-    textKey: 'pz.play.emptyGeneric',
-    linkKey: 'pz.play.emptyGenericLink',
-    href: pzRoutes.games
-  }
-})
 
 useSeoMeta({
-  title: () => t('pz.play.title'),
-  ogTitle: () => `${t('pz.play.title')} · Potkalnički zapisi`,
-  ogDescription: () => t('pz.games.hubDescription'),
-  description: () => t('pz.games.hubDescription')
+  title: 'Igre',
+  ogTitle: 'Igre · Potkalnički zapisi',
+  ogDescription: GAMES_DESCRIPTION,
+  description: GAMES_DESCRIPTION
 })
 </script>
 
 <template>
-  <UContainer class="py-10 sm:py-14">
-    <div class="mx-auto max-w-4xl space-y-10">
-      <header>
-        <h1 class="text-3xl font-bold text-highlighted sm:text-4xl">
-          {{ t('pz.play.title') }}
-        </h1>
-        <p class="mt-2 max-w-2xl text-muted">
-          {{ t('pz.games.hubDescription') }}
-        </p>
-      </header>
+  <UContainer class="py-6 sm:py-10">
+    <PageHead
+      title="Igre"
+      :lead="`${GAMES_DESCRIPTION} Svaka traje nekoliko minuta.`"
+    />
 
-      <HeritageDailyWord />
-
-      <HeritageChallengeActiveStrip
-        v-if="stripItems.length"
-        :items="stripItems"
-        :new-players-for="newPlayersFor"
+    <div
+      v-if="activeTopic"
+      class="mb-6 flex flex-wrap items-center gap-3"
+      data-testid="play-active-topic"
+    >
+      <p class="pz-body-sm text-default">
+        Tema: {{ activeTopic }}
+      </p>
+      <UButton
+        label="Prikaži sve teme"
+        color="neutral"
+        variant="outline"
+        data-testid="play-clear-topic"
+        @click="clearTopic"
       />
+    </div>
+
+    <Skeleton
+      v-if="loading"
+      :lines="6"
+      block
+      label="Učitavanje igara…"
+      data-testid="play-loading"
+    />
+
+    <PageState
+      v-else-if="error"
+      kind="error"
+      title="Popis igara nismo uspjeli učitati"
+      @retry="refresh()"
+    />
+
+    <PageState
+      v-else-if="!playable.length"
+      kind="empty"
+      title="Igre se još pripremaju"
+      description="Za igre treba dovoljno provjerenih zapisa. Dotad možeš učiti riječi ili pogoditi riječ dana."
+      data-testid="play-empty-state"
+    >
+      <template #actions>
+        <UButton
+          :to="pzRoutes.learn"
+          label="Uči riječi"
+        />
+        <UButton
+          :to="pzRoutes.dailyWord"
+          label="Riječ dana"
+          color="neutral"
+          variant="outline"
+        />
+      </template>
+    </PageState>
+
+    <div
+      v-else
+      class="flex flex-col gap-8"
+      data-testid="play-catalog"
+    >
+      <div
+        class="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Vrsta pitanja"
+        data-testid="play-topic-filters"
+      >
+        <PzChip
+          v-for="chip in typeChips"
+          :key="chip.id"
+          :selected="type === chip.id"
+          :count="chip.count"
+          :data-testid="`play-filter-${chip.id}`"
+          @click="choose(chip.id)"
+        >
+          {{ chip.label }}
+        </PzChip>
+      </div>
+      <p
+        v-if="type"
+        role="status"
+        class="pz-body-sm -mt-4 text-muted"
+        data-testid="play-filter-count"
+      >
+        {{ countNoun(filtered.length, 'igra', 'igre') }}
+      </p>
 
       <section
-        data-testid="play-catalog"
-        aria-labelledby="play-games-heading"
+        v-for="group in groups"
+        :key="group.id"
+        :aria-labelledby="`play-group-${group.id}`"
+        :data-testid="`play-group-${group.id}`"
       >
         <h2
-          id="play-games-heading"
-          class="sr-only"
+          :id="`play-group-${group.id}`"
+          class="pz-h2 mb-3 text-highlighted"
         >
-          {{ t('pz.play.title') }}
+          {{ group.label }}
         </h2>
-
-        <div
-          class="mb-6 flex flex-wrap gap-2"
-          data-testid="play-topic-filters"
-          role="tablist"
-        >
-          <UButton
-            v-for="chip in baseFilterTopics"
-            :key="chip.id"
-            :data-testid="`play-filter-${chip.id}`"
-            :label="'labelKey' in chip ? t(chip.labelKey) : chip.label"
-            :color="(activeTopic ?? 'sve') === chip.id || (chip.id === 'sve' && !activeTopic) ? 'primary' : 'neutral'"
-            :variant="(activeTopic ?? 'sve') === chip.id || (chip.id === 'sve' && !activeTopic) ? 'solid' : 'outline'"
-            size="sm"
-            role="tab"
-            @click="selectTopic(chip.id)"
-          />
-          <UButton
-            v-for="chip in extraFilterTopics"
-            :key="chip.id"
-            :data-testid="`play-filter-${chip.id}`"
-            :label="chip.label"
-            :color="activeTopic === chip.id ? 'primary' : 'neutral'"
-            :variant="activeTopic === chip.id ? 'solid' : 'outline'"
-            size="sm"
-            role="tab"
-            @click="selectTopic(chip.id)"
-          />
-        </div>
-
-        <div
-          v-if="emptyState"
-          class="rounded-lg border border-dashed border-default p-8 text-center"
-          data-testid="play-empty-state"
-        >
-          <p class="text-muted">
-            {{ t(emptyState.textKey) }}
-          </p>
-          <UButton
-            :to="localePath(emptyState.href)"
-            :label="t(emptyState.linkKey)"
-            class="mt-4"
-            variant="link"
-          />
-        </div>
-
-        <div
-          v-else
-          class="grid gap-4 sm:grid-cols-2"
-          data-testid="play-game-grid"
-        >
-          <GamesTile
-            v-for="game in liveGames"
+        <div class="grid gap-3 lg:grid-cols-3 md:grid-cols-2">
+          <GamesGameCard
+            v-for="game in group.games"
             :key="game.id"
             :game="game"
           />
         </div>
       </section>
 
-      <PzChallengeCard
-        :overline="t('challenge.friendTitle')"
-        :title="t('pz.games.friendHeroTitle')"
-        :text="t('pz.games.friendHeroDescription')"
-        :cta="t('pz.games.friendHeroCta')"
-        :to="localePath(pzRoutes.challenge)"
-        data-testid="friend-challenge-card"
-      />
-
       <section
-        v-if="soonEntries.length"
+        v-if="soon.length"
         aria-labelledby="play-soon-heading"
       >
         <h2
           id="play-soon-heading"
-          class="mb-4 text-xl font-semibold text-highlighted"
+          class="pz-h2 mb-3 text-highlighted"
         >
-          {{ t('pz.play.soon') }}
+          Uskoro
         </h2>
         <div
-          class="grid gap-4 sm:grid-cols-2"
+          class="grid gap-3 lg:grid-cols-3 md:grid-cols-2"
           data-testid="play-soon-grid"
         >
-          <GamesTile
-            v-for="game in soonEntries"
+          <GamesGameCard
+            v-for="game in soon"
             :key="game.id"
             :game="game"
-            :soon-href="memoryHref"
-            :soon-label="t('pz.play.tellUs')"
+            :soon-href="soonHref"
           />
         </div>
       </section>

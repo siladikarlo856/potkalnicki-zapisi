@@ -102,19 +102,19 @@ async function readPublic(limit?: number) {
   return await response.json() as PublicWords
 }
 
-describe.skipIf(!harness.enabled)('Potkalnički zapisi learning and challenge choice', () => {
-  it('serves the play catalogue and friend challenge on the games hub', async () => {
+describe.skipIf(!harness.enabled)('Potkalnički zapisi games hub', () => {
+  it('serves the games hub shell before the client fetches its pool', async () => {
     const response = await request('/igre')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
     const window = new Window({ url: url('/') }) // resolves the page's relative preload links
     window.document.body.innerHTML = html
-    const catalog = window.document.querySelector('[data-testid="play-catalog"]')!
-    expect(catalog).not.toBeNull()
-    expect(window.document.querySelector('[data-testid="friend-challenge-card"]')?.textContent).toContain('Izazovi prijatelja')
-    expect(window.document.querySelector('[data-testid="game-tile-znacenje"]')).not.toBeNull()
-    expect(window.document.querySelector('[data-testid="game-tile-kartice"]')).not.toBeNull()
+    expect(window.document.querySelector('[data-testid="play-loading"]')).not.toBeNull()
+    expect(window.document.querySelector('[data-testid="play-catalog"]')).toBeNull()
+    expect(window.document.querySelector('[data-testid="friend-challenge-card"]')).toBeNull()
+    expect(window.document.querySelector('[data-testid="game-tile-znacenje"]')).toBeNull()
+    expect(window.document.querySelector('[data-testid="game-tile-kartice"]')).toBeNull()
     expect(window.document.querySelector('header')?.textContent).toContain('Igre')
     expect(window.document.querySelector('header')?.textContent).toContain('Doprinesi')
     expect(window.document.querySelector('header')?.textContent).toContain('O projektu')
@@ -182,22 +182,19 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi contribute and about page
   })
 })
 
-describe.skipIf(!harness.enabled)('Potkalnički zapisi quiz catalog', () => {
-  it('renders the play catalogue with the daily word first', async () => {
+describe.skipIf(!harness.enabled)('Potkalnički zapisi games SSR', () => {
+  it('leaves the daily word and catalogue cards to client-side loading', async () => {
     const response = await request('/igre')
     expect(response.status).toBe(200)
     const html = await response.text()
     const { Window } = await import('happy-dom')
     const window = new Window({ url: url('/') }) // resolves the page's relative preload links
     window.document.body.innerHTML = html
-    const catalog = window.document.querySelector('[data-testid="play-catalog"]')!
-    expect(catalog).not.toBeNull()
-    const daily = window.document.querySelector('#rijec-dana')!
-    expect(daily).not.toBeNull()
-    expect(daily.compareDocumentPosition(catalog) & 4).toBeTruthy()
-    expect(window.document.querySelector('#rijec-dana [data-testid="daily-skeleton"]')).not.toBeNull()
-    expect(catalog.querySelector('[data-testid="game-tile-znacenje"]')).not.toBeNull()
-    expect(catalog.querySelector('[data-testid="game-tile-znacenje"]')?.textContent).toContain('Kaj to znači?')
+    expect(window.document.querySelector('[data-testid="play-loading"]')).not.toBeNull()
+    expect(window.document.querySelector('[data-testid="play-catalog"]')).toBeNull()
+    expect(window.document.querySelector('#rijec-dana')).toBeNull()
+    expect(window.document.querySelector('[data-testid="game-tile-znacenje"]')).toBeNull()
+    expect(window.document.querySelector('[data-testid="game-tile-kartice"]')).toBeNull()
     await window.happyDOM.close()
   })
 })
@@ -948,7 +945,7 @@ describe.skipIf(!harness.enabled)('multiple-choice pages', () => {
     const html = await response.text()
     expect(html).toMatch(/<html[^>]+lang="hr-HR"/)
     expect(html).toContain('Ponuđeni odgovori')
-    expect(html).toContain('Učitavam pitanja…')
+    expect(html).toContain('Pripremamo pitanja…')
     expect(html).not.toContain('Trebamo još riječi')
     expect(html).toContain('role="status"')
     expect(html).not.toContain('/igre/kartice')
@@ -1021,7 +1018,7 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
 
   it.each([
     { path: '', title: 'Potkalnički zapisi', description: 'Istraži mjesta', image: 'og.svg' },
-    { path: '/igre/', title: 'Igraj · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
+    { path: '/igre/', title: 'Igre · Potkalnički zapisi', description: 'Trinaest kratkih igara', image: 'og.svg' },
     { path: '/doprinesi/', title: 'Doprinesi · Potkalnički zapisi', description: 'Zapiši ono što znaš', image: 'og.svg' },
     { path: '/o-projektu/', title: 'O projektu · Potkalnički zapisi', description: 'Digitalni arhiv kraja pod Kalnikom.', image: 'og.svg' },
     { path: '/uci/', title: 'Uči · Potkalnički zapisi', description: 'Odaberi teme', image: 'og.svg' },

@@ -48,52 +48,24 @@ useSeoMeta({
 </script>
 
 <template>
-  <UContainer class="py-3 sm:py-5 lg:py-6">
-    <div class="mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3">
-      <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
-          {{ t('pz.play.opcineEyebrow') }}
-        </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
-          {{ t('pz.play.opcineTitle') }}
-        </h1>
-        <p class="mt-1 text-sm text-muted">
-          {{ t('pz.play.opcineDescription') }}
-        </p>
-      </header>
-
-      <div
-        v-if="error || loading"
-        class="rounded-xl bg-default p-4 ring ring-default"
-        role="status"
-      >
-        <p>{{ t(error ? 'quiz.loadError' : 'quiz.loading') }}</p>
-        <UButton
-          v-if="error"
-          :label="t('quiz.retry')"
-          variant="link"
-          @click="refresh()"
-        />
-      </div>
-      <div
-        v-else-if="placeCount < 3"
-        class="rounded-xl bg-default p-4 text-center ring ring-default"
-        role="status"
-      >
-        <h2 class="text-xl font-bold text-highlighted">
-          {{ t('quiz.emptyTitle') }}
-        </h2>
-        <p class="mt-1 text-sm text-muted">
-          {{ t('quiz.emptyDescription') }}
-        </p>
-      </div>
+  <GamesScreen
+    :title="t('pz.play.opcineTitle')"
+    :lead="t('pz.play.opcineDescription')"
+    :loading="loading"
+    :error="Boolean(error)"
+    :empty="placeCount < 3"
+    :started="started"
+    @retry="refresh()"
+  >
+    <template #start>
       <GamesStart
-        v-else-if="!started"
         v-model:difficulty="difficulty"
+        :game-id="game.id"
         @start="start"
       />
+    </template>
+    <template #round>
       <GamesShell
-        v-else
         :game-id="game.id"
         :title="t('pz.play.opcineTitle')"
         :questions="questions"
@@ -101,6 +73,6 @@ useSeoMeta({
         :difficulty="difficulty"
         @restart="restart"
       />
-    </div>
-  </UContainer>
+    </template>
+  </GamesScreen>
 </template>

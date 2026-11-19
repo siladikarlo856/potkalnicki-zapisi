@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
-// The friend challenge hero on the home and games hub pages: the one inverted slab on its screen. Deep sage with
+// The friend challenge hero: the one inverted slab on its screen. Deep sage with
 // the ridge in primary bleeding off the bottom right, a wheat overline, a serif title, one sentence and a full-width
 // wheat button (focus rings on the slab switch to wheat in main.css). Two variants replace the copy:
 //   resume:  "Nastavi izazov · runda 2 od 3"

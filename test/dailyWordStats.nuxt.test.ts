@@ -5,7 +5,6 @@ import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
 import DailyWord from '../app/components/heritage/DailyWord.vue'
 import DailyStatus from '../app/components/heritage/DailyStatus.vue'
 import DailyStats from '../app/components/heritage/DailyStats.vue'
-import Hub from '../app/pages/igre/index.vue'
 import type { DailyProgress, DailyWordPayload } from '../shared/utils/dailyWord'
 
 const payload: DailyWordPayload = {
@@ -91,7 +90,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
   it('shares the exact spoiler-free text with encoded WhatsApp and Viber links', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
-    const link = 'https://prigorje.karlo-siladi.from.hr/igre/#rijec-dana'
+    const link = 'https://prigorje.karlo-siladi.from.hr/#rijec-dana'
     const page = await mountDaily(lang)
     expect(page.find('[data-testid="daily-share"]').exists()).toBe(false)
     await page.get('[data-option-id="a"]').trigger('click')
@@ -110,7 +109,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
   it('shares X/3 with three red squares after a miss', async () => {
     const page = await mountDaily(lang)
     for (const id of ['a', 'b', 'd']) await page.get(`[data-option-id="${id}"]`).trigger('click')
-    expect(page.get('[data-testid="daily-share-text"]').element.textContent?.trim()).toBe('Riječ dana #12: X/3\n🟥🟥🟥\nhttps://prigorje.karlo-siladi.from.hr/igre/#rijec-dana')
+    expect(page.get('[data-testid="daily-share-text"]').element.textContent?.trim()).toBe('Riječ dana #12: X/3\n🟥🟥🟥\nhttps://prigorje.karlo-siladi.from.hr/#rijec-dana')
     expect(page.get('[data-testid="daily-stats"] [data-today="true"]').text()).toContain(lang === 'hr' ? 'Nije uspjelo' : 'Missed')
   })
 
@@ -151,19 +150,6 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
     expect(played).toContain(lang === 'hr' ? 'niz 4 dana' : 'streak 4 days')
     expect(wrapper.find('[data-testid="daily-countdown"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="daily-status-play"]').exists()).toBe(false)
-  })
-})
-
-describe('daily status in the Words flagship card', () => {
-  it('updates inside the daily word section when today is played on the games hub', async () => {
-    await useNuxtApp().$i18n.setLocale('hr')
-    wrapper = await mountSuspended(Hub, { route: '/igre' })
-    const dailySection = () => wrapper!.get('#rijec-dana')
-    await expect.poll(() => dailySection().find('[data-option-id]').exists(), { timeout: 5000 }).toBe(true)
-    await wrapper.get('[data-option-id="a"]').trigger('click')
-    await wrapper.get('[data-option-id="c"]').trigger('click')
-    await expect.poll(() => dailySection().find('[data-testid="daily-reveal"]').exists()).toBe(true)
-    expect(dailySection().text()).toContain('hiža')
   })
 })
 

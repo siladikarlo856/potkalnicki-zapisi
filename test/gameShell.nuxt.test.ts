@@ -65,6 +65,7 @@ describe('GameShell', () => {
     expect(hidden.value).toBe(true)
     for (const q of questions) {
       await shell.get(`[data-testid="game-option-${q.correct}"]`).trigger('click')
+      await shell.get('[data-testid="game-check"]').trigger('click')
       await shell.get('[data-testid="game-next"]').trigger('click')
     }
     expect(hidden.value).toBe(false)
@@ -87,15 +88,16 @@ describe('GameShell', () => {
     const focus = vi.spyOn(HTMLElement.prototype, 'focus')
     const page = await mountShell()
     await page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     const feedback = page.get('[data-testid="game-feedback"]')
     expect(feedback.attributes('aria-live')).toBe('polite')
-    expect(feedback.text()).toContain('Nije točno.')
+    expect(feedback.text()).toContain('Netočno')
     expect(feedback.text()).toContain('Točan odgovor: A')
     expect(feedback.text()).toContain('Objašnjenje 0.')
     expect(focus.mock.contexts.some(element => (element as HTMLElement).dataset.testid === 'game-feedback-heading')).toBe(true)
     // ✓ and ✗ are text for assistive tech as well as icons.
     expect(page.get('[data-testid="game-option-0"]').text()).toContain('Točan odgovor')
-    expect(page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).text()).toContain('Tvoj odgovor')
+    expect(page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).text()).toContain('Netočno')
     expect(page.findAll(OPTION).every(option => option.attributes('aria-disabled') === 'true')).toBe(true)
     expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).cards['word:w0'].missed).toBe(1)
     // A second click on a locked option changes nothing.
@@ -110,6 +112,7 @@ describe('GameShell', () => {
     const focus = vi.spyOn(HTMLElement.prototype, 'focus')
     const page = await mountShell()
     await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 1')
     expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).cards['word:w0'].known).toBe(1)
     focus.mockClear()
@@ -120,11 +123,15 @@ describe('GameShell', () => {
     expect(focus.mock.contexts.some(element => (element as HTMLElement).id === 'game-question')).toBe(true)
   })
 
-  it('selects with the keys 1 to 3 and ignores 4 when there are only three options', async () => {
+  it('selects with digit and letter keys, case-insensitively, and ignores 4/D when there are only three options', async () => {
     const page = await mountShell()
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '4' }))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'D' }))
     expect(page.find('[data-testid="game-feedback"]').exists()).toBe(false)
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: String(questions[0]!.correct + 1) }))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: String.fromCharCode(97 + questions[0]!.correct) }))
+    await vi.waitFor(() => expect(page.get('[data-testid="game-check"]').attributes('disabled')).toBeUndefined())
+    expect(page.find('[data-testid="game-feedback"]').exists()).toBe(false)
+    await page.get('[data-testid="game-check"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-testid="game-feedback"]').exists()).toBe(true))
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 1')
   })
@@ -133,23 +140,23 @@ describe('GameShell', () => {
     const page = await mountShell()
     for (const [i, q] of questions.entries()) {
       await page.get(`[data-testid="game-option-${i === 1 ? wrongIndex(q) : q.correct}"]`).trigger('click')
+      await page.get('[data-testid="game-check"]').trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
-    expect(page.get('[data-testid="game-result-score"]').text()).toBe('2 / 3')
-    expect(page.get('[data-testid="pz-squares"]').attributes('aria-label')).toBe('2 točno, 1 netočno')
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('Rezultat: 2/3')
+    expect(page.findAll('[data-testid="question-dots"] li').map(dot => dot.attributes('data-state'))).toEqual(['right', 'wrong', 'right'])
     expect(page.findAll('[data-testid="game-miss"]')).toHaveLength(1)
     expect(page.get('[data-testid="game-miss"]').text()).toContain('Pitanje 1?')
     expect(page.get('[data-testid="game-miss"]').text()).toContain('Točan odgovor: B')
     expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!)).toMatchObject({ version: 1, best: { rijec: { score: 2, max: 3 } } })
-    // Rijec has no creator round: it links to the challenge page instead of making one in place.
-    // The primary action of the result is the challenge, ahead of the share and the replay buttons.
+    // The primary action of the result is "Igraj ponovno", ahead of the challenge and the share buttons.
     const primary = page.get('[data-testid="game-make-challenge"]')
-    expect(primary.text()).toBe('Izazovi prijatelje s ovom rundom')
-    expect(primary.attributes('href')).toContain('/izazov')
+    expect(primary.text()).toBe('Izazovi prijatelje ovom igrom')
+    expect(primary.attributes('href')).toBe('/izazov/novi/?igra=rijec&teme=rijeci')
     expect(page.find('[data-testid="challenge-create"]').exists()).toBe(false)
     const buttons = page.findAll('a[data-testid], button[data-testid]').map(button => button.attributes('data-testid'))
+    expect(buttons.indexOf('game-replay')).toBeLessThan(buttons.indexOf('game-make-challenge'))
     expect(buttons.indexOf('game-make-challenge')).toBeLessThan(buttons.indexOf('result-share-open'))
-    expect(buttons.indexOf('result-share-open')).toBeLessThan(buttons.indexOf('game-replay'))
     expect(page.get('[data-testid="result-share-open"]').text()).toBe('Podijeli rezultat')
     await page.get('[data-testid="result-share-open"]').trigger('click')
     await vi.waitFor(() => expect(document.body.querySelector('[data-testid="pz-share-text"]')).not.toBeNull())
@@ -161,6 +168,7 @@ describe('GameShell', () => {
     const page = await mountShell()
     for (const q of questions) {
       await page.get(`[data-testid="game-option-${wrongIndex(q)}"]`).trigger('click')
+      await page.get('[data-testid="game-check"]').trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
     expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!).best.rijec).toMatchObject({ score: 3, max: 3 })
@@ -172,6 +180,7 @@ describe('GameShell', () => {
     const page = await mountShell()
     for (const q of questions) {
       await page.get(`[data-testid="game-option-${wrongIndex(q)}"]`).trigger('click')
+      await page.get('[data-testid="game-check"]').trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
     await page.get('[data-testid="game-replay-missed"]').trigger('click')
@@ -179,20 +188,22 @@ describe('GameShell', () => {
     for (let i = 0; i < 3; i++) {
       // Options are reshuffled, so find the correct one from the prompt's question.
       const n = Number(page.get('[data-testid="game-prompt"]').text().match(/\d/)![0])
-      const texts = page.findAll(OPTION).map(option => option.text().replace(/^\d+\.?\s*/, ''))
+      const texts = page.findAll(OPTION).map(option => option.text().replace(/^[A-F]/, ''))
       await page.get(`[data-testid="game-option-${texts.indexOf(['A', 'B', 'C'][questions[n]!.correct]!)}"]`).trigger('click')
+      await page.get('[data-testid="game-check"]').trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
-    expect(page.get('[data-testid="game-result-score"]').text()).toBe('3 / 3')
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('Rezultat: 3/3')
     expect(page.find('[data-testid="result-share-open"]').exists()).toBe(false)
     expect(page.find('[data-testid="game-make-challenge"]').exists()).toBe(false)
-    // The 0/3 first round saved nothing, and the 3/3 practice round saves nothing either.
-    expect(localStorage.getItem(GAME_SCORES_KEY)).toBeNull()
+    expect(page.get('[data-testid="game-result"]').text()).not.toContain('Novi najbolji rezultat')
+    expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!).best.rijec).toMatchObject({ score: 0, max: 3 })
   })
 
   it('resets to the first question when new questions arrive', async () => {
     const page = await mountShell()
     await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     await page.setProps({ questions: [question(2), question(1)] })
     expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 2')
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 0')
@@ -200,12 +211,12 @@ describe('GameShell', () => {
 })
 
 describe('GameShell game kit', () => {
-  it('lists the options as buttons with aria-pressed before the answer', async () => {
+  it('lists the options as a radio group before the answer', async () => {
     const page = await mountShell()
     const options = page.findAll(OPTION)
     expect(options.every(option => option.element.tagName === 'BUTTON')).toBe(true)
-    expect(options.every(option => option.attributes('aria-pressed') === 'false')).toBe(true)
-    expect(page.find('[role="radiogroup"], [role="radio"]').exists()).toBe(false)
+    expect(options.every(option => option.attributes('role') === 'radio' && option.attributes('aria-checked') === 'false')).toBe(true)
+    expect(page.find('[role="radiogroup"]').exists()).toBe(true)
     expect(page.find('[data-testid="game-answer-tag"]').exists()).toBe(false)
   })
 
@@ -213,32 +224,35 @@ describe('GameShell game kit', () => {
     const page = await mountShell()
     const wrong = wrongIndex(questions[0]!)
     await page.get(`[data-testid="game-option-${wrong}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     const right = page.get(`[data-testid="game-option-${questions[0]!.correct}"]`)
     const picked = page.get(`[data-testid="game-option-${wrong}"]`)
     expect(right.get('[data-testid="game-answer-tag"]').text()).toBe('Točan odgovor')
     expect(right.find('[class*="lucide:check"]').exists()).toBe(true)
-    expect(picked.get('[data-testid="game-answer-tag"]').text()).toBe('Tvoj odgovor')
+    expect(picked.get('[data-testid="game-answer-tag"]').text()).toBe('Netočno')
     expect(picked.find('[class*="lucide:x"]').exists()).toBe(true)
     expect(right.attributes('data-state')).toBe('correct')
     expect(picked.attributes('data-state')).toBe('wrong')
-    // Options lose aria-pressed once they are locked.
-    expect(page.findAll(OPTION).every(option => option.attributes('aria-pressed') === undefined)).toBe(true)
+    // Every option is locked once the answer is checked.
+    expect(page.findAll(OPTION).every(option => option.attributes('aria-disabled') === 'true')).toBe(true)
   })
 
   it('says "Točno" on the option the player got right', async () => {
     const page = await mountShell()
     await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     expect(page.get('[data-testid="game-answer-tag"]').text()).toBe('Točno')
   })
 
   it('shows feedback as a status region: verdict, the right answer, why, then the links', async () => {
     const page = await mountShell()
     await page.get(`[data-testid="game-option-${wrongIndex(questions[0]!)}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     const feedback = page.get('[data-testid="game-feedback"]')
     expect(feedback.attributes('role')).toBe('status')
     expect(feedback.attributes('aria-live')).toBe('polite')
-    expect(feedback.get('h3').text()).toBe('Nije točno.')
-    expect(feedback.text()).toMatch(/Nije točno\.\s*Točan odgovor: A\.\s*Objašnjenje 0\./)
+    expect(feedback.get('h3').text()).toBe('Netočno')
+    expect(feedback.text()).toMatch(/Netočno\s*Točan odgovor: A\.\s*Objašnjenje 0\./)
     const html = feedback.html()
     expect(html.indexOf('Objašnjenje 0.')).toBeLessThan(html.indexOf('data-testid="game-open-record"'))
   })
@@ -254,6 +268,7 @@ describe('GameShell game kit', () => {
     try {
       const page = await mountShell()
       await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
+      await page.get('[data-testid="game-check"]').trigger('click')
       await vi.advanceTimersByTimeAsync(60_000)
       expect(page.get('[data-testid="game-progress"]').attributes('aria-valuetext')).toBe('1 od 3')
       expect(page.find('[data-testid="game-feedback"]').exists()).toBe(true)
@@ -268,14 +283,16 @@ describe('GameShell game kit', () => {
     const page = await mountShell()
     expect(page.find('[data-testid="pz-sticky-action-bar"]').exists()).toBe(false)
     await page.get(`[data-testid="game-option-${questions[0]!.correct}"]`).trigger('click')
-    const bar = page.get('[data-testid="pz-sticky-action-bar"]')
+    await page.get('[data-testid="game-check"]').trigger('click')
+    const bar = page.get('[data-testid="game-action-bar"]')
     expect(bar.get('[data-testid="game-next"]').text()).toBe('Dalje')
     await page.get('[data-testid="game-next"]').trigger('click')
     await page.get(`[data-testid="game-option-${questions[1]!.correct}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     await page.get('[data-testid="game-next"]').trigger('click')
     await page.get(`[data-testid="game-option-${questions[2]!.correct}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     expect(page.get('[data-testid="game-next"]').text()).toBe('Pogledaj rezultat')
-    expect(page.get('[data-testid="game-next-desktop"]').text()).toBe('Pogledaj rezultat')
   })
 })
 
@@ -284,11 +301,12 @@ describe('Kak se to veli?', () => {
     wrapper = await mountSuspended(KakSeVeli, { route: '/igre/kak-se-veli' })
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="game-start"]').exists()).toBe(true))
     const levels = ['lako', 'srednje', 'tesko'].map(id => wrapper!.get(`[data-testid="game-level-${id}"]`))
-    expect(levels.map(level => level.text())).toEqual(['Lako', 'Srednje', 'Teško'])
-    expect(levels.map(level => level.attributes('aria-checked'))).toEqual(['false', 'true', 'false'])
-    await levels[2]!.trigger('click')
-    expect(wrapper.get('[data-testid="game-level-tesko"]').attributes('aria-checked')).toBe('true')
-    expect(wrapper.get('[data-testid="game-start-button"]').text()).toBe('Kreni')
+    expect(levels.map(level => level.get('b').text())).toEqual(['Lako', 'Srednje', 'Teško'])
+    const checked = () => ['lako', 'srednje', 'tesko'].map(id => (wrapper!.get(`[data-testid="game-level-${id}"] input`).element as HTMLInputElement).checked)
+    expect(checked()).toEqual([false, true, false])
+    await levels[2]!.get('input').setValue(true)
+    expect(checked()).toEqual([false, false, true])
+    expect(wrapper.get('[data-testid="game-start-button"]').text()).toBe('Počni')
     await wrapper.get('[data-testid="game-start-button"]').trigger('click')
     expect(wrapper.find('[data-testid="game-start"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="game-prompt"]').text()).toMatch(/^Kak se kod nas veli „značenje \d”\?$/)

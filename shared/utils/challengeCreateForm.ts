@@ -1,14 +1,28 @@
 import type { GenerateChallengeInput } from './challenge'
 import { DEFAULT_GENERATE } from './challenge'
-import type { CardPool, TopicId } from './learn/types'
-import type { Difficulty, GenerateGameId } from './games/types'
+import type { CardKind, CardPool, TopicId } from './learn/types'
+import type { Difficulty, GameId, GenerateGameId } from './games/types'
 import { generateGameEnabled } from './games/questions'
-import { CHALLENGEABLE_GAMES } from './games/definitions'
+import { CHALLENGEABLE_GAMES, gameDefinition } from './games/definitions'
 import { challengeGameLabel } from './challengeShare'
 
 const LENGTHS = new Set([5, 10, 15])
 /** The mixed game first, then every challengeable game in catalogue order. */
 const GAMES: readonly GenerateGameId[] = ['mjesovito', ...CHALLENGEABLE_GAMES]
+
+const GAME_TOPICS: Record<CardKind, TopicId> = {
+  word: 'rijeci',
+  place: 'mjesta',
+  item: 'bastina',
+  person: 'osobe',
+  club: 'sport'
+}
+
+export function challengeCreateQueryForGame(game: GameId): { igra: GameId, teme: TopicId } | null {
+  const definition = gameDefinition(game)
+  if (!definition.challengeable || !definition.questionCard) return null
+  return { igra: game, teme: GAME_TOPICS[definition.questionCard.kind] }
+}
 
 export interface ChallengeCreateGameOption {
   id: GenerateGameId

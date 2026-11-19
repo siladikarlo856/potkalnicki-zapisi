@@ -54,43 +54,25 @@ useSeoMeta({
 </script>
 
 <template>
-  <UContainer class="py-3 sm:py-5 lg:py-6">
-    <div class="mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3">
-      <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
-          {{ t('pz.map.whichTitle') }}
-        </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
-          {{ t('pz.map.whichTitle') }}
-        </h1>
-        <p class="mt-1 text-sm text-muted">
-          {{ t('pz.map.whichBlurb') }}
-        </p>
-      </header>
-
-      <div
-        v-if="error || loading"
-        class="rounded-xl bg-default p-4 ring ring-default"
-        role="status"
-      >
-        <p>{{ t(error ? 'quiz.loadError' : 'quiz.loading') }}</p>
-        <UButton
-          v-if="error"
-          :label="t('quiz.retry')"
-          variant="link"
-          @click="refresh()"
-        />
-      </div>
-
+  <GamesScreen
+    :title="t('pz.map.whichTitle')"
+    :lead="t('pz.map.whichBlurb')"
+    :loading="loading"
+    :error="Boolean(error)"
+    :empty="false"
+    :started="started"
+    @retry="refresh()"
+  >
+    <template #start>
       <GamesStart
-        v-else-if="!started"
         v-model:difficulty="difficulty"
+        :game-id="game.id"
         :disabled="places.length < 4"
         @start="start"
       />
-
+    </template>
+    <template #round>
       <GamesShell
-        v-else-if="questions.length"
         :game-id="game.id"
         :title="t('pz.map.whichTitle')"
         :questions="questions"
@@ -98,7 +80,7 @@ useSeoMeta({
         :difficulty="difficulty"
         @restart="restart"
       >
-        <template #default="{ question, selected, answered, answer }">
+        <template #default="{ question, selected, pending, answered, pick, answer }">
           <GamesMapView
             v-if="placeFor(question)"
             class="mb-3"
@@ -114,11 +96,13 @@ useSeoMeta({
           <GamesOptions
             :question="question"
             :selected="selected"
+            :pending="pending"
             labelledby="game-question"
-            @select="answer"
+            @select="pick"
+            @submit="answer()"
           />
         </template>
       </GamesShell>
-    </div>
-  </UContainer>
+    </template>
+  </GamesScreen>
 </template>

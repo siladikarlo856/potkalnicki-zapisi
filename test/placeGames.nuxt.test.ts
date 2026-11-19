@@ -3,6 +3,7 @@ import { flushPromises } from '@vue/test-utils'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData } from '#imports'
 import Opcine from '../app/pages/igre/opcine.vue'
+import KojeJeSelo from '../app/pages/igre/koje-je-selo.vue'
 import SelaOpcine from '../app/pages/igre/sela-i-opcine.vue'
 import Nabroji from '../app/pages/igre/nabroji.vue'
 import { fixtureCardPool } from './fixtures/gamePool'
@@ -33,11 +34,25 @@ describe('opcine game page', () => {
     for (let i = 0; i < 12 && wrapper.find('[data-testid="game-result"]').exists() === false; i++) {
       if (!wrapper.find('[data-testid="game-option-0"]').exists()) break
       await wrapper.get('[data-testid="game-option-0"]').trigger('click')
+      await wrapper.get('[data-testid="game-check"]').trigger('click')
       if (wrapper.find('[data-testid="game-next"]').exists()) {
         await wrapper.get('[data-testid="game-next"]').trigger('click')
       }
     }
     expect(wrapper.find('[data-testid="game-result"]').exists()).toBe(true)
+  })
+})
+
+describe('Koje je ovo selo?', () => {
+  it('checks the marked option with Enter through the custom renderer', async () => {
+    wrapper = await mountSuspended(KojeJeSelo, { route: '/igre/koje-je-selo' })
+    await waitForStart()
+    await wrapper.get('[data-testid="game-start-button"]').trigger('click')
+    const option = wrapper.get('[data-testid="game-option-0"]')
+    await option.trigger('click')
+    expect(wrapper.find('[data-testid="game-feedback"]').exists()).toBe(false)
+    await option.trigger('keydown', { key: 'Enter' })
+    expect(wrapper.find('[data-testid="game-feedback"]').exists()).toBe(true)
   })
 })
 
