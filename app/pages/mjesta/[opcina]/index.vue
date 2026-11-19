@@ -27,8 +27,13 @@ const settlements = computed(() => (page.value?.settlements ?? []).map(s => ({
   ...s,
   to: settlementPath(municipalitySlug.value, s.slug)
 })).sort((a, b) => a.name.localeCompare(b.name, 'hr')))
-const filteredSettlements = computed(() => settlements.value.filter(s => s.name.toLocaleLowerCase('hr').includes(settlementFilter.value.trim().toLocaleLowerCase('hr'))))
-const availableLetters = computed(() => [...new Set(settlements.value.map(s => s.name.slice(0, 1).toLocaleUpperCase('hr')))])
+const currentLetter = computed(() => typeof route.query.slovo === 'string' ? alphabetLetter(route.query.slovo) : undefined)
+const filteredSettlements = computed(() => {
+  const query = foldHr(settlementFilter.value.trim())
+  return settlements.value.filter(s => foldHr(s.name).includes(query) && (!currentLetter.value || alphabetLetter(s.name) === currentLetter.value))
+})
+const availableLetters = computed(() => [...new Set(settlements.value.flatMap(s => alphabetLetter(s.name) ?? []))])
+const letterTo = (letter: string) => `${route.path}?slovo=${encodeURIComponent(letter.toLocaleLowerCase('hr'))}#settlements-title`
 
 // "Baština" tab: the municipality's items, from the same list API the heritage list uses.
 const { data: heritage } = useLazyFetch<AtlasHeritageListResponse>('/api/atlas/heritage', {
@@ -125,9 +130,11 @@ useSeoMeta({
         <PzAlphabetIndex
           v-if="settlements.length > 20"
           :available="availableLetters"
+          :current="currentLetter"
+          :to="letterTo"
         />
         <PzEmptyState
-          v-if="settlementFilter && !filteredSettlements.length"
+          v-if="!filteredSettlements.length"
           title="Nijedno naselje ne sadrži ovaj filtar"
           description="Provjeri kako je napisano ili obriši filtar da vidiš sva naselja."
         />

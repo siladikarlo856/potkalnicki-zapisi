@@ -19,13 +19,13 @@ useSeoMeta({
 })
 
 const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
-const municipalityPages = await Promise.all((overview.value?.municipalities ?? []).map(async (m) => {
+const { data: municipalityPages } = await useAsyncData('pz-places-municipality-pages', () => Promise.all((overview.value?.municipalities ?? []).map(async (m) => {
   try {
     return await $fetch<AtlasMunicipalityResponse>(`/api/atlas/municipalities/${m.slug}`)
   } catch {
     return null
   }
-}))
+})))
 
 // Four equal entries open the hub: places (the list below), Baština, Priče i običaji and Naš govor. The word and
 // record counts are not part of the overview, so those two show no number.
@@ -43,7 +43,11 @@ const municipalities = computed(() => (overview.value?.municipalities ?? []).map
   settlements: m.stats.settlements,
   items: m.stats.items
 })))
-const settlements = computed(() => municipalityPages.filter((page): page is AtlasMunicipalityResponse => !!page).flatMap(page => page.settlements.map(s => ({ ...s, municipality: page.municipality.label, to: `${page.municipality.path}${s.slug}/` }))))
+const settlements = computed(() => (municipalityPages.value ?? []).filter((page): page is AtlasMunicipalityResponse => !!page).flatMap(page => page.settlements.map(s => ({ ...s, municipality: page.municipality.label, to: `${page.municipality.path}${s.slug}/` }))))
+const normalizedQuery = computed(() => foldHr(settlementQuery.value.trim()))
+const matches = computed(() => normalizedQuery.value
+  ? settlements.value.filter(s => foldHr(s.name).includes(normalizedQuery.value)).slice(0, 8)
+  : [])
 </script>
 
 <template>
@@ -105,21 +109,21 @@ const settlements = computed(() => municipalityPages.filter((page): page is Atla
           placeholder="npr. Glogovnica"
         />
         <p
-          v-if="settlementQuery.trim() && !settlements.length"
+          v-if="normalizedQuery && !matches.length"
           class="pz-body-sm text-muted"
         >
-          Nema naselja „{{ settlementQuery }}”. Arhiv pokriva općine Kalnik, Sveti Petar Orehovec i Gornja Rijeka te grad Križevci.
+          Nema naselja „{{ settlementQuery.trim() }}”. Arhiv pokriva općine Kalnik, Sveti Petar Orehovec i Gornja Rijeka te grad Križevci.
         </p>
         <PzMunicipalityList
-          v-if="!settlementQuery.trim()"
+          v-if="!normalizedQuery"
           :rows="municipalities"
         />
         <ul
-          v-else
+          v-else-if="matches.length"
           class="divide-y divide-default rounded-lg border border-default bg-default"
         >
           <li
-            v-for="settlement in settlements.filter(s => s.name.toLocaleLowerCase('hr').includes(settlementQuery.toLocaleLowerCase('hr'))).slice(0, 8)"
+            v-for="settlement in matches"
             :key="settlement.id"
           >
             <NuxtLink
