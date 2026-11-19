@@ -38,7 +38,7 @@ const state = computed(() => {
 })
 
 function setQuery(patch: Record<string, string | number | undefined>, keepPage = false) {
-  const query = Object.fromEntries(Object.entries({ ...route.query, ...patch, ...(keepPage ? {} : { page: undefined }) })
+  const query = Object.fromEntries(Object.entries({ ...route.query, ...(keepPage ? {} : { page: undefined, id: undefined }), ...patch })
     .filter(([key, value]) => value !== undefined && value !== '' && !(key === 'status' && value === 'pending') && !(key === 'page' && value === 1)))
   return router.replace({ query })
 }
@@ -86,7 +86,7 @@ const openId = computed(() => {
   const id = Number(single(route.query.id))
   return Number.isSafeInteger(id) ? id : undefined
 })
-const openRow = computed(() => rows.value.find(row => row.id === openId.value) ?? (openId.value === undefined && isWide.value ? rows.value[0] : undefined))
+const openRow = computed(() => rows.value.find(row => row.id === openId.value) ?? (isWide.value ? rows.value[0] : undefined))
 const isWide = useMedia('(min-width: 1024px)')
 function open(row: InboxRow) {
   return setQuery({ id: row.id }, true)
@@ -111,7 +111,7 @@ const bulkActions = [
 ]
 async function bulk(action: 'reject' | 'delete') {
   const count = selected.value.length
-  if (!count) return
+  if (!count || bulkBusy.value) return
   if (!await confirm({
     title: action === 'delete' ? `Obrisati ${count} prijedloga?` : `Odbiti ${count} prijedloga?`,
     description: action === 'delete'
@@ -169,14 +169,25 @@ const headline = computed(() => pending.value
         :model-value="state.status"
         :items="statusTabs"
         :content="false"
-        @update:model-value="value => setQuery({ status: String(value), id: undefined })"
+        @update:model-value="value => setQuery({ status: String(value) })"
       />
 
+      <p
+        v-if="bulkBusy"
+        class="flex items-center gap-2 rounded-lg bg-inverted p-3 text-inverted"
+        role="status"
+        data-test="admin-inbox-bulk-busy"
+      >
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-4 animate-spin"
+        />
+        Obrađujem {{ selected.length }} {{ nounFor(selected.length, ['prilog', 'priloga', 'priloga']) }}…
+      </p>
       <AdminBulkActionBar
-        v-if="selected.length"
+        v-else-if="selected.length"
         :count="selected.length"
         :actions="bulkActions"
-        :running="bulkBusy ? { label: 'Obrađujem…', done: 0, total: selected.length } : undefined"
         data-test="admin-inbox-bulk"
         @action="key => bulk(key as 'reject' | 'delete')"
         @clear="selected = []"
@@ -344,7 +355,7 @@ const headline = computed(() => pending.value
           :page="state.page"
           :total="total"
           :items-per-page="CONTENT_PAGE_SIZES[0]"
-          @update:page="page => setQuery({ page }, true)"
+          @update:page="page => setQuery({ page })"
         />
       </div>
     </div>

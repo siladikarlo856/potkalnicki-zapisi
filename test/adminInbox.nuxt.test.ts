@@ -59,8 +59,10 @@ async function draftRoute(event: unknown) {
   await record(event)
   return { kind: 'heritage_item', id: ITEM, created: true }
 }
+let bulkGate: Promise<void> | undefined
 async function bulkRoute(event: unknown) {
   await record(event, true)
+  await bulkGate
   return { done: 2, skipped: 0 }
 }
 
@@ -185,6 +187,38 @@ describe('admin inbox', () => {
     await vi.waitFor(() => expect(dialog()?.textContent).toContain('Odbiti 2 prijedloga?'))
     dialog()!.querySelector<HTMLButtonElement>('[data-test="admin-confirm-accept"]')!.click()
     await vi.waitFor(() => expect(calls.find(call => call.path === '/api/admin/inbox/bulk')?.body).toEqual({ ids: [12, 13], action: 'reject' }))
+  })
+})
+
+describe('admin inbox review pane and bulk state', () => {
+  it('opens the first row on a wide screen when the linked contribution is no longer in the list', async () => {
+    wrapper = await mountInApp(Prijedlozi, '/admin/prijedlozi?id=99')
+    await vi.waitFor(() => expect(wrapper!.find('section[aria-label="Pregled priloga"]').exists()).toBe(true))
+    expect(wrapper.get('button[aria-current="true"]').attributes('aria-label')).toBe('Detalji prijedloga 12')
+  })
+
+  it('shows a busy state without progress or a stop control while the bulk request runs', async () => {
+    let release!: () => void
+    bulkGate = new Promise(resolve => (release = resolve))
+    try {
+      wrapper = await mountInApp(Prijedlozi, '/admin/prijedlozi')
+      await vi.waitFor(() => expect(wrapper!.text()).toContain('Naziv je drugačiji.'))
+      await wrapper.findAll('button[role="checkbox"]')[0]!.trigger('click')
+      await wrapper.findAll('button[role="checkbox"]')[1]!.trigger('click')
+      await vi.waitFor(() => expect(wrapper!.find('[data-test="admin-inbox-bulk"]').exists()).toBe(true))
+      buttonIn(wrapper.get('[data-test="admin-inbox-bulk"]').element, 'Odbij')!.click()
+      await vi.waitFor(() => expect(dialog()?.textContent).toContain('Odbiti 2 prijedloga?'))
+      dialog()!.querySelector<HTMLButtonElement>('[data-test="admin-confirm-accept"]')!.click()
+      await vi.waitFor(() => expect(wrapper!.find('[data-test="admin-inbox-bulk-busy"]').exists()).toBe(true))
+      expect(wrapper.get('[data-test="admin-inbox-bulk-busy"]').text()).toContain('Obrađujem 2 priloga')
+      expect(buttonIn(wrapper.element, 'Zaustavi')).toBeUndefined()
+      expect(wrapper.find('[role="progressbar"]').exists()).toBe(false)
+      release()
+      await vi.waitFor(() => expect(wrapper!.find('[data-test="admin-inbox-bulk-busy"]').exists()).toBe(false))
+    } finally {
+      release()
+      bulkGate = undefined
+    }
   })
 })
 
