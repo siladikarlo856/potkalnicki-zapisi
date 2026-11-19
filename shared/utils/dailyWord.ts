@@ -123,7 +123,7 @@ export interface DailyStats {
 }
 
 /** Consume validated device records and the server-provided day, never device time. */
-export function deriveDailyStats(days: Readonly<Record<string, DailyProgress>>, today: string): DailyStats {
+export function deriveDailyStats(days: Readonly<Record<string, DailyProgress>>, today: string, outageDays: readonly string[] = []): DailyStats {
   const completed = Object.keys(days).filter(day => day <= today && days[day]!.done).sort()
   const distribution: DailyStats['distribution'] = { 1: 0, 2: 0, 3: 0, X: 0 }
   let solved = 0
@@ -132,7 +132,7 @@ export function deriveDailyStats(days: Readonly<Record<string, DailyProgress>>, 
   let previous: string | undefined
   for (const day of completed) {
     const result = days[day]!
-    run = previous && dayDiff(previous, day) === 1 ? run + 1 : 1
+    run = previous === previousDailyDay(days, day, outageDays) ? run + 1 : 1
     maxStreak = Math.max(maxStreak, run)
     previous = day
     if (result.solved) {
@@ -141,10 +141,10 @@ export function deriveDailyStats(days: Readonly<Record<string, DailyProgress>>, 
     } else distribution.X++
   }
   let streak = 0
-  let day = days[today]?.done ? today : addDays(today, -1)
+  let day = days[today]?.done ? today : previousDailyDay(days, today, outageDays)
   while (days[day]?.done) {
     streak++
-    day = addDays(day, -1)
+    day = previousDailyDay(days, day, outageDays)
   }
   return { streak, maxStreak, played: completed.length, percentCorrect: completed.length ? Math.round(100 * solved / completed.length) : 0, distribution }
 }
@@ -181,25 +181,31 @@ function oneLetterApart(a: string, b: string): boolean {
  * The run of consecutive solved days ending today (when today is solved) or yesterday. A missed day ends the run,
  * unlike `deriveDailyStats().streak`, which counts every played day.
  */
-export function dailySolvedStreak(days: Readonly<Record<string, DailyProgress>>, today: string): number {
-  return solvedRunEndingOn(days, days[today]?.done ? today : addDays(today, -1))
+export function dailySolvedStreak(days: Readonly<Record<string, DailyProgress>>, today: string, outageDays: readonly string[] = []): number {
+  return solvedRunEndingOn(days, days[today]?.done ? today : previousDailyDay(days, today, outageDays), outageDays)
 }
 
-function solvedRunEndingOn(days: Readonly<Record<string, DailyProgress>>, last: string): number {
+function previousDailyDay(days: Readonly<Record<string, DailyProgress>>, day: string, outageDays: readonly string[]): string {
+  let previous = addDays(day, -1)
+  while (outageDays.includes(previous) && !days[previous]?.done) previous = addDays(previous, -1)
+  return previous
+}
+
+function solvedRunEndingOn(days: Readonly<Record<string, DailyProgress>>, last: string, outageDays: readonly string[]): number {
   let day = last
   let run = 0
   while (days[day]?.done && days[day]!.solved) {
     run++
-    day = addDays(day, -1)
+    day = previousDailyDay(days, day, outageDays)
   }
   return run
 }
 
 /** The run that today's missed word ended (0 when today is not a finished miss). */
-export function dailyBrokenStreak(days: Readonly<Record<string, DailyProgress>>, today: string): number {
+export function dailyBrokenStreak(days: Readonly<Record<string, DailyProgress>>, today: string, outageDays: readonly string[] = []): number {
   const record = days[today]
   if (!record?.done || record.solved) return 0
-  return solvedRunEndingOn(days, addDays(today, -1))
+  return solvedRunEndingOn(days, previousDailyDay(days, today, outageDays), outageDays)
 }
 
 export type DailyGuessVerdict = { kind: 'wrong' } | { kind: 'right', answer: string, exact: boolean }

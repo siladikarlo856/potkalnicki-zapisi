@@ -203,6 +203,37 @@ describe('typed daily round helpers', () => {
     expect(dailySolvedStreak({ ...days, '2026-11-15': day(true) }, '2026-11-15')).toBe(4)
   })
 
+  it('preserves a solved streak across recorded outages without counting them as played', () => {
+    const days: Record<string, DailyProgress> = { '2026-11-14': result() }
+    const outages = ['2026-11-15']
+    expect(dailySolvedStreak(days, '2026-11-15', outages)).toBe(1)
+    expect(dailySolvedStreak(days, '2026-11-16', outages)).toBe(1)
+    days['2026-11-16'] = result()
+    expect(dailySolvedStreak(days, '2026-11-16', outages)).toBe(2)
+    expect(deriveDailyStats(days, '2026-11-16', outages)).toMatchObject({ streak: 2, maxStreak: 2, played: 2, percentCorrect: 100 })
+    expect(dailyWordShareMessage('2026-11-16', days['2026-11-16']!, dailySolvedStreak(days, '2026-11-16', outages))).toContain('niz 2')
+    expect(dailySolvedStreak(days, '2026-11-18', [...outages, '2026-11-17'])).toBe(2)
+    expect(dailySolvedStreak(days, '2026-11-19', [...outages, '2026-11-17', '2026-11-18'])).toBe(2)
+  })
+
+  it('breaks the streak on an ordinary missed day without an outage record', () => {
+    const days = { '2026-11-14': result() }
+    expect(dailySolvedStreak(days, '2026-11-16')).toBe(0)
+    const resumed = { ...days, '2026-11-16': result() }
+    expect(dailySolvedStreak(resumed, '2026-11-16')).toBe(1)
+    expect(deriveDailyStats(resumed, '2026-11-16')).toMatchObject({ streak: 1, maxStreak: 1, played: 2 })
+    expect(dailySolvedStreak(days, '2026-11-17', ['2026-11-16'])).toBe(0)
+  })
+
+  it('lets a completed loss override an outage and reports the broken run across outages', () => {
+    const days = { '2026-11-14': result(), '2026-11-16': result(false, 3) }
+    const outages = ['2026-11-15', '2026-11-16']
+    expect(dailySolvedStreak(days, '2026-11-16', outages)).toBe(0)
+    expect(dailyBrokenStreak(days, '2026-11-16', outages)).toBe(1)
+    expect(dailySolvedStreak({ ...days, '2026-11-17': result() }, '2026-11-17', outages)).toBe(1)
+    expect(dailyBrokenStreak({ ...days, '2026-11-16': result() }, '2026-11-16', outages)).toBe(0)
+  })
+
   it('reports no broken run when a missed or unfinished day had already ended it', () => {
     const day = (solved: boolean, done = true) => ({ wordId: 'w', guesses: [], done, solved, tries: 1, maxTries: 5 })
     const gap = { '2026-11-13': day(true), '2026-11-14': day(true), '2026-11-16': day(false) }

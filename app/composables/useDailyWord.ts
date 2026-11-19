@@ -1,4 +1,5 @@
 import { computed, onBeforeUnmount, watch } from 'vue'
+import { zagrebDay } from '~~/shared/utils/dailyWord'
 import type { DailyWordPayload } from '~~/shared/utils/dailyWord'
 
 const RETRY_MS = 30_000
@@ -15,6 +16,10 @@ export function useDailyWord() {
   const payload = computed(() => data.value ?? undefined)
   /** Before the epoch the API answers 404 not-started and the section stays hidden. */
   const unavailable = computed(() => error.value?.statusCode === 404)
+  const progress = useDailyProgress()
+  watch([error, progress.loaded], ([failure, loaded]) => {
+    if (import.meta.client && loaded && failure && !unavailable.value) progress.recordOutage(zagrebDay(new Date()))
+  }, { immediate: true })
 
   let timer: ReturnType<typeof setTimeout> | undefined
   let disposed = false
