@@ -246,7 +246,7 @@ useSeoMeta({
           mode="correction"
           :target="{ id: correction.id, label: correction.label }"
           :current="correction.current"
-          draft-key="doprinesi"
+          :draft-key="`doprinesi/correction/${correction.kind}/${correction.id}`"
         />
         <HeritageSuggestForm
           v-else-if="proposalRequest"
@@ -254,14 +254,14 @@ useSeoMeta({
           :kind="proposalRequest.kind"
           mode="proposal"
           :prefill="proposalPrefill"
-          draft-key="doprinesi"
+          :draft-key="`doprinesi/proposal/${proposalRequest.kind}`"
         />
         <HeritageSubmissionForm
           v-else-if="selectedKind"
           :word="prefillWord"
           :fixed-type="fixedType"
           hide-type-picker
-          draft-key="doprinesi"
+          :draft-key="`doprinesi/submission/${selectedKind}`"
           sticky-bar
         />
       </div>
