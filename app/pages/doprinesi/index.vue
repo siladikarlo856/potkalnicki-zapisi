@@ -150,22 +150,15 @@ useSeoMeta({
 
 <template>
   <div class="mx-auto w-full max-w-(--pz-page-max) px-4 py-6 lg:px-12 lg:py-12">
-    <div class="flex max-w-(--pz-measure) flex-col gap-8">
-      <header
-        v-if="showPicker"
-        class="flex flex-col gap-3"
-      >
-        <h1 class="pz-h1 text-highlighted lg:pz-display">
-          {{ t('pz.contribute.title') }}
-        </h1>
-        <p class="pz-body text-muted">
-          {{ t('pz.contribute.intro') }}
-        </p>
-      </header>
+    <div class="mx-auto flex w-full max-w-[720px] flex-col gap-8">
+      <PageHead
+        :title="t('pz.contribute.title')"
+        lead="Zapiši ono što znaš o ovom kraju. Urednik svaki prilog pregleda prije objave i, ako treba, javi ti se s pitanjem."
+      />
 
       <ul
         v-if="showPicker"
-        class="grid grid-cols-2 gap-3"
+        class="grid gap-3 sm:grid-cols-2"
         data-testid="contribute-type-picker"
       >
         <li
@@ -253,6 +246,7 @@ useSeoMeta({
           mode="correction"
           :target="{ id: correction.id, label: correction.label }"
           :current="correction.current"
+          draft-key="doprinesi"
         />
         <HeritageSuggestForm
           v-else-if="proposalRequest"
@@ -260,12 +254,14 @@ useSeoMeta({
           :kind="proposalRequest.kind"
           mode="proposal"
           :prefill="proposalPrefill"
+          draft-key="doprinesi"
         />
         <HeritageSubmissionForm
           v-else-if="selectedKind"
           :word="prefillWord"
           :fixed-type="fixedType"
           hide-type-picker
+          draft-key="doprinesi"
           sticky-bar
         />
       </div>

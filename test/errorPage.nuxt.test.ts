@@ -12,14 +12,14 @@ describe('error page', () => {
     })
     expect(page.text()).toContain('Ovaj je zapis uklonjen')
     expect(page.text()).not.toMatch(/Pokušaj ponovno|pošlo po zlu/)
-    expect(page.findAll('a').find(link => link.text() === 'Na popis')?.attributes('href')).toBe('/bastina/')
+    expect(page.findAll('a').find(link => link.text() === 'Pregledaj baštinu')?.attributes('href')).toBe('/bastina/')
   })
 
   it('falls back to the places list when the section is unknown', async () => {
     const page = await mountSuspended(ErrorPage, {
       props: { error: { statusCode: 410, url: '/' } as never }
     })
-    expect(page.findAll('a').find(link => link.text() === 'Na popis')?.attributes('href')).toBe('/mjesta/')
+    expect(page.findAll('a').find(link => link.text() === 'Pregledaj baštinu')?.attributes('href')).toBe('/mjesta/')
   })
 
   it('points an old /potkalnicko-prigorje/ address of a removed settlement to the places list', async () => {
@@ -27,14 +27,14 @@ describe('error page', () => {
     const page = await mountSuspended(ErrorPage, {
       props: { error: { statusCode: 410, url: '/potkalnicko-prigorje/naselja/nestalo-selo' } as never }
     })
-    expect(page.findAll('a').find(link => link.text() === 'Na popis')?.attributes('href')).toBe('/mjesta/')
+    expect(page.findAll('a').find(link => link.text() === 'Pregledaj baštinu')?.attributes('href')).toBe('/mjesta/')
   })
 
   it('keeps the not-found state for a 404', async () => {
     const page = await mountSuspended(ErrorPage, {
       props: { error: { statusCode: 404, url: '/nepostojeca-adresa/' } as never }
     })
-    expect(page.text()).toContain('Stranica nije pronađena')
+    expect(page.text()).toContain('Ove stranice nema')
     expect(page.text()).not.toContain('Ovaj je zapis uklonjen')
   })
 })

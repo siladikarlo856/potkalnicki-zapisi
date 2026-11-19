@@ -1069,7 +1069,7 @@
     },
     "contribute": {
       "title": "Doprinesi",
-      "intro": "Sve što pošalješ prvo pregledamo. Ime nije obavezno, prijava nije potrebna.",
+      "intro": "Zapiši ono što znaš o ovom kraju. Urednik svaki prilog pregleda prije objave i, ako treba, javi ti se s pitanjem.",
       "back": "Doprinesi",
       "correctionMissingTarget": "Ovaj ispravak ili prijedlog ne možemo otvoriti. Odaberi što želiš poslati na popisu doprinosa.",
       "picker": {
@@ -1087,8 +1087,8 @@
           "badge": "faza 6"
         }
       },
-      "successTitle": "Hvala!",
-      "successDescription": "Pregledat ćemo prijedlog prije objave.",
+      "successTitle": "Prilog je poslan",
+      "successDescription": "Hvala. Urednik će ga pregledati prije objave. Obično to traje nekoliko dana.",
       "nextTitle": "Što se događa dalje",
       "nextBody": "Urednik pročita svaki prijedlog i provjeri ga u izvorima. Tek tada se pojavi u atlasu.",
       "linkExplore": "Istraži atlas",

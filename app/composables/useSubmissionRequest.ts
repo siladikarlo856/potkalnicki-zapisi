@@ -4,7 +4,7 @@ import type { SubmissionIssue } from '~~/shared/utils/submission'
 
 export type SubmissionOutcome
   = | { ok: true }
-    | { ok: false, message: string, issues?: SubmissionIssue[] }
+    | { ok: false, message: string, issues?: SubmissionIssue[], kind?: 'network' | 'rate-limit' | 'invalid' }
 
 /** Shared by the contribution form and the word variant dialog, so both speak to the API the same way. */
 export function useSubmissionRequest() {
@@ -35,10 +35,10 @@ export function useSubmissionRequest() {
       const { statusCode, data } = error as { statusCode?: number, data?: { data?: { issues?: SubmissionIssue[] } } }
       const issues = data?.data?.issues
       // The linked word was withdrawn or never existed: no field to mark, so the message says it.
-      if (statusCode === 400 && issues?.some(issue => issue.field === 'wordId')) return { ok: false, issues, message: t('heritage.form.errorWord') }
-      if (statusCode === 400 && issues?.length) return { ok: false, issues, message: t('heritage.form.errorInvalid') }
-      if (statusCode === 429) return { ok: false, message: t('heritage.form.errorTooMany') }
-      return { ok: false, message: t('heritage.form.errorGeneric') }
+      if (statusCode === 400 && issues?.some(issue => issue.field === 'wordId')) return { ok: false, issues, message: t('heritage.form.errorWord'), kind: 'invalid' }
+      if (statusCode === 400 && issues?.length) return { ok: false, issues, message: t('heritage.form.errorInvalid'), kind: 'invalid' }
+      if (statusCode === 429) return { ok: false, message: t('heritage.form.errorTooMany'), kind: 'rate-limit' }
+      return { ok: false, message: t('heritage.form.errorGeneric'), kind: 'network' }
     }
   }
 
