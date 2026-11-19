@@ -3,6 +3,7 @@ import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { GameId, GameQuestion } from '~~/shared/utils/games/types'
 import type { QuizChallengeInput } from '~~/shared/utils/challenge'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
+import { challengeCreateQueryForGame } from '~~/shared/utils/challengeCreateForm'
 import { resultShareMessage } from '~/utils/shareResult'
 import { nounFor } from '~/utils/pzText'
 import type { DotState } from '~/utils/questionDots'
@@ -38,8 +39,10 @@ const misses = computed(() => props.questions.filter((_, index) => props.results
 const definition = computed(() => gameDefinition(props.gameId))
 const canChallenge = computed(() => !props.practice && definition.value.challengeable && total.value > 0)
 const canShare = computed(() => !props.practice && total.value > 0)
-// With a creator round the primary opens the create form in place; otherwise it goes to the challenge page.
-const challengeHref = computed(() => localePath(pzRoutes.challenge))
+const challengeQuery = computed(() => challengeCreateQueryForGame(props.gameId))
+const challengeHref = computed(() => localePath(challengeQuery.value
+  ? { path: pzRoutes.challengeNew, query: challengeQuery.value }
+  : pzRoutes.challenge))
 const challengeOpen = ref(false)
 const shareOpen = ref(false)
 const origin = ref('')
@@ -121,7 +124,7 @@ onMounted(() => {
         <UButton
           v-else
           :to="challengeHref"
-          :label="t('pz.play.challengeFriends')"
+          :label="challengeQuery ? 'Izazovi prijatelje ovom igrom' : 'Izazovi prijatelje'"
           icon="i-lucide-flag"
           color="neutral"
           variant="outline"

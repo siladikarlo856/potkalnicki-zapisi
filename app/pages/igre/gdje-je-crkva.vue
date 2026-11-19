@@ -124,7 +124,7 @@ useSeoMeta({
         :difficulty="difficulty"
         @restart="restart"
       >
-        <template #default="{ question, selected, pending, pick, check }">
+        <template #default="{ question, selected, pending, pick, answer }">
           <div class="mb-3 flex justify-center">
             <PzVerificationBadge
               :verification="poolItem(question.card)?.verification"
@@ -137,7 +137,7 @@ useSeoMeta({
             :pending="pending"
             labelledby="game-question"
             @select="pick"
-            @submit="check()"
+            @submit="answer()"
           />
         </template>
       </GamesShell>

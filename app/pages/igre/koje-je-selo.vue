@@ -80,7 +80,7 @@ useSeoMeta({
         :difficulty="difficulty"
         @restart="restart"
       >
-        <template #default="{ question, selected, pending, answered, pick, check }">
+        <template #default="{ question, selected, pending, answered, pick, answer }">
           <GamesMapView
             v-if="placeFor(question)"
             class="mb-3"
@@ -99,7 +99,7 @@ useSeoMeta({
             :pending="pending"
             labelledby="game-question"
             @select="pick"
-            @submit="check()"
+            @submit="answer()"
           />
         </template>
       </GamesShell>

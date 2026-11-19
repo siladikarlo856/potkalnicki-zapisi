@@ -2,11 +2,14 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import GameCard from '../app/components/games/GameCard.vue'
 import Shell from '../app/components/games/Shell.vue'
+import Start from '../app/components/games/Start.vue'
+import Result from '../app/components/games/Result.vue'
 import Pick from '../app/components/Pick.vue'
 import QuestionDots from '../app/components/QuestionDots.vue'
 import ResultSummary from '../app/components/ResultSummary.vue'
 import { GAME_CATALOGUE, GAME_GROUPS, gameGroupOf, gameTypeOf, isListedGame } from '../shared/utils/games/catalogue'
 import type { GameQuestion } from '../shared/utils/games/types'
+import { applyChallengeCreateQuery } from '../shared/utils/challengeCreateForm'
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 afterEach(() => {
@@ -86,6 +89,38 @@ const question = (n: number): GameQuestion => ({
   options: [{ hr: 'A', en: 'A' }, { hr: 'B', en: 'B' }],
   correct: 0,
   explanation: { hr: 'Zato.', en: 'Because.' }
+})
+
+describe('game challenge links', () => {
+  it.each([
+    ['znacenje', 'rijeci'],
+    ['rijec', 'rijeci'],
+    ['opcina', 'mjesta'],
+    ['karta-koje', 'mjesta'],
+    ['karta-tocke', 'mjesta'],
+    ['crkva', 'bastina'],
+    ['osoba', 'osobe'],
+    ['klub-mjesto', 'sport'],
+    ['klub-liga', 'sport'],
+    ['klub-odakle', 'sport']
+  ] as const)('preserves %s and its topic from the start and result screens', async (gameId, topic) => {
+    wrapper = await mountSuspended(Start, { props: { gameId } })
+    const start = wrapper.get('[data-testid="game-start-challenge"]')
+    expect(start.text()).toBe('Izazovi prijatelje ovom igrom')
+    const href = start.attributes('href')!
+    const url = new URL(href, 'https://example.test')
+    expect(url.pathname).toBe('/izazov/novi/')
+    const form = applyChallengeCreateQuery(Object.fromEntries(url.searchParams), new Set([topic]))
+    expect(form).toMatchObject({ game: gameId, topics: [topic] })
+    wrapper.unmount()
+
+    wrapper = await mountSuspended(Result, {
+      props: { gameId, title: 'Igra', questions: [{ ...question(0), gameId }], results: [true] }
+    })
+    const result = wrapper.get('[data-testid="game-make-challenge"]')
+    expect(result.text()).toBe('Izazovi prijatelje ovom igrom')
+    expect(result.attributes('href')).toBe(href)
+  })
 })
 
 describe('round: Provjeri, Preskoči, Dalje', () => {

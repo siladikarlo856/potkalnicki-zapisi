@@ -153,7 +153,7 @@ async function replayMissed() {
   heading.value?.focus()
 }
 
-defineExpose({ answer, next, pick, skip })
+defineExpose({ answer, next })
 </script>
 
 <template>
@@ -197,7 +197,6 @@ defineExpose({ answer, next, pick, skip })
                 :answered="answered"
                 :answer="answer"
                 :pick="pick"
-                :check="answer"
               >
                 <GamesOptions
                   :question="question"

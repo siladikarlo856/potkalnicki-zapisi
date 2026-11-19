@@ -30,8 +30,7 @@ export function decodeGameScores(raw: string | null): GameScoresV1 {
 
 /** A result beats the stored best when its share of correct answers is higher (ties keep the earlier one). */
 export function betterScore(current: BestScore | undefined, score: number, max: number): boolean {
-  // A round with no correct answers is not a best score worth showing.
-  if (max < 1 || score < 1) return false
+  if (max < 1 || score < 0) return false
   return !current || score / max > current.score / current.max
 }
 

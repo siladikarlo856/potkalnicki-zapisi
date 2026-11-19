@@ -149,11 +149,10 @@ describe('GameShell', () => {
     expect(page.get('[data-testid="game-miss"]').text()).toContain('Pitanje 1?')
     expect(page.get('[data-testid="game-miss"]').text()).toContain('Točan odgovor: B')
     expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!)).toMatchObject({ version: 1, best: { rijec: { score: 2, max: 3 } } })
-    // Rijec has no creator round: it links to the challenge page instead of making one in place.
     // The primary action of the result is "Igraj ponovno", ahead of the challenge and the share buttons.
     const primary = page.get('[data-testid="game-make-challenge"]')
-    expect(primary.text()).toBe('Izazovi prijatelje s ovom rundom')
-    expect(primary.attributes('href')).toContain('/izazov')
+    expect(primary.text()).toBe('Izazovi prijatelje ovom igrom')
+    expect(primary.attributes('href')).toBe('/izazov/novi/?igra=rijec&teme=rijeci')
     expect(page.find('[data-testid="challenge-create"]').exists()).toBe(false)
     const buttons = page.findAll('a[data-testid], button[data-testid]').map(button => button.attributes('data-testid'))
     expect(buttons.indexOf('game-replay')).toBeLessThan(buttons.indexOf('game-make-challenge'))
@@ -198,8 +197,7 @@ describe('GameShell', () => {
     expect(page.find('[data-testid="result-share-open"]').exists()).toBe(false)
     expect(page.find('[data-testid="game-make-challenge"]').exists()).toBe(false)
     expect(page.get('[data-testid="game-result"]').text()).not.toContain('Novi najbolji rezultat')
-    // The 0/3 first round saved nothing, and the 3/3 practice round saves nothing either.
-    expect(localStorage.getItem(GAME_SCORES_KEY)).toBeNull()
+    expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!).best.rijec).toMatchObject({ score: 0, max: 3 })
   })
 
   it('resets to the first question when new questions arrive', async () => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { pzRoutes } from '~~/shared/utils/appRoutes'
+import { challengeCreateQueryForGame } from '~~/shared/utils/challengeCreateForm'
 import { gameDefinition } from '~~/shared/utils/games/definitions'
 import type { Difficulty, GameId } from '~~/shared/utils/games/types'
 import { nounFor } from '~/utils/pzText'
@@ -22,6 +23,10 @@ const localePath = useLocalePath()
 const { scores } = useGameScores()
 
 const definition = computed(() => gameDefinition(props.gameId))
+const challengeQuery = computed(() => challengeCreateQueryForGame(props.gameId))
+const challengeHref = computed(() => localePath(challengeQuery.value
+  ? { path: pzRoutes.challengeNew, query: challengeQuery.value }
+  : pzRoutes.challenge))
 const minutes = computed(() => definition.value.catalogue?.minutes)
 const best = computed(() => {
   const entry = scores.value.best[props.gameId]
@@ -99,8 +104,8 @@ const level = computed({ get: () => difficulty.value, set: value => (difficulty.
       />
       <UButton
         v-if="definition.challengeable"
-        :to="localePath(pzRoutes.challenge)"
-        label="Izazovi prijatelje ovom igrom"
+        :to="challengeHref"
+        :label="challengeQuery ? 'Izazovi prijatelje ovom igrom' : 'Izazovi prijatelje'"
         icon="i-lucide-flag"
         color="neutral"
         variant="outline"
