@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData, clearNuxtState, useRouter } from '#imports'
 import CreateChallenge from '../app/pages/izazov/novi.vue'
+import ChallengeExperience from '../app/components/heritage/ChallengeExperience.vue'
+import Leaderboard from '../app/pages/izazov/[code]/ljestvica.vue'
 import BottomNav from '../app/components/BottomNav.vue'
 import { usePzTabBar } from '../app/composables/usePzTabBar'
 import type { ChallengeSetPublic, ChallengeState, GenerateChallengeInput } from '../shared/utils/challenge'
@@ -45,10 +47,12 @@ const createRequests: Array<{ nickname: string, generate: GenerateChallengeInput
 const created: ChallengeState = {
   code: 'prefillproof12345', title: { hr: 'Moj izazov', en: 'My challenge' }, sample: false,
   createdAt: '2026-11-19T12:00:00Z', closesAt: '2026-11-26T12:00:00Z', closed: false,
-  questionCount: 5, maxScore: 500, targetScore: null, rounds: [],
+  questionCount: 5, maxScore: 500, targetScore: null, rounds: [{ topic: { hr: 'Riječi', en: 'Words' }, count: 5 }],
   participant: { nickname: 'Ana', phase: 'ready', index: 0, total: 0, completedAt: null, rounds: [] },
   question: null, feedback: null
 }
+registerEndpoint(`/api/challenges/${created.code}`, () => created)
+registerEndpoint(`/api/challenges/${created.code}/leaderboard`, () => ({ rows: [], count: 0, completedCount: 0 }))
 registerEndpoint('/api/challenges', {
   method: 'POST',
   handler: async (event) => {
@@ -60,11 +64,14 @@ registerEndpoint('/api/challenges', {
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 let navigation: Awaited<ReturnType<typeof mountSuspended>> | undefined
+let departing: Awaited<ReturnType<typeof mountSuspended>> | undefined
 beforeEach(() => {
   localStorage.clear()
   clearNuxtState(['pz-challenge-list', 'pz-challenge-list-loaded', 'pz-challenge-leaderboard-counts'])
 })
 afterEach(async () => {
+  departing?.unmount()
+  departing = undefined
   wrapper?.unmount()
   wrapper = undefined
   navigation?.unmount()
@@ -77,6 +84,23 @@ afterEach(async () => {
 })
 
 describe('challenge create action bar', () => {
+  it.each(['challenge', 'leaderboard'] as const)('keeps the incoming create page hold when the departing %s scope is disposed', async (screen) => {
+    navigation = await mountSuspended(BottomNav, { route: '/izazov/' })
+    departing = screen === 'challenge'
+      ? await mountSuspended(ChallengeExperience, { props: { code: created.code }, route: `/izazov/${created.code}/` })
+      : await mountSuspended(Leaderboard, { route: `/izazov/${created.code}/ljestvica/` })
+    await expect.poll(() => usePzTabBar().hidden.value).toBe(true)
+    wrapper = await mountSuspended(CreateChallenge, { route: '/izazov/novi/' })
+    departing.unmount()
+    departing = undefined
+    expect(usePzTabBar().hidden.value).toBe(true)
+    await expect.poll(() => navigation!.find('[data-testid="bottom-nav"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="challenge-create-submit"]').isVisible()).toBe(true)
+    wrapper.unmount()
+    wrapper = undefined
+    await expect.poll(() => navigation!.find('[data-testid="bottom-nav"]').exists()).toBe(true)
+  })
+
   it('keeps BottomNav hidden across nickname focus and blur, then restores it after leaving', async () => {
     navigation = await mountSuspended(BottomNav, { route: '/izazov/novi/' })
     expect(navigation.find('[data-testid="bottom-nav"]').exists()).toBe(true)
@@ -161,17 +185,21 @@ describe('challenge game prefill', () => {
     }
   })
 
-  it('falls back to a compatible word game when the map pool becomes unavailable', async () => {
-    wrapper = await mountSuspended(CreateChallenge, { route: '/izazov/novi/?igra=karta-koje&teme=mjesta' })
-    await expect.poll(() => wrapper!.find('input[value="karta-koje"]:checked').exists()).toBe(true)
+  it.each([
+    ['karta-koje', 'mjesta', 'place', 'znacenje', 'rijeci'],
+    ['znacenje', 'rijeci', 'word', 'karta-koje', 'mjesta'],
+    ['rijec', 'rijeci', 'word', 'karta-koje', 'mjesta']
+  ] as const)('falls back from %s when its card pool becomes unavailable', async (game, topics, kind, fallback, fallbackTopic) => {
+    wrapper = await mountSuspended(CreateChallenge, { route: `/izazov/novi/?igra=${game}&teme=${topics}` })
+    await expect.poll(() => wrapper!.find(`input[value="${game}"]:checked`).exists()).toBe(true)
     const { useNuxtData } = await import('#imports')
     const { data } = useNuxtData<typeof pool>('card-pool')
-    data.value = { ...pool, cards: pool.cards.filter(card => card.kind !== 'place') }
-    await expect.poll(() => wrapper!.find('input[value="znacenje"]:checked').exists()).toBe(true)
+    data.value = { ...pool, cards: pool.cards.filter(card => card.kind !== kind) }
+    await expect.poll(() => wrapper!.find(`input[value="${fallback}"]:checked`).exists()).toBe(true)
     await wrapper.get('input[name="nickname"]').setValue('Ana')
     await wrapper.get('[data-testid="challenge-create-form"]').trigger('submit')
     await expect.poll(() => navigateToMock.mock.calls.length).toBe(1)
-    expect(createRequests[0]?.generate).toMatchObject({ game: 'znacenje', topics: ['rijeci'] })
+    expect(createRequests[0]?.generate).toMatchObject({ game: fallback, topics: [fallbackTopic] })
   })
 
   it('keeps the three default game choices when there is no incoming selection', async () => {

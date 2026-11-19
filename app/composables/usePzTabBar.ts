@@ -1,4 +1,4 @@
-import type { MaybeRefOrGetter } from 'vue'
+import { getCurrentInstance, useId, type MaybeRefOrGetter } from 'vue'
 
 /**
  * Why the mobile tab bar is hidden. Pages and components hold the bar down for as long as one of
@@ -16,14 +16,20 @@ import type { MaybeRefOrGetter } from 'vue'
 export type PzTabBarHold = 'game' | 'challenge' | 'sheet' | 'keyboard'
 
 export function usePzTabBar() {
-  const holds = useState<PzTabBarHold[]>('pz-tabbar-holds', () => [])
+  const owners = useState<Record<string, PzTabBarHold[]>>('pz-tabbar-owners', () => ({}))
+  const owner = getCurrentInstance() ? useId() : crypto.randomUUID()
+  const holds = computed(() => [...new Set(Object.values(owners.value).flat())])
   const hidden = computed(() => holds.value.length > 0)
 
   function hold(reason: PzTabBarHold) {
-    if (!holds.value.includes(reason)) holds.value = [...holds.value, reason]
+    const held = owners.value[owner] ?? []
+    if (!held.includes(reason)) owners.value[owner] = [...held, reason]
   }
   function release(reason: PzTabBarHold) {
-    if (holds.value.includes(reason)) holds.value = holds.value.filter(item => item !== reason)
+    const held = owners.value[owner]?.filter(item => item !== reason)
+    if (!held) return
+    if (held.length) owners.value[owner] = held
+    else delete owners.value[owner]
   }
 
   return { holds, hidden, hold, release }
