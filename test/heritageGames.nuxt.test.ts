@@ -48,6 +48,7 @@ describe('Gdje je ta crkva?', () => {
     const options = wrapper.findAll('[data-testid^="game-option-"]')
     expect(options.length).toBeGreaterThanOrEqual(2)
     await options[0]!.trigger('click')
+    await wrapper.get('[data-testid="game-check"]').trigger('click')
     expect(wrapper.find('[data-testid="game-feedback"]').exists()).toBe(true)
   })
 

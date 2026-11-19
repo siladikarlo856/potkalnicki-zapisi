@@ -39,28 +39,32 @@ registerEndpoint('/api/learn/pool', () => ({
   topics: []
 }))
 
-describe('Potkalnički zapisi play catalogue (WP2)', () => {
-  it('renders the daily word anchor and play catalogue', async () => {
-    const page = await mountSuspended(Igre, { route: '/igre' })
-    expect(page.find('#rijec-dana').exists()).toBe(true)
-    expect(page.find('[data-testid="play-catalog"]').exists()).toBe(true)
-    expect(page.find('[data-testid="game-tile-rijec-dana"]').exists()).toBe(true)
-    expect(page.find('[data-testid="game-tile-znacenje"]').exists()).toBe(true)
+describe('Igre list', () => {
+  it('groups the games by what they train and leaves the daily word and learning to their own screens', async () => {
+    const page = await mountSuspended(Igre, { route: '/igre/' })
+    await expect.poll(() => page.find('[data-testid="play-catalog"]').exists(), { timeout: 3000 }).toBe(true)
+    expect(page.get('h1').text()).toBe('Igre')
+    expect(page.find('[data-testid="play-group-rijeci"] [data-testid="game-tile-znacenje"]').exists()).toBe(true)
+    expect(page.find('[data-testid="game-tile-rijec-dana"]').exists()).toBe(false)
+    expect(page.find('[data-testid="game-tile-kartice"]').exists()).toBe(false)
+    expect(page.get('[data-testid="game-tile-znacenje"] [data-testid="game-card-status"]').text()).toBe('Još nije igrano')
   })
 
-  it('filters tiles when a topic chip is selected after mount', async () => {
-    const page = await mountSuspended(Igre, { route: '/igre?tema=mjesta' })
-    await expect.poll(() => page.find('[data-testid="play-filter-mjesta"]').exists(), { timeout: 3000 }).toBe(true)
-    await page.get('[data-testid="play-filter-mjesta"]').trigger('click')
+  it('filters the cards by question type and says how many games are left', async () => {
+    const page = await mountSuspended(Igre, { route: '/igre/' })
+    await expect.poll(() => page.find('[data-testid="play-filter-odabir"]').exists(), { timeout: 3000 }).toBe(true)
+    expect(page.get('[data-testid="play-filter-odabir"]').attributes('aria-pressed')).toBe('false')
+    await page.get('[data-testid="play-filter-odabir"]').trigger('click')
+    await expect.poll(() => page.find('[data-testid="play-filter-count"]').exists(), { timeout: 3000 }).toBe(true)
+    expect(page.get('[data-testid="play-filter-count"]').text()).toMatch(/^\d+ igr(a|e)$/)
+    expect(page.find('[data-testid="game-tile-znacenje"]').exists()).toBe(true)
+    expect(page.find('[data-testid="game-tile-grupiraj"]').exists()).toBe(false)
+  })
+
+  it('says the games are being prepared when an old topic address has none to show', async () => {
+    const page = await mountSuspended(Igre, { route: '/igre/?tema=mjesta' })
     await expect.poll(() => page.find('[data-testid="play-empty-state"]').exists(), { timeout: 3000 }).toBe(true)
+    expect(page.text()).toContain('Igre se još pripremaju')
     expect(page.find('[data-testid="game-tile-znacenje"]').exists()).toBe(false)
-  })
-
-  it('shows riječi games when the rijeci filter is applied', async () => {
-    const page = await mountSuspended(Igre, { route: '/igre' })
-    await page.get('[data-testid="play-filter-rijeci"]').trigger('click')
-    await expect.poll(() => page.find('[data-testid="game-tile-znacenje"]').exists(), { timeout: 3000 }).toBe(true)
-    expect(page.find('[data-testid="game-tile-znacenje"]').exists()).toBe(true)
-    expect(page.find('[data-testid="play-empty-state"]').exists()).toBe(false)
   })
 })

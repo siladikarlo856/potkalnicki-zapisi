@@ -79,6 +79,7 @@ useSeoMeta({
   ogDescription: () => t('pz.play.selaDescription'),
   description: () => t('pz.play.selaDescription')
 })
+const selectedChipName = computed(() => board.value?.chips.find(chip => chip.id === selectedChip.value)?.name)
 </script>
 
 <template>
@@ -87,17 +88,11 @@ useSeoMeta({
       class="mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3"
       data-testid="game-sela-opcine"
     >
-      <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
-          {{ t('pz.play.selaEyebrow') }}
-        </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
-          {{ t('pz.play.selaTitle') }}
-        </h1>
-        <p class="mt-1 text-sm text-muted">
-          {{ t('pz.play.selaDescription') }}
-        </p>
-      </header>
+      <PageHead
+        v-if="phase === 'start' || loading || error"
+        title="Sela i općine"
+        lead="Razvrstaj sela po općinama."
+      />
 
       <div
         v-if="error || loading"
@@ -127,12 +122,22 @@ useSeoMeta({
       <GamesStart
         v-else-if="phase === 'start'"
         v-model:difficulty="difficulty"
+        :game-id="game.id"
+        :questions="SELA_OPCINE_CHIP_COUNT"
+        :levels="false"
+        :instructions="['Dodirni selo, pa općinu u koju ga stavljaš.', 'Pritisni „Provjeri” kad su sva sela razvrstana.']"
         :disabled="!canStart"
         @start="start"
       />
       <template v-else-if="board && phase === 'play'">
         <p class="text-sm text-muted">
           {{ t('pz.play.selaHint') }}
+        </p>
+        <p
+          role="status"
+          class="sr-only"
+        >
+          {{ selectedChipName ? `Odabrano: ${selectedChipName}. Odaberi skupinu.` : '' }}
         </p>
         <div
           class="flex flex-wrap gap-2"
@@ -142,20 +147,27 @@ useSeoMeta({
             v-for="chip in board.chips"
             :key="chip.id"
             type="button"
-            class="min-h-11 rounded-lg px-3 py-2 text-sm font-medium ring ring-default transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            class="inline-flex min-h-11 items-center gap-1.5 rounded-(--pz-radius-md) px-3.5 text-base font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--pz-focus)"
             :class="[
-              selectedChip === chip.id ? 'bg-primary text-inverted ring-primary' : 'bg-elevated text-highlighted',
-              assignments[chip.id] ? 'opacity-90' : ''
+              checked && chipCorrect(chip.id) === false ? 'border-2 border-dashed border-inverted bg-default text-highlighted line-through'
+              : checked && chipCorrect(chip.id) ? 'border-2 border-success bg-(--pz-ok-bg) text-highlighted'
+                : selectedChip === chip.id ? 'border-2 border-inverted bg-inverted text-inverted'
+                  : 'border-[1.5px] border-accented bg-default text-highlighted hover:border-inverted',
+              assignments[chip.id] && !checked ? 'opacity-70' : ''
             ]"
+            :aria-pressed="selectedChip === chip.id"
             :data-testid="`sela-chip-${chip.id}`"
             @click="selectChip(chip.id)"
           >
             <span>{{ chip.name }}</span>
-            <span
-              v-if="checked && chipCorrect(chip.id) !== null"
-              class="ms-1"
-              :aria-label="chipCorrect(chip.id) ? t('pz.play.right') : t('pz.play.wrong')"
-            >{{ chipCorrect(chip.id) ? '✓' : '✗' }}</span>
+            <template v-if="checked && chipCorrect(chip.id) !== null">
+              <UIcon
+                :name="chipCorrect(chip.id) ? 'i-lucide-check' : 'i-lucide-x'"
+                class="size-4"
+                aria-hidden="true"
+              />
+              <span class="sr-only">{{ chipCorrect(chip.id) ? 'Točno' : 'Netočno' }}</span>
+            </template>
           </button>
         </div>
         <div
@@ -167,11 +179,16 @@ useSeoMeta({
             v-for="bucket in board.buckets"
             :key="bucket.id"
             type="button"
-            class="min-h-24 rounded-xl border-2 border-dashed border-default bg-default p-3 text-start text-sm font-semibold text-highlighted transition hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            class="min-h-24 rounded-(--pz-radius-md) border-[1.5px] border-dashed border-accented bg-default p-3 text-start text-base font-bold text-highlighted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--pz-focus)"
+            :class="selectedChip ? '!border-2 !border-solid !border-inverted bg-elevated' : ''"
             :data-testid="`sela-bucket-${bucket.id}`"
             @click="assignBucket(bucket.id)"
           >
             {{ bucket.label }}
+            <span
+              v-if="selectedChip"
+              class="mt-1 block text-sm font-semibold text-muted"
+            >Stavi ovamo</span>
             <ul class="mt-2 space-y-1 text-xs font-normal text-muted">
               <li
                 v-for="chip in board.chips.filter(c => assignments[c.id] === bucket.id)"

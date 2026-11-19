@@ -66,3 +66,54 @@ export function liveTopicsInCatalogue(): GameTopic[] {
 export function gamePathUsesRedirectSlug(path: string): boolean {
   return GAME_REDIRECT_SLUGS.some(slug => path.includes(`/igre/${slug}`))
 }
+
+/** What a player does in a game; the chips on the games list filter by it (20-screens.md, Igre). */
+export type GameType = 'odabir' | 'upis' | 'spajanje' | 'razvrstavanje' | 'karta' | 'niz'
+
+export const GAME_TYPE_LABELS: Record<GameType, string> = {
+  odabir: 'Odabir odgovora',
+  upis: 'Upis odgovora',
+  spajanje: 'Spajanje',
+  razvrstavanje: 'Razvrstavanje',
+  karta: 'Karta',
+  niz: 'Niz točnih'
+}
+
+const FORMAT_TYPES: Record<GameFormat, GameType | null> = {
+  'dnevna': null,
+  'odabir': 'odabir',
+  'karta': 'karta',
+  'upisi': 'upis',
+  'spoji': 'spajanje',
+  'razvrstaj': 'razvrstavanje',
+  'grupiraj': 'razvrstavanje',
+  'bez-greske': 'niz'
+}
+
+export const gameTypeOf = (game: Pick<GameEntry, 'format'>): GameType | null => FORMAT_TYPES[game.format]
+
+/** The four groups of the games list, by what the games train. Games of mixed topics sit with the words. */
+export type GameGroupId = 'rijeci' | 'mjesta' | 'bastina' | 'ljudi'
+
+export const GAME_GROUPS: { id: GameGroupId, label: string }[] = [
+  { id: 'rijeci', label: 'Riječi' },
+  { id: 'mjesta', label: 'Mjesta i karta' },
+  { id: 'bastina', label: 'Baština' },
+  { id: 'ljudi', label: 'Priče i ljudi' }
+]
+
+const TOPIC_GROUPS: Record<GameTopic, GameGroupId> = {
+  rijeci: 'rijeci',
+  mjesovito: 'rijeci',
+  mjesta: 'mjesta',
+  bastina: 'bastina',
+  osobe: 'ljudi',
+  legende: 'ljudi'
+}
+
+export const gameGroupOf = (game: Pick<GameEntry, 'topic'>): GameGroupId => TOPIC_GROUPS[game.topic]
+
+/** Games that have their own screen elsewhere (the daily word, the learning cards): not part of the games list. */
+const OWN_SCREEN: readonly string[] = ['rijec-dana', 'kartice']
+
+export const isListedGame = (game: Pick<GameEntry, 'id'>) => !OWN_SCREEN.includes(game.id)

@@ -33,6 +33,7 @@ describe('opcine game page', () => {
     for (let i = 0; i < 12 && wrapper.find('[data-testid="game-result"]').exists() === false; i++) {
       if (!wrapper.find('[data-testid="game-option-0"]').exists()) break
       await wrapper.get('[data-testid="game-option-0"]').trigger('click')
+      await wrapper.get('[data-testid="game-check"]').trigger('click')
       if (wrapper.find('[data-testid="game-next"]').exists()) {
         await wrapper.get('[data-testid="game-next"]').trigger('click')
       }

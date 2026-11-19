@@ -14,11 +14,11 @@ const { locale, t } = useI18n()
 const { pool, status, error, refresh } = useCardPool()
 // The word entries carry the variants and examples the feedback shows; the questions come from the card pool.
 const { words } = useHeritage()
-const { totals } = useProgress()
 // Nuxt carries the seed to the client, keeping server rendering and hydration identical.
 const seed = useState('heritage-quiz-seed', () => Math.floor(Math.random() * 4294967296))
 const questions = shallowRef<GameQuestion[]>([])
 const variantOpen = ref(false)
+const started = ref(false)
 const wordsById = computed(() => new Map(words.value.map(word => [word.id, word])))
 const loading = computed(() => !error.value && (status.value === 'idle' || status.value === 'pending'))
 
@@ -55,118 +55,71 @@ useSeoMeta({
 </script>
 
 <template>
-  <UContainer class="py-3 sm:py-5 lg:py-6">
-    <div
-      id="heritage-quiz"
-      class="mx-auto grid w-full min-w-0 max-w-xl gap-3 lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-12 lg:gap-y-6"
-    >
-      <header class="lg:col-start-1 lg:row-start-1">
-        <p class="mb-1 text-xs font-semibold text-primary">
-          Kaj to znači?
-        </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
-          {{ t('quiz.title') }}
-        </h1>
-        <p class="mt-1 text-sm text-muted">
-          {{ t('quiz.description') }}
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          {{ t('game.progressCount', { count: totals.known + totals.missed }) }}
-        </p>
-      </header>
-
-      <div class="flex min-w-0 flex-col gap-2.5 lg:col-start-2 lg:row-span-2 lg:row-start-1">
-        <div
-          v-if="error || loading"
-          class="rounded-xl bg-default p-4 ring ring-default"
-          role="status"
-        >
-          <p>{{ t(error ? 'quiz.loadError' : 'quiz.loading') }}</p>
-          <UButton
-            v-if="error"
-            :label="t('quiz.retry')"
-            variant="link"
-            @click="refresh()"
-          />
-        </div>
-
-        <div
-          v-else-if="!questions.length"
-          class="flex flex-col items-center gap-3 rounded-xl bg-default p-4 text-center ring ring-default sm:p-6"
-        >
-          <UIcon
-            name="i-lucide-book-open"
-            class="size-8 text-primary"
-          />
-          <h2 class="text-xl font-bold text-highlighted">
-            {{ t('quiz.emptyTitle') }}
-          </h2>
-          <p
-            role="status"
-            class="text-sm text-muted"
-          >
-            {{ t('quiz.emptyDescription') }}
-          </p>
-        </div>
-
-        <GamesShell
-          v-else
-          :game-id="game.id"
-          :questions="questions"
-          :topics="['rijeci']"
-          difficulty="srednje"
-          @restart="restart"
-        >
-          <template #feedback="{ question }">
-            <template v-if="entryFor(question)">
-              <p
-                v-if="entryFor(question)!.examples?.[0]"
-                class="text-xs"
-              >
-                <span class="mr-1 text-muted">{{ t('quiz.example') }}</span>
-                <span lang="hr"><i>{{ entryFor(question)!.examples![0]!.text }}</i><span
-                  v-if="entryFor(question)!.examples![0]!.translation"
-                  class="text-muted"
-                > — {{ entryFor(question)!.examples![0]!.translation }}</span></span>
-              </p>
-              <div class="max-h-32 min-w-0 overflow-y-auto sm:max-h-48">
-                <h3 class="mb-1 text-xs font-semibold text-muted">
-                  {{ t('quiz.variants') }}
-                </h3>
-                <HeritageVariantList
-                  :entry="entryFor(question)!"
-                  :english="locale === 'en'"
-                  lang="hr"
-                />
-              </div>
-              <UButton
-                :label="t('game.differently')"
-                icon="i-lucide-message-square-plus"
-                color="neutral"
-                variant="link"
-                size="sm"
-                class="self-start px-0 print:hidden"
-                aria-haspopup="dialog"
-                data-testid="quiz-differently"
-                @click="variantOpen = true"
-              />
-              <HeritageVariantDialog
-                v-model:open="variantOpen"
+  <GamesScreen
+    :title="t('quiz.title')"
+    :lead="t('quiz.description')"
+    :loading="loading"
+    :error="Boolean(error)"
+    :empty="!questions.length && !loading"
+    empty-description="Za kviz treba barem dva različita značenja aktivnih riječi. Dotad pokušaj neku drugu igru ili pomozi dodati riječi."
+    :started="started"
+    @retry="refresh()"
+  >
+    <template #start>
+      <GamesStart
+        :game-id="game.id"
+        :levels="false"
+        @start="started = true"
+      />
+    </template>
+    <template #round>
+      <GamesShell
+        :game-id="game.id"
+        :questions="questions"
+        :topics="['rijeci']"
+        difficulty="srednje"
+        @restart="restart"
+      >
+        <template #feedback="{ question }">
+          <template v-if="entryFor(question)">
+            <p
+              v-if="entryFor(question)!.examples?.[0]"
+              class="text-xs"
+            >
+              <span class="mr-1 text-muted">{{ t('quiz.example') }}</span>
+              <span lang="hr"><i>{{ entryFor(question)!.examples![0]!.text }}</i><span
+                v-if="entryFor(question)!.examples![0]!.translation"
+                class="text-muted"
+              > — {{ entryFor(question)!.examples![0]!.translation }}</span></span>
+            </p>
+            <div class="max-h-32 min-w-0 overflow-y-auto sm:max-h-48">
+              <h3 class="mb-1 text-xs font-semibold text-muted">
+                {{ t('quiz.variants') }}
+              </h3>
+              <HeritageVariantList
                 :entry="entryFor(question)!"
+                :english="locale === 'en'"
+                lang="hr"
               />
-            </template>
+            </div>
+            <UButton
+              :label="t('game.differently')"
+              icon="i-lucide-message-square-plus"
+              color="neutral"
+              variant="link"
+              size="sm"
+              class="self-start px-0 print:hidden"
+              aria-haspopup="dialog"
+              data-testid="quiz-differently"
+              @click="variantOpen = true"
+            />
+            <HeritageVariantDialog
+              v-model:open="variantOpen"
+              :entry="entryFor(question)!"
+            />
           </template>
-        </GamesShell>
-      </div>
-    </div>
-  </UContainer>
+        </template>
+      </GamesShell>
+    </template>
+  </GamesScreen>
 </template>
-
-<style scoped>
-/* Area names can be longer than a narrow phone's card. Keep the shared chips readable. */
-#heritage-quiz :deep(span[title]) {
-  max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-</style>

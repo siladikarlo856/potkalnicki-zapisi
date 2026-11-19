@@ -35,14 +35,14 @@ describe('AnswerFeedback', () => {
     wrapper = await mountSuspended(Feedback, { props: { correct: true, answer: 'jaje', explanation: 'Jejce je jaje.' } })
     expect(wrapper.attributes('role')).toBe('status')
     expect(wrapper.attributes('aria-live')).toBe('polite')
-    expect(wrapper.get('h3').text()).toBe('Točno!')
+    expect(wrapper.get('h3').text()).toBe('Točno')
     expect(wrapper.get('h3').attributes('tabindex')).toBe('-1')
     expect(wrapper.text()).toMatch(/Točan odgovor: jaje\.\s*Jejce je jaje\./)
   })
 
-  it('says "Nije točno." for a wrong answer', async () => {
+  it('says "Netočno" for a wrong answer', async () => {
     wrapper = await mountSuspended(Feedback, { props: { correct: false, answer: 'jaje' } })
-    expect(wrapper.get('h3').text()).toBe('Nije točno.')
+    expect(wrapper.get('h3').text()).toBe('Netočno')
   })
 })
 

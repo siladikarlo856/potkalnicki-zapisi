@@ -116,17 +116,11 @@ useSeoMeta({
 <template>
   <UContainer class="py-3 sm:py-5 lg:py-6">
     <div class="mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3">
-      <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
-          {{ t('pz.map.findTitle') }}
-        </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
-          {{ t('pz.map.findTitle') }}
-        </h1>
-        <p class="mt-1 text-sm text-muted">
-          {{ t('pz.map.findBlurb') }}
-        </p>
-      </header>
+      <PageHead
+        v-if="!started || loading || error"
+        :title="t('pz.map.findTitle')"
+        :lead="t('pz.map.findBlurb')"
+      />
 
       <div
         v-if="error || loading"
@@ -145,15 +139,18 @@ useSeoMeta({
       <GamesStart
         v-else-if="!started"
         v-model:difficulty="difficulty"
+        :game-id="game.id"
+        :questions="ROUND_LENGTH"
+        :instructions="['Dodirni kartu da postaviš oznaku.', 'Pritisni „Dalje” kad pročitaš rezultat.']"
         :disabled="!places.length"
         @start="start"
       />
 
       <template v-else-if="!finished && target">
-        <GamesProgress
+        <RoundBar
+          :title="t('pz.map.findTitle')"
           :current="index + 1"
           :total="roundPlaces.length"
-          :results="results"
           :score="totalScore"
         />
         <h2

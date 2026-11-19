@@ -239,21 +239,10 @@ describe('daily word device storage', () => {
 })
 
 describe('daily word placement', () => {
-  it('is the first section of the games hub, ahead of the play catalogue', async () => {
-    const page = await mountSuspended(Hub, { route: '/igre' })
-    const daily = page.element.querySelector('#rijec-dana')!
-    const catalog = page.element.querySelector('[data-testid="play-catalog"]')!
-    expect(daily).not.toBeNull()
-    expect(catalog).not.toBeNull()
-    expect(daily.compareDocumentPosition(catalog) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    page.unmount()
-  })
-
-  it('lists the daily word in the catalogue with a link to the section', async () => {
-    const page = await mountSuspended(Hub, { route: '/igre' })
-    const tile = page.get('[data-testid="game-tile-rijec-dana"]')
-    expect(tile.exists()).toBe(true)
-    expect(tile.attributes('href')).toContain('#rijec-dana')
+  it('is no longer part of the games list: the daily word has its own screen', async () => {
+    const page = await mountSuspended(Hub, { route: '/igre/' })
+    expect(page.element.querySelector('#rijec-dana')).toBeNull()
+    expect(page.find('[data-testid="game-tile-rijec-dana"]').exists()).toBe(false)
     page.unmount()
   })
 })
