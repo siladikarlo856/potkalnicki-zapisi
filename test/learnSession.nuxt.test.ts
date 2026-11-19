@@ -24,14 +24,15 @@ function word(id: string, headword: string): PoolCard {
 }
 
 function testPool(count: number): CardPool {
-  const cards = Array.from({ length: count }, (_, i) => word(`w${i}`, `riječ${i}`))
+  const words = Array.from({ length: count }, (_, i) => word(`w${i}`, `riječ${i}`))
+  const village: PoolCard = { kind: 'place', key: 'place:p1', id: 'p1', topics: ['mjesta'], name: 'Šopron', slug: 'sopron', municipalityId: 'm1', lat: 46, lng: 16, itemCount: 1, seat: false, difficulty: 2 }
   return {
     version: 1,
     generatedAt: T,
-    cards,
+    cards: [...words, village],
     municipalities: [],
     settlements: [{ id: 's1', name: 'Šopron', slug: 'sopron', municipalityId: 'm1' }],
-    topics: [{ id: 'rijeci', label: 'Riječi', status: 'live', count: cards.length }]
+    topics: [{ id: 'rijeci', label: 'Riječi', status: 'live', count: words.length }, { id: 'mjesta', label: 'Mjesta', status: 'live', count: 1 }]
   }
 }
 
@@ -195,6 +196,15 @@ describe('learn session page', () => {
     expect(wrapper!.find('[data-testid="learn-reveal"]').exists()).toBe(false)
     expect(wrapper!.get('[data-testid="learn-known"]').text()).toBe('Znam')
     expect(wrapper!.get('[data-testid="learn-unknown"]').text()).toBe('Još ne znam')
+  })
+
+  it('asks Što znači? only above word cards', async () => {
+    wrapper = await mountSuspended(LearnSession, {
+      route: '/uci/sesija?teme=mjesta&n=5'
+    })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('Kartica 1 od 1')
+    expect(wrapper!.get('[data-testid="learn-counter"]').text()).not.toContain('Što znači?')
   })
 
   it('lists the missed cards with a link and a count in the summary', async () => {
