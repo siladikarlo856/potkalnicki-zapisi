@@ -64,9 +64,6 @@ useThemeColor(isPotkalnicko ? '#FDF9F0' : undefined, isPotkalnicko ? '#14140F' :
         v-else
         :kind="state"
         :title="title"
-        :description="removed
-          ? 'Urednici su ga povukli 2. studenoga 2026. jer se podaci nisu mogli potvrditi izvorima. Ako imaš izvor koji ih potvrđuje, javi nam.'
-          : undefined"
         @retry="retry"
       >
         <template #actions>
