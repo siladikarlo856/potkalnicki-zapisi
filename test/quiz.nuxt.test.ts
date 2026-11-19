@@ -80,15 +80,22 @@ afterEach(() => {
   clearNuxtData(['active-heritage-words', 'card-pool'])
 })
 
-async function mountQuiz(lang: 'hr' = 'hr') {
+async function startQuiz(page: Awaited<ReturnType<typeof mountSuspended>>) {
+  await vi.waitFor(() => expect(page.find('[data-testid="game-start-button"]').exists()).toBe(true))
+  await page.get('[data-testid="game-start-button"]').trigger('click')
+}
+
+/** Mounts the page; unless `start` is false it also presses "Počni" once the start page is there. */
+async function mountQuiz(lang: 'hr' = 'hr', start = true) {
   await useNuxtApp().$i18n.setLocale(lang)
   wrapper = await mountSuspended(Quiz, { route: '/igre/kviz' })
+  if (start) await startQuiz(wrapper)
   return wrapper
 }
 
 const OPTION = '[data-testid^="game-option-"]'
 type Page = Awaited<ReturnType<typeof mountQuiz>>
-const optionText = (option: { text: () => string }) => option.text().replace(/^\d+\.?\s*/, '').replace(/(Točan odgovor|Tvoj odgovor|Točno)/g, '').trim()
+const optionText = (option: { text: () => string }) => option.text().replace(/^[A-F]/, '').replace(/(Točan odgovor|Netočno|Točno)$/g, '').trim()
 const askedWord = (page: Page) => {
   const headword = page.get('[data-testid="game-prompt"]').text().match(/„(.*)”/)![1]!
   return seeds.find(word => word.headword === headword)!
@@ -102,7 +109,7 @@ const pickIndex = (page: Page, correct: boolean) => {
 }
 
 const locales = [
-  { lang: 'hr' as const, loading: 'Učitavam pitanja…', empty: 'Trebamo još riječi', progress: 'Odgovorena pitanja', error: 'Pitanja trenutačno nisu dostupna.', retry: 'Pokušaj opet' }
+  { lang: 'hr' as const, loading: 'Pripremamo pitanja…', empty: 'Ova igra još nema dovoljno pitanja', progress: 'Odgovorena pitanja', error: 'Pitanja nismo uspjeli učitati', retry: 'Pokušaj ponovno' }
 ]
 
 describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, error, retry }) => {
@@ -119,11 +126,11 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, er
     // The pool also drives answer handling, feedback and moving to the next question.
     const focus = vi.spyOn(HTMLElement.prototype, 'focus')
     await page.get(`[data-testid="game-option-${pickIndex(page, true)}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     expect(page.get('[data-testid="game-progress"]').attributes('aria-valuenow')).toBe('1')
     expect(storedWord(entry.id).known).toBe(1)
-    expect(page.text()).toContain('Odgovoreno ukupno: 1')
     expect(page.get('[data-testid="game-score"]').text()).toBe('Bodovi: 1')
-    expect(page.get('[data-testid="game-feedback"]').text()).toContain(`Točan odgovor: ${entry.meaning.hr}`)
+    expect(page.get('[data-testid="game-feedback"]').text()).toContain(entry.meaning.hr)
     // Focus moves to the feedback after an answer, and the options are locked.
     expect(focus.mock.contexts.some(element => (element as HTMLElement).dataset.testid === 'game-feedback-heading')).toBe(true)
     expect(page.findAll(OPTION).every(option => option.attributes('aria-disabled') === 'true')).toBe(true)
@@ -138,6 +145,8 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, er
     await expect.poll(() => page.findAll(OPTION).length).toBe(4)
     const entry = askedWord(page)
     window.dispatchEvent(new KeyboardEvent('keydown', { key: String(pickIndex(page, true) + 1) }))
+    await expect.poll(() => page.get('[data-testid="game-check"]').attributes('disabled')).toBeUndefined()
+    await page.get('[data-testid="game-check"]').trigger('click')
     await expect.poll(() => page.find('[data-testid="game-feedback"]').exists()).toBe(true)
     expect(storedWord(entry.id).known).toBe(1)
   })
@@ -146,18 +155,19 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, er
     pending = new Promise((resolve) => {
       release = resolve
     })
-    const page = await mountQuiz(lang)
+    const page = await mountQuiz(lang, false)
     expect(page.text()).toContain(loading)
     expect(page.text()).not.toContain(empty)
     expect(page.find(OPTION).exists()).toBe(false)
     release!()
+    await startQuiz(page)
     await expect.poll(() => page.findAll(OPTION).length).toBe(4)
     expect(page.text()).not.toContain(loading)
   })
 
   it('shows a localized error and retries the pool request', async () => {
     unavailable = true
-    const page = await mountQuiz(lang)
+    const page = await mountQuiz(lang, false)
     await expect.poll(() => page.text()).toContain(error)
     expect(page.text()).not.toContain(empty)
     expect(page.find(OPTION).exists()).toBe(false)
@@ -165,6 +175,7 @@ describe.each(locales)('$lang multiple-choice page', ({ lang, loading, empty, er
     expect(button).toBeDefined()
     unavailable = false
     await button.trigger('click')
+    await startQuiz(page)
     await expect.poll(() => page.findAll(OPTION).length).toBe(4)
     expect(page.text()).not.toContain(error)
   })
@@ -183,6 +194,8 @@ describe('quiz variant dialog', () => {
     expect(page.find('a[href*="doprinos"]').exists()).toBe(false)
 
     await page.get(`[data-testid="game-option-${pickIndex(page, true)}"]`).trigger('click')
+
+    await page.get('[data-testid="game-check"]').trigger('click')
     const trigger = page.get('[data-testid="quiz-differently"]')
     expect(trigger.text()).toBe('Kod nas se kaže drugačije')
     expect(dialog()).toBeNull()
@@ -203,6 +216,7 @@ describe('quiz variant dialog', () => {
     await expect.poll(() => page.findAll(OPTION).length).toBe(4)
     expect(page.find('[data-testid="game-suggest"]').exists()).toBe(false)
     await page.get(`[data-testid="game-option-${pickIndex(page, false)}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     const entry = askedWord(page)
     await page.get('[data-testid="game-suggest"]').trigger('click')
     await vi.waitFor(() => expect(dialog()).not.toBeNull())
@@ -213,8 +227,8 @@ describe('quiz variant dialog', () => {
 describe('limited active words', () => {
   it.each([0, 1, 2])('shows the empty state with %i active words', async (count) => {
     for (const entry of seeds.slice(count)) setActive(entry.id, false)
-    const page = await mountQuiz()
-    await expect.poll(() => page.text()).toContain('Trebamo još riječi')
+    const page = await mountQuiz('hr', false)
+    await expect.poll(() => page.text()).toContain('Ova igra još nema dovoljno pitanja')
     expect(page.text()).toContain('barem dva različita značenja')
     expect(page.find(OPTION).exists()).toBe(false)
   })
@@ -233,6 +247,7 @@ describe.each([
   async function answerCurrent(page: Page, correct: boolean) {
     const entry = askedWord(page)
     await page.get(`[data-testid="game-option-${pickIndex(page, correct)}"]`).trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     await page.get('[data-testid="game-next"]').trigger('click')
     return entry
   }
@@ -247,7 +262,7 @@ describe.each([
     for (let i = 0; i < 3; i++) await answerCurrent(page, true)
 
     await expect.poll(() => page.find('[data-testid="game-misses"]').exists()).toBe(true)
-    expect(page.get('[data-testid="game-result-score"]').text()).toBe('3 / 4')
+    expect(page.get('[data-testid="game-result-score"]').text()).toBe('Rezultat: 3/4')
     expect(JSON.parse(localStorage.getItem(GAME_SCORES_KEY)!)).toMatchObject({ version: 1, best: { znacenje: { score: 3, max: 4 } } })
     const rows = page.findAll('[data-testid="game-miss"]')
     expect(rows).toHaveLength(1)
@@ -301,6 +316,7 @@ describe.each([
       const ids = page.findAll(OPTION).map(optionText).map(text => seeds.find(word => word.meaning.hr === text)!.id)
       asked.push({ id: entry.id, optionIds: ids })
       await page.get(`[data-testid="game-option-${pickIndex(page, i !== 0)}"]`).trigger('click')
+      await page.get('[data-testid="game-check"]').trigger('click')
       await page.get('[data-testid="game-next"]').trigger('click')
     }
     await expect.poll(() => page.find('[data-testid="game-make-challenge"]').exists()).toBe(true)

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData, clearNuxtState } from '#imports'
 import TkoJeTo from '../app/pages/igre/tko-je-to.vue'
-import Tile from '../app/components/games/Tile.vue'
+import Tile from '../app/components/games/GameCard.vue'
 import { GAME_CATALOGUE } from '../shared/utils/games/catalogue'
 import { pzRoutes } from '../shared/utils/appRoutes'
 
@@ -42,6 +42,7 @@ async function playPerfectRound(page: NonNullable<typeof wrapper>) {
     const n = page.get('[data-testid="game-prompt"]').text().match(/Trag broj (\d+)/)![1]
     const option = page.findAll('[data-testid^="game-option-"]').find(o => o.text().includes(`Osoba ${n}`))!
     await option.trigger('click')
+    await page.get('[data-testid="game-check"]').trigger('click')
     await page.get('[data-testid="game-next"]').trigger('click')
   }
 }
