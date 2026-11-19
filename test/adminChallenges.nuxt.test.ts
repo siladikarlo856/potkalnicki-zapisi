@@ -104,7 +104,8 @@ describe('admin challenge templates (Izazovi)', () => {
   it('starts a new template with one round and question, and shows problems at the nested fields', async () => {
     wrapper = await mountPage()
     await vi.waitFor(() => expect(wrapper!.text()).toContain('Proljetni izazov'))
-    buttonIn(wrapper.element, 'Novi izazov')!.click()
+    buttonIn(wrapper.element, 'Novi predložak')!.click()
+    await vi.waitFor(() => expect(dialog()?.textContent ?? document.body.textContent).toContain('Izazovi koji su već stvoreni iz ovog predloška ne mijenjaju se.'))
     await vi.waitFor(() => expect(dialog()?.querySelector('[data-test="challenge-round-0"]')).toBeTruthy())
     expect(dialog()!.querySelector('[data-test="challenge-question-0"]')).not.toBeNull()
 

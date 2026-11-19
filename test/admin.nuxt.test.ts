@@ -84,17 +84,20 @@ describe('admin submissions linked to a word', () => {
       // Badges next to the text, so the editor sees the kind without opening the row.
       expect(wrapper.text()).toContain('Potvrda upotrebe')
       expect(wrapper.text()).toContain('Drugačiji oblik')
-      for (const info of wrapper.findAll('button[aria-label^="Detalji"]')) await info.trigger('click')
-      const links = wrapper.findAll('[data-testid="submission-word"]')
-      expect(links).toHaveLength(2)
-      expect(links[0]!.text()).toBe('hiža · Potvrda upotrebe')
-      expect(links[1]!.text()).toBe('hiža · Drugačiji oblik')
-      expect(links[0]!.get('a').attributes('href')).toBe('/admin/rijeci?uredi=fixture-word-1')
-      const promote = wrapper.findAll('button').filter(button => button.text() === 'Dodaj u riječi / otvori skicu')
-      // A variant (and the plain row) can still become a draft; the usage cannot.
-      expect(promote).toHaveLength(2)
+      const infos = wrapper.findAll('button[aria-label^="Detalji"]')
+      await infos[0]!.trigger('click')
+      await vi.waitFor(() => expect(wrapper!.findAll('[data-testid="submission-word"]')).toHaveLength(1))
+      const first = wrapper.get('[data-testid="submission-word"]')
+      expect(first.text()).toBe('hiža · Potvrda upotrebe')
+      expect(first.get('a').attributes('href')).toBe('/admin/rijeci?uredi=fixture-word-1')
       expect(wrapper.findAll('[data-testid="usage-note"]')).toHaveLength(1)
       expect(wrapper.get('[data-testid="usage-note"]').text()).toContain('ne pretvara u novu skicu')
+      // A usage cannot become a draft; a variant can.
+      expect(wrapper.findAll('button').filter(button => button.text() === 'Dodaj u riječi / otvori skicu')).toHaveLength(0)
+      await infos[1]!.trigger('click')
+      await vi.waitFor(() => expect(wrapper!.get('[data-testid="submission-word"]').text()).toBe('hiža · Drugačiji oblik'))
+      expect(wrapper.findAll('button').filter(button => button.text() === 'Dodaj u riječi / otvori skicu')).toHaveLength(1)
+      expect(wrapper.findAll('[data-testid="usage-note"]')).toHaveLength(0)
     } finally {
       wrapper?.unmount()
       submissionRows = [submission]
@@ -107,8 +110,8 @@ describe('admin submissions linked to a word', () => {
     try {
       wrapper = await mountSuspended(Review)
       await vi.waitFor(() => expect(wrapper.text()).toContain('Usage confirmation'))
-      for (const info of wrapper.findAll('button[aria-label^="Detalji"]')) await info.trigger('click')
-      expect(wrapper.findAll('[data-testid="submission-word"]')).toHaveLength(1)
+      await wrapper.findAll('button[aria-label^="Detalji"]')[0]!.trigger('click')
+      await vi.waitFor(() => expect(wrapper!.findAll('[data-testid="submission-word"]')).toHaveLength(1))
       expect(wrapper.get('[data-testid="submission-word"]').text()).toContain('fixture-word-1')
     } finally {
       wrapper?.unmount()
@@ -118,22 +121,15 @@ describe('admin submissions linked to a word', () => {
 })
 
 describe('admin tables', () => {
-  for (const [name, page, label] of [['submissions', Review, 'Moja riječ']] as const) {
-    it(`${name}: row click and info button toggle the expanded row`, async () => {
-      const wrapper = await mountSuspended(page)
-      await vi.waitFor(() => expect(wrapper.text()).toContain(label))
-      const info = wrapper.find('button[aria-label^="Detalji"]')
-      expect(info.attributes('aria-expanded')).toBe('false')
-      await info.trigger('click')
-      expect(wrapper.find('button[aria-label^="Detalji"]').attributes('aria-expanded')).toBe('true')
-      expect(wrapper.findAll('tbody tr')).toHaveLength(2)
-      await info.trigger('click')
-      expect(wrapper.findAll('tbody tr')).toHaveLength(1)
-      await wrapper.find('tbody tr').trigger('click')
-      expect(wrapper.findAll('tbody tr')).toHaveLength(2)
-      wrapper.unmount()
-    })
-  }
+  it('submissions: choosing a row opens its review pane and marks it current', async () => {
+    const wrapper = await mountSuspended(Review)
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Moja riječ'))
+    const info = wrapper.get('button[aria-label^="Detalji"]')
+    await info.trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[data-test="admin-inbox-detail"]').exists()).toBe(true))
+    expect(wrapper.get('button[aria-label^="Detalji"]').attributes('aria-current')).toBe('true')
+    wrapper.unmount()
+  })
 
   it('words: the table shows a daily-word readiness badge for active rows', async () => {
     const wrapper = await mountSuspended(ReviewWords, { route: '/admin/rijeci' })

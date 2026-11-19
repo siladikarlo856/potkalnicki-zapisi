@@ -17,6 +17,7 @@ const busy = ref(false)
 const error = ref('')
 const notice = ref('')
 const heading = useTemplateRef<HTMLElement>('heading')
+const formOpen = ref(false)
 
 const date = ref('')
 const wordId = ref('')
@@ -42,6 +43,50 @@ const villageChoices = computed(() => [
 ])
 const canPin = computed(() => !!overview.value && !!date.value && !!wordId.value && !busy.value
   && date.value >= minDate.value! && date.value <= maxDate.value!)
+
+const CALENDAR_DAYS = 28
+const WEEKDAYS = ['pon', 'uto', 'sri', 'čet', 'pet', 'sub', 'ned']
+const MONTHS = ['siječnja', 'veljače', 'ožujka', 'travnja', 'svibnja', 'lipnja', 'srpnja', 'kolovoza', 'rujna', 'listopada', 'studenoga', 'prosinca']
+const weekdayIndex = (day: string) => (new Date(`${day}T12:00:00Z`).getUTCDay() + 6) % 7
+const longDate = (day: string) => `${Number(day.slice(8))}. ${MONTHS[Number(day.slice(5, 7)) - 1]} ${day.slice(0, 4)}.`
+const shortDate = (day: string) => `${Number(day.slice(8))}. ${Number(day.slice(5, 7))}.`
+
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000)
+
+interface CalendarCell { day: string, kind: 'past' | 'today' | 'pinned' | 'auto', word?: string, village?: string, weekday: string }
+/** Which four-week window is drawn: 0 starts on the Monday of this week; the last one holds the pin horizon. */
+const windowIndex = ref(0)
+const firstMonday = computed(() => overview.value ? addDays(overview.value.day, -weekdayIndex(overview.value.day)) : '')
+const lastWindow = computed(() => overview.value ? Math.floor(daysBetween(firstMonday.value, maxDate.value!) / CALENDAR_DAYS) : 0)
+const windowStart = computed(() => firstMonday.value ? addDays(firstMonday.value, windowIndex.value * CALENDAR_DAYS) : '')
+const windowLabel = computed(() => windowStart.value ? `${shortDate(windowStart.value)} – ${shortDate(addDays(windowStart.value, CALENDAR_DAYS - 1))}` : '')
+function showWindow(index: number) {
+  windowIndex.value = Math.min(Math.max(index, 0), lastWindow.value)
+}
+function showDay(day: string) {
+  showWindow(Math.floor(daysBetween(firstMonday.value, day) / CALENDAR_DAYS))
+}
+/** Four weeks from a Monday: past days muted, today outlined, pinned days with their word. */
+const calendar = computed<CalendarCell[]>(() => {
+  const current = overview.value
+  if (!current) return []
+  const start = windowStart.value
+  const known = new Map([...current.recent, ...(current.today ? [current.today] : []), ...current.pins].map(item => [item.day, item]))
+  return Array.from({ length: CALENDAR_DAYS }, (_, index) => {
+    const day = addDays(start, index)
+    const item = known.get(day)
+    const weekday = WEEKDAYS[index % 7]!
+    if (day < current.day) return { day, kind: 'past', word: item?.headword, weekday }
+    if (day === current.day) return { day, kind: 'today', word: item?.headword, weekday }
+    return item ? { day, kind: 'pinned', word: item.headword, village: villageLabel(item), weekday } : { day, kind: 'auto', weekday }
+  })
+})
+const lastPin = computed(() => overview.value?.pins.at(-1))
+function scheduleOn(cell: CalendarCell) {
+  if (cell.kind === 'pinned') return
+  date.value = cell.day
+  formOpen.value = true
+}
 
 watch(wordId, async (id) => {
   village.value = 'auto'
@@ -133,6 +178,7 @@ async function unpin(day: DailyAdminDay) {
 watch(() => route.query.pin, (pin) => {
   if (typeof pin === 'string') {
     wordId.value = pin
+    formOpen.value = true
     nextTick(() => heading.value?.focus())
   }
 }, { immediate: true })
@@ -143,182 +189,285 @@ onMounted(refresh)
 <template>
   <AdminPanel
     title="Riječ dana"
-    description="Raspored, zaliha riječi i prikvačeni dani. Brojevi zalihe računaju se na poslužitelju preko svih aktivnih riječi."
     icon="i-lucide-calendar-days"
   >
-    <UCard id="rijec-dana">
-      <template #header>
-        <h2
-          ref="heading"
-          tabindex="-1"
-          class="text-xl font-semibold text-highlighted"
-        >
-          Raspored
-        </h2>
-      </template>
-      <div
-        class="flex flex-col gap-4"
-        lang="hr"
+    <template #actions>
+      <UButton
+        label="Rasporedi riječ"
+        icon="i-lucide-calendar-plus"
+        :disabled="!overview"
+        data-test="daily-schedule"
+        @click="formOpen = true"
+      />
+    </template>
+
+    <div
+      id="rijec-dana"
+      class="flex flex-col gap-4"
+      lang="hr"
+    >
+      <h2
+        ref="heading"
+        tabindex="-1"
+        class="sr-only"
       >
+        Raspored
+      </h2>
+      <UAlert
+        v-if="error"
+        :title="overview ? error : 'Raspored nismo uspjeli učitati'"
+        :description="overview ? undefined : 'Riječi koje su već raspoređene i dalje se prikazuju posjetiteljima.'"
+        color="error"
+        variant="subtle"
+        role="alert"
+        :actions="overview ? undefined : [{ label: 'Pokušaj ponovno', color: 'neutral', variant: 'outline', onClick: refresh }]"
+      />
+      <UAlert
+        v-if="notice"
+        :title="notice"
+        color="success"
+        variant="subtle"
+        role="status"
+      />
+      <template v-if="overview">
+        <p
+          class="text-muted"
+          data-test="daily-coverage"
+        >
+          <template v-if="lastPin">
+            Prikvačeno do <UButton
+              :label="longDate(lastPin.day)"
+              color="neutral"
+              variant="link"
+              class="p-0 align-baseline"
+              data-test="daily-last-pin"
+              @click="showDay(lastPin.day)"
+            /> Dani bez prikvačene riječi dobivaju riječ automatski.
+          </template>
+          <template v-else>
+            Nema prikvačenih riječi. Svaki dan dobiva riječ automatski.
+          </template>
+        </p>
+        <p data-test="daily-today">
+          <span class="text-muted">Danas ({{ overview.day }}): </span>
+          <template v-if="overview.today">
+            <strong class="text-highlighted">{{ overview.today.headword }}</strong>
+            · {{ overview.today.source === 'pinned' ? 'prikvačeno' : 'automatski odabrano' }}
+          </template>
+          <template v-else>
+            još nije odabrana; odabire se pri prvom otvaranju riječi dana.
+          </template>
+        </p>
         <UAlert
-          v-if="error"
-          :title="error"
-          color="error"
+          v-for="warning in overview.warnings"
+          :key="`${warning.code}-${warning.day ?? ''}-${warning.wordId ?? ''}`"
+          :title="warning.message"
+          color="warning"
           variant="subtle"
-          role="alert"
+          icon="i-lucide-triangle-alert"
         />
-        <UAlert
-          v-if="notice"
-          :title="notice"
-          color="success"
-          variant="subtle"
-          role="status"
-        />
-        <template v-if="overview">
-          <p data-test="daily-today">
-            <span class="text-muted">Danas ({{ overview.day }}): </span>
-            <template v-if="overview.today">
-              <strong class="text-highlighted">{{ overview.today.headword }}</strong>
-              · {{ overview.today.source === 'pinned' ? 'prikvačeno' : 'automatski odabrano' }}
-            </template>
-            <template v-else>
-              još nije odabrana; odabire se pri prvom otvaranju riječi dana.
-            </template>
-          </p>
-          <dl
-            class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]"
-            data-test="daily-runway"
-          >
-            <dt class="text-muted">
-              Spremne neiskorištene riječi
-            </dt><dd>{{ overview.runway.readyUnused }}</dd>
-            <dt class="text-muted">
-              Neiskorištene riječi
-            </dt><dd>{{ overview.runway.unused }}</dd>
-            <dt class="text-muted">
-              Aktivne riječi
-            </dt><dd>{{ overview.runway.active }}</dd>
-            <dt class="text-muted">
-              Dana bez ponavljanja
-            </dt><dd>{{ overview.runway.daysLeft }}</dd>
-          </dl>
-          <UAlert
-            v-for="warning in overview.warnings"
-            :key="`${warning.code}-${warning.day ?? ''}-${warning.wordId ?? ''}`"
-            :title="warning.message"
-            color="warning"
-            variant="subtle"
+
+        <div
+          class="flex items-center gap-2"
+          data-test="daily-window"
+        >
+          <UButton
+            icon="i-lucide-chevron-left"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            aria-label="Prethodna četiri tjedna"
+            :disabled="windowIndex === 0"
+            data-test="daily-prev"
+            @click="showWindow(windowIndex - 1)"
           />
-          <section aria-labelledby="daily-pins-title">
-            <h3
-              id="daily-pins-title"
-              class="font-semibold text-highlighted"
-            >
-              Prikvačene riječi
-            </h3>
-            <p
-              v-if="!overview.pins.length"
-              class="text-sm text-muted"
-            >
-              Nema prikvačenih riječi.
-            </p>
-            <ul
-              v-else
-              class="mt-2 flex flex-col gap-2"
-            >
-              <li
-                v-for="item in overview.pins"
-                :key="item.day"
-                class="flex flex-wrap items-center gap-2"
-              >
-                <time :datetime="item.day">{{ item.day }}</time>
-                <strong class="text-highlighted">{{ item.headword }}</strong>
-                <span class="text-sm text-muted">{{ villageLabel(item) }}</span>
-                <UButton
-                  label="Ukloni"
-                  icon="i-lucide-x"
-                  size="sm"
-                  color="neutral"
-                  variant="ghost"
-                  :aria-label="`Ukloni prikvačenu riječ ${item.headword} za ${item.day}`"
-                  :disabled="busy"
-                  @click="unpin(item)"
-                />
-              </li>
-            </ul>
-          </section>
-          <form
-            class="flex flex-col gap-3"
-            aria-labelledby="daily-pin-form-title"
-            @submit.prevent="pin"
+          <span
+            class="text-sm text-muted"
+            aria-live="polite"
+            data-test="daily-window-label"
+          >{{ windowLabel }}</span>
+          <UButton
+            icon="i-lucide-chevron-right"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            aria-label="Sljedeća četiri tjedna"
+            :disabled="windowIndex >= lastWindow"
+            data-test="daily-next"
+            @click="showWindow(windowIndex + 1)"
+          />
+        </div>
+
+        <ol
+          class="grid grid-cols-1 gap-2 md:grid-cols-7"
+          aria-label="Raspored riječi dana"
+          data-test="daily-calendar"
+        >
+          <li
+            v-for="cell in calendar"
+            :key="cell.day"
+            class="flex min-h-24 flex-col gap-1 rounded-lg border p-2 text-sm"
+            :class="{
+              'border-default bg-elevated text-muted': cell.kind === 'past',
+              'border-2 border-inverted': cell.kind === 'today',
+              'border-solid border-default': cell.kind === 'pinned',
+              'border-dashed border-default text-muted': cell.kind === 'auto'
+            }"
+            :data-kind="cell.kind"
           >
-            <h3
-              id="daily-pin-form-title"
-              class="font-semibold text-highlighted"
+            <time
+              :datetime="cell.day"
+              class="text-xs"
+            ><span class="md:hidden">{{ cell.weekday }}, </span>{{ shortDate(cell.day) }}<span
+              v-if="cell.kind === 'today'"
+              class="ms-1 font-bold"
+            >danas</span></time>
+            <template v-if="cell.word">
+              <strong class="text-highlighted">{{ cell.word }}</strong>
+              <span
+                v-if="cell.village"
+                class="text-xs text-muted"
+              >{{ cell.village }}</span>
+            </template>
+            <span
+              v-else-if="cell.kind === 'auto'"
+              class="text-xs"
+            >automatski</span>
+            <span
+              v-else
+              class="text-xs"
+            >—</span>
+            <div
+              v-if="cell.kind === 'pinned'"
+              class="mt-auto flex items-center gap-1"
             >
-              Prikvači riječ
-            </h3>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <UFormField
-                label="Datum"
-                :help="minDate ? `Od ${minDate}; današnji i prošli dani su zaključani.` : undefined"
-              >
-                <UInput
-                  v-model="date"
-                  type="date"
-                  :min="minDate"
-                  :max="maxDate"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Pretraži aktivne riječi">
-                <UInput
-                  v-model="wordSearch"
-                  icon="i-lucide-search"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Riječ">
-                <USelect
-                  v-model="wordId"
-                  :items="wordChoices"
-                  :loading="lookupStatus === 'pending'"
-                  placeholder="Odaberi riječ"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Oznaka mjesta">
-                <USelect
-                  v-model="village"
-                  :items="villageChoices"
-                  class="w-full"
-                />
-              </UFormField>
+              <UBadge
+                label="prikvačeno"
+                size="sm"
+                variant="subtle"
+                color="neutral"
+              />
+              <UButton
+                icon="i-lucide-x"
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :aria-label="`Ukloni prikvačenu riječ ${cell.word} za ${cell.day}`"
+                :disabled="busy"
+                @click="unpin(overview.pins.find(pin => pin.day === cell.day)!)"
+              />
             </div>
             <UButton
-              type="submit"
-              label="Prikvači"
-              icon="i-lucide-pin"
-              :disabled="!canPin"
-              :loading="busy"
+              v-else-if="cell.kind === 'auto' && cell.day <= maxDate!"
+              label="Rasporedi"
+              size="xs"
+              color="neutral"
+              variant="link"
+              class="mt-auto self-start px-0"
+              :aria-label="`Rasporedi riječ za ${cell.day}`"
+              @click="scheduleOn(cell)"
             />
-          </form>
-        </template>
-        <p
-          v-else-if="loading"
-          class="text-muted"
+          </li>
+        </ol>
+
+        <dl
+          class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]"
+          data-test="daily-runway"
         >
-          Učitavam…
-        </p>
+          <dt class="text-muted">
+            Spremne neiskorištene riječi
+          </dt><dd>{{ overview.runway.readyUnused }}</dd>
+          <dt class="text-muted">
+            Neiskorištene riječi
+          </dt><dd>{{ overview.runway.unused }}</dd>
+          <dt class="text-muted">
+            Aktivne riječi
+          </dt><dd>{{ overview.runway.active }}</dd>
+          <dt class="text-muted">
+            Dana bez ponavljanja
+          </dt><dd>{{ overview.runway.daysLeft }}</dd>
+        </dl>
+      </template>
+      <p
+        v-else-if="loading"
+        class="text-muted"
+        role="status"
+      >
+        Učitavanje rasporeda…
+      </p>
+    </div>
+
+    <UModal
+      v-model:open="formOpen"
+      title="Rasporedi riječ"
+      description="Prikvačena riječ zamjenjuje automatski odabir za taj dan."
+    >
+      <template #body>
+        <form
+          id="daily-pin-form"
+          class="flex flex-col gap-3"
+          @submit.prevent="pin().then(() => { if (!wordId) formOpen = false })"
+        >
+          <UAlert
+            v-if="error"
+            :title="error"
+            color="error"
+            variant="subtle"
+            role="alert"
+          />
+          <AdminFormField
+            label="Datum"
+            :help="minDate ? `Od ${minDate}; današnji i prošli dani su zaključani.` : undefined"
+          >
+            <UInput
+              v-model="date"
+              type="date"
+              :min="minDate"
+              :max="maxDate"
+              class="w-full"
+            />
+          </AdminFormField>
+          <AdminFormField label="Pretraži aktivne riječi">
+            <UInput
+              v-model="wordSearch"
+              icon="i-lucide-search"
+              class="w-full"
+            />
+          </AdminFormField>
+          <AdminFormField label="Riječ">
+            <USelect
+              v-model="wordId"
+              :items="wordChoices"
+              :loading="lookupStatus === 'pending'"
+              placeholder="Odaberi riječ"
+              class="w-full"
+            />
+          </AdminFormField>
+          <AdminFormField label="Oznaka mjesta">
+            <USelect
+              v-model="village"
+              :items="villageChoices"
+              class="w-full"
+            />
+          </AdminFormField>
+        </form>
+      </template>
+      <template #footer>
         <UButton
-          v-else
-          label="Pokušaj ponovno"
-          icon="i-lucide-refresh-cw"
+          label="Odustani"
           color="neutral"
-          variant="outline"
-          @click="refresh"
+          variant="ghost"
+          @click="formOpen = false"
         />
-      </div>
-    </UCard>
+        <UButton
+          type="submit"
+          form="daily-pin-form"
+          label="Spremi u raspored"
+          icon="i-lucide-pin"
+          :disabled="!canPin"
+          :loading="busy"
+        />
+      </template>
+    </UModal>
   </AdminPanel>
 </template>
