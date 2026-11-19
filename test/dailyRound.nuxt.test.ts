@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData, clearNuxtState } from '#imports'
 import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
 import DailyPage from '../app/pages/rijec-dana/index.vue'
@@ -22,6 +22,9 @@ function payload(): DailyWordPayload {
     clues: [{ kind: 'example', text: 'Nosi se na glavi.' }, { kind: 'category', category: 'clothing' }, { kind: 'partOfSpeech', text: 'imenica' }]
   }
 }
+
+const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn() }))
+mockNuxtImport('navigateTo', () => navigateToMock)
 
 registerEndpoint('/api/heritage/daily', () => payload())
 registerEndpoint('/api/learn/pool', () => ({ version: 1, generatedAt: '', cards: [], municipalities: [], settlements: [], topics: [] }))
@@ -185,5 +188,23 @@ describe('Igraj i uči hub', () => {
     expect(wrapper.get('[data-testid="hub-games"] a[href="/igre/"]').text()).toBe('Svih 13')
     expect(wrapper.get('#hub-code').exists()).toBe(true)
     expect(wrapper.get('[data-testid="hub-challenge-new"]').attributes('href')).toBe('/izazov/novi/')
+  })
+
+  it('opens a shared challenge code exactly as the server issued it', async () => {
+    navigateToMock.mockClear()
+    wrapper = await mountSuspended(PlayHub, { route: '/igraj/' })
+    await wrapper.get('#hub-code').setValue('  aB3_x9Kq-Lm2Zp0w ')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.find('#hub-code-error').exists()).toBe(false)
+    expect(navigateToMock).toHaveBeenCalledWith('/izazov/aB3_x9Kq-Lm2Zp0w/')
+  })
+
+  it('rejects a code too short to be a challenge code', async () => {
+    navigateToMock.mockClear()
+    wrapper = await mountSuspended(PlayHub, { route: '/igraj/' })
+    await wrapper.get('#hub-code').setValue('KALNIK7')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.find('#hub-code-error').exists()).toBe(true)
+    expect(navigateToMock).not.toHaveBeenCalled()
   })
 })

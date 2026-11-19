@@ -36,9 +36,9 @@ const games = [
 ]
 
 function openCode() {
-  const value = code.value.trim().toUpperCase()
-  if (!/^[A-Z0-9]{3,20}$/.test(value)) {
-    codeError.value = 'Kôd se sastoji od slova i brojeva.'
+  const value = code.value.trim()
+  if (!/^[A-Za-z0-9_-]{16,32}$/.test(value)) {
+    codeError.value = 'Kôd ima barem 16 znakova: slova, brojke, - ili _.'
     return
   }
   codeError.value = ''
@@ -202,8 +202,9 @@ onMounted(async () => {
               class="min-w-0 flex-1"
               size="xl"
               autocomplete="off"
-              autocapitalize="characters"
-              placeholder="npr. KALNIK7"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="npr. aB3x9KqLm2Zp0wQr"
               :aria-describedby="codeError ? 'hub-code-error' : undefined"
               :aria-invalid="codeError ? 'true' : undefined"
             />
