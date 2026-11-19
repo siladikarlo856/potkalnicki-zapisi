@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LearnN } from '~~/shared/utils/learn/learnState'
 import { sessionCardIndex } from '~~/shared/utils/learn/learnState'
+import { reviewCardKeys } from '~~/shared/utils/learn/session'
 import type { TopicId } from '~~/shared/utils/learn/types'
 import { settlementForSlug, settlementSlugForPlace } from '~/utils/learnPlace'
 import type { PlaceOption } from '~~/shared/types/place'
@@ -41,11 +42,12 @@ const topics = computed(() => pool.value.topics.filter(topic => !topic.parent &&
 const hasProgress = computed(() => ready.value && Object.keys(cards.value).length > 0)
 const current = computed(() => ready.value ? learn.current.value : null)
 const firstTime = computed(() => ready.value && !hasProgress.value && !current.value)
-const due = computed(() => ready.value ? dueCount() : 0)
+const reviewKeys = computed(() => reviewCardKeys(pool.value, placeSlug.value))
+const due = computed(() => ready.value ? dueCount(reviewKeys.value) : 0)
 const known = computed(() => ready.value ? learnedCount() : 0)
 const learning = computed(() => Math.max(0, Object.keys(cards.value).length - known.value))
 const reviewCount = computed(() => Math.min(due.value, 20))
-const upcoming = computed(() => ready.value && due.value === 0 ? nextReview() : null)
+const upcoming = computed(() => ready.value && due.value === 0 ? nextReview(reviewKeys.value) : null)
 const upcomingWhen = computed(() => {
   const days = upcoming.value?.inDays ?? 0
   if (days === 1) return 'sutra'
@@ -64,7 +66,7 @@ const topicRows = computed(() => topics.value.map((topic) => {
 function sessionHref(query: Record<string, string>) {
   return localePath(`${pzRoutes.learnSession}?${new URLSearchParams(query)}`)
 }
-const reviewHref = computed(() => sessionHref({ ponovi: '1' }))
+const reviewHref = computed(() => sessionHref({ ponovi: '1', ...(placeSlug.value ? { mjesto: placeSlug.value } : {}) }))
 const continueHref = computed(() => sessionHref({ nastavi: '1' }))
 const newHref = computed(() => {
   const query: Record<string, string> = { teme: (requestedTopics.value.length ? requestedTopics.value : learn.lastTopics.value).join(','), n: String(n.value) }

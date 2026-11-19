@@ -8,6 +8,7 @@ import {
   judgeDailyGuess
 } from '~~/shared/utils/dailyWord'
 import { encodeCardKey } from '~~/shared/utils/games/cardKey'
+import { reviewCardKeys } from '~~/shared/utils/learn/session'
 import { dailyDateLabel, triesOrdinal } from '~/utils/dailyClues'
 
 // Riječ dana: one dialect word a day, guessed from up to three clues in at most five tries. It runs in the normal
@@ -31,6 +32,8 @@ useSeoMeta({
 const { payload, clues, refresh, error, replaced, stored, finished, solvedStreak, brokenStreak, loading, ready, progress } = useDailyToday()
 const countdown = useDailyCountdown(() => payload.value?.nextAt)
 const { cards, recordSeenCard, dueCount } = useProgress()
+const { pool } = useCardPool()
+const learn = useLearnState()
 
 const guess = ref('')
 const announcement = ref('')
@@ -72,7 +75,8 @@ const shareText = computed(() => payload.value && finished.value ? dailyWordShar
 
 const wordKey = computed(() => payload.value && !payload.value.sample ? encodeCardKey({ kind: 'word', id: payload.value.entry.id }) : undefined)
 const inLearning = computed(() => !!wordKey.value && Object.hasOwn(cards.value, wordKey.value))
-const due = computed(() => ready.value ? dueCount() : 0)
+const reviewKeys = computed(() => reviewCardKeys(pool.value, learn.place.value))
+const due = computed(() => ready.value ? dueCount(reviewKeys.value) : 0)
 
 useHidePzTabBar(playing, 'game')
 

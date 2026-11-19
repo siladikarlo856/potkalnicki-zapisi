@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { pzPath, pzRoutes } from '~~/shared/utils/appRoutes'
+import { reviewCardKeys } from '~~/shared/utils/learn/session'
 
 // Igraj i uči: the destination of "Igraj" in the bottom bar. Today's word, learning, three games and challenges in
 // one place. Phone: one column in that order. Desktop: two rows of two (daily 5 + learning 7, games 7 + challenges 5).
@@ -17,6 +18,7 @@ useSeoMeta({
 
 const { cards, dueCount, learnedCount } = useProgress()
 const learn = useLearnState()
+const { pool } = useCardPool()
 const { homeHighlight, resetRefreshBudget, refreshItem, items, newPlayersFor, totalCount } = useChallengeList()
 
 const ready = ref(false)
@@ -24,7 +26,8 @@ const code = ref('')
 const codeError = ref('')
 
 const stored = computed(() => ready.value ? Object.keys(cards.value).length : 0)
-const due = computed(() => ready.value ? dueCount() : 0)
+const reviewKeys = computed(() => reviewCardKeys(pool.value, learn.place.value))
+const due = computed(() => ready.value ? dueCount(reviewKeys.value) : 0)
 const known = computed(() => ready.value ? learnedCount() : 0)
 const returning = computed(() => stored.value > 0 || !!learn.current.value)
 const reviewHref = computed(() => localePath(learn.current.value

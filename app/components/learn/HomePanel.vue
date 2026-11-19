@@ -4,6 +4,7 @@ import type { CardPool, TopicId } from '~~/shared/utils/learn/types'
 import { pluralFormHr } from '~/utils/plural'
 import { formatLearnStartedAt, topicLabels } from '~/utils/learnUi'
 import { sessionCardIndex } from '~~/shared/utils/learn/learnState'
+import { reviewCardKeys } from '~~/shared/utils/learn/session'
 
 const props = defineProps<{ pool: CardPool }>()
 
@@ -29,7 +30,7 @@ const hasAnyProgress = computed(() => Object.keys(cards.value).length > 0)
 
 const due = computed(() => {
   if (!ready.value) return 0
-  return dueCount()
+  return dueCount(reviewCardKeys(props.pool, learn.place.value))
 })
 
 const showTopA = computed(() => ready.value && !!current.value)

@@ -33,6 +33,17 @@ function matchesPlaceFilter(card: PoolCard, pool: CardPool, placeSlug: string | 
   }
 }
 
+function eligibleCards(pool: CardPool, topics: TopicId[], place?: string): PoolCard[] {
+  const municipalitySlugById = municipalitySlugMap(pool.municipalities)
+  return pool.cards.filter(card => matchesPlaceFilter(card, pool, place)
+    && cardMatchesTopicSelection(card, topics, municipalitySlugById))
+}
+
+export function reviewCardKeys(pool: CardPool, place?: string): CardKey[] {
+  const topics = pool.topics.filter(topic => topic.status === 'live' && !topic.parent).map(topic => topic.id)
+  return eligibleCards(pool, topics, place).map(card => card.key)
+}
+
 function firstMatchingTopic(
   selected: TopicId[],
   card: PoolCard,
@@ -164,9 +175,7 @@ export function buildSession(
     grouped.set(id, { due: [], neu: [], known: [] })
   }
 
-  for (const card of pool.cards) {
-    if (!matchesPlaceFilter(card, pool, o.place)) continue
-    if (!cardMatchesTopicSelection(card, o.topics, municipalitySlugById)) continue
+  for (const card of eligibleCards(pool, o.topics, o.place)) {
     const group = firstMatchingTopic(o.topics, card, municipalitySlugById)
     if (!group) continue
     const p = progressFor(card.key, progress)

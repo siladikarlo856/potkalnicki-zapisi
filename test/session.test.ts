@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CardPool, PoolCard, TopicId } from '../shared/utils/learn/types'
 import type { CardProgress } from '../shared/utils/learn/leitner'
-import { buildSession } from '../shared/utils/learn/session'
+import { buildSession, reviewCardKeys } from '../shared/utils/learn/session'
 
 const T = '2026-11-01T00:00:00.000Z'
 
@@ -177,5 +177,30 @@ describe('buildSession', () => {
     const a = buildSession(pool(cards, topics), {}, options)
     const b = buildSession(pool(cards, topics), {}, options)
     expect(a).toEqual(b)
+  })
+
+  it('uses the same review eligibility for all card kinds and place selections', () => {
+    const cards: PoolCard[] = [
+      word('w1', 'riječ', ['rijeci']),
+      place('p1', 'Kalnik', 'mun-1', 'mjesta'),
+      item('i1', 'Crkva', 'bastina'),
+      { kind: 'person', key: 'person:p1', id: 'p1', topics: ['osobe'], name: 'Osoba', slug: 'osoba', years: '', clue: '', role: '', areaIds: ['mun-1'], verification: 'verified' },
+      { kind: 'club', key: 'club:c1', id: 'c1', topics: ['sport'], name: 'Klub', slug: 'klub', sport: 'Nogomet', settlementId: 'set-1', settlementName: 'Kalnik', settlementSlug: 'kalnik', municipalityId: 'mun-1', seniorSeason: null, verification: 'verified', difficulty: 1 }
+    ]
+    const p = pool(cards, ['rijeci', 'mjesta', 'bastina', 'osobe', 'sport'])
+    p.settlements.push({ id: 'set-2', name: 'Drugo', slug: 'drugo', municipalityId: 'mun-2' })
+    const progress = Object.fromEntries([...cards.map(card => card.key), 'word:removed'].map(key => [key, {
+      box: 1 as const, due: '2026-11-04', seen: 1, known: 0, missed: 1, lastPlayed: '2026-11-03'
+    }]))
+    for (const placeSlug of [undefined, 'kalnik', 'drugo', 'unknown']) {
+      const keys = reviewCardKeys(p, placeSlug)
+      const expected = placeSlug === 'unknown' ? [] : placeSlug === 'drugo' ? ['word:w1'] : cards.map(card => card.key)
+      expect(keys).toEqual(expected)
+      expect(buildSession(p, progress, {
+        n: 20, topics: p.topics.map(topic => topic.id), today: '2026-11-04', mode: 'review', place: placeSlug
+      }).sort()).toEqual([...expected].sort())
+    }
+    p.topics = p.topics.map(topic => topic.id === 'osobe' || topic.id === 'sport' ? { ...topic, status: 'soon' } : topic)
+    expect(reviewCardKeys(p, 'kalnik')).toEqual(['word:w1', 'place:p1', 'item:i1'])
   })
 })

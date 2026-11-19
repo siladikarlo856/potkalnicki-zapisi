@@ -9,6 +9,7 @@ import DailyPage from '../app/pages/rijec-dana/index.vue'
 import PlayHub from '../app/pages/igraj/index.vue'
 import DailyWordCard from '../app/components/DailyWordCard.vue'
 import type { DailyWordPayload } from '../shared/utils/dailyWord'
+import type { CardPool } from '../shared/utils/learn/types'
 
 function payload(): DailyWordPayload {
   return {
@@ -30,8 +31,13 @@ const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn() }))
 mockNuxtImport('navigateTo', () => navigateToMock)
 
 let current = payload()
+const pool: CardPool = {
+  version: 1, generatedAt: '', municipalities: [], settlements: [],
+  cards: [{ kind: 'word', key: 'word:a', id: 'a', topics: ['rijeci'], headword: 'hiža', meaning: 'kuća', variants: [], status: 'verified', transparency: 0.5, difficulty: 2 }],
+  topics: [{ id: 'rijeci', label: 'Riječi', status: 'live', count: 1 }]
+}
 registerEndpoint('/api/heritage/daily', () => current)
-registerEndpoint('/api/learn/pool', () => ({ version: 1, generatedAt: '', cards: [], municipalities: [], settlements: [], topics: [] }))
+registerEndpoint('/api/learn/pool', () => pool)
 
 const stateKeys = ['heritage-daily-progress', 'heritage-daily-progress-loaded', 'heritage-daily-progress-unavailable', 'heritage-progress', 'heritage-progress-loaded', 'pz-learn-state', 'pz-learn-loaded']
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
@@ -42,6 +48,7 @@ beforeEach(() => {
   localStorage.clear()
   clearNuxtState(stateKeys)
   clearNuxtData('heritage-daily-word')
+  clearNuxtData('card-pool')
 })
 afterEach(() => {
   wrapper?.unmount()
@@ -300,7 +307,7 @@ describe('Igraj i uči hub', () => {
     }))
     wrapper = await mountSuspended(PlayHub, { route: '/igraj/' })
     await expect.poll(() => wrapper!.find('[data-testid="hub-learn-continue"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="hub-learn-continue"]').attributes('href')).toBe(hasDue ? '/uci/sesija/?ponovi=1' : '/uci/')
+    await expect.poll(() => wrapper!.get('[data-testid="hub-learn-continue"]').attributes('href')).toBe(hasDue ? '/uci/sesija/?ponovi=1' : '/uci/')
   })
 
   it.each([true, false])('resumes an unfinished session when due cards exist: %s', async (hasDue) => {
