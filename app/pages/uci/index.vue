@@ -1,77 +1,76 @@
 <script setup lang="ts">
 import type { LearnN } from '~~/shared/utils/learn/learnState'
+import { sessionCardIndex } from '~~/shared/utils/learn/learnState'
 import type { TopicId } from '~~/shared/utils/learn/types'
-import { pluralFormHr } from '~/utils/plural'
 import { settlementForSlug, settlementSlugForPlace } from '~/utils/learnPlace'
 import type { PlaceOption } from '~~/shared/types/place'
+import { pluralFormHr } from '~/utils/plural'
 
+// Uči: home of spaced-repetition learning. What is due today, where to find new words, how much is known. Three
+// states of the "Danas" card: words due, nothing due, and the first visit (pick where to start).
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
 
 const { t } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
-const router = useRouter()
 const { pool, status, error, refresh } = useCardPool()
 const learn = useLearnState()
+const { cards, dueCount, learnedCount } = useProgress()
 
 useSeoMeta({
   title: () => t('pz.learn.seoTitle'),
   ogTitle: () => `${t('pz.learn.title')} · Potkalnički zapisi`,
-  description: () => t('pz.learn.pickTopics'),
-  ogDescription: () => t('pz.learn.pickTopics')
+  description: 'Kartice s riječima domaćega govora.',
+  ogDescription: 'Kartice s riječima domaćega govora.'
 })
 
 const ready = ref(false)
-const selectedParent = ref<TopicId | null>(null)
-const selected = ref<Set<TopicId>>(new Set(['rijeci']))
 const n = ref<LearnN>(10)
+const lengths: LearnN[] = [5, 10, 20]
+const firstPick = ref<'rijeci' | TopicId | 'mjesto'>('rijeci')
 const placeSlug = ref<string | undefined>()
 const placeId = ref<string | null>(null)
 const placeQuery = ref('')
 
-const lengths: LearnN[] = [5, 10, 20]
+const topics = computed(() => pool.value.topics.filter(topic => !topic.parent && topic.status === 'live'))
+const hasProgress = computed(() => ready.value && Object.keys(cards.value).length > 0)
+const current = computed(() => ready.value ? learn.current.value : null)
+const firstTime = computed(() => ready.value && !hasProgress.value && !current.value)
+const due = computed(() => ready.value ? dueCount() : 0)
+const known = computed(() => ready.value ? learnedCount() : 0)
+const learning = computed(() => Math.max(0, Object.keys(cards.value).length - known.value))
+const reviewCount = computed(() => Math.min(due.value, 20))
+const minutes = computed(() => Math.max(1, Math.round(reviewCount.value / 3)))
+const cardsWord = (count: number) => t(`pz.learn.startCards.${pluralFormHr(count)}`, { n: count }).replace(/^Započni /, '')
 
-const topTopics = computed(() => pool.value.topics.filter(topic => !topic.parent))
-const childTopics = computed(() => {
-  if (!selectedParent.value) return []
-  return pool.value.topics.filter(topic => topic.parent === selectedParent.value)
-})
+const topicRows = computed(() => topics.value.map((topic) => {
+  const keys = pool.value.cards.filter(card => card.topics.includes(topic.id)).map(card => card.key)
+  const knownHere = ready.value ? learnedCount(keys) : 0
+  return { ...topic, known: knownHere, started: keys.some(key => Object.hasOwn(cards.value, key)) }
+}))
 
-const startLabel = computed(() =>
-  t(`pz.learn.startCards.${pluralFormHr(n.value)}`, { n: n.value }))
-
-function syncFromQuery() {
-  const teme = route.query.teme
-  if (typeof teme === 'string' && teme) {
-    selected.value = new Set(teme.split(',').filter(Boolean) as TopicId[])
-  }
-  const qn = Number(route.query.n)
-  if (qn === 5 || qn === 10 || qn === 20) n.value = qn
-  const mjesto = route.query.mjesto
-  if (typeof mjesto === 'string' && mjesto.trim()) placeSlug.value = mjesto.trim()
+function sessionHref(query: Record<string, string>) {
+  return localePath(`${pzRoutes.learnSession}?${new URLSearchParams(query)}`)
 }
-
-function syncPlacePickerFromSlug() {
-  const settlement = settlementForSlug(pool.value, placeSlug.value)
-  if (!settlement) {
-    placeId.value = null
-    placeQuery.value = ''
-    return
-  }
-  placeQuery.value = settlement.name
-}
-
-function syncToQuery() {
-  const teme = [...selected.value].join(',')
-  const query: Record<string, string> = { teme, n: String(n.value) }
+const reviewHref = computed(() => sessionHref({ ponovi: '1' }))
+const continueHref = computed(() => sessionHref({ nastavi: '1' }))
+const newHref = computed(() => {
+  const query: Record<string, string> = { teme: learn.lastTopics.value.join(','), n: String(n.value) }
   if (placeSlug.value) query.mjesto = placeSlug.value
-  router.replace({ query })
-}
+  return sessionHref(query)
+})
+const topicHref = (id: TopicId) => sessionHref({ teme: id, n: String(n.value) })
+const startHref = computed(() => {
+  const query: Record<string, string> = { teme: firstPick.value === 'mjesto' ? 'rijeci' : firstPick.value, n: '10' }
+  if (firstPick.value === 'mjesto' && placeSlug.value) query.mjesto = placeSlug.value
+  return sessionHref(query)
+})
 
 async function onPlaceSelection(id: string | null) {
   if (!id) {
-    clearPlace()
+    placeSlug.value = undefined
+    learn.rememberPlace(undefined)
     return
   }
   const q = placeQuery.value.trim()
@@ -82,9 +81,8 @@ async function onPlaceSelection(id: string | null) {
     if (!match) return
     placeSlug.value = settlementSlugForPlace(pool.value, match)
     learn.rememberPlace(placeSlug.value)
-    syncToQuery()
   } catch {
-    // keep the picker selection; slug sync can wait for the next pool load
+    // keep the picker selection; the slug can wait for the next pool load
   }
 }
 
@@ -93,213 +91,268 @@ function clearPlace() {
   placeQuery.value = ''
   placeSlug.value = undefined
   learn.rememberPlace(undefined)
-  syncToQuery()
 }
 
-function toggleTopic(topic: { id: TopicId, status: string, parent?: TopicId, soonHref?: string }) {
-  if (topic.status === 'soon' && topic.soonHref) {
-    navigateTo(topic.soonHref)
-    return
-  }
-  if (topic.status !== 'live') return
-  if (!topic.parent) {
-    selectedParent.value = selectedParent.value === topic.id ? null : topic.id
-  }
-  const next = new Set(selected.value)
-  if (next.has(topic.id)) next.delete(topic.id)
-  else next.add(topic.id)
-  if (next.size) {
-    selected.value = next
-    syncToQuery()
-  }
-}
-
-function startHref() {
-  const teme = [...selected.value].join(',')
-  let href = localePath(`${pzRoutes.learnSession}?teme=${encodeURIComponent(teme)}&n=${n.value}`)
-  if (placeSlug.value) href += `&mjesto=${encodeURIComponent(placeSlug.value)}`
-  return href
-}
-
-watch(n, () => {
-  learn.rememberSetup([...selected.value], n.value)
-  syncToQuery()
-})
+watch(n, () => learn.rememberSetup(learn.lastTopics.value, n.value))
 
 onMounted(() => {
   learn.load()
   n.value = learn.lastN.value
-  if (learn.lastTopics.value.length) {
-    selected.value = new Set(learn.lastTopics.value)
-  }
-  if (learn.place.value) placeSlug.value = learn.place.value
-  syncFromQuery()
+  const qn = Number(route.query.n)
+  if (qn === 5 || qn === 10 || qn === 20) n.value = qn
+  placeSlug.value = typeof route.query.mjesto === 'string' && route.query.mjesto.trim() ? route.query.mjesto.trim() : learn.place.value
   ready.value = true
 })
-
-watch(() => status.value, (s) => {
-  if (s === 'success') syncPlacePickerFromSlug()
-})
-
-watch(placeSlug, () => {
-  if (status.value === 'success') syncPlacePickerFromSlug()
+watch([() => status.value, placeSlug], () => {
+  if (status.value !== 'success') return
+  const settlement = settlementForSlug(pool.value, placeSlug.value)
+  placeQuery.value = settlement?.name ?? ''
+  if (!settlement) placeId.value = null
 })
 </script>
 
 <template>
   <UContainer class="py-4 lg:py-6">
-    <div class="mx-auto flex w-full max-w-(--pz-measure) flex-col gap-6">
-      <PzBackPill :to="localePath('/')">
-        {{ t('heritage.title') }}
-      </PzBackPill>
-      <header class="flex flex-col gap-2">
-        <span class="pz-overline text-muted">{{ t('pz.learn.setupOverline') }}</span>
-        <h1 class="pz-h1 text-highlighted">
-          {{ t('pz.learn.title') }}
-        </h1>
-      </header>
+    <div
+      class="mx-auto flex w-full flex-col"
+      :class="firstTime && !error ? 'max-w-(--pz-game-col)' : 'max-w-(--pz-page-max)'"
+    >
+      <PageHead
+        :title="t('pz.learn.title')"
+        :lead="firstTime && !error ? 'Odaberi odakle želiš početi. Dobit ćeš deset kartica, a ostalo dolazi samo.' : 'Kartice s riječima domaćega govora. Riječi koje teže pamtiš vraćaju se češće, one koje znaš rjeđe.'"
+      />
 
       <div
         v-if="!ready || status === 'pending'"
-        class="space-y-3"
+        class="grid gap-4 lg:grid-cols-12"
+        aria-busy="true"
       >
-        <USkeleton class="h-10 w-full" />
-        <USkeleton class="h-32 w-full" />
+        <p
+          class="sr-only"
+          role="status"
+        >
+          Učitavanje…
+        </p>
+        <USkeleton class="h-60 w-full rounded-(--pz-radius-lg) lg:col-span-5" />
+        <USkeleton class="h-60 w-full rounded-(--pz-radius-lg) lg:col-span-7" />
       </div>
 
-      <UAlert
+      <PageState
         v-else-if="error"
-        color="error"
-        variant="subtle"
-        :title="t('pz.learn.loadError')"
-      >
-        <UButton
-          :label="t('game.retry')"
-          variant="link"
-          @click="refresh()"
-        />
-      </UAlert>
+        kind="error"
+        title="Riječi za učenje nismo uspjeli učitati"
+        description="Tvoj je napredak sačuvan na uređaju. Pokušaj ponovno za koji trenutak."
+        @retry="refresh()"
+      />
 
       <div
-        v-else
-        class="flex flex-col gap-6"
+        v-else-if="firstTime"
+        class="flex flex-col gap-5"
         data-testid="learn-setup"
       >
-        <section
-          class="flex flex-col gap-3"
-          aria-labelledby="learn-topics-heading"
-        >
-          <h2
-            id="learn-topics-heading"
-            class="pz-h3 text-highlighted"
+        <fieldset class="m-0 flex flex-col gap-2 border-0 p-0">
+          <legend class="pz-h3 mb-2 text-highlighted">
+            Prve riječi
+          </legend>
+          <label
+            v-for="option in [{ id: 'rijeci', label: 'Najčešće riječi', sub: 'Riječi domaćega govora iz svakog sela.' }, ...topics.filter(topic => topic.id !== 'rijeci').map(topic => ({ id: topic.id, label: topic.label, sub: `${topic.count} kartica` })), { id: 'mjesto', label: 'Riječi iz jednog naselja', sub: 'Odaberi svoje selo.' }]"
+            :key="option.id"
+            class="flex min-h-14 cursor-pointer items-center gap-3 rounded-(--pz-radius-md) border border-default px-3 py-2 has-checked:border-2 has-checked:border-(--ui-text) has-checked:bg-elevated has-focus-visible:outline-2 has-focus-visible:outline-offset-2"
           >
-            {{ t('pz.learn.pickTopics') }}
-          </h2>
-          <div
-            class="flex flex-wrap gap-2"
-            role="group"
-            :aria-label="t('pz.learn.topicsGroup')"
-          >
-            <LearnChip
-              v-for="topic in topTopics"
-              :key="topic.id"
-              :label="`${topic.label} (${topic.count})`"
-              :selected="selected.has(topic.id)"
-              :disabled="topic.status === 'soon'"
-              @click="toggleTopic(topic)"
-            />
-          </div>
-          <div
-            v-if="childTopics.length"
-            class="flex flex-wrap gap-2 ps-2"
-            role="group"
-            :aria-label="t('pz.learn.topicsGroup')"
-          >
-            <LearnChip
-              v-for="topic in childTopics"
-              :key="topic.id"
-              :label="`${topic.label} (${topic.count})`"
-              :selected="selected.has(topic.id)"
-              @click="toggleTopic(topic)"
-            />
-          </div>
-        </section>
-
-        <section
-          class="flex flex-col gap-3"
-          aria-labelledby="learn-place-heading"
+            <input
+              v-model="firstPick"
+              type="radio"
+              name="first-pick"
+              :value="option.id"
+              class="size-5 accent-(--ui-text)"
+            >
+            <span class="min-w-0 flex-1"><b class="block">{{ option.label }}</b><small class="text-muted">{{ option.sub }}</small></span>
+          </label>
+        </fieldset>
+        <div
+          v-if="firstPick === 'mjesto'"
+          class="flex flex-col gap-2"
           data-testid="learn-place"
         >
-          <h2
-            id="learn-place-heading"
-            class="pz-h3 text-highlighted"
-          >
-            {{ t('pz.learn.myPlace') }}
-          </h2>
           <HeritagePlacePicker
             v-model="placeId"
             v-model:query="placeQuery"
             @selection="onPlaceSelection"
           />
-          <p
-            v-if="placeSlug"
-            class="pz-body-sm flex flex-wrap items-center gap-2 text-muted"
-          >
-            <span>{{ settlementForSlug(pool, placeSlug)?.name }}</span>
-            <UButton
-              :label="t('pz.learn.changePlace')"
-              color="neutral"
-              variant="link"
-              class="min-h-(--pz-tap-min) px-0"
-              @click="clearPlace"
-            />
-          </p>
-          <p
-            v-if="placeSlug && selected.has('rijeci')"
-            class="pz-body-sm text-muted"
-          >
+          <p class="pz-body-sm text-muted">
             {{ t('pz.learn.wordsNoPlaceData') }}
           </p>
-        </section>
-
-        <section
-          class="flex flex-col gap-3"
-          aria-labelledby="learn-length-heading"
-        >
-          <h2
-            id="learn-length-heading"
-            class="pz-h3 text-highlighted"
-          >
-            {{ t('pz.learn.pickLength') }}
-          </h2>
-          <div
-            class="flex flex-wrap gap-2"
-            role="group"
-            :aria-label="t('pz.learn.lengthGroup')"
-          >
-            <LearnChip
-              v-for="len in lengths"
-              :key="len"
-              :label="String(len)"
-              :selected="n === len"
-              @click="n = len"
-            />
-          </div>
-        </section>
-
-        <p class="pz-body-sm text-muted">
-          {{ t('pz.learn.deviceNote') }}
-        </p>
-
+        </div>
         <UButton
-          :to="startHref()"
-          :label="startLabel"
-          trailing-icon="i-lucide-arrow-right"
+          :to="startHref"
+          label="Počni s 10 kartica"
+          icon="i-lucide-play"
           size="xl"
           block
           data-testid="learn-setup-start"
-          @click="learn.rememberSetup([...selected], n)"
         />
+        <p class="pz-caption text-center text-muted">
+          Bez računa. Napredak se čuva na ovom uređaju.
+        </p>
+      </div>
+
+      <div
+        v-else
+        class="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start"
+        data-testid="learn-hub"
+      >
+        <section
+          class="flex flex-col gap-4 rounded-(--pz-radius-lg) border border-default bg-default p-4 sm:p-5 lg:col-span-5"
+          aria-labelledby="learn-today"
+          data-testid="learn-today"
+        >
+          <h2
+            id="learn-today"
+            class="pz-h3 text-highlighted"
+          >
+            Danas
+          </h2>
+          <dl class="m-0 grid grid-cols-3 gap-2 text-center">
+            <div
+              v-for="stat in [{ n: due, l: 'za ponavljanje' }, { n: known, l: 'znaš' }, { n: learning, l: 'učiš' }]"
+              :key="stat.l"
+              class="rounded-(--pz-radius-md) bg-elevated px-2 py-3"
+            >
+              <dd class="pz-h2 m-0 tabular-nums text-highlighted">
+                {{ stat.n }}
+              </dd>
+              <dt class="pz-caption text-muted">
+                {{ stat.l }}
+              </dt>
+            </div>
+          </dl>
+          <template v-if="due > 0">
+            <UButton
+              :to="reviewHref"
+              label="Počni ponavljanje"
+              icon="i-lucide-play"
+              size="xl"
+              block
+              data-testid="learn-home-review"
+            />
+            <p class="pz-caption text-center text-muted">
+              {{ reviewCount }} {{ cardsWord(reviewCount) }}, oko {{ minutes }} {{ minutes === 1 ? 'minutu' : minutes < 5 ? 'minute' : 'minuta' }}
+            </p>
+          </template>
+          <div
+            v-else
+            class="flex flex-col items-center gap-1 py-2 text-center"
+          >
+            <UIcon
+              name="i-lucide-check"
+              class="size-8 text-success"
+              aria-hidden="true"
+            />
+            <p><b>Za danas je sve ponovljeno.</b></p>
+          </div>
+          <UButton
+            v-if="current"
+            :to="continueHref"
+            :label="`Nastavi sesiju (kartica ${sessionCardIndex(current)} od ${current.n})`"
+            color="neutral"
+            variant="outline"
+            block
+            data-testid="learn-home-continue"
+          />
+          <UButton
+            v-if="due === 0"
+            :to="newHref"
+            label="Nauči nove riječi"
+            icon="i-lucide-plus"
+            size="xl"
+            block
+            data-testid="learn-home-new-lesson"
+          />
+        </section>
+
+        <div class="flex flex-col gap-8 lg:col-span-7">
+          <section aria-labelledby="learn-new">
+            <h2
+              id="learn-new"
+              class="pz-h2 mb-2 text-highlighted"
+            >
+              Nove riječi po temama
+            </h2>
+            <ul class="m-0 flex list-none flex-col gap-2 p-0">
+              <li
+                v-for="topic in topicRows"
+                :key="topic.id"
+              >
+                <NuxtLink
+                  :to="topicHref(topic.id)"
+                  class="flex min-h-14 items-center gap-3 rounded-(--pz-radius-md) border border-default px-3 py-2 hover:border-accented"
+                  data-testid="learn-topic-row"
+                >
+                  <span class="min-w-0 flex-1"><b class="block">{{ topic.label }}</b><small class="text-muted">{{ topic.count }} {{ cardsWord(topic.count) }} · {{ topic.started ? `znaš ${topic.known}` : 'još nije započeto' }}</small></span>
+                  <UIcon
+                    name="i-lucide-chevron-right"
+                    class="size-5 shrink-0 text-muted"
+                    aria-hidden="true"
+                  />
+                </NuxtLink>
+              </li>
+            </ul>
+          </section>
+
+          <section
+            class="flex flex-col gap-4 rounded-(--pz-radius-lg) bg-elevated p-4 sm:p-5"
+            aria-labelledby="learn-settings"
+          >
+            <h2
+              id="learn-settings"
+              class="pz-h3 text-highlighted"
+            >
+              Postavke učenja
+            </h2>
+            <fieldset class="m-0 flex flex-col gap-2 border-0 p-0">
+              <legend class="mb-1 text-sm font-semibold">
+                Kartica po sesiji
+              </legend>
+              <div
+                class="flex gap-2"
+                role="group"
+                :aria-label="t('pz.learn.lengthGroup')"
+              >
+                <LearnChip
+                  v-for="len in lengths"
+                  :key="len"
+                  :label="String(len)"
+                  :selected="n === len"
+                  @click="n = len"
+                />
+              </div>
+            </fieldset>
+            <div
+              class="flex flex-col gap-2"
+              data-testid="learn-place"
+            >
+              <p class="text-sm font-semibold">
+                {{ t('pz.learn.myPlace') }}
+              </p>
+              <HeritagePlacePicker
+                v-model="placeId"
+                v-model:query="placeQuery"
+                @selection="onPlaceSelection"
+              />
+              <UButton
+                v-if="placeSlug"
+                :label="t('pz.learn.changePlace')"
+                color="neutral"
+                variant="link"
+                class="min-h-(--pz-tap-min) self-start px-0"
+                @click="clearPlace"
+              />
+            </div>
+            <p class="pz-caption text-muted">
+              Napredak se čuva samo na ovom uređaju.
+            </p>
+          </section>
+        </div>
       </div>
     </div>
   </UContainer>

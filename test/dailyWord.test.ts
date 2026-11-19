@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DAILY_CATEGORIES, DAILY_WORD_EPOCH, addDays, dailyWordNumber, dailyWordShareText, dayDiff, deriveDailyStats, guessDailyWord, startDailyGame, zagrebDay, zagrebMidnightUtc } from '../shared/utils/dailyWord'
+import { DAILY_CATEGORIES, DAILY_WORD_EPOCH, addDays, dailyBrokenStreak, dailyRevealedLetters, dailySolvedStreak, dailyWordShareMessage, judgeDailyGuess, dailyWordNumber, dailyWordShareText, dayDiff, deriveDailyStats, guessDailyWord, startDailyGame, zagrebDay, zagrebMidnightUtc } from '../shared/utils/dailyWord'
 import type { DailyClue, DailyProgress, DailyWordPayload } from '../shared/utils/dailyWord'
 import { pickDistractors, seededRandom } from '../shared/utils/multipleChoice'
 import type { WordEntry } from '../app/types/heritage'
@@ -169,5 +169,37 @@ describe('shared distractors and categories', () => {
   it('defines all thirteen editorial slugs once', () => {
     expect(DAILY_CATEGORIES).toEqual(['house', 'yard', 'clothing', 'food', 'time', 'weather', 'people', 'body', 'animals', 'work', 'customs', 'feelings', 'function'])
     expect(new Set(DAILY_CATEGORIES).size).toBe(13)
+  })
+})
+
+describe('typed daily round helpers', () => {
+  it('judges guesses ignoring case and diacritics, with a one-letter near miss from five letters', () => {
+    expect(judgeDailyGuess('SKRLAK', ['škrlak'])).toEqual({ kind: 'right', answer: 'škrlak', exact: true })
+    expect(judgeDailyGuess('skrlek', ['škrlak'])).toEqual({ kind: 'right', answer: 'škrlak', exact: false })
+    expect(judgeDailyGuess('klobuk', ['škrlak']).kind).toBe('wrong')
+    expect(judgeDailyGuess('kuc', ['kuća']).kind).toBe('wrong')
+    expect(judgeDailyGuess('  ', ['kuća']).kind).toBe('wrong')
+    expect(judgeDailyGuess('hiža', ['kuća', 'hiža']).kind).toBe('right')
+  })
+
+  it('reveals the first letter and one more after each wrong guess', () => {
+    expect(dailyRevealedLetters('škrlak', 0)).toEqual(['š', '', '', '', '', ''])
+    expect(dailyRevealedLetters('škrlak', 2)).toEqual(['š', 'k', 'r', '', '', ''])
+  })
+
+  it('builds a share message without the word', () => {
+    const result = { done: true, solved: true, tries: 2, maxTries: 5 }
+    expect(dailyWordShareMessage('2026-11-15', result, 5)).toBe('Potkalnički zapisi · Riječ dana 15. 11.\n🟨🟩⬜⬜⬜ 2/5 · niz 5')
+    expect(dailyWordShareMessage('2026-11-15', { ...result, solved: false, tries: 5 }, 0)).toContain('🟨🟨🟨🟨🟨 X/5')
+    expect(dailyWordShareMessage('2026-11-15', { ...result, done: false }, 1)).toBe('')
+  })
+
+  it('counts solved days only for the streak and reports a broken run', () => {
+    const day = (solved: boolean) => ({ wordId: 'w', guesses: [], done: true, solved, tries: 1, maxTries: 5 })
+    const days = { '2026-11-12': day(true), '2026-11-13': day(true), '2026-11-14': day(true), '2026-11-15': day(false) }
+    expect(dailySolvedStreak(days, '2026-11-15')).toBe(0)
+    expect(dailyBrokenStreak(days, '2026-11-15')).toBe(3)
+    expect(dailySolvedStreak(days, '2026-11-16')).toBe(0)
+    expect(dailySolvedStreak({ ...days, '2026-11-15': day(true) }, '2026-11-15')).toBe(4)
   })
 })

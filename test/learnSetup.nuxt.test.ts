@@ -43,20 +43,46 @@ beforeEach(() => {
 afterEach(() => wrapper?.unmount())
 
 describe('learn setup page', () => {
-  it('shows topics and lengths as pressed-state chips and a start link that carries the choice', async () => {
+  it('offers the first words as radios and a start link that carries the choice', async () => {
     wrapper = await mountSuspended(LearnSetup, { route: '/uci?mjesto=sopron' })
     await expect.poll(() => wrapper!.find('[data-testid="learn-setup"]').exists(), { timeout: 5000 }).toBe(true)
-    const chips = wrapper!.findAll('[data-testid="learn-chip"]')
-    const rijeci = chips.find(chip => chip.text().includes('Riječi'))!
-    expect(rijeci.attributes('aria-pressed')).toBe('true')
-    const soon = chips.find(chip => chip.text().includes('Mjesta'))!
-    expect(soon.attributes('disabled')).toBeDefined()
-    const twenty = chips.find(chip => chip.text() === '20')!
-    await twenty.trigger('click')
-    expect(twenty.attributes('aria-pressed')).toBe('true')
-    const href = wrapper!.get('[data-testid="learn-setup-start"]').attributes('href')!
-    expect(href).toContain('/uci/sesija/?teme=rijeci&n=20')
-    expect(href).toContain('mjesto=sopron')
+    const start = () => wrapper!.get('[data-testid="learn-setup-start"]')
+    expect(start().text()).toBe('Počni s 10 kartica')
+    expect(start().attributes('href')).toContain('/uci/sesija/?teme=rijeci&n=10')
+    const radios = wrapper!.findAll('input[name="first-pick"]')
+    expect(radios.map(radio => radio.attributes('value'))).toContain('mjesto')
+    await radios.find(radio => radio.attributes('value') === 'mjesto')!.setValue(true)
+    expect(start().attributes('href')).toContain('mjesto=sopron')
+  })
+})
+
+describe('learn hub with progress', () => {
+  const progress = (due: string) => JSON.stringify({
+    version: 2,
+    cards: { 'word:a': { box: 1, due, seen: 1, known: 0, missed: 1, lastPlayed: '2026-11-01' } },
+    lastPlayed: '2026-11-01',
+    streak: 1
+  })
+
+  it('shows the three numbers and Počni ponavljanje when a card is due', async () => {
+    localStorage.setItem('pz-progress/v2', progress('2020-01-01'))
+    clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci' })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-hub"]').exists(), { timeout: 5000 }).toBe(true)
+    const review = wrapper.get('[data-testid="learn-home-review"]')
+    expect(review.text()).toBe('Počni ponavljanje')
+    expect(review.attributes('href')).toContain('/uci/sesija/?ponovi=1')
+    expect(wrapper.get('[data-testid="learn-today"]').text()).toContain('za ponavljanje')
+    expect(wrapper.findAll('[data-testid="learn-topic-row"]')).toHaveLength(1)
+  })
+
+  it('says everything is repeated and offers new words when nothing is due', async () => {
+    localStorage.setItem('pz-progress/v2', progress('2999-01-01'))
+    clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci' })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-hub"]').exists(), { timeout: 5000 }).toBe(true)
+    expect(wrapper.text()).toContain('Za danas je sve ponovljeno.')
+    expect(wrapper.get('[data-testid="learn-home-new-lesson"]').text()).toBe('Nauči nove riječi')
   })
 })
 

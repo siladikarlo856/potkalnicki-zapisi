@@ -11,6 +11,8 @@ const props = defineProps<{
   text: string
   /** Show the text that will be sent, for results. Copies the text and the address instead of the address alone. */
   preview?: boolean
+  /** The line above the preview. */
+  previewLead?: string
 }>()
 
 const emit = defineEmits<{ copied: [] }>()
@@ -58,7 +60,7 @@ async function share() {
   >
     <div v-if="preview">
       <p class="mb-1 text-sm font-bold">
-        Ovo će se poslati:
+        {{ previewLead ?? 'Ovo će se poslati:' }}
       </p>
       <pre
         class="m-0 rounded-md border border-default bg-elevated p-3 font-sans text-sm/normal wrap-anywhere whitespace-pre-wrap"
