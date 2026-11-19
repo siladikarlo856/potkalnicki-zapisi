@@ -309,7 +309,7 @@ watch(() => status.value, (s) => {
           <UButton
             v-if="!seen"
             class="col-span-2"
-            label="Pokaži značenje"
+            :label="currentCard?.kind === 'word' ? 'Pokaži značenje' : 'Pokaži odgovor'"
             size="xl"
             block
             data-testid="learn-reveal"

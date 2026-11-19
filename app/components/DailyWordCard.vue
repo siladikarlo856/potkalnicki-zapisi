@@ -16,10 +16,10 @@ const done = computed(() => !!finished.value)
 const clue = computed(() => payload.value?.clues[0])
 const headline = computed(() => clue.value && payload.value ? clueLine((key, named) => t(key, named ?? {}), clue.value, payload.value.areas) : '')
 const slots = computed(() => payload.value ? dailyRevealedLetters(payload.value.entry.headword, 0) : [])
-const overline = computed(() => payload.value
-  ? done.value ? 'Riječ dana · riješeno' : `Riječ dana · ${dailyDateLabel(payload.value.day)}`
-  : 'Riječ dana')
 const solved = computed(() => !!finished.value?.solved)
+const overline = computed(() => payload.value
+  ? solved.value ? 'Riječ dana · riješeno' : `Riječ dana · ${dailyDateLabel(payload.value.day)}`
+  : 'Riječ dana')
 const cluesTotal = computed(() => Math.min(3, payload.value?.clues.length ?? 1))
 </script>
 
@@ -101,7 +101,7 @@ const cluesTotal = computed(() => Math.min(3, payload.value?.clues.length ?? 1))
         class="pz-h2"
       >
         <template v-if="replaced">
-          Današnja je riječ riješena
+          {{ solved ? 'Današnja je riječ riješena' : 'Danas nije išlo' }}
         </template>
         <template v-else>
           <span lang="hr">{{ payload.entry.headword }}</span>

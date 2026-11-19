@@ -107,6 +107,14 @@ describe('Riječ dana page', () => {
     expect(wrapper.get('h1').text()).toBe('Današnja je riječ riješena')
   })
 
+  it('does not promise the word for a failed round on a since replaced word', async () => {
+    localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify({ version: 1, days: { '2026-11-15': { wordId: 'withdrawn', guesses: ['a1', 'b2', 'c3', 'd4', 'e5'], done: true, solved: false, tries: 5, maxTries: 5 } } }))
+    wrapper = await mountSuspended(DailyPage, { route: '/rijec-dana/' })
+    await expect.poll(() => wrapper!.find('[data-testid="daily-result"]').exists(), { timeout: 5000 }).toBe(true)
+    expect(wrapper.get('h1').text()).toBe('Danas nije išlo')
+    expect(wrapper.text()).not.toContain('riješen')
+  })
+
   it('does not count option picks saved by the old multiple-choice round as typed tries', async () => {
     localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify({ version: 1, days: { '2026-11-15': { wordId: 'skrlak', guesses: ['b'], done: false, solved: false, tries: 1, maxTries: 1 } } }))
     const page = await mountPage()
@@ -155,6 +163,15 @@ describe('DailyWordCard', () => {
     wrapper = await mountSuspended(DailyWordCard)
     await expect.poll(() => wrapper!.text(), { timeout: 5000 }).toContain('Danas nije išlo')
     expect(wrapper.text()).not.toContain('je prekinut')
+    expect(wrapper.text()).not.toContain('riješen')
+  })
+
+  it('never calls a failed round on a since replaced word solved', async () => {
+    const miss = { wordId: 'withdrawn', guesses: ['a1', 'b2', 'c3', 'd4', 'e5'], done: true, solved: false, tries: 5, maxTries: 5 }
+    localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify({ version: 1, days: { '2026-11-15': miss } }))
+    wrapper = await mountSuspended(DailyWordCard)
+    await expect.poll(() => wrapper!.find('h2').exists() && wrapper!.get('h2').text(), { timeout: 5000 }).toBe('Danas nije išlo')
+    expect(wrapper.text()).not.toContain('riješen')
   })
 })
 

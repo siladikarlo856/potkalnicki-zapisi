@@ -206,6 +206,7 @@ describe('learn session page', () => {
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('Kartica 1 od 1')
     expect(wrapper!.get('[data-testid="learn-counter"]').text()).not.toContain('Što znači?')
+    expect(wrapper!.get('[data-testid="learn-reveal"]').text()).toBe('Pokaži odgovor')
     await wrapper!.get('[data-testid="learn-reveal"]').trigger('click')
     expect(wrapper!.findAll('[data-testid="learn-open-record"]')).toHaveLength(1)
   })
