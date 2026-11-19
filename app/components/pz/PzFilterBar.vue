@@ -23,6 +23,10 @@ const props = defineProps<{
   /** Result count, shown at the right. */
   count?: number
   searchLabel?: string
+  /** The search field's placeholder; an example, never the label. */
+  searchPlaceholder?: string
+  /** Shows the "/" hint and focuses the search from anywhere outside a text field. */
+  searchShortcut?: boolean
 }>()
 
 const model = defineModel<PzFilterValue>({ default: () => ({ query: '', selects: {}, quick: [] }) })
@@ -61,7 +65,8 @@ const noun = computed(() => props.count === undefined ? '' : countNoun(props.cou
     <PzSearchField
       :model-value="model.query"
       :label="searchLabel ?? 'Traži po nazivu'"
-      placeholder="Naziv"
+      :placeholder="searchPlaceholder ?? 'Naziv'"
+      :shortcut="searchShortcut"
       class="min-w-48 flex-1 sm:max-w-xs"
       @update:model-value="setQuery"
       @submit="setQuery"

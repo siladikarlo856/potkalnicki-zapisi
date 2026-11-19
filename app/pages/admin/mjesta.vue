@@ -38,6 +38,7 @@ function defaultKindForTab(): AreaKind {
 const resource = defineAdminResource<Area, AreaForm>({
   kind: 'area',
   icon: 'i-lucide-map-pin',
+  editor: 'page',
   labels: {
     title: 'Mjesta',
     description: 'Država, županija, regija, gradovi, općine i naselja — hijerarhija i članstvo u regiji Potkalničkog prigorja.',
@@ -200,10 +201,10 @@ const slugManual = ref(false)
       >
         <UInput
           :model-value="state.slug ?? undefined"
-          @update:model-value="state.slug = ($event && String($event).trim()) ? String($event) : null"
           :maxlength="AREA_LIMITS.slug"
           class="w-full font-mono"
           placeholder="auto iz naziva"
+          @update:model-value="state.slug = ($event && String($event).trim()) ? String($event) : null"
           @input="slugManual = true"
         />
       </UFormField>

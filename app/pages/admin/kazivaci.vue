@@ -51,9 +51,6 @@ const resource = defineAdminResource<Narrator, NarratorValue>({
     <template #publicDescription-cell="{ row }">
       <span class="block max-w-xs truncate">{{ row.publicDescription ?? '—' }}</span>
     </template>
-    <template #verification-cell="{ row }">
-      {{ INTANGIBLE_VERIFICATION_LABELS[row.verification] ?? row.verification }}
-    </template>
 
     <template #fields="{ state: form, entity }">
       <AdminNarratorFields

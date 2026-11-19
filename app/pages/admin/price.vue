@@ -15,6 +15,7 @@ const verificationOptions = INTANGIBLE_VERIFICATIONS.map(value => ({ label: INTA
 const resource = reactive(defineAdminResource<Story, StoryValue>({
   kind: 'story',
   icon: 'i-lucide-scroll-text',
+  editor: 'page',
   dialogWidth: 'wide',
   labels: {
     title: 'Priče',
@@ -52,9 +53,6 @@ watch(typeOptions, (options) => {
   <AdminResourcePage :resource="resource">
     <template #recordedYear-cell="{ row }">
       {{ formatRecordedOn(row) || '—' }}
-    </template>
-    <template #verification-cell="{ row }">
-      {{ INTANGIBLE_VERIFICATION_LABELS[row.verification] ?? row.verification }}
     </template>
 
     <template #fields="{ state: form, entity }">

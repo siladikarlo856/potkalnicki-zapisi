@@ -25,6 +25,7 @@ const heritageStatusOptions = [{ label: '—', value: '__none__' }, ...HERITAGE_
 const resource = defineAdminResource<HeritageItem, ItemForm>({
   kind: 'heritage_item',
   icon: 'i-lucide-landmark',
+  editor: 'page',
   dialogWidth: 'wide',
   labels: {
     title: 'Baština',
@@ -112,9 +113,6 @@ watch(categoryOptions, (options) => {
 
     <template #categoryLabel-cell="{ row }">
       {{ row.categoryLabel ?? '—' }}
-    </template>
-    <template #verification-cell="{ row }">
-      {{ HERITAGE_VERIFICATION_LABELS[row.verification] ?? row.verification }}
     </template>
 
     <template #fields="{ state: form, entity }">

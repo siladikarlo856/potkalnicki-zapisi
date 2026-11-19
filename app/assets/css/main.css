@@ -72,4 +72,13 @@ body { background: var(--pz-bg); color: var(--ui-text); overflow-wrap: break-wor
 @utility pz-caption { font-size: .8125rem; line-height: 1.4; }
 @utility pz-numeral { font-variant-numeric: tabular-nums; font-size: 1.75rem; line-height: 1.15; font-weight: 700; }
 
+/* The admin's density (21-admin-screens.md "Density and input"): with a fine pointer from 768px, 14px text and 36px controls;
+   a coarse pointer or a phone keeps the public sizes. `data-admin` is set on <html> by the admin layout, so dialogs and drawers
+   (teleported out of the layout) follow it too. */
+@media (min-width: 768px) and (pointer: fine) {
+  html[data-admin] body { font-size: .875rem; }
+  html[data-admin] :is(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"]), select, textarea, [role="combobox"]) { min-height: 2.25rem; padding-block: .375rem; font-size: .875rem; }
+  html[data-admin] :is(button, a)[data-slot="base"] { min-height: 2.25rem; padding-block: .4375rem; font-size: .875rem; }
+}
+
 @media print { .dark { color-scheme: light; --ui-primary: var(--ui-color-primary-700); --ui-text: var(--ui-color-neutral-700); --ui-text-highlighted: var(--ui-color-neutral-900); --ui-bg: #fff; --ui-bg-muted: var(--ui-color-neutral-50); --ui-bg-elevated: var(--ui-color-neutral-100); --ui-border: var(--ui-color-neutral-200); } .bg-primary, .bg-inverted, .iconify { print-color-adjust: exact; } [data-print-url]::after { content: '(' attr(data-print-url) ')'; } }

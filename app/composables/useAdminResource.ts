@@ -68,6 +68,11 @@ export interface AdminResource<T extends ContentEntity = ContentEntity, F extend
   lockedReason?(entity: T): string | undefined
   /** Dialog width: `wide` for nested editors; `full` for the word editor. */
   dialogWidth?: 'default' | 'wide' | 'full'
+  /**
+   * How a record opens: as the editor page (`page`, the design's pattern for the main resources) or in a dialog (`dialog`, the
+   * default, for the short lookup lists: Teme, Kategorije, Izvori, Kazivači and the like).
+   */
+  editor?: 'page' | 'dialog'
 }
 
 export function defineAdminResource<T extends ContentEntity, F extends object>(resource: AdminResource<T, F>) {
@@ -93,9 +98,9 @@ export function adminApiError(error: unknown): AdminApiError {
   const fetchError = error as { statusCode?: number, status?: number, data?: { data?: ContentErrorData } }
   const statusCode = fetchError?.statusCode ?? fetchError?.status ?? 0
   const data = fetchError?.data?.data ?? {}
-  if (statusCode === 401 && import.meta.client) {
+  if (statusCode === 401 && import.meta.client && !raiseAdminSessionExpired()) {
     const route = useRoute()
-    navigateTo({ path: '/admin/prijava', query: { next: route.fullPath } })
+    navigateTo({ path: '/admin/prijava', query: { next: route.fullPath, razlog: 'istekla' } })
   }
   return {
     ...data,
@@ -164,10 +169,16 @@ export function useAdminResource<T extends ContentEntity, F extends object>(reso
   const router = useRouter()
   const state = computed(() => adminListState(route.query, resource as unknown as AdminResource))
 
-  function replaceQuery(patch: LocationQueryRaw) {
-    const query = Object.fromEntries(Object.entries({ ...route.query, ...patch })
+  function nextQuery(patch: LocationQueryRaw) {
+    return Object.fromEntries(Object.entries({ ...route.query, ...patch })
       .filter(([, value]) => value !== undefined && value !== null && value !== '')) as LocationQueryRaw
-    return router.replace({ query })
+  }
+  function replaceQuery(patch: LocationQueryRaw) {
+    return router.replace({ query: nextQuery(patch) })
+  }
+  /** Opening an editor is a step forward: Back returns to the list as it was. */
+  function pushQuery(patch: LocationQueryRaw) {
+    return router.push({ query: nextQuery(patch) })
   }
 
   /** Changing the search or a filter starts again from the first page. */
@@ -235,10 +246,10 @@ export function useAdminResource<T extends ContentEntity, F extends object>(reso
 
   // One overlay at a time: opening a dialog or the history closes the others.
   function openEdit(id: string) {
-    return replaceQuery({ uredi: id, novo: undefined, povijest: undefined })
+    return pushQuery({ uredi: id, novo: undefined, povijest: undefined })
   }
   function openCreate() {
-    return replaceQuery({ novo: '1', uredi: undefined, povijest: undefined })
+    return pushQuery({ novo: '1', uredi: undefined, povijest: undefined })
   }
   function openHistory(id: string) {
     return replaceQuery({ povijest: id, uredi: undefined, novo: undefined })

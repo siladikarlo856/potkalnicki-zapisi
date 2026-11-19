@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // The frame of every admin page inside the dashboard layout: a navbar with the page title (the
-// page's h1), the sidebar toggle on small screens, page actions on the right, and the body.
+// page's h1), page actions and the shell's tools (search, theme, account) on the right, and the body.
 defineProps<{
   title: string
   description?: string
@@ -16,9 +16,12 @@ defineProps<{
       <UDashboardNavbar
         :title="title"
         :icon="icon"
+        :toggle="false"
+        :ui="{ root: 'border-default', title: 'font-display font-bold' }"
       >
         <template #right>
           <slot name="actions" />
+          <AdminTopTools />
         </template>
       </UDashboardNavbar>
       <slot name="toolbar" />

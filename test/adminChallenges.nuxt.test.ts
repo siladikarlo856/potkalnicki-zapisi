@@ -154,9 +154,9 @@ describe('admin challenge templates (Izazovi)', () => {
     await vi.waitFor(() => expect(wrapper!.text()).toContain('Proljetni izazov'))
 
     openMenu('Izazov zavičaja — uzorak')
-    await vi.waitFor(() => expect(menuItems().some(item => item.textContent?.includes('Obriši'))).toBe(true))
+    await vi.waitFor(() => expect(menuItems().some(item => item.textContent?.includes('Izbriši zapis'))).toBe(true))
     expect(menuItems().some(item => item.textContent?.includes('Postavi kao trenutni'))).toBe(false)
-    const deleteItem = menuItems().find(item => item.textContent?.includes('Obriši'))!
+    const deleteItem = menuItems().find(item => item.textContent?.includes('Izbriši zapis'))!
     expect(deleteItem.hasAttribute('data-disabled')).toBe(true)
     expect(deleteItem.textContent).toContain('Najprije postavi drugi izazov kao trenutni.')
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))

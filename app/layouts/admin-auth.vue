@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// The login page: no sidebar, since nothing in it works before signing in.
-useThemeColor('#F8FAFC', '#1E293B')
+// The sign-in page: no shell, since nothing in the admin works before signing in. One centred card on the page ground.
+useThemeColor('#F3F4EE', '#0F1512')
 useHead({
   titleTemplate: title => title ? `${title} · Administracija` : 'Administracija',
   meta: [{ name: 'robots', content: 'noindex, nofollow' }]
@@ -8,7 +8,7 @@ useHead({
 </script>
 
 <template>
-  <div class="min-h-screen bg-default">
+  <div class="min-h-dvh bg-muted">
     <div class="flex justify-end p-4">
       <UColorModeButton />
     </div>
