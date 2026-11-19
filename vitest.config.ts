@@ -57,6 +57,9 @@ export default defineConfig(async () => ({
         test: {
           name: 'nuxt',
           include: ['test/**/*.nuxt.test.ts'],
+          // The first nuxt test file in a worker boots the whole Nuxt environment in a beforeAll hook; on a cold
+          // or slow runner that exceeds vitest's 10s default, as it does for the server projects above.
+          hookTimeout: 300_000,
           testTimeout: 30_000
         }
       })
