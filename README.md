@@ -6,7 +6,7 @@ Potkalnički zapisi is the heritage and Digital Atlas for Potkalničko prigorje:
 
 `/igraj/` brings together Riječ dana, learning cards, games and shared challenges. The full games catalogue remains at `/igre/`.
 
-At `/rijec-dana/`, type the local word from up to three clues in five attempts. The first letter is given; wrong guesses reveal more letters and any remaining clues. Capitalization and diacritics do not affect acceptance. A new word arrives at midnight in Europe/Zagreb. After finishing, share a result without revealing the answer or choose **Dodaj u učenje** to save the word for review.
+At `/rijec-dana/`, type the local word from up to three clues in five attempts. The first letter is given; wrong guesses reveal more letters and any remaining clues. The headword and its variants are accepted regardless of capitalization or diacritics; guesses of at least five characters also allow a single-letter typo. A new word arrives at midnight in Europe/Zagreb. After finishing, share a result without revealing the answer. For non-sample words, choose **Dodaj u učenje** to save the word for review.
 
 Daily results and learning progress stay on this device, without an account. The daily streak counts solved days: a recorded load-failure day preserves it without adding a day, while an ordinary missed day or completed loss breaks it. Outage protection depends on this browser retaining its local record; with storage unavailable, progress lasts only in memory.
 
