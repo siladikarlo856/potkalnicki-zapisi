@@ -8,18 +8,18 @@ import { clueLine, dailyDateLabel } from '~/utils/dailyClues'
 // the countdown. The word is never in the markup until the round is over.
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { payload, refresh, error, replaced, stored, finished, solvedStreak, brokenStreak, loading, ready } = useDailyToday()
+const { payload, refresh, error, replaced, finished, solvedStreak, brokenStreak, loading, ready } = useDailyToday()
 const countdown = useDailyCountdown(() => payload.value?.nextAt)
 
 const titleId = useId()
-const done = computed(() => !!finished.value || replaced.value)
+const done = computed(() => !!finished.value)
 const clue = computed(() => payload.value?.clues[0])
 const headline = computed(() => clue.value && payload.value ? clueLine((key, named) => t(key, named ?? {}), clue.value, payload.value.areas) : '')
 const slots = computed(() => payload.value ? dailyRevealedLetters(payload.value.entry.headword, 0) : [])
 const overline = computed(() => payload.value
   ? done.value ? 'Riječ dana · riješeno' : `Riječ dana · ${dailyDateLabel(payload.value.day)}`
   : 'Riječ dana')
-const solved = computed(() => finished.value?.solved ?? (replaced.value ? stored.value?.solved : false))
+const solved = computed(() => !!finished.value?.solved)
 const cluesTotal = computed(() => Math.min(3, payload.value?.clues.length ?? 1))
 </script>
 

@@ -18,7 +18,6 @@ useSeoMeta({
 const { cards, dueCount, learnedCount } = useProgress()
 const learn = useLearnState()
 const { homeHighlight, resetRefreshBudget, refreshItem, items, newPlayersFor, totalCount } = useChallengeList()
-const { payload, replaced, finished } = useDailyToday()
 
 const ready = ref(false)
 const code = ref('')
@@ -27,7 +26,6 @@ const codeError = ref('')
 const stored = computed(() => ready.value ? Object.keys(cards.value).length : 0)
 const due = computed(() => ready.value ? dueCount() : 0)
 const known = computed(() => ready.value ? learnedCount() : 0)
-const dailyDone = computed(() => !!payload.value && (!!finished.value || replaced.value))
 const returning = computed(() => stored.value > 0 || !!learn.current.value)
 const reviewHref = computed(() => localePath(due.value > 0 ? `${pzRoutes.learnSession}?ponovi=1` : pzRoutes.learn))
 
@@ -124,12 +122,6 @@ onMounted(async () => {
             data-testid="hub-learn-first"
           />
         </template>
-        <p
-          v-if="dailyDone"
-          class="sr-only"
-        >
-          Riječ dana je riješena.
-        </p>
       </section>
 
       <section

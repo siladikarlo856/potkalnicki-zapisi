@@ -16,7 +16,7 @@ const localePath = useLocalePath()
 const route = useRoute()
 const { pool, status, error, refresh } = useCardPool()
 const learn = useLearnState()
-const { cards, dueCount, learnedCount } = useProgress()
+const { cards, dueCount, learnedCount, nextReview } = useProgress()
 
 useSeoMeta({
   title: () => t('pz.learn.seoTitle'),
@@ -41,8 +41,15 @@ const due = computed(() => ready.value ? dueCount() : 0)
 const known = computed(() => ready.value ? learnedCount() : 0)
 const learning = computed(() => Math.max(0, Object.keys(cards.value).length - known.value))
 const reviewCount = computed(() => Math.min(due.value, 20))
+const upcoming = computed(() => ready.value && due.value === 0 ? nextReview() : null)
+const upcomingWhen = computed(() => {
+  const days = upcoming.value?.inDays ?? 0
+  if (days === 1) return 'sutra'
+  if (days === 2) return 'prekosutra'
+  return `za ${days} ${days % 10 === 1 && days % 100 !== 11 ? 'dan' : 'dana'}`
+})
 const minutes = computed(() => Math.max(1, Math.round(reviewCount.value / 3)))
-const cardsWord = (count: number) => t(`pz.learn.startCards.${pluralFormHr(count)}`, { n: count }).replace(/^Započni /, '')
+const cardsWord = (count: number) => t(`pz.learn.startCards.${pluralFormHr(count)}`, { n: count }).replace(/^Započni \S+ /, '')
 
 const topicRows = computed(() => topics.value.map((topic) => {
   const keys = pool.value.cards.filter(card => card.topics.includes(topic.id)).map(card => card.key)
@@ -249,6 +256,13 @@ watch([() => status.value, placeSlug], () => {
               aria-hidden="true"
             />
             <p><b>Za danas je sve ponovljeno.</b></p>
+            <p
+              v-if="upcoming"
+              class="pz-caption text-muted"
+              data-testid="learn-home-next-review"
+            >
+              Sljedeće ponavljanje: {{ upcomingWhen }}, {{ upcoming.count }} {{ cardsWord(upcoming.count) }}.
+            </p>
           </div>
           <UButton
             v-if="current"

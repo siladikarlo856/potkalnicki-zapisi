@@ -181,12 +181,12 @@ describe('learn session page', () => {
     }).toBe('missed')
   })
 
-  it('shows Ne znam and Znam only after the card is turned, with an explicit text position', async () => {
+  it('shows Još ne znam and Znam only after the card is turned, with an explicit text position', async () => {
     wrapper = await mountSuspended(LearnSession, {
       route: '/uci/sesija?teme=rijeci&n=5'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
-    expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('1 od 5')
+    expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('Kartica 1 od 5 · Što znači?')
     expect(wrapper!.find('[data-testid="learn-known"]').exists()).toBe(false)
     expect(wrapper!.get('[data-testid="learn-reveal"]').text()).toBe('Pokaži značenje')
     expect(wrapper!.get('[data-testid="learn-card"]').attributes('data-flipped')).toBe('false')
@@ -194,7 +194,7 @@ describe('learn session page', () => {
     expect(wrapper!.get('[data-testid="learn-card"]').attributes('data-flipped')).toBe('true')
     expect(wrapper!.find('[data-testid="learn-reveal"]').exists()).toBe(false)
     expect(wrapper!.get('[data-testid="learn-known"]').text()).toBe('Znam')
-    expect(wrapper!.get('[data-testid="learn-unknown"]').text()).toBe('Ne znam')
+    expect(wrapper!.get('[data-testid="learn-unknown"]').text()).toBe('Još ne znam')
   })
 
   it('lists the missed cards with a link and a count in the summary', async () => {

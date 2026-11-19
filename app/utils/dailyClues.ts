@@ -21,7 +21,7 @@ export function pluralForm(locale: string, n: number): 'one' | 'other' {
   return one ? 'one' : 'other'
 }
 
-const upperFirst = (text: string) => text.charAt(0).toLocaleUpperCase('hr') + text.slice(1)
+export const upperFirst = (text: string) => text.charAt(0).toLocaleUpperCase('hr') + text.slice(1)
 
 /** One clue as a single line of copy (the card headline and the clue list of /rijec-dana/). */
 export function clueLine(t: Translate, clue: DailyClue, areas: readonly Area[]): string {
@@ -36,11 +36,14 @@ export function clueLine(t: Translate, clue: DailyClue, areas: readonly Area[]):
 
 const SLOT_NUMBERS: Record<number, string> = { 3: 'tri', 4: 'četiri', 5: 'pet', 6: 'šest', 7: 'sedam', 8: 'osam', 9: 'devet', 10: 'deset', 11: 'jedanaest', 12: 'dvanaest' }
 
+/** "šest" for 6, the number as a word where the slots have a spelled-out name. */
+export const letterCount = (total: number) => SLOT_NUMBERS[total] ?? String(total)
+
 /** "Riječ od šest slova, prvo slovo š": the one sentence a screen reader gets for the slots. */
 export function slotsLabel(letters: readonly string[]): string {
   const total = letters.filter(letter => letter !== ' ' && letter !== '-').length
   const shown = letters.filter(letter => letter && letter !== ' ' && letter !== '-')
-  const base = `Riječ od ${SLOT_NUMBERS[total] ?? total} slova`
+  const base = `Riječ od ${letterCount(total)} slova`
   if (shown.length === 0) return base
   return shown.length === 1 ? `${base}, prvo slovo ${shown[0]}` : `${base}, otkrivena slova: ${shown.join(', ')}`
 }

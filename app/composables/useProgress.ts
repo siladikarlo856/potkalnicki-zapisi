@@ -245,6 +245,16 @@ export function useProgress() {
     return entries.filter(card => isDue(card, today.value)).length
   }
 
+  /** The first day after today with cards to review, how far off it is and how many cards fall on it. */
+  function nextReview() {
+    load()
+    today.value = localDay()
+    const upcoming = Object.values(progress.value.cards).filter(card => card.box >= 1 && card.due > today.value)
+    if (!upcoming.length) return null
+    const day = upcoming.reduce((first, card) => card.due < first ? card.due : first, upcoming[0]!.due)
+    return { inDays: dayNumber(day) - dayNumber(today.value), count: upcoming.filter(card => card.due === day).length }
+  }
+
   function learnedCount(keys?: CardKey[]) {
     load()
     const entries = keys
@@ -268,6 +278,7 @@ export function useProgress() {
     }),
     recordAnswer: (key: CardKey, knew: boolean) => updateCard(key, current => applyAnswer(current, knew, today.value)),
     dueCount,
+    nextReview,
     learnedCount
   }
 }
