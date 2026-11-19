@@ -22,12 +22,25 @@ registerEndpoint('/api/admin/session', () => ({ authenticated: true }))
 let pins = overview.pins
 registerEndpoint('/api/review/daily', () => ({ ...overview, pins }))
 registerEndpoint('/api/admin/lookup/word', () => ({ items: [] }))
+registerEndpoint('/api/admin/content/word/w2', () => ({ entity: { headword: 'gablec', areas: [] } }))
+let pinFailure = 0
+const pinRequests: unknown[] = []
+registerEndpoint(`/api/review/daily/${addDays(TODAY, 1)}`, {
+  method: 'PUT',
+  handler: async (event) => {
+    pinRequests.push(await (event as unknown as { web: { request: Request } }).web.request.json())
+    if (pinFailure) throw createError({ statusCode: pinFailure, data: { message: 'Riječ nije moguće rasporediti.' } })
+    return { ...day(1, 'gablec'), wordId: 'w2' }
+  }
+})
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 afterEach(() => {
   wrapper?.unmount()
   wrapper = undefined
   pins = overview.pins
+  pinFailure = 0
+  pinRequests.length = 0
 })
 
 describe('admin daily word scheduler', () => {
@@ -48,6 +61,34 @@ describe('admin daily word scheduler', () => {
     await vi.waitFor(() => expect(wrapper!.find('[data-test="daily-calendar"]').exists()).toBe(true))
     await wrapper.get('[data-test="daily-schedule"]').trigger('click')
     await vi.waitFor(() => expect(document.body.textContent).toContain('Spremi u raspored'))
+  })
+
+  it.each([409, 500])('shows a failed scheduling PUT (%i) in the dialog and lets the editor retry', async (status) => {
+    pinFailure = status
+    wrapper = await mountSuspended({ setup: () => () => h(UApp, null, { default: () => h(RijecDana) }) }, { attachTo: document.body, route: '/admin/rijec-dana?pin=w2' })
+    await vi.waitFor(() => expect(wrapper!.find('[data-test="daily-calendar"]').exists()).toBe(true))
+    const form = () => document.querySelector<HTMLFormElement>('#daily-pin-form')!
+    await vi.waitFor(() => expect(form()).not.toBeNull())
+    const dateInput = form().querySelector<HTMLInputElement>('input[type="date"]')!
+    dateInput.value = addDays(TODAY, 1)
+    dateInput.dispatchEvent(new Event('input', { bubbles: true }))
+
+    async function submit() {
+      form().dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+      await vi.waitFor(() => expect(document.querySelector('[data-test="admin-confirm-accept"]')).not.toBeNull())
+      document.querySelector<HTMLButtonElement>('[data-test="admin-confirm-accept"]')!.click()
+    }
+
+    await submit()
+    await vi.waitFor(() => expect(form().closest('[role="dialog"]')?.querySelector('[role="alert"]')?.textContent).toContain('Riječ nije moguće rasporediti.'))
+    expect(dateInput.value).toBe(addDays(TODAY, 1))
+    expect(pinRequests).toEqual([{ wordId: 'w2', village: 'auto' }])
+
+    pinFailure = 0
+    await submit()
+    await vi.waitFor(() => expect(document.querySelector('#daily-pin-form')).toBeNull())
+    expect(pinRequests).toEqual(Array.from({ length: 2 }, () => ({ wordId: 'w2', village: 'auto' })))
+    expect(wrapper.text()).toContain(`Riječ „gablec“ prikvačena je za ${addDays(TODAY, 1)}.`)
   })
 
   it('pages the calendar by four weeks up to the pin horizon so a far pin can be reached and removed', async () => {

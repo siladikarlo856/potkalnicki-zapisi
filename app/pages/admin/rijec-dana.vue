@@ -408,6 +408,13 @@ onMounted(refresh)
           class="flex flex-col gap-3"
           @submit.prevent="pin().then(() => { if (!wordId) formOpen = false })"
         >
+          <UAlert
+            v-if="error"
+            :title="error"
+            color="error"
+            variant="subtle"
+            role="alert"
+          />
           <AdminFormField
             label="Datum"
             :help="minDate ? `Od ${minDate}; današnji i prošli dani su zaključani.` : undefined"
