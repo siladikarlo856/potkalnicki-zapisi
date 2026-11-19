@@ -10,7 +10,8 @@ import {
 } from '~~/shared/utils/games/catalogue'
 import { countNoun } from '~/utils/pzText'
 import type { GameType } from '~~/shared/utils/games/catalogue'
-import { pzPath, pzRoutes } from '~~/shared/utils/appRoutes'
+import { pzRoutes } from '~~/shared/utils/appRoutes'
+import { TOPICS } from '~~/shared/utils/learn/topics'
 
 // /igre/: every game, grouped by what it trains, with chips by question type. The daily word and the learning
 // cards have their own screens; challenges are reached from a game's start page and from /izazov/.
@@ -26,6 +27,9 @@ const loading = computed(() => !error.value && (status.value === 'idle' || statu
 
 // Old topic addresses (?tema=rijeci) still narrow the list; the chips filter by question type (?vrsta=).
 const legacyTopic = computed(() => typeof route.query.tema === 'string' ? route.query.tema : undefined)
+const activeTopic = computed(() => legacyTopic.value && legacyTopic.value !== 'sve'
+  ? TOPICS.find(topic => topic.id === legacyTopic.value)?.label ?? legacyTopic.value
+  : undefined)
 const type = computed<GameType | undefined>(() => {
   const value = route.query.vrsta
   return typeof value === 'string' && value in GAME_TYPE_LABELS ? value as GameType : undefined
@@ -49,6 +53,12 @@ function choose(next: GameType | undefined) {
   void router.replace({ query })
 }
 
+function clearTopic() {
+  const query = { ...route.query }
+  delete query.tema
+  void router.replace({ query })
+}
+
 useSeoMeta({
   title: 'Igre',
   ogTitle: 'Igre · Potkalnički zapisi',
@@ -63,6 +73,23 @@ useSeoMeta({
       title="Igre"
       :lead="`${GAMES_DESCRIPTION} Svaka traje nekoliko minuta.`"
     />
+
+    <div
+      v-if="activeTopic"
+      class="mb-6 flex flex-wrap items-center gap-3"
+      data-testid="play-active-topic"
+    >
+      <p class="pz-body-sm text-default">
+        Tema: {{ activeTopic }}
+      </p>
+      <UButton
+        label="Prikaži sve teme"
+        color="neutral"
+        variant="outline"
+        data-testid="play-clear-topic"
+        @click="clearTopic"
+      />
+    </div>
 
     <Skeleton
       v-if="loading"
@@ -92,7 +119,7 @@ useSeoMeta({
           label="Uči riječi"
         />
         <UButton
-          :to="pzPath('rijec-dana')"
+          :to="pzRoutes.dailyWord"
           label="Riječ dana"
           color="neutral"
           variant="outline"

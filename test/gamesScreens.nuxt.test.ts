@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import GameCard from '../app/components/games/GameCard.vue'
 import Shell from '../app/components/games/Shell.vue'
+import Options from '../app/components/games/Options.vue'
 import Start from '../app/components/games/Start.vue'
 import Result from '../app/components/games/Result.vue'
 import Pick from '../app/components/Pick.vue'
@@ -27,6 +28,7 @@ describe('games catalogue grouping', () => {
       expect(gameTypeOf(game)).not.toBeNull()
     }
     expect(GAME_CATALOGUE.filter(game => !isListedGame(game)).map(game => game.id).sort()).toEqual(['kartice', 'rijec-dana'])
+    expect(GAME_CATALOGUE.find(game => game.id === 'rijec-dana')!.path).toBe('/#rijec-dana')
   })
 })
 
@@ -89,6 +91,53 @@ const question = (n: number): GameQuestion => ({
   options: [{ hr: 'A', en: 'A' }, { hr: 'B', en: 'B' }],
   correct: 0,
   explanation: { hr: 'Zato.', en: 'Because.' }
+})
+
+describe('start question count', () => {
+  it.each([undefined, 4, 8])('describes the round length as an upper limit for %s questions', async (questions) => {
+    wrapper = await mountSuspended(Start, { props: { gameId: 'osoba', questions } })
+    expect(wrapper.get('[data-testid="game-start-facts"] dd').text()).toBe(`Do ${questions ?? 10}`)
+    await wrapper.get('[data-testid="game-start-button"]').trigger('click')
+    expect(wrapper.emitted('start')).toEqual([[]])
+  })
+})
+
+describe('answer option navigation', () => {
+  it('moves focus in every arrow direction and wraps without answering in immediate-submit consumers', async () => {
+    const q = { ...question(0), options: ['A', 'B', 'C', 'D'].map(label => ({ hr: label, en: label })) }
+    wrapper = await mountSuspended(Options, { attachTo: document.body, props: { question: q, selected: null } })
+    const options = wrapper.findAll<HTMLButtonElement>('[role="radio"]')
+    expect(options.map(option => option.attributes('tabindex'))).toEqual(['0', '0', '0', '0'])
+    options[0]!.element.focus()
+    let focused = 0
+    for (const [key, target] of [
+      ['ArrowDown', 1], ['ArrowDown', 2], ['ArrowRight', 3], ['ArrowRight', 0], ['ArrowUp', 3], ['ArrowLeft', 2]
+    ] as const) {
+      await options[focused]!.trigger('keydown', { key })
+      expect(document.activeElement).toBe(options[target]!.element)
+      expect(wrapper.emitted('select')).toBeUndefined()
+      focused = target
+    }
+    await options[2]!.trigger('click')
+    expect(wrapper.emitted('select')).toEqual([[2]])
+    await wrapper.setProps({ selected: 2 })
+    await options[2]!.trigger('keydown', { key: 'ArrowDown' })
+    await options[1]!.trigger('click')
+    expect(wrapper.emitted('select')).toEqual([[2]])
+    expect(options.every(option => option.attributes('tabindex') === '-1')).toBe(true)
+  })
+
+  it('marks arrow selections and submits on Enter when the parent supplies pending selection', async () => {
+    wrapper = await mountSuspended(Options, { props: { question: question(0), selected: null, pending: null } })
+    await wrapper.get('[data-testid="game-option-0"]').trigger('keydown', { key: 'ArrowDown' })
+    expect(wrapper.emitted('select')).toEqual([[1]])
+    expect(wrapper.emitted('submit')).toBeUndefined()
+    await wrapper.setProps({ pending: 1 })
+    expect(wrapper.get('[data-testid="game-option-1"]').attributes('aria-checked')).toBe('true')
+    expect(wrapper.get('[data-testid="game-option-0"]').attributes('tabindex')).toBe('-1')
+    await wrapper.get('[data-testid="game-option-1"]').trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('submit')).toEqual([[]])
+  })
 })
 
 describe('game challenge links', () => {

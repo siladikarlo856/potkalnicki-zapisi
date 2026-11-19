@@ -108,6 +108,8 @@ describe('Bez greške', () => {
   it('shows feedback after an answer and only moves on with Dalje', async () => {
     wrapper = await mountSuspended(BezGreske, { route: '/igre/bez-greske' })
     await vi.waitFor(() => expect(wrapper!.find('[data-testid="bez-prompt"]').exists()).toBe(true))
+    await wrapper.get('[data-testid="game-option-0"]').trigger('keydown', { key: 'ArrowDown' })
+    expect(wrapper.find('[data-testid="game-feedback"]').exists()).toBe(false)
     vi.useFakeTimers()
     const prompt = wrapper.get('[data-testid="bez-prompt"]').text()
     await wrapper.get('[data-testid="game-option-0"]').trigger('click')

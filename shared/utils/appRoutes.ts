@@ -14,7 +14,7 @@ export const pzRoutes = {
   archive: pzPath('arhiv'),
   search: pzPath('trazi'),
   games: pzPath('igre'),
-  dailyWord: pzPath('rijec-dana'),
+  dailyWord: '/#rijec-dana',
   cards: pzPath('igre', 'kartice'),
   learn: pzPath('uci'),
   learnSession: pzPath('uci', 'sesija'),

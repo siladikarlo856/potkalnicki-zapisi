@@ -35,7 +35,6 @@ function choose(index: number) {
   if (!answered.value) emit('select', index)
 }
 
-// Roving tab stop: the marked option, or the first one while nothing is marked.
 const tabbable = computed(() => props.pending ?? 0)
 
 async function onOptionKey(event: KeyboardEvent, index: number) {
@@ -45,7 +44,7 @@ async function onOptionKey(event: KeyboardEvent, index: number) {
   if (step) {
     event.preventDefault()
     const next = index + step < 0 ? last : index + step > last ? 0 : index + step
-    emit('select', next)
+    if (props.pending !== undefined) emit('select', next)
     await nextTick()
     root.value?.querySelector<HTMLElement>(`[data-testid="game-option-${next}"]`)?.focus()
   } else if (event.key === 'Enter' && props.pending !== null && props.pending !== undefined) {
@@ -87,7 +86,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       role="radio"
       :aria-checked="stateOf(index) === 'chosen' || stateOf(index) === 'wrong' || (stateOf(index) === 'correct' && selected === index)"
       :aria-disabled="answered ? 'true' : undefined"
-      :tabindex="answered ? -1 : index === tabbable ? 0 : -1"
+      :tabindex="answered ? -1 : pending === undefined || index === tabbable ? 0 : -1"
       :data-testid="`game-option-${index}`"
       :data-state="stateOf(index)"
       class="grid min-h-(--pz-option-min) w-full grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 rounded-(--pz-radius-md) px-4 py-3 text-start text-base transition-colors duration-150 motion-reduce:transition-none"

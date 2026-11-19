@@ -152,7 +152,7 @@ export function deriveDailyStats(days: Readonly<Record<string, DailyProgress>>, 
 
 /**
  * Only completed results can be shared. No word or clue data is accepted. The text is the same
- * in both languages and links to the games hub (the Croatian-only page that hosts the daily word).
+ * in both languages.
  */
 export function dailyWordShareText(number: number, result: Pick<DailyProgress, 'done' | 'solved' | 'tries' | 'maxTries'>): string {
   if (!result.done) return ''

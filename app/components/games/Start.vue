@@ -33,7 +33,7 @@ const best = computed(() => {
   return entry ? (props.gameId === 'bez-greske' ? String(entry.score) : `${entry.score}/${entry.max}`) : 'još nema'
 })
 const facts = computed(() => [
-  { value: String(props.questions), label: nounFor(props.questions, ['pitanje', 'pitanja']) },
+  { value: `Do ${props.questions}`, label: nounFor(props.questions, ['pitanje', 'pitanja']) },
   ...(minutes.value ? [{ value: String(minutes.value), label: nounFor(minutes.value, ['minuta', 'minute', 'minuta']) }] : []),
   { value: best.value, label: 'najbolji rezultat' }
 ])
