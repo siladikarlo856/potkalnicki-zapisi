@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ChallengeState } from '~~/shared/utils/challenge'
-import { DEFAULT_GENERATE } from '~~/shared/utils/challenge'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
@@ -8,153 +7,117 @@ defineI18nRoute({ locales: ['hr'] })
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+useSeoMeta({ title: () => t('challenge.hubPageTitle'), description: () => t('challenge.hubPageIntro') })
 
-useSeoMeta({ title: () => t('challenge.hubTitle'), description: () => t('challenge.hubIntro') })
-
-const quickOpen = ref(false)
-const nickname = ref('')
-const busy = ref(false)
-const error = ref('')
-const { remember, items, forget, refreshItem, resetRefreshBudget, newPlayersFor } = useChallengeList()
+const code = ref('')
+const codeError = ref('')
+const codeBusy = ref(false)
+const { items, forget, refreshItem, resetRefreshBudget, newPlayersFor } = useChallengeList()
 const refreshed = ref(new Set<string>())
 
-async function onRowVisible(code: string) {
-  if (refreshed.value.has(code)) return
-  refreshed.value.add(code)
-  const item = items.value.find(entry => entry.code === code)
-  await refreshItem(code, { fetchLeaderboard: item?.role === 'creator' })
+async function onRowVisible(challengeCode: string) {
+  if (refreshed.value.has(challengeCode)) return
+  refreshed.value.add(challengeCode)
+  const item = items.value.find(entry => entry.code === challengeCode)
+  await refreshItem(challengeCode, { fetchLeaderboard: item?.role === 'creator' })
 }
 
-onMounted(() => {
-  resetRefreshBudget()
-})
-
-async function quickChallenge() {
-  const name = challengeNickname(nickname.value)
-  if (!name) {
-    error.value = t('challenge.invalidNickname')
+async function join() {
+  const normalized = code.value.trim().replace(/\s+/g, '')
+  if (!normalized) {
+    codeError.value = t('challenge.codeRequired')
     return
   }
-  if (busy.value) return
-  busy.value = true
-  error.value = ''
+  if (codeBusy.value) return
+  codeBusy.value = true
+  codeError.value = ''
   try {
-    const state = await $fetch<ChallengeState>('/api/challenges', {
-      method: 'POST',
-      body: { nickname: name, generate: DEFAULT_GENERATE }
-    })
-    remember(state, 'creator')
-    await navigateTo(localePath(pzPath(pzRoutes.challenge, state.code)))
+    await $fetch<ChallengeState>(`/api/challenges/${encodeURIComponent(normalized)}`)
+    await navigateTo(localePath(pzPath(pzRoutes.challenge, normalized)))
   } catch (cause) {
     const failure = cause as { status?: number, statusCode?: number }
-    error.value = (failure.status ?? failure.statusCode) === 429 ? t('challenge.limited') : t('challenge.createError')
+    codeError.value = (failure.status ?? failure.statusCode) === 404
+      ? t('challenge.codeNotFound')
+      : t('challenge.error')
   } finally {
-    busy.value = false
+    codeBusy.value = false
   }
 }
+
+onMounted(resetRefreshBudget)
 </script>
 
 <template>
-  <div>
-    <UContainer class="max-w-3xl space-y-8 py-6 sm:py-10">
+  <UContainer class="max-w-3xl py-6 sm:py-10">
+    <header class="flex flex-col gap-3">
+      <p class="pz-overline text-muted">
+        {{ t('pz.challenge.introOverline') }}
+      </p>
+      <h1 class="pz-h1 text-highlighted">
+        {{ t('challenge.hubPageTitle') }}
+      </h1>
+      <p class="pz-lead text-muted">
+        {{ t('challenge.hubPageIntro') }}
+      </p>
+    </header>
+
+    <div class="mt-6 space-y-4">
       <UButton
-        :to="localePath(pzRoutes.home)"
-        color="neutral"
-        variant="link"
-        icon="i-lucide-arrow-left"
+        :to="localePath(pzRoutes.challengeNew)"
+        icon="i-lucide-swords"
+        size="xl"
+        block
+        data-testid="challenge-hub-new"
       >
-        {{ t('challenge.heritage') }}
+        {{ t('challenge.newChallenge') }}
       </UButton>
 
-      <header class="relative flex flex-col gap-3 py-2">
-        <PzRidge class="absolute -top-2 right-0 h-28 w-3/4 opacity-80" />
-        <p class="pz-overline relative text-muted">
-          {{ t('pz.challenge.introOverline') }}
-        </p>
-        <h1 class="pz-display relative text-highlighted">
-          {{ t('challenge.hubTitle') }}
-        </h1>
-        <p class="pz-lead relative text-muted">
-          {{ t('challenge.hubIntro') }}
-        </p>
-      </header>
-
-      <ol class="pz-body list-decimal space-y-2 pl-5 text-muted">
-        <li>{{ t('challenge.hubStep1') }}</li>
-        <li>{{ t('challenge.hubStep2') }}</li>
-        <li>{{ t('challenge.hubStep3') }}</li>
-      </ol>
-
-      <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <UButton
-          :to="localePath(pzRoutes.challengeNew)"
-          size="lg"
-          icon="i-lucide-wand-sparkles"
-          data-testid="challenge-hub-custom"
-        >
-          {{ t('challenge.createPageTitle') }}
-        </UButton>
-        <UButton
-          v-if="!quickOpen"
-          size="lg"
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-zap"
-          data-testid="challenge-hub-quick"
-          @click="quickOpen = true"
-        >
-          {{ t('challenge.quickCreate') }}
-        </UButton>
-      </div>
-
       <UCard
-        v-if="quickOpen"
-        data-testid="challenge-quick-form"
+        class="mt-5"
+        :ui="{ body: 'space-y-4' }"
+        aria-labelledby="challenge-code-title"
       >
-        <form
-          class="space-y-4"
-          @submit.prevent="quickChallenge"
-        >
-          <p class="text-sm text-muted">
-            {{ t('challenge.quickCreateHelp') }}
-          </p>
-          <UFormField
-            :label="t('challenge.nickname')"
-            :help="t('challenge.nicknameHelp')"
-            required
+        <div>
+          <h2
+            id="challenge-code-title"
+            class="pz-h3 text-highlighted"
           >
-            <UInput
-              v-model="nickname"
-              name="nickname"
-              autocomplete="nickname"
-              :maxlength="24"
-              class="w-full"
-            />
-          </UFormField>
-          <UButton
-            type="submit"
-            :loading="busy"
-          >
-            {{ t('challenge.quickCreateSubmit') }}
-          </UButton>
-          <p
-            v-if="error"
-            role="alert"
-            class="text-sm text-error"
-          >
-            {{ error }}
-          </p>
-        </form>
+            {{ t('challenge.haveCode') }}
+          </h2>
+        </div>
+        <PzChallengeCodeField
+          v-model="code"
+          :busy="codeBusy"
+          :error="codeError"
+          :label="t('challenge.codeLabel')"
+          :hint="t('challenge.codeHint')"
+          @submit="join"
+        />
       </UCard>
-    </UContainer>
+    </div>
 
-    <UContainer class="max-w-3xl pb-16">
+    <div class="mt-8">
       <HeritageChallengeHubList
         :items="items"
         :new-players-for="newPlayersFor"
         @remove="forget"
         @visible="onRowVisible"
       />
-    </UContainer>
-  </div>
+      <div
+        v-if="!items.length"
+        class="mt-8 flex flex-col items-center gap-3 rounded-(--pz-radius-lg) border border-default p-6 text-center"
+        data-testid="challenge-empty"
+      >
+        <span class="grid size-14 place-items-center rounded-full bg-accented text-primary">
+          <UIcon name="i-lucide-swords" />
+        </span>
+        <h2 class="pz-h3 text-highlighted">
+          {{ t('challenge.noChallenges') }}
+        </h2>
+        <p class="text-muted">
+          {{ t('challenge.noChallengesHelp') }}
+        </p>
+      </div>
+    </div>
+  </UContainer>
 </template>

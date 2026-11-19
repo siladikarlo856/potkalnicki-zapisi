@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChallengeLeaderboard, ChallengeState, ChallengeText } from '../../../../shared/utils/challenge'
+import { pzRoutes } from '../../../../shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
@@ -21,6 +22,21 @@ const date = computed(() => state.value ? new Intl.DateTimeFormat(locale.value =
 const me = computed(() => state.value?.participant?.nickname ?? null)
 const owner = computed(() => find(code)?.role === 'creator' || Boolean(state.value?.participant?.completedAt))
 const roundCount = computed(() => state.value?.rounds.length ?? Math.max(0, ...board.value.rows.map(row => row.rounds.length)))
+const shareOpen = ref(false)
+const origin = ref('')
+const shareUrl = computed(() => origin.value + localePath(pzPath(pzRoutes.challenge, code, 'ljestvica')))
+const myRow = computed(() => board.value.rows.find(row => row.nickname === me.value))
+const shareMessage = computed(() => state.value && myRow.value
+  ? `${text(state.value.title)}: ${myRow.value.rank}. mjesto, ${myRow.value.total} bodova.\n${shareUrl.value}`
+  : shareUrl.value)
+const placeTitle = computed(() => {
+  const rank = board.value.rows.find(row => row.nickname === me.value)?.rank
+  if (!rank) return t('challenge.leaderboard')
+  if (rank === 1) return t('challenge.firstPlace')
+  if (rank === 2) return t('challenge.secondPlace')
+  if (rank === 3) return t('challenge.thirdPlace')
+  return t('challenge.numberedPlace', { rank })
+})
 useSeoMeta({ title: () => t('challenge.leaderboard'), robots: 'noindex, nofollow' })
 // The sticky action bar owns the bottom of this screen, so the tab bar steps aside once it is there.
 useHidePzTabBar(() => Boolean(state.value), 'challenge')
@@ -45,23 +61,35 @@ async function load(more = false) {
     loading.value = false
   }
 }
-onMounted(() => void load())
+onMounted(() => {
+  origin.value = window.location.origin
+  void load()
+})
 </script>
 
 <template>
   <UContainer class="max-w-3xl py-6 sm:py-10">
     <div class="flex flex-col gap-6">
-      <UButton
-        :to="localePath(pzPath(pzRoutes.challenge, code))"
-        icon="i-lucide-arrow-left"
-        color="neutral"
-        variant="link"
-        class="min-h-(--pz-tap-min) self-start"
-      >
-        {{ t('challenge.back') }}
-      </UButton>
-
       <header class="flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <UButton
+            :to="localePath(pzPath(pzRoutes.challenge, code))"
+            icon="i-lucide-arrow-left"
+            color="neutral"
+            variant="link"
+            class="min-h-(--pz-tap-min) self-start"
+          >
+            {{ t('challenge.back') }}
+          </UButton>
+          <UButton
+            icon="i-lucide-share-2"
+            color="neutral"
+            variant="ghost"
+            :aria-label="t('challenge.shareLeaderboard')"
+            data-testid="challenge-leaderboard-share"
+            @click="shareOpen = true"
+          />
+        </div>
         <p
           v-if="state"
           class="pz-overline text-muted wrap-anywhere"
@@ -85,6 +113,19 @@ onMounted(() => void load())
           />
           {{ t('pz.challenge.closesChip', { date }) }}
         </span>
+        <p
+          v-if="state && !loading && me"
+          class="pz-lead text-muted"
+          data-testid="challenge-place-title"
+        >
+          {{ placeTitle }}
+        </p>
+        <p
+          v-if="state && !loading"
+          class="pz-body-sm text-muted"
+        >
+          {{ t('challenge.playedCount', { played: board.rows.filter(row => row.completedAt).length, total: board.count }) }}
+        </p>
       </header>
 
       <UAlert
@@ -197,6 +238,17 @@ onMounted(() => void load())
           />
         </PzStickyActionBar>
       </template>
+
+      <PzShareSheet
+        v-if="state"
+        v-model:open="shareOpen"
+        :title="t('challenge.shareLeaderboard')"
+        :context="state.title.hr"
+        :message="shareMessage"
+        :url="shareUrl"
+        preview
+        prefix="challenge-leaderboard"
+      />
     </div>
   </UContainer>
 </template>
