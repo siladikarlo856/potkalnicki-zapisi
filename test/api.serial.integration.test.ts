@@ -1024,7 +1024,7 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     { path: '/igre/', title: 'Igraj · Potkalnički zapisi', description: 'Izazovi prijatelja', image: 'og.svg' },
     { path: '/doprinesi/', title: 'Doprinesi · Potkalnički zapisi', description: 'Zapiši ono što znaš', image: 'og.svg' },
     { path: '/o-projektu/', title: 'O projektu · Potkalnički zapisi', description: 'Digitalni arhiv kraja pod Kalnikom.', image: 'og.svg' },
-    { path: '/uci/', title: 'Uči · Potkalnički zapisi', description: 'Odaberi teme', image: 'og.svg' },
+    { path: '/uci/', title: 'Uči · Potkalnički zapisi', description: 'Kartice s riječima domaćega govora.', image: 'og.svg' },
     { path: '/igre/kviz/', title: 'Ponuđeni odgovori · Potkalnički zapisi', description: 'Pročitaj riječ', image: 'og.svg' },
     { path: '/privatnost/', title: 'Privatnost · Potkalnički zapisi', description: 'Kratko i jasno', image: 'og.svg' }
   ])('sets localized sharing metadata on $path', async ({ path, title, description, image }) => {
