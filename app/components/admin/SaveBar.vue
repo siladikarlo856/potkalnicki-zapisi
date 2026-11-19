@@ -31,7 +31,7 @@ const message = computed(() => {
   switch (props.state) {
     case 'new': return { text: 'Još nije spremljeno', icon: 'i-lucide-circle-dashed', tone: '' }
     case 'saved': return { text: 'Sve je spremljeno', icon: 'i-lucide-check', tone: '' }
-    case 'just-saved': return { text: 'Objavljeno maloprije', icon: 'i-lucide-check', tone: '' }
+    case 'just-saved': return { text: props.status === 'published' ? 'Objavljeno maloprije' : 'Spremljeno maloprije', icon: 'i-lucide-check', tone: '' }
     case 'saving': return { text: props.busyLabel ?? 'Spremam…', icon: 'i-lucide-loader-circle', tone: '' }
     case 'unsaved': return { text: `Nespremljene izmjene u ${count} ${nounFor(count, ['polju', 'polja', 'polja'])}`, icon: 'i-lucide-pencil', tone: 'text-warning' }
     case 'errors': return { text: `${count} ${nounFor(count, ['polje', 'polja', 'polja'])} treba ispraviti`, icon: 'i-lucide-circle-alert', tone: 'text-error' }

@@ -461,6 +461,42 @@ describe('Uređivanje zapisa', () => {
     await type(titleInput(), 'Skica izmijenjena')
     buttonIn(bar(), 'Spremi skicu')!.click()
     await vi.waitFor(() => expect(calls.find(call => call.method === 'PATCH')?.body).toMatchObject({ status: 'draft', title: 'Skica izmijenjena' }))
+    await vi.waitFor(() => expect(bar()!.textContent).toContain('Spremljeno maloprije'))
+    expect(bar()!.textContent).not.toContain('Objavljeno')
+  })
+
+  it('moves a new record to its own address once it is saved', async () => {
+    wrapper = await mountPage('/admin/izvori?novo=1')
+    await vi.waitFor(() => expect(editor()?.textContent).toContain('Novi izvor'))
+    await type(titleInput(), 'Novi registar')
+    buttonIn(bar(), 'Spremi skicu')!.click()
+    await vi.waitFor(() => expect(calls.find(call => call.method === 'POST')?.body).toMatchObject({ title: 'Novi registar', status: 'draft' }))
+    await vi.waitFor(() => expect(useRoute().query.uredi).toBe(ID[2]))
+    expect(useRoute().query.novo).toBeUndefined()
+  })
+
+  it('saves the draft and then leaves when "Spremi skicu i izađi" is chosen', async () => {
+    await openEditor({ ...base, status: 'draft' })
+    await type(titleInput(), 'Spremi pa izađi');
+    (editor()!.querySelector('[data-testid="admin-editor-back"]') as HTMLButtonElement).click()
+    await vi.waitFor(() => expect(dialog()?.textContent).toContain('Imaš nespremljene izmjene'))
+    buttonIn(dialog(), 'Spremi skicu i izađi')!.click()
+    await vi.waitFor(() => expect(calls.find(call => call.method === 'PATCH')?.body).toMatchObject({ status: 'draft', title: 'Spremi pa izađi' }))
+    await vi.waitFor(() => expect(useRoute().query.uredi).toBeUndefined())
+    await vi.waitFor(() => expect(editor()).toBeNull())
+  })
+
+  it('compares a browser copy kept from an older revision with the saved row instead of saving over it', async () => {
+    localStorage.setItem(`admin-draft:source:${ID[0]}`, JSON.stringify({ savedAt: '2026-11-18T10:00:00.000Z', revision: 2, state: { title: 'Stara kopija', status: 'published' } }))
+    rows = [base]
+    wrapper = await mountPage(`/admin/izvori?uredi=${ID[0]}`)
+    await vi.waitFor(() => expect(editor()?.querySelector('[data-test="admin-conflict"]')).not.toBeNull())
+    expect(titleInput().value).toBe('Stara kopija')
+    expect(bar()!.textContent).toContain('Sukob inačica: nije spremljeno')
+    expect(buttonIn(bar(), 'Objavi izmjene')!.disabled).toBe(true)
+    buttonIn(editor()!.querySelector('[data-test="admin-conflict"]'), 'Učitaj spremljenu inačicu')!.click()
+    await vi.waitFor(() => expect(titleInput().value).toBe('Registar kulturnih dobara'))
+    expect(calls.filter(call => call.method === 'PATCH')).toEqual([])
   })
 
   it('asks before leaving with changes: discard, stay, or save the draft and leave', async () => {

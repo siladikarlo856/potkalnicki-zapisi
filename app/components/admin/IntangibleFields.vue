@@ -75,7 +75,7 @@ function setStep(index: number, value: string) {
     <legend class="mb-2 text-sm font-semibold text-highlighted">
       Osnovno
     </legend>
-    <UFormField
+    <AdminFormField
       name="title"
       label="Naslov"
       required
@@ -87,8 +87,8 @@ function setStep(index: number, value: string) {
         autofocus
         @update:model-value="value => patch({ title: String(value) })"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="typeId"
       :label="nouns.type"
       required
@@ -101,38 +101,32 @@ function setStep(index: number, value: string) {
         data-test="admin-type"
         @update:model-value="value => patch({ typeId: String(value) })"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminLookupField
       v-if="kind === 'custom'"
+      :model-value="state.occasionId ?? null"
       name="occasionId"
       label="Prigoda"
-      hint="Neobavezno"
+      optional
       description="Dan, blagdan ili životni događaj kojem običaj pripada, npr. Martinje."
-    >
-      <AdminLookupSelect
-        :model-value="state.occasionId ?? null"
-        endpoint="/api/admin/lookup/occasion"
-        placeholder="Odaberi prigodu"
-        clearable
-        @update:model-value="value => patch({ occasionId: value })"
-      />
-    </UFormField>
-    <UFormField
+      endpoint="/api/admin/lookup/occasion"
+      placeholder="Odaberi prigodu"
+      clearable
+      @update:model-value="value => patch({ occasionId: value })"
+    />
+    <AdminLookupField
       v-if="kind === 'folk_text'"
+      :model-value="state.customId ?? null"
       name="customId"
       label="Običaj kojem je pripadao"
-      hint="Neobavezno"
+      optional
       description="„Govorilo se ili pjevalo kad“: običaj u kojem se tekst izgovarao."
-    >
-      <AdminLookupSelect
-        :model-value="state.customId ?? null"
-        endpoint="/api/admin/lookup/custom"
-        placeholder="Odaberi običaj"
-        clearable
-        @update:model-value="value => patch({ customId: value })"
-      />
-    </UFormField>
-    <UFormField
+      endpoint="/api/admin/lookup/custom"
+      placeholder="Odaberi običaj"
+      clearable
+      @update:model-value="value => patch({ customId: value })"
+    />
+    <AdminFormField
       name="slug"
       label="Slug"
       required
@@ -153,7 +147,7 @@ function setStep(index: number, value: string) {
           @click="suggestSlug"
         />
       </div>
-    </UFormField>
+    </AdminFormField>
   </fieldset>
 
   <fieldset class="flex flex-col gap-4">
@@ -161,58 +155,43 @@ function setStep(index: number, value: string) {
       {{ hasTexts ? 'Tekst' : 'Opis' }}
     </legend>
     <template v-if="hasTexts">
-      <UFormField
+      <AdminRichTextField
+        v-model="textLocal"
         name="textLocal"
         label="Izvorni tekst (mjesni govor)"
         description="Onako kako je ispričano ili pjevano. Objava traži izvorni ili standardni tekst, barem jedan."
-      >
-        <UTextarea
-          v-model="textLocal"
-          :maxlength="INTANGIBLE_LIMITS.text"
-          :rows="8"
-          autoresize
-          class="w-full"
-          lang="hr"
-        />
-      </UFormField>
-      <UFormField
+        :maxlength="INTANGIBLE_LIMITS.text"
+        :rows="8"
+        lang="hr"
+      />
+      <AdminRichTextField
+        v-model="textStandard"
         name="textStandard"
         label="Standardni prepričani tekst"
         description="Prepričano na hrvatskom standardnom jeziku."
-      >
-        <UTextarea
-          v-model="textStandard"
-          :maxlength="INTANGIBLE_LIMITS.text"
-          :rows="8"
-          autoresize
-          class="w-full"
-          lang="hr"
-        />
-      </UFormField>
+        :maxlength="INTANGIBLE_LIMITS.text"
+        :rows="8"
+        lang="hr"
+      />
     </template>
     <template v-else>
-      <UFormField
+      <AdminRichTextField
+        v-model="description"
         name="description"
         label="Opis običaja"
         required
         description="Kako se običaj provodio. Objava traži opis."
-      >
-        <UTextarea
-          v-model="description"
-          :maxlength="INTANGIBLE_LIMITS.text"
-          :rows="8"
-          autoresize
-          class="w-full"
-        />
-      </UFormField>
-      <UFormField
+        :maxlength="INTANGIBLE_LIMITS.text"
+        :rows="8"
+      />
+      <AdminFormField
         name="quotes"
         label="Citati"
-        hint="Neobavezno"
+        optional
         description="Kratki citati u mjesnom govoru, redom kojim se prikazuju."
       >
         <div class="flex flex-col gap-2">
-          <UFormField
+          <AdminFormField
             v-for="(quote, index) in quotes"
             :key="index"
             :name="`quotes.${index}`"
@@ -235,7 +214,7 @@ function setStep(index: number, value: string) {
                 @click="patch({ quotes: removeEntry(quotes, index) })"
               />
             </div>
-          </UFormField>
+          </AdminFormField>
           <div>
             <UButton
               label="Dodaj citat"
@@ -249,15 +228,15 @@ function setStep(index: number, value: string) {
             />
           </div>
         </div>
-      </UFormField>
-      <UFormField
+      </AdminFormField>
+      <AdminFormField
         name="steps"
         label="Koraci"
-        hint="Neobavezno"
+        optional
         description="Radnje običaja redom, npr. za igru na dlanu."
       >
         <div class="flex flex-col gap-2">
-          <UFormField
+          <AdminFormField
             v-for="(step, index) in steps"
             :key="index"
             :name="`steps.${index}`"
@@ -279,7 +258,7 @@ function setStep(index: number, value: string) {
                 @click="patch({ steps: removeEntry(steps, index) })"
               />
             </div>
-          </UFormField>
+          </AdminFormField>
           <div>
             <UButton
               label="Dodaj korak"
@@ -293,7 +272,7 @@ function setStep(index: number, value: string) {
             />
           </div>
         </div>
-      </UFormField>
+      </AdminFormField>
     </template>
   </fieldset>
 
@@ -319,10 +298,10 @@ function setStep(index: number, value: string) {
     <legend class="mb-2 text-sm font-semibold text-highlighted">
       Poveznice
     </legend>
-    <UFormField
+    <AdminFormField
       name="itemIds"
       label="Povezana baština"
-      hint="Neobavezno"
+      optional
       description="Crkve, kapele, križevi i drugi zapisi baštine na koje se zapis odnosi."
     >
       <AdminLookupList
@@ -334,11 +313,11 @@ function setStep(index: number, value: string) {
         :max="INTANGIBLE_MAX.items"
         @update:model-value="ids => patch({ itemIds: ids })"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="themeIds"
       label="Teme"
-      hint="Neobavezno"
+      optional
       description="Teme dijele sve vrste zapisa. Nova tema se dodaje na stranici Teme."
     >
       <AdminLookupList
@@ -350,12 +329,12 @@ function setStep(index: number, value: string) {
         :max="INTANGIBLE_MAX.themes"
         @update:model-value="ids => patch({ themeIds: ids })"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       v-if="kind === 'folk_text'"
       name="wordIds"
       label="Riječi iz teksta"
-      hint="Neobavezno"
+      optional
       description="Riječi iz rječnika mjesnog govora koje tekst sadrži."
     >
       <AdminLookupList
@@ -367,11 +346,11 @@ function setStep(index: number, value: string) {
         :max="INTANGIBLE_MAX.words"
         @update:model-value="ids => patch({ wordIds: ids })"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="sourceIds"
       label="Izvori"
-      hint="Neobavezno"
+      optional
       description="Redom kojim se navode. Snimke se za sada navode kao izvor."
     >
       <AdminLookupList
@@ -383,14 +362,14 @@ function setStep(index: number, value: string) {
         :max="INTANGIBLE_MAX.sources"
         @update:model-value="ids => patch({ sourceIds: ids })"
       />
-    </UFormField>
+    </AdminFormField>
   </fieldset>
 
   <fieldset class="flex flex-col gap-4">
     <legend class="mb-2 text-sm font-semibold text-highlighted">
       Provjera i bilješke
     </legend>
-    <UFormField
+    <AdminFormField
       name="verification"
       label="Potvrđenost (atribucija)"
       required
@@ -402,8 +381,8 @@ function setStep(index: number, value: string) {
         class="w-full"
         @update:model-value="value => patch({ verification: value as IntangibleFormState['verification'] })"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="researchNotes"
       label="Bilješke istraživanja (privatno)"
     >
@@ -414,14 +393,14 @@ function setStep(index: number, value: string) {
         autoresize
         class="w-full"
       />
-    </UFormField>
-    <UFormField name="noindex">
+    </AdminFormField>
+    <AdminFormField name="noindex">
       <UCheckbox
         :model-value="state.noindex"
         label="Ne indeksirati u tražilicama (noindex)"
         @update:model-value="value => patch({ noindex: value === true })"
       />
-    </UFormField>
+    </AdminFormField>
     <p class="text-sm text-muted">
       Zahvale pošiljatelju sjećanja dodaju se same pri objavi skice nastale iz sjećanja, samo uz ime i privolu.
     </p>

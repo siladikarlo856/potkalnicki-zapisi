@@ -54,7 +54,7 @@ const consentNote = computed({
     <legend class="mb-2 text-sm font-semibold text-highlighted">
       Ime i javni prikaz
     </legend>
-    <UFormField
+    <AdminFormField
       name="name"
       label="Ime i prezime (samo za urednike)"
       required
@@ -67,7 +67,7 @@ const consentNote = computed({
         autofocus
         @update:model-value="value => patch({ name: String(value) })"
       />
-    </UFormField>
+    </AdminFormField>
 
     <UAlert
       :color="state.consentNamed ? 'success' : 'warning'"
@@ -90,7 +90,7 @@ const consentNote = computed({
       </template>
     </UAlert>
 
-    <UFormField
+    <AdminFormField
       name="consentNamed"
       label="Pristanak za javno navođenje imena"
       description="Označi tek kad je kazivač pristao da se njegovo ime objavi. Pristanak se bilježi ovdje, ne pretpostavlja se."
@@ -101,11 +101,11 @@ const consentNote = computed({
         data-test="admin-narrator-consent"
         @update:model-value="value => patch({ consentNamed: value === true })"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="consentNote"
       label="Bilješka o pristanku (nikada se ne prikazuje javno)"
-      hint="Neobavezno"
+      optional
       description="Kako i kad je pristanak dan, npr. „usmeno, 12. 3. 2026., uz snimku“. Vide je samo urednici."
     >
       <UTextarea
@@ -115,8 +115,8 @@ const consentNote = computed({
         autoresize
         class="w-full"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="publicDescription"
       label="Javni opis"
       :required="!state.consentNamed"
@@ -128,8 +128,8 @@ const consentNote = computed({
         class="w-full"
         data-test="admin-narrator-description"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="slug"
       label="Slug"
       required
@@ -150,7 +150,7 @@ const consentNote = computed({
           @click="suggestSlug"
         />
       </div>
-    </UFormField>
+    </AdminFormField>
   </fieldset>
 
   <fieldset class="flex flex-col gap-4">
@@ -158,7 +158,7 @@ const consentNote = computed({
       Podaci o kazivaču
     </legend>
     <div class="grid gap-4 sm:grid-cols-2">
-      <UFormField
+      <AdminFormField
         name="living"
         label="Živ/a"
       >
@@ -167,11 +167,11 @@ const consentNote = computed({
           :label="state.living ? 'Živ/a' : 'Preminuo/la'"
           @update:model-value="value => patch({ living: value === true })"
         />
-      </UFormField>
-      <UFormField
+      </AdminFormField>
+      <AdminFormField
         name="bornYear"
         label="Godina rođenja"
-        hint="Neobavezno"
+        optional
       >
         <UInput
           :model-value="state.bornYear ?? undefined"
@@ -180,44 +180,38 @@ const consentNote = computed({
           class="w-full"
           @update:model-value="value => patch({ bornYear: numberOrNull(value) })"
         />
-      </UFormField>
+      </AdminFormField>
     </div>
-    <UFormField
+    <AdminLookupField
+      :model-value="state.settlementId"
       name="settlementId"
       label="Mjesto življenja"
-      hint="Neobavezno"
+      optional
       description="Naselje u kojem kazivač živi ili je živio."
-    >
-      <AdminLookupSelect
-        :model-value="state.settlementId"
-        endpoint="/api/admin/lookup/area"
-        scope="settlement"
-        placeholder="Odaberi naselje"
-        clearable
-        @update:model-value="value => patch({ settlementId: value })"
-      />
-    </UFormField>
-    <UFormField
+      endpoint="/api/admin/lookup/area"
+      scope="settlement"
+      placeholder="Odaberi naselje"
+      clearable
+      @update:model-value="value => patch({ settlementId: value })"
+    />
+    <AdminLookupField
+      :model-value="state.personId"
       name="personId"
       label="Povijesna osoba"
-      hint="Neobavezno"
+      optional
       description="Samo ako je kazivač ujedno poznata povijesna osoba iz popisa Osobe. Jedna osoba može biti povezana s najviše jednim kazivačem."
-    >
-      <AdminLookupSelect
-        :model-value="state.personId"
-        endpoint="/api/admin/lookup/person"
-        placeholder="Odaberi osobu"
-        clearable
-        @update:model-value="value => patch({ personId: value })"
-      />
-    </UFormField>
+      endpoint="/api/admin/lookup/person"
+      placeholder="Odaberi osobu"
+      clearable
+      @update:model-value="value => patch({ personId: value })"
+    />
   </fieldset>
 
   <fieldset class="flex flex-col gap-4">
     <legend class="mb-2 text-sm font-semibold text-highlighted">
       Provjera i bilješke
     </legend>
-    <UFormField
+    <AdminFormField
       name="verification"
       label="Status provjere"
       required
@@ -228,8 +222,8 @@ const consentNote = computed({
         class="w-full"
         @update:model-value="value => patch({ verification: value as NarratorValue['verification'] })"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="researchNotes"
       label="Bilješka (privatno)"
     >
@@ -241,13 +235,13 @@ const consentNote = computed({
         class="w-full"
         @update:model-value="value => patch({ researchNotes: String(value) })"
       />
-    </UFormField>
-    <UFormField name="noindex">
+    </AdminFormField>
+    <AdminFormField name="noindex">
       <UCheckbox
         :model-value="state.noindex"
         label="Ne indeksirati u tražilicama (noindex)"
         @update:model-value="value => patch({ noindex: value === true })"
       />
-    </UFormField>
+    </AdminFormField>
   </fieldset>
 </template>

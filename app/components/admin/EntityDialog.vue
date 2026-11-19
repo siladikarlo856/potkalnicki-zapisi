@@ -77,7 +77,7 @@ const changedFields = computed(() => {
 
 // The copy kept in the browser per record, offered back after a crash or an expired session.
 const draftKey = computed(() => `admin-draft:${props.resource.kind}:${props.entityId ?? 'novo'}`)
-function readDraft(): { savedAt: string, state: F } | null {
+function readDraft(): { savedAt: string, revision?: number, state: F } | null {
   try {
     const raw = localStorage.getItem(draftKey.value)
     return raw ? JSON.parse(raw) : null
@@ -90,13 +90,15 @@ function forgetDraft(key = draftKey.value) {
     localStorage.removeItem(key)
   } catch { /* nothing kept */ }
 }
+/** The revision the form's edits started from, kept with the copy so an older one is never saved over a newer row. */
+let draftRevision: number | undefined
 let keepTimer: ReturnType<typeof setTimeout> | undefined
 function keepDraft() {
   clearTimeout(keepTimer)
   const key = draftKey.value
   keepTimer = setTimeout(() => {
     try {
-      if (dirty.value && !saving.value) localStorage.setItem(key, JSON.stringify({ savedAt: new Date().toISOString(), state: state.value }))
+      if (dirty.value && !saving.value) localStorage.setItem(key, JSON.stringify({ savedAt: new Date().toISOString(), revision: draftRevision, state: state.value }))
     } catch { /* storage full or unavailable: the form itself still has everything */ }
   }, 400)
 }
@@ -108,6 +110,7 @@ onBeforeUnmount(() => clearTimeout(keepTimer))
 
 function reset(value: F) {
   state.value = value
+  draftRevision = entity.value?.revision
   baseline.value = JSON.stringify(value)
   failure.value = ''
   saveFailed.value = false
@@ -125,6 +128,9 @@ function restoreDraft() {
   if (!kept || JSON.stringify(kept.state) === baseline.value) return
   state.value = { ...props.resource.blank(), ...kept.state }
   restoredAt.value = kept.savedAt
+  draftRevision = kept.revision
+  // A copy kept from an older revision is compared with the saved row, as any other conflict, before it can be saved.
+  if (entity.value && kept.revision !== entity.value.revision) conflict.value = entity.value
 }
 
 function discardRestored() {
@@ -195,6 +201,7 @@ function validate(value: Partial<F>) {
 }
 
 function onFormError(event: FormErrorEvent) {
+  pendingExit = undefined
   errorCount.value = new Set(event.errors.map(error => error.name)).size + formIssues.value.length
   saveFailed.value = false
 }
@@ -208,9 +215,13 @@ function requestSave(statusToSave: ContentStatus, another = false) {
 
 // A save refused because the session ended waits for the password, then runs again (see useAdminEditing).
 let pendingResave: (() => void) | undefined
+// Where "Spremi skicu i izađi" goes once the draft is saved: closing the editor, or the navigation it held back.
+let pendingExit: (() => unknown) | undefined
 useAdminEditing(() => open.value, () => pendingResave?.())
 
 async function save(revisionOverride?: number) {
+  const exit = pendingExit
+  pendingExit = undefined
   saving.value = true
   failure.value = ''
   saveFailed.value = false
@@ -249,11 +260,14 @@ async function save(revisionOverride?: number) {
       entity.value = result.entity
       reset(props.resource.toForm(result.entity))
       justSaved.value = true
-      if (wasNew) await router.replace({ query: { ...router.currentRoute.value.query, novo: undefined, uredi: result.entity.id } })
     } else {
       baseline.value = JSON.stringify(state.value)
       open.value = false
     }
+    // Navigating runs the editor's own route guards, which hold everything back while saving.
+    saving.value = false
+    if (exit) await exit()
+    else if (isPage.value && wasNew && !addAnother.value) await router.replace({ query: { ...router.currentRoute.value.query, novo: undefined, uredi: result.entity.id } })
   } catch (error) {
     const problem = adminApiError(error)
     if (problem.statusCode === 401) {
@@ -262,6 +276,7 @@ async function save(revisionOverride?: number) {
       const another = addAnother.value
       pendingResave = () => {
         pendingResave = undefined
+        pendingExit = exit
         requestSave(statusToSave, another)
       }
     } else if (problem.code === 'revision-conflict' && problem.current) {
@@ -313,8 +328,11 @@ function discardChanges() {
   reset(JSON.parse(baseline.value) as F)
 }
 
-/** Closing with changes asks first (21-admin-screens.md "Unsaved changes"). Returns whether the editor may close. */
-async function mayLeave() {
+/**
+ * Closing with changes asks first (21-admin-screens.md "Unsaved changes"). Returns whether the editor may close now; after
+ * "Spremi skicu i izađi" it returns false and `exit` runs once the draft is saved.
+ */
+async function mayLeave(exit: () => unknown) {
   if (saving.value) return false
   if (!dirty.value) return true
   const choice = await chooseUnsaved({ fields: Math.max(1, changedFields.value.length), canSaveDraft: !readOnly.value && (!entity.value || status.value === 'draft') })
@@ -322,6 +340,7 @@ async function mayLeave() {
   if (choice === 'save') {
     nextStatus.value = 'draft'
     addAnother.value = false
+    pendingExit = exit
     form.value?.submit()
     return false
   }
@@ -330,16 +349,18 @@ async function mayLeave() {
   return true
 }
 
-async function requestClose() {
-  if (!await mayLeave()) return
+function close() {
   open.value = false
+}
+async function requestClose() {
+  if (await mayLeave(close)) close()
 }
 
 // The page editor also guards navigation to other screens and closing the tab.
 if (isPage.value) {
-  onBeforeRouteLeave(() => mayLeave())
+  onBeforeRouteLeave(to => mayLeave(() => router.push(to.fullPath)))
   // Going back to the list (or to another record) in the same page asks too.
-  onBeforeRouteUpdate((to, from) => to.query.uredi === from.query.uredi && to.query.novo === from.query.novo ? true : mayLeave())
+  onBeforeRouteUpdate((to, from) => to.query.uredi === from.query.uredi && to.query.novo === from.query.novo ? true : mayLeave(() => router.push(to.fullPath)))
   onMounted(() => window.addEventListener('beforeunload', onBeforeUnload))
   onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
 }

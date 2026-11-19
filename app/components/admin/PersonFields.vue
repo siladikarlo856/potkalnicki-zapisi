@@ -150,7 +150,7 @@ function removeItemLink(index: number) {
   <h3 class="text-sm font-semibold text-highlighted">
     Osnovno
   </h3>
-  <UFormField
+  <AdminFormField
     name="name"
     label="Ime"
     required
@@ -161,8 +161,8 @@ function removeItemLink(index: number) {
       class="w-full"
       autofocus
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="role"
     label="Uloga (jedan red)"
   >
@@ -171,8 +171,8 @@ function removeItemLink(index: number) {
       :maxlength="PERSON_LIMITS.role"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="clue"
     label="Natuknica (prednja strana kartice)"
     hint="Ne smije sadržavati ime osobe."
@@ -184,8 +184,8 @@ function removeItemLink(index: number) {
       autoresize
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="verification"
     label="Status provjere"
     required
@@ -195,8 +195,8 @@ function removeItemLink(index: number) {
       :items="verificationOptions"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="slug"
     label="Slug"
     required
@@ -216,13 +216,13 @@ function removeItemLink(index: number) {
         @click="suggestSlug"
       />
     </div>
-  </UFormField>
+  </AdminFormField>
 
   <h3 class="pt-2 text-sm font-semibold text-highlighted">
     Životni podaci
   </h3>
   <div class="grid gap-4 sm:grid-cols-2">
-    <UFormField
+    <AdminFormField
       name="born"
       label="Rođen/a (prikaz)"
     >
@@ -231,8 +231,8 @@ function removeItemLink(index: number) {
         :maxlength="PERSON_LIMITS.born"
         class="w-full"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="bornYear"
       label="Godina rođenja"
     >
@@ -241,9 +241,9 @@ function removeItemLink(index: number) {
         type="number"
         class="w-full"
       />
-    </UFormField>
+    </AdminFormField>
   </div>
-  <UFormField
+  <AdminFormField
     name="bornPlace"
     label="Mjesto rođenja (slobodan tekst)"
   >
@@ -252,9 +252,9 @@ function removeItemLink(index: number) {
       :maxlength="PERSON_LIMITS.bornPlace"
       class="w-full"
     />
-  </UFormField>
+  </AdminFormField>
   <div class="grid gap-4 sm:grid-cols-2">
-    <UFormField
+    <AdminFormField
       name="died"
       label="Smrt (prikaz)"
       required
@@ -264,8 +264,8 @@ function removeItemLink(index: number) {
         :maxlength="PERSON_LIMITS.died"
         class="w-full"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="diedYear"
       label="Godina smrti"
       required
@@ -275,9 +275,9 @@ function removeItemLink(index: number) {
         type="number"
         class="w-full"
       />
-    </UFormField>
+    </AdminFormField>
   </div>
-  <UFormField
+  <AdminFormField
     name="diedPlace"
     label="Mjesto smrti (slobodan tekst)"
   >
@@ -286,8 +286,8 @@ function removeItemLink(index: number) {
       :maxlength="PERSON_LIMITS.diedPlace"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="bio"
     label="Biografija"
   >
@@ -298,7 +298,7 @@ function removeItemLink(index: number) {
       autoresize
       class="w-full"
     />
-  </UFormField>
+  </AdminFormField>
 
   <h3 class="pt-2 text-sm font-semibold text-highlighted">
     Mjesta
@@ -390,7 +390,7 @@ function removeItemLink(index: number) {
   <h3 class="pt-2 text-sm font-semibold text-highlighted">
     Izvori
   </h3>
-  <UFormField
+  <AdminFormField
     name="sourceIds"
     label="Izvori"
     description="Objava zahtijeva barem jedan izvor."
@@ -404,12 +404,12 @@ function removeItemLink(index: number) {
       placeholder="Pretraži izvore"
       class="w-full"
     />
-  </UFormField>
+  </AdminFormField>
 
   <h3 class="pt-2 text-sm font-semibold text-highlighted">
     Bilješke
   </h3>
-  <UFormField
+  <AdminFormField
     name="openQuestions"
     label="Što još provjeravamo"
   >
@@ -420,8 +420,8 @@ function removeItemLink(index: number) {
       autoresize
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="researchNotes"
     label="Bilješke istraživanja (privatno)"
   >
@@ -432,11 +432,11 @@ function removeItemLink(index: number) {
       autoresize
       class="w-full"
     />
-  </UFormField>
-  <UFormField name="noindex">
+  </AdminFormField>
+  <AdminFormField name="noindex">
     <UCheckbox
       v-model="noindex"
       label="Ne indeksirati u tražilicama (noindex)"
     />
-  </UFormField>
+  </AdminFormField>
 </template>

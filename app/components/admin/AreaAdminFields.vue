@@ -64,7 +64,7 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
 </script>
 
 <template>
-  <UFormField
+  <AdminFormField
     name="kind"
     label="Vrsta"
     required
@@ -75,8 +75,8 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
       class="w-full"
       :disabled="!!entityId"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="name"
     label="Naziv"
     required
@@ -87,8 +87,8 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
       class="w-full"
       autofocus
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     v-if="form.kind !== 'country'"
     name="parentId"
     label="Nadređeno mjesto"
@@ -106,15 +106,15 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
       placeholder="Pretraži i odaberi…"
       class="w-full"
     />
-  </UFormField>
+  </AdminFormField>
   <div
     v-if="showRegions"
     class="grid gap-4 sm:grid-cols-2"
   >
-    <UFormField
+    <AdminFormField
       name="officialCode"
       label="Službeni kod (DGU)"
-      hint="Neobavezno"
+      optional
     >
       <UInput
         :model-value="nullToUndefined(form.officialCode)"
@@ -122,11 +122,11 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
         :maxlength="AREA_LIMITS.officialCode"
         class="w-full font-mono"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="geonamesId"
       label="GeoNames ID"
-      hint="Neobavezno"
+      optional
     >
       <UInput
         :model-value="nullToUndefined(form.geonamesId)"
@@ -135,13 +135,13 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
         inputmode="numeric"
         class="w-full font-mono"
       />
-    </UFormField>
+    </AdminFormField>
   </div>
   <div class="grid gap-4 sm:grid-cols-2">
-    <UFormField
+    <AdminFormField
       name="latitude"
       label="Geografska širina"
-      hint="Neobavezno"
+      optional
     >
       <UInput
         v-model.number="form.latitude"
@@ -149,11 +149,11 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
         step="any"
         class="w-full"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="longitude"
       label="Geografska dužina"
-      hint="Neobavezno"
+      optional
     >
       <UInput
         v-model.number="form.longitude"
@@ -161,9 +161,9 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
         step="any"
         class="w-full"
       />
-    </UFormField>
+    </AdminFormField>
   </div>
-  <UFormField
+  <AdminFormField
     v-if="showRegions"
     name="regionIds"
     label="Regije"
@@ -178,19 +178,14 @@ const showRegions = computed(() => areaKindMayJoinRegion(props.form.kind))
       placeholder="Odaberi regije…"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminRichTextField
+    :model-value="form.description ?? ''"
     name="description"
     label="Opis"
-    hint="Neobavezno"
-  >
-    <UTextarea
-      :model-value="nullToUndefined(form.description)"
-      @update:model-value="form.description = undefinedToNull($event) ?? null"
-      :maxlength="AREA_LIMITS.description"
-      :rows="3"
-      autoresize
-      class="w-full"
-    />
-  </UFormField>
+    optional
+    :maxlength="AREA_LIMITS.description"
+    :rows="3"
+    @update:model-value="form.description = undefinedToNull($event)"
+  />
 </template>

@@ -101,9 +101,14 @@ describe('Nadzorna ploča', () => {
     registerEndpoint('/api/review/daily', () => ({
       day: '2026-11-19', today: { headword: 'kaj' }, recent: [], pins: [{ day: '2026-11-20', headword: 'štenge' }], runway: { readyUnused: 1, unused: 1, active: 1, daysLeft: 1 }, warnings: []
     }))
-    registerEndpoint('/api/admin/history', () => overrides.history ?? ({
-      rows: [{ id: 1, kind: 'heritage_item', entityId: 'e1', revision: 2, action: 'update', actor: 'admin', createdAt: '2026-11-18T10:00:00.000Z', submissionId: null, label: 'Crkva sv. Ane', registered: true }], total: 1, page: 1, size: 6
-    }))
+    // Like listHistoryLog, the endpoint pages by 25, 50 or 100 only and refuses any other size.
+    registerEndpoint('/api/admin/history', (event) => {
+      const size = Number(new URL((event as unknown as { path: string }).path.replace(/^\/_/, ''), 'http://localhost').searchParams.get('size') ?? 25)
+      if (![25, 50, 100].includes(size)) throw createError({ statusCode: 400, statusMessage: 'Invalid size' })
+      return overrides.history ?? ({
+        rows: [{ id: 1, kind: 'heritage_item', entityId: 'e1', revision: 2, action: 'update', actor: 'admin', createdAt: '2026-11-18T10:00:00.000Z', submissionId: null, label: 'Crkva sv. Ane', registered: true }], total: 1, page: 1, size
+      })
+    })
     const content = (kind: string, query: Record<string, string>) => {
       if (kind === 'area') return { rows: [], total: overrides.areas ?? 5, page: 1, size: 25 }
       if (query.verification === 'needs_update') return { rows: [], total: kind === 'heritage_item' ? (overrides.needsUpdate ?? 12) : 0, page: 1, size: 25 }
@@ -136,6 +141,23 @@ describe('Nadzorna ploča', () => {
     expect(wrapper.text()).toContain('Nedavne izmjene')
     expect(wrapper.text()).toContain('Crkva sv. Ane')
     expect(wrapper.text()).toContain('štenge')
+  })
+
+  it('lists the six newest changes and counts each kind in agreeing Croatian', async () => {
+    const rows = Array.from({ length: 9 }, (_, index) => ({
+      id: index + 1, kind: 'person', entityId: `p${index}`, revision: 1, action: 'update', actor: 'admin', createdAt: '2026-11-18T10:00:00.000Z', submissionId: null, label: `Osoba ${index + 1}`, registered: true
+    }))
+    endpoints({ history: { rows, total: 9, page: 1, size: 25 }, draftAge: 1 })
+    wrapper = await mountInApp(AdminDashboard)
+    await vi.waitFor(() => expect(wrapper!.find('[aria-labelledby="admin-recent"] ul').exists()).toBe(true))
+    const listed = wrapper.findAll('[aria-labelledby="admin-recent"] li')
+    expect(listed).toHaveLength(6)
+    expect(listed[0]!.text()).toContain('Osoba 1')
+    expect(wrapper.text()).not.toContain('Osoba 7')
+    const cards = wrapper.findAll('[data-testid="admin-dashboard-card"]')
+    expect(cards[1]!.text()).toContain('12 zapisa baštine')
+    expect(cards[2]!.text()).toContain('1 osoba')
+    expect(cards[2]!.text()).not.toContain('1 osobe')
   })
 
   it('says everything is reviewed when nothing waits', async () => {

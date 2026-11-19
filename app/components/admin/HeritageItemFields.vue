@@ -130,7 +130,7 @@ function onSlugInput() {
 </script>
 
 <template>
-  <UFormField
+  <AdminFormField
     name="name"
     label="Naziv"
     required
@@ -141,8 +141,8 @@ function onSlugInput() {
       class="w-full"
       autofocus
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="categoryId"
     label="Kategorija"
     required
@@ -153,8 +153,8 @@ function onSlugInput() {
       placeholder="Odaberi kategoriju"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="municipalityId"
     label="Grad ili općina"
     required
@@ -167,11 +167,12 @@ function onSlugInput() {
       placeholder="Pretraži gradove i općine"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="settlementId"
     label="Naselje"
-    hint="Neobavezno; bez naselja nema javne stranice zapisa."
+    optional
+    description="Bez naselja nema javne stranice zapisa."
   >
     <USelectMenu
       v-model="settlementId"
@@ -182,19 +183,19 @@ function onSlugInput() {
       placeholder="Pretraži naselja"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="locality"
     label="Lokalitet"
-    hint="Neobavezno"
+    optional
   >
     <UInput
       v-model="locality"
       :maxlength="HERITAGE_ITEM_LIMITS.locality"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="verification"
     label="Status provjere"
     required
@@ -204,8 +205,8 @@ function onSlugInput() {
       :items="verificationOptions"
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="researchNotes"
     label="Bilješke istraživanja"
   >
@@ -216,22 +217,17 @@ function onSlugInput() {
       autoresize
       class="w-full"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminRichTextField
+    v-model="description"
     name="description"
     label="Opis"
-    hint="Neobavezno"
-  >
-    <UTextarea
-      v-model="description"
-      :maxlength="HERITAGE_ITEM_LIMITS.description"
-      :rows="3"
-      autoresize
-      class="w-full"
-    />
-  </UFormField>
+    optional
+    :maxlength="HERITAGE_ITEM_LIMITS.description"
+    :rows="3"
+  />
   <div class="grid gap-4 sm:grid-cols-2">
-    <UFormField
+    <AdminFormField
       name="period"
       label="Razdoblje"
     >
@@ -240,8 +236,8 @@ function onSlugInput() {
         :maxlength="HERITAGE_ITEM_LIMITS.period"
         class="w-full"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="registryNumber"
       label="Registarski broj"
     >
@@ -250,9 +246,9 @@ function onSlugInput() {
         :maxlength="HERITAGE_ITEM_LIMITS.registryNumber"
         class="w-full"
       />
-    </UFormField>
+    </AdminFormField>
   </div>
-  <UFormField
+  <AdminFormField
     name="heritageStatus"
     label="Status u registru"
   >
@@ -262,8 +258,8 @@ function onSlugInput() {
       class="w-full"
       @update:model-value="setHeritageStatus"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="sourceIds"
     label="Izvori"
     description="Redoslijed odgovara prikazu na javnoj stranici."
@@ -277,10 +273,10 @@ function onSlugInput() {
       placeholder="Pretraži izvore"
       class="w-full"
     />
-  </UFormField>
-  <AdminHeritageImagesField v-model:images="images" />
+  </AdminFormField>
+  <AdminImageField v-model:images="images" />
   <div class="grid gap-4 sm:grid-cols-2">
-    <UFormField
+    <AdminFormField
       name="latitude"
       label="Geografska širina"
     >
@@ -290,8 +286,8 @@ function onSlugInput() {
         step="any"
         class="w-full"
       />
-    </UFormField>
-    <UFormField
+    </AdminFormField>
+    <AdminFormField
       name="longitude"
       label="Geografska dužina"
     >
@@ -301,15 +297,15 @@ function onSlugInput() {
         step="any"
         class="w-full"
       />
-    </UFormField>
+    </AdminFormField>
   </div>
-  <UFormField name="noindex">
+  <AdminFormField name="noindex">
     <UCheckbox
       v-model="noindex"
       label="Ne indeksirati u tražilicama (noindex)"
     />
-  </UFormField>
-  <UFormField
+  </AdminFormField>
+  <AdminFormField
     name="slug"
     label="Adresa (slug)"
     required
@@ -330,5 +326,5 @@ function onSlugInput() {
         @click="suggestSlug"
       />
     </div>
-  </UFormField>
+  </AdminFormField>
 </template>

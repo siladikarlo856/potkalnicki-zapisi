@@ -24,15 +24,15 @@ const createItems = [[
 const inboxTotal = computed(() => dash.inbox.data.value?.total ?? 0)
 const outdatedTotal = computed(() => dash.outdated.data.value?.total ?? 0)
 const draftsTotal = computed(() => dash.drafts.data.value?.total ?? 0)
-/** "3 baština · 2 osobe": where the work is, and the first of them as the link target. */
-function kindBreakdown(byKind: Array<{ kind: keyof typeof HISTORY_KIND_META, count: number }> | undefined) {
-  return (byKind ?? []).map(entry => `${entry.count} ${HISTORY_KIND_META[entry.kind].plural.toLowerCase()}`).join(' · ')
+/** "3 zapisa baštine · 2 osobe": where the work is, and the first of them as the link target. */
+function kindBreakdown(byKind: Array<{ phrase: string }> | undefined) {
+  return (byKind ?? []).map(entry => entry.phrase).join(' · ')
 }
 function kindPath(byKind: Array<{ kind: keyof typeof HISTORY_KIND_META }> | undefined) {
   return HISTORY_KIND_META[byKind?.[0]?.kind ?? 'heritage_item'].adminPath
 }
 const gaps = computed(() => dash.daily.data.value?.gaps ?? [])
-const recent = computed(() => dash.recent.data.value?.rows ?? [])
+const recent = computed(() => dash.recent.data.value ?? [])
 
 // Counts that failed are left out rather than shown as zero, so the "all clear" state is never claimed on missing data.
 const countsReady = computed(() => dash.inbox.status.value === 'success' && dash.outdated.status.value === 'success' && dash.drafts.status.value === 'success' && dash.daily.status.value === 'success')
@@ -164,7 +164,7 @@ const gapDay = (day: string) => longDate(new Date(`${day}T00:00:00`))
             v-if="dash.inbox.status.value === 'success'"
             to="/admin/prijedlozi"
             :count="inboxTotal || pendingBadge"
-            :label="nounFor(inboxTotal, ['prilog čeka pregled', 'priloga čekaju pregled', 'priloga čeka pregled'])"
+            :label="nounFor(inboxTotal, PENDING_NOUN)"
             :detail="dash.inbox.data.value?.counts.map(entry => entry.phrase).join(' · ') || 'Otvori Prijedloge'"
             attention
           />

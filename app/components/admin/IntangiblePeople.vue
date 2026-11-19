@@ -45,7 +45,7 @@ function remove(index: number) {
           kazivač ima pristanak, inače njegov javni opis.
         </p>
       </div>
-      <UFormField
+      <AdminFormField
         v-for="(link, index) in narrators"
         :key="index"
         :name="`narrators.${index}.narratorId`"
@@ -73,7 +73,7 @@ function remove(index: number) {
             @click="remove(index)"
           />
         </div>
-      </UFormField>
+      </AdminFormField>
       <div class="flex flex-wrap items-center gap-3">
         <UButton
           label="Dodaj kazivača ili zapisivača"
@@ -96,10 +96,10 @@ function remove(index: number) {
       </div>
     </div>
 
-    <UFormField
+    <AdminFormField
       name="authorIds"
       label="Autori (samo za književne prepriče)"
-      hint="Neobavezno"
+      optional
       description="Povijesne osobe koje su tekst napisale. Narodni tekstovi nemaju autora."
     >
       <AdminLookupList
@@ -111,6 +111,6 @@ function remove(index: number) {
         :max="INTANGIBLE_MAX.authors"
         @update:model-value="emit('update:authorIds', $event)"
       />
-    </UFormField>
+    </AdminFormField>
   </fieldset>
 </template>

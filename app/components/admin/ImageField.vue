@@ -4,9 +4,9 @@ import {
   type HeritageImageValue, type ImageLicense
 } from '#shared/utils/content/heritageImage'
 
-// The photos of a heritage item: upload (resized in the browser first), the credit each photo needs, and the
-// order (the first one is the main photo on cards and the item page). Uploaded files only become public on the
-// site once the item is saved with them.
+// ImageField of the design system, for the photos of a heritage item: upload (resized in the browser first), the credit
+// each photo needs, and the order (the first one, *Naslovna*, is the main photo on cards and the item page). Uploaded files
+// only become public on the site once the item is saved with them.
 const props = defineProps<{ images: HeritageImageValue[] }>()
 const emit = defineEmits<{ 'update:images': [HeritageImageValue[]] }>()
 
@@ -22,6 +22,7 @@ const input = ref<HTMLInputElement | null>(null)
 const uploading = ref(0)
 const failure = ref('')
 
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const SOURCE_EXAMPLE = 'https://commons.wikimedia.org/wiki/File:...'
 const licenseOptions = IMAGE_LICENSES.map(value => ({ label: IMAGE_LICENSE_LABELS[value], value }))
 const free = computed(() => HERITAGE_IMAGE_LIMITS.perItem - props.images.length - uploading.value)
@@ -84,6 +85,10 @@ async function onFiles(event: Event) {
   target.value = ''
   failure.value = ''
   for (const file of files) {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      failure.value = `${file.name}: Ovaj oblik datoteke nije podržan. Prenesi JPG, PNG ili WebP.`
+      continue
+    }
     uploading.value += 1
     try {
       const image = await upload(file)
@@ -116,6 +121,11 @@ async function onFiles(event: Event) {
       class="flex flex-col gap-3 rounded-md border border-default p-3 sm:flex-row"
     >
       <div class="flex shrink-0 flex-col items-start gap-2">
+        <span
+          v-if="index === 0"
+          class="rounded-full border border-default px-2 text-xs font-bold"
+          data-testid="admin-image-cover"
+        >Naslovna</span>
         <img
           v-if="thumbUrl(image)"
           :src="thumbUrl(image)"
@@ -125,7 +135,7 @@ async function onFiles(event: Event) {
           class="w-40 rounded bg-elevated object-cover"
         >
         <p class="text-xs text-muted">
-          {{ image.width }} × {{ image.height }}<span v-if="index === 0"> · glavna</span>
+          {{ image.width }} × {{ image.height }}
         </p>
         <div class="flex gap-1">
           <UButton
@@ -161,9 +171,9 @@ async function onFiles(event: Event) {
       </div>
 
       <div class="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
-        <UFormField
+        <AdminFormField
           :name="`images.${index}.alt`"
-          label="Opis za čitače zaslona"
+          label="Opis slike za čitače zaslona"
           required
           class="sm:col-span-2"
         >
@@ -174,11 +184,11 @@ async function onFiles(event: Event) {
             class="w-full"
             @update:model-value="value => text(index, 'alt', value)"
           />
-        </UFormField>
-        <UFormField
+        </AdminFormField>
+        <AdminFormField
           :name="`images.${index}.caption`"
           label="Potpis"
-          hint="Neobavezno"
+          optional
           class="sm:col-span-2"
         >
           <UInput
@@ -187,8 +197,8 @@ async function onFiles(event: Event) {
             class="w-full"
             @update:model-value="value => optional(index, 'caption', value)"
           />
-        </UFormField>
-        <UFormField
+        </AdminFormField>
+        <AdminFormField
           :name="`images.${index}.author`"
           label="Autor"
           required
@@ -199,8 +209,8 @@ async function onFiles(event: Event) {
             class="w-full"
             @update:model-value="value => text(index, 'author', value)"
           />
-        </UFormField>
-        <UFormField
+        </AdminFormField>
+        <AdminFormField
           :name="`images.${index}.license`"
           label="Licencija"
           required
@@ -212,10 +222,10 @@ async function onFiles(event: Event) {
             class="w-full"
             @update:model-value="value => update(index, { license: value as ImageLicense })"
           />
-        </UFormField>
-        <UFormField
+        </AdminFormField>
+        <AdminFormField
           :name="`images.${index}.sourceUrl`"
-          label="Izvor (poveznica)"
+          label="Izvor ili poveznica"
           :required="image.license !== 'permission'"
         >
           <UInput
@@ -226,11 +236,11 @@ async function onFiles(event: Event) {
             class="w-full"
             @update:model-value="value => optional(index, 'sourceUrl', value)"
           />
-        </UFormField>
-        <UFormField
+        </AdminFormField>
+        <AdminFormField
           :name="`images.${index}.authorUrl`"
           label="Poveznica na autora"
-          hint="Neobavezno"
+          optional
         >
           <UInput
             :model-value="image.authorUrl ?? ''"
@@ -239,14 +249,14 @@ async function onFiles(event: Event) {
             class="w-full"
             @update:model-value="value => optional(index, 'authorUrl', value)"
           />
-        </UFormField>
+        </AdminFormField>
       </div>
     </div>
 
-    <UFormField name="images">
+    <AdminFormField name="images">
       <div class="flex flex-wrap items-center gap-3">
         <UButton
-          :label="uploading ? 'Učitavanje…' : 'Dodaj fotografije'"
+          :label="uploading ? 'Učitavanje…' : 'Prenesi fotografiju'"
           icon="i-lucide-image-plus"
           color="neutral"
           variant="outline"
@@ -263,13 +273,13 @@ async function onFiles(event: Event) {
         <input
           ref="input"
           type="file"
-          accept="image/jpeg,image/webp,image/png"
+          accept="image/jpeg,image/png,image/webp"
           multiple
           class="hidden"
           @change="onFiles"
         >
       </div>
-    </UFormField>
+    </AdminFormField>
     <p
       v-if="failure"
       class="text-sm text-error"

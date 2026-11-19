@@ -1,4 +1,5 @@
 import type { ContentKind, ContentList } from '~~/shared/utils/content/common'
+import { CONTENT_PAGE_SIZES } from '~~/shared/utils/content/common'
 import type { DailyAdminOverview } from '~~/shared/utils/dailyAdmin'
 import type { HistoryLog } from '~~/shared/utils/content/history'
 import type { InboxList } from '~~/shared/types/inbox'
@@ -18,10 +19,25 @@ const TYPE_NOUNS: Record<(typeof SUBMISSION_TYPES)[number], PzNoun> = {
 // What "Nadzorna ploča" shows, read from the admin APIs that already exist (no new endpoint, nothing stored). Each source
 // loads on its own, so one failing leaves the others on screen (state `djelomicna-greska`).
 
+/** The kinds the cards count, and what one of them is called, counted: "1 osoba", "3 zapisa baštine". */
+const KIND_NOUNS = {
+  area: ['mjesto', 'mjesta'],
+  heritage_item: ['zapis baštine', 'zapisa baštine'],
+  person: ['osoba', 'osobe', 'osoba'],
+  club: ['klub', 'kluba', 'klubova'],
+  word: ['riječ', 'riječi'],
+  story: ['priča', 'priče', 'priča'],
+  custom: ['običaj', 'običaja'],
+  folk_text: ['usmeni tekst', 'usmena teksta', 'usmenih tekstova']
+} satisfies Partial<Record<ContentKind, PzNoun>>
+type DashboardKind = keyof typeof KIND_NOUNS
+
 /** Kinds whose rows carry a verification the editors keep current. */
-const VERIFIED_KINDS: ContentKind[] = ['heritage_item', 'person', 'story', 'custom', 'folk_text']
+const VERIFIED_KINDS: DashboardKind[] = ['heritage_item', 'person', 'story', 'custom', 'folk_text']
 /** Kinds whose drafts are counted when they have waited too long. */
-const DRAFT_KINDS: ContentKind[] = ['area', 'heritage_item', 'person', 'club', 'word', 'story', 'custom', 'folk_text']
+const DRAFT_KINDS: DashboardKind[] = ['area', 'heritage_item', 'person', 'club', 'word', 'story', 'custom', 'folk_text']
+/** The most recent changes the dashboard lists; the history API pages by `CONTENT_PAGE_SIZES` only. */
+export const RECENT_CHANGES_SHOWN = 6
 export const STALE_DRAFT_DAYS = 30
 export const DAILY_HORIZON_DAYS = 14
 const DAY_MS = 86_400_000
@@ -41,14 +57,17 @@ export function daysWithoutPin(overview: Pick<DailyAdminOverview, 'day' | 'pins'
   return days
 }
 
-export interface KindCount {
-  kind: ContentKind
+interface KindCount {
+  kind: DashboardKind
   count: number
 }
 
 /** The total, and the kinds that contribute to it (largest first), so the card can say where the work is and link there. */
 function summarize(byKind: KindCount[]) {
-  const found = byKind.filter(entry => entry.count).sort((a, b) => b.count - a.count)
+  const found = byKind
+    .filter(entry => entry.count)
+    .sort((a, b) => b.count - a.count)
+    .map(entry => ({ ...entry, phrase: `${entry.count} ${nounFor(entry.count, KIND_NOUNS[entry.kind])}` }))
   return { total: found.reduce((sum, entry) => sum + entry.count, 0), byKind: found }
 }
 
@@ -84,7 +103,10 @@ export function useAdminDashboard() {
     return { overview, gaps: daysWithoutPin(overview) }
   }, opts)
 
-  const recent = useAsyncData('admin-dash-recent', () => $fetch<HistoryLog>('/api/admin/history', { query: { size: 6 } }), opts)
+  const recent = useAsyncData('admin-dash-recent', async () => {
+    const log = await $fetch<HistoryLog>('/api/admin/history', { query: { size: CONTENT_PAGE_SIZES[0] } })
+    return log.rows.slice(0, RECENT_CHANGES_SHOWN)
+  }, opts)
 
   const places = useAsyncData('admin-dash-places', async () => ({ total: (await list('area', { size: 25 })).total }), opts)
 
