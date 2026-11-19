@@ -47,6 +47,21 @@ describe('contribution draft storage', () => {
   })
 })
 
+describe('draft only reflects visitor input', () => {
+  it('writes nothing on mount, saves after typing, and removes the draft once the form is emptied again', async () => {
+    wrapper = await mountForm('doprinesi/proposal/word/a')
+    await new Promise(resolve => setTimeout(resolve, 150))
+    expect(localStorage.getItem(KEY)).toBeNull()
+    expect(wrapper.text()).not.toContain('Vraćen je nedovršeni prilog')
+
+    const note = wrapper.find('textarea')
+    await note.setValue('nešto')
+    await vi.waitFor(() => expect(localStorage.getItem(KEY)).not.toBeNull())
+    await note.setValue('')
+    await vi.waitFor(() => expect(localStorage.getItem(KEY)).toBeNull())
+  })
+})
+
 describe('410 page copy', () => {
   it('uses generic copy without a fabricated date or reason', async () => {
     const page = await mountSuspended(ErrorPage, { props: { error: { statusCode: 410, url: '/bastina/x/y/' } as never } })
