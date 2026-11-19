@@ -2,19 +2,11 @@ export const PZ_ROOT = ''
 
 /**
  * Every public address ends in a slash (10-layout-and-navigation.md). `pzPath` builds one from its
- * segments and `withTrailingSlash` fixes a path that may carry a query or a hash; a link is written
- * with either, so the slash is never forgotten.
+ * segments, so a link written with it never forgets the slash.
  */
 export function pzPath(...segments: (string | number)[]) {
   const parts = segments.flatMap(segment => String(segment).split('/')).filter(Boolean)
   return parts.length ? `/${parts.join('/')}/` : '/'
-}
-
-export function withTrailingSlash(path: string) {
-  const at = path.search(/[?#]/)
-  const pathname = at === -1 ? path : path.slice(0, at)
-  const rest = at === -1 ? '' : path.slice(at)
-  return `${pathname.endsWith('/') ? pathname : `${pathname}/`}${rest}`
 }
 
 export const pzRoutes = {

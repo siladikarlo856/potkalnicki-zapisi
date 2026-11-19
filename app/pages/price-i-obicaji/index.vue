@@ -11,7 +11,7 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const count = usePzCount()
 
-// The filters live in the address (?kind=obicaj&type=godisnji&theme=vino&place=opcina-kalnik), so a filtered list
+// The filters live in the address (?kind=obicaji&type=godisnji&theme=vino&place=opcina-kalnik), so a filtered list
 // can be shared. `type` only makes sense with a kind: types are per kind.
 const FILTER_KEYS = ['kind', 'type', 'theme', 'place'] as const
 type FilterKey = typeof FILTER_KEYS[number]

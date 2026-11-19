@@ -205,7 +205,7 @@ export function resolveNarrator(content: PublicContent, slug: string): Resolved<
 }
 
 export interface IntangibleListFilter {
-  /** Kind segment: prica, obicaj or usmeni-tekst */
+  /** Kind segment: price, obicaji or narodni-tekstovi */
   kind?: string
   /** Type key; needs a kind, because keys are only unique within a kind's list */
   type?: string
