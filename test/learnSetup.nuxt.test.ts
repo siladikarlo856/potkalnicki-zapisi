@@ -84,6 +84,26 @@ describe('learn hub with progress', () => {
     expect(wrapper.text()).toContain('Za danas je sve ponovljeno.')
     expect(wrapper.get('[data-testid="learn-home-new-lesson"]').text()).toBe('Nauči nove riječi')
   })
+
+  it('names the next review day and how many cards fall on it when nothing is due', async () => {
+    const localDay = (offset: number) => {
+      const date = new Date()
+      date.setDate(date.getDate() + offset)
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    }
+    const card = (due: string) => ({ box: 2, due, seen: 1, known: 1, missed: 0, lastPlayed: localDay(0) })
+    localStorage.setItem('pz-progress/v2', JSON.stringify({
+      version: 2,
+      cards: { 'word:a': card(localDay(1)), 'word:b': card(localDay(1)), 'word:c': card(localDay(5)) },
+      lastPlayed: localDay(0),
+      streak: 1
+    }))
+    clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci' })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-hub"]').exists(), { timeout: 5000 }).toBe(true)
+    expect(wrapper.get('[data-testid="learn-home-next-review"]').text()).toBe('Sljedeće ponavljanje: sutra, 2 kartice.')
+    expect(wrapper.get('[data-testid="learn-topic-row"]').text()).toContain('2 kartice ·')
+  })
 })
 
 describe('Uči | Igraj switch', () => {

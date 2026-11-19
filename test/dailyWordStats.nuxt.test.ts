@@ -91,7 +91,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
   it('shares the exact spoiler-free text with encoded WhatsApp and Viber links', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
-    const link = 'https://prigorje.karlo-siladi.from.hr/igre/#rijec-dana'
+    const link = 'https://prigorje.karlo-siladi.from.hr/rijec-dana/'
     const page = await mountDaily(lang)
     expect(page.find('[data-testid="daily-share"]').exists()).toBe(false)
     await page.get('[data-option-id="a"]').trigger('click')
@@ -110,7 +110,7 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
   it('shares X/3 with three red squares after a miss', async () => {
     const page = await mountDaily(lang)
     for (const id of ['a', 'b', 'd']) await page.get(`[data-option-id="${id}"]`).trigger('click')
-    expect(page.get('[data-testid="daily-share-text"]').element.textContent?.trim()).toBe('Riječ dana #12: X/3\n🟥🟥🟥\nhttps://prigorje.karlo-siladi.from.hr/igre/#rijec-dana')
+    expect(page.get('[data-testid="daily-share-text"]').element.textContent?.trim()).toBe('Riječ dana #12: X/3\n🟥🟥🟥\nhttps://prigorje.karlo-siladi.from.hr/rijec-dana/')
     expect(page.get('[data-testid="daily-stats"] [data-today="true"]').text()).toContain(lang === 'hr' ? 'Nije uspjelo' : 'Missed')
   })
 
@@ -154,16 +154,13 @@ describe.each(['hr', 'en'] as const)('%s daily word result', (lang) => {
   })
 })
 
-describe('daily status in the Words flagship card', () => {
-  it('updates inside the daily word section when today is played on the games hub', async () => {
+describe('daily word on the games hub', () => {
+  it('links to the Riječ dana page instead of hosting a second round', async () => {
     await useNuxtApp().$i18n.setLocale('hr')
     wrapper = await mountSuspended(Hub, { route: '/igre' })
-    const dailySection = () => wrapper!.get('#rijec-dana')
-    await expect.poll(() => dailySection().find('[data-option-id]').exists(), { timeout: 5000 }).toBe(true)
-    await wrapper.get('[data-option-id="a"]').trigger('click')
-    await wrapper.get('[data-option-id="c"]').trigger('click')
-    await expect.poll(() => dailySection().find('[data-testid="daily-reveal"]').exists()).toBe(true)
-    expect(dailySection().text()).toContain('hiža')
+    const dailySection = wrapper.get('#rijec-dana')
+    expect(dailySection.find('[data-option-id]').exists()).toBe(false)
+    expect(dailySection.get('a').attributes('href')).toBe('/rijec-dana/')
   })
 })
 

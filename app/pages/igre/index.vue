@@ -120,7 +120,31 @@ useSeoMeta({
         </p>
       </header>
 
-      <HeritageDailyWord />
+      <section
+        id="rijec-dana"
+        class="rounded-(--pz-radius-lg) border border-default p-4 sm:p-5"
+        aria-labelledby="igre-rijec-dana"
+        data-testid="igre-daily-link"
+      >
+        <h2
+          id="igre-rijec-dana"
+          class="pz-h3 text-highlighted"
+        >
+          Riječ dana
+        </h2>
+        <p class="mt-1 text-muted">
+          Jedna riječ domaćega govora na dan, pogodi je iz tragova.
+        </p>
+        <UButton
+          class="mt-3"
+          :to="localePath(pzRoutes.daily)"
+          label="Igraj riječ dana"
+          icon="i-lucide-arrow-right"
+          trailing
+          color="neutral"
+          variant="outline"
+        />
+      </section>
 
       <HeritageChallengeActiveStrip
         v-if="stripItems.length"

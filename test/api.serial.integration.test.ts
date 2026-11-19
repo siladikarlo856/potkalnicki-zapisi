@@ -195,7 +195,7 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi quiz catalog', () => {
     const daily = window.document.querySelector('#rijec-dana')!
     expect(daily).not.toBeNull()
     expect(daily.compareDocumentPosition(catalog) & 4).toBeTruthy()
-    expect(window.document.querySelector('#rijec-dana [data-testid="daily-skeleton"]')).not.toBeNull()
+    expect(window.document.querySelector('#rijec-dana a[href="/rijec-dana/"]')).not.toBeNull()
     expect(catalog.querySelector('[data-testid="game-tile-znacenje"]')).not.toBeNull()
     expect(catalog.querySelector('[data-testid="game-tile-znacenje"]')?.textContent).toContain('Kaj to znači?')
     await window.happyDOM.close()

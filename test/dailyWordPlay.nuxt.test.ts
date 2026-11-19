@@ -249,11 +249,11 @@ describe('daily word placement', () => {
     page.unmount()
   })
 
-  it('lists the daily word in the catalogue with a link to the section', async () => {
+  it('lists the daily word in the catalogue with a link to its page', async () => {
     const page = await mountSuspended(Hub, { route: '/igre' })
     const tile = page.get('[data-testid="game-tile-rijec-dana"]')
     expect(tile.exists()).toBe(true)
-    expect(tile.attributes('href')).toContain('#rijec-dana')
+    expect(tile.attributes('href')).toBe('/rijec-dana/')
     page.unmount()
   })
 })

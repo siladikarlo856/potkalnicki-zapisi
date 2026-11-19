@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { letterCount, upperFirst } from '~/utils/dailyClues'
 // Clues, slots, earlier guesses and the answer field of the word of the day, in one column. Each wrong guess
 // reveals the next clue and one more letter; earlier guesses stay visible, dashed and struck through.
 const props = defineProps<{
@@ -17,7 +18,7 @@ const guess = defineModel<string>({ default: '' })
 const field = useTemplateRef<{ focus: () => void }>('field')
 const lengthHint = computed(() => {
   const total = props.letters.filter(letter => letter !== ' ' && letter !== '-').length
-  return `${total} slova. Možeš pisati i bez kvačica.`
+  return `${upperFirst(letterCount(total))} slova. Možeš pisati i bez kvačica.`
 })
 defineExpose({ focus: () => field.value?.focus() })
 </script>

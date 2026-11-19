@@ -134,7 +134,7 @@ describe('device stats', () => {
 
 describe('spoiler-free share', () => {
   it('uses the Croatian brand and the games hub link for every interface language', () => {
-    const link = 'https://prigorje.karlo-siladi.from.hr/igre/#rijec-dana'
+    const link = 'https://prigorje.karlo-siladi.from.hr/rijec-dana/'
     expect(dailyWordShareText(12, result(true, 2))).toBe(`Riječ dana #12: 2/3\n🟥🟩⬜\n${link}`)
     expect(dailyWordShareText(12, result(false, 3))).toBe(`Riječ dana #12: X/3\n🟥🟥🟥\n${link}`)
   })
@@ -201,5 +201,13 @@ describe('typed daily round helpers', () => {
     expect(dailyBrokenStreak(days, '2026-11-15')).toBe(3)
     expect(dailySolvedStreak(days, '2026-11-16')).toBe(0)
     expect(dailySolvedStreak({ ...days, '2026-11-15': day(true) }, '2026-11-15')).toBe(4)
+  })
+
+  it('reports no broken run when a missed or unfinished day had already ended it', () => {
+    const day = (solved: boolean, done = true) => ({ wordId: 'w', guesses: [], done, solved, tries: 1, maxTries: 5 })
+    const gap = { '2026-11-13': day(true), '2026-11-14': day(true), '2026-11-16': day(false) }
+    expect(dailyBrokenStreak(gap, '2026-11-16')).toBe(0)
+    expect(dailyBrokenStreak({ ...gap, '2026-11-15': day(false, false) }, '2026-11-16')).toBe(0)
+    expect(dailyBrokenStreak({ ...gap, '2026-11-15': day(true) }, '2026-11-16')).toBe(3)
   })
 })

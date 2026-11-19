@@ -151,13 +151,13 @@ export function deriveDailyStats(days: Readonly<Record<string, DailyProgress>>, 
 
 /**
  * Only completed results can be shared. No word or clue data is accepted. The text is the same
- * in both languages and links to the games hub (the Croatian-only page that hosts the daily word).
+ * in both languages and links to the Riječ dana page.
  */
 export function dailyWordShareText(number: number, result: Pick<DailyProgress, 'done' | 'solved' | 'tries' | 'maxTries'>): string {
   if (!result.done) return ''
   const { solved, tries, maxTries } = result
   const squares = '🟥'.repeat(solved ? tries - 1 : tries) + (solved ? '🟩' : '') + '⬜'.repeat(maxTries - tries)
-  return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://prigorje.karlo-siladi.from.hr/igre/#rijec-dana`
+  return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://prigorje.karlo-siladi.from.hr/rijec-dana/`
 }
 
 /** Typed rounds (the /rijec-dana/ page): five tries, up to three clues, one more letter after each wrong guess. */
@@ -182,7 +182,11 @@ function oneLetterApart(a: string, b: string): boolean {
  * unlike `deriveDailyStats().streak`, which counts every played day.
  */
 export function dailySolvedStreak(days: Readonly<Record<string, DailyProgress>>, today: string): number {
-  let day = days[today]?.done ? today : addDays(today, -1)
+  return solvedRunEndingOn(days, days[today]?.done ? today : addDays(today, -1))
+}
+
+function solvedRunEndingOn(days: Readonly<Record<string, DailyProgress>>, last: string): number {
+  let day = last
   let run = 0
   while (days[day]?.done && days[day]!.solved) {
     run++
@@ -195,7 +199,7 @@ export function dailySolvedStreak(days: Readonly<Record<string, DailyProgress>>,
 export function dailyBrokenStreak(days: Readonly<Record<string, DailyProgress>>, today: string): number {
   const record = days[today]
   if (!record?.done || record.solved) return 0
-  return dailySolvedStreak(days, addDays(today, -1))
+  return solvedRunEndingOn(days, addDays(today, -1))
 }
 
 export type DailyGuessVerdict = { kind: 'wrong' } | { kind: 'right', answer: string, exact: boolean }

@@ -43,7 +43,7 @@ const result = useTemplateRef<HTMLElement>('result')
 
 const done = computed(() => !!stored.value?.done)
 const playing = computed(() => ready.value && !error.value && !done.value)
-const guesses = computed(() => replaced.value ? [] : stored.value?.guesses ?? [])
+const guesses = computed(() => !replaced.value && stored.value?.maxTries === DAILY_TYPED_TRIES ? stored.value.guesses : [])
 const wrongGuesses = computed(() => finished.value?.solved ? guesses.value.slice(0, -1) : guesses.value)
 const hintTotal = computed(() => Math.min(DAILY_TYPED_CLUES, payload.value?.clues.length ?? 0))
 const hints = computed(() => {
