@@ -21,8 +21,8 @@ export async function challengeAction(action: ChallengeAction, code: string, has
   return data as ChallengeState
 }
 
-export async function challengeScoreboard(code: string, offset: number): Promise<ChallengeLeaderboard> {
-  const { data, error } = await useDatabaseClient().rpc('heritage_challenge_scoreboard', { p_code: code, p_offset: offset })
+export async function challengeScoreboard(code: string, offset: number, hash: string | null): Promise<ChallengeLeaderboard> {
+  const { data, error } = await useDatabaseClient().rpc('heritage_challenge_scoreboard', { p_code: code, p_offset: offset, p_hash: hash })
   if (error) refusal(error)
   return data as ChallengeLeaderboard
 }

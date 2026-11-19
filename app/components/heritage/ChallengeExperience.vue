@@ -187,8 +187,8 @@ watch(feedback, async (value) => {
   feedbackCard.value?.focus()
 })
 
-const myRow = computed(() => board.value?.rows.find(row => row.nickname === participant.value?.nickname))
-const sharedRank = computed(() => Boolean(myRow.value && board.value?.rows.some(row => row !== myRow.value && row.rank === myRow.value!.rank)))
+const myRow = computed(() => board.value?.me)
+const sharedRank = computed(() => Boolean(myRow.value?.sharedRank))
 const boardPreview = computed(() => (board.value?.rows ?? []).slice(0, 5))
 const lastRound = computed(() => {
   const rounds = participant.value?.rounds ?? []

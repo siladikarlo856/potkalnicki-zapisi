@@ -47,7 +47,6 @@ function gameEnabled(id: GenerateGameId) {
 }
 
 function chooseGame(id: GenerateGameId) {
-  source.value = 'random'
   form.value = { ...form.value, game: id, topics: topicsForGame(id) }
 }
 
@@ -140,7 +139,7 @@ watch(publishedSets, (sets) => {
             v-for="option in gameChoices"
             :key="option.id"
             class="flex min-h-16 cursor-pointer items-start gap-3 rounded-(--pz-radius-md) border p-4 transition-colors"
-            :class="game === option.id ? 'border-2 border-primary bg-accented' : 'border-default hover:border-primary'"
+            :class="source === 'random' && game === option.id ? 'border-2 border-primary bg-accented' : 'border-default hover:border-primary'"
             :data-game="option.id"
           >
             <input
@@ -148,9 +147,9 @@ watch(publishedSets, (sets) => {
               type="radio"
               class="mt-1 size-4 accent-(--pz-primary)"
               :value="option.id"
-              :checked="game === option.id"
+              :checked="source === 'random' && game === option.id"
               :disabled="!gameEnabled(option.id)"
-              @change="chooseGame(option.id)"
+              @change="source = 'random'; chooseGame(option.id)"
             >
             <span class="min-w-0">
               <b class="block text-highlighted">{{ option.label }}</b>

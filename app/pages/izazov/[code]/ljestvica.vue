@@ -12,7 +12,7 @@ const localePath = useLocalePath()
 const route = useRoute()
 const code = String(route.params.code)
 const state = ref<ChallengeState | null>(null)
-const board = ref<ChallengeLeaderboard>({ rows: [], count: 0, completedCount: 0 })
+const board = ref<ChallengeLeaderboard>({ rows: [], me: null, count: 0, completedCount: 0 })
 const loading = ref(true)
 const error = ref(false)
 const missing = ref(false)
@@ -25,12 +25,12 @@ const roundCount = computed(() => state.value?.rounds.length ?? Math.max(0, ...b
 const shareOpen = ref(false)
 const origin = ref('')
 const shareUrl = computed(() => origin.value + localePath(pzPath(pzRoutes.challenge, code, 'ljestvica')))
-const myRow = computed(() => board.value.rows.find(row => row.nickname === me.value))
+const myRow = computed(() => board.value.me)
 const shareMessage = computed(() => state.value && myRow.value
   ? `${text(state.value.title)}: ${myRow.value.rank}. mjesto, ${myRow.value.total} bodova.\n${shareUrl.value}`
   : shareUrl.value)
 const placeTitle = computed(() => {
-  const rank = board.value.rows.find(row => row.nickname === me.value)?.rank
+  const rank = myRow.value?.rank
   if (!rank) return t('challenge.leaderboard')
   if (rank === 1) return t('challenge.firstPlace')
   if (rank === 2) return t('challenge.secondPlace')

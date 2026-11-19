@@ -1,4 +1,5 @@
-create or replace function public.heritage_challenge_scoreboard(p_code text, p_offset integer default 0) returns jsonb
+drop function public.heritage_challenge_scoreboard(text, integer);
+create function public.heritage_challenge_scoreboard(p_code text, p_offset integer default 0, p_hash text default null) returns jsonb
 language plpgsql set search_path = '' as $$
 declare
   snapshot jsonb;
@@ -12,32 +13,38 @@ begin
     from jsonb_array_elements(snapshot->'rounds') with ordinality r
     cross join lateral jsonb_array_elements(r.value->'questions') with ordinality q
   ), participants as (
-    select id, nickname, total_score, completed_at,
+    select id, nickname, total_score, completed_at, token_hash,
       rank() over (order by total_score desc) as position
     from public.heritage_challenge_participants where challenge_code = p_code
   ), page as (
     select * from participants order by total_score desc, lower(nickname), nickname
     limit 50 offset greatest(0, least(1000000, p_offset))
+  ), selected_participants as (
+    select * from participants where id in (select id from page) or token_hash = p_hash
   ), scores as (
     select a.participant_id, qr.round_index, sum(a.points) as points
     from public.heritage_challenge_answers a
-    join page p on p.id = a.participant_id
+    join selected_participants p on p.id = a.participant_id
     join question_rounds qr on qr.question_index = a.question_index
     where a.answered_at is not null
     group by a.participant_id, qr.round_index
   ), board as (
-    select p.nickname, p.total_score as total, p.position as rank, p.completed_at as "completedAt",
+    select p.id, p.nickname, p.total_score as total, p.position as rank, p.completed_at as "completedAt",
       jsonb_agg(coalesce(s.points, 0) order by r.ordinality) as rounds
-    from page p
+    from selected_participants p
     cross join jsonb_array_elements(snapshot->'rounds') with ordinality r
     left join scores s on s.participant_id = p.id and s.round_index = r.ordinality - 1
     group by p.id, p.nickname, p.total_score, p.position, p.completed_at
   )
-  select jsonb_build_object('rows', coalesce(jsonb_agg(to_jsonb(b) order by b.total desc, lower(b.nickname), b.nickname), '[]'),
+  select jsonb_build_object('rows', coalesce((select jsonb_agg(to_jsonb(b) - 'id' order by b.total desc, lower(b.nickname), b.nickname)
+      from board b join page p on p.id = b.id), '[]'::jsonb),
     'count', (select count(*) from participants),
-    'completedCount', (select count(*) from participants where completed_at is not null)) into result from board b;
+    'completedCount', (select count(*) from participants where completed_at is not null),
+    'me', (select (to_jsonb(b) - 'id') || jsonb_build_object('sharedRank',
+        (select count(*) > 1 from participants peer where peer.total_score = b.total))
+      from board b join participants p on p.id = b.id where p.token_hash = p_hash)) into result;
   return result;
 end;
 $$;
-revoke all on function public.heritage_challenge_scoreboard(text, integer) from public, anon, authenticated;
-grant execute on function public.heritage_challenge_scoreboard(text, integer) to service_role;
+revoke all on function public.heritage_challenge_scoreboard(text, integer, text) from public, anon, authenticated;
+grant execute on function public.heritage_challenge_scoreboard(text, integer, text) to service_role;

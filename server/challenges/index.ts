@@ -180,7 +180,8 @@ export async function readChallengeLeaderboard(event: H3Event): Promise<Challeng
   challengeLimit(event, 'action')
   const offset = Number(getQuery(event).offset ?? 0)
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000000) invalid('Invalid offset')
-  return challengeScoreboard(challengeCode(event), offset)
+  const code = challengeCode(event)
+  return challengeScoreboard(code, offset, participantHash(event, code))
 }
 
 /** The introduction of a new Fixed challenge, from the current Challenge template: no questions or answers. */

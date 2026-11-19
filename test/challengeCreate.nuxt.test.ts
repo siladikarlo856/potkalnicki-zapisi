@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import { clearNuxtData, clearNuxtState, useRouter } from '#imports'
+import { clearNuxtData, clearNuxtState, useNuxtData, useRouter } from '#imports'
+import { nextTick } from 'vue'
 import CreateChallenge from '../app/pages/izazov/novi.vue'
 import ChallengeExperience from '../app/components/heritage/ChallengeExperience.vue'
 import Leaderboard from '../app/pages/izazov/[code]/ljestvica.vue'
@@ -43,7 +44,7 @@ for (let i = 0; i < 8; i++) {
 pool.topics = computeTopicCounts(pool.cards, pool.municipalities.map(m => ({ slug: m.slug, label: m.label })), new Map(pool.municipalities.map(m => [m.id, m.slug])))
 registerEndpoint('/api/challenges/sets', () => sets)
 registerEndpoint('/api/learn/pool', () => pool)
-const createRequests: Array<{ nickname: string, generate: GenerateChallengeInput }> = []
+const createRequests: Array<{ nickname: string, generate?: GenerateChallengeInput, set?: string }> = []
 const created: ChallengeState = {
   code: 'prefillproof12345', title: { hr: 'Moj izazov', en: 'My challenge' }, sample: false,
   createdAt: '2026-11-19T12:00:00Z', closesAt: '2026-11-26T12:00:00Z', closed: false,
@@ -52,7 +53,7 @@ const created: ChallengeState = {
   question: null, feedback: null
 }
 registerEndpoint(`/api/challenges/${created.code}`, () => created)
-registerEndpoint(`/api/challenges/${created.code}/leaderboard`, () => ({ rows: [], count: 0, completedCount: 0 }))
+registerEndpoint(`/api/challenges/${created.code}/leaderboard`, () => ({ rows: [], me: null, count: 0, completedCount: 0 }))
 registerEndpoint('/api/challenges', {
   method: 'POST',
   handler: async (event) => {
@@ -136,6 +137,26 @@ describe('challenge create action bar', () => {
 })
 
 describe('challenge template chooser', () => {
+  it('preserves the selected template through late pool loading and fallback in both directions', async () => {
+    wrapper = await mountSuspended(CreateChallenge, { route: '/izazov/novi/' })
+    const { data } = useNuxtData<typeof pool>('card-pool')
+    data.value = { ...pool, cards: [], topics: [] }
+    await nextTick()
+    await wrapper.get('[data-testid="challenge-source-set"] input').setValue(true)
+    await wrapper.get('[data-set-id="ordinary-template"]').trigger('click')
+    for (const kind of ['place', 'word']) {
+      data.value = { ...pool, cards: pool.cards.filter(card => card.kind === kind) }
+      await nextTick()
+      expect((wrapper.get('[data-testid="challenge-source-set"] input').element as HTMLInputElement).checked).toBe(true)
+      expect(wrapper.get('[data-set-id="ordinary-template"]').attributes('aria-pressed')).toBe('true')
+      expect(wrapper.findAll('[data-game] input:checked')).toHaveLength(0)
+    }
+    await wrapper.get('input[name="nickname"]').setValue('Ana')
+    await wrapper.get('[data-testid="challenge-create-form"]').trigger('submit')
+    await expect.poll(() => navigateToMock.mock.calls.length).toBe(1)
+    expect(createRequests).toEqual([{ nickname: 'Ana', set: 'ordinary-template' }])
+  })
+
   it('discloses Sample templates with a visible, accessible label before and after selection', async () => {
     wrapper = await mountSuspended(CreateChallenge, { route: '/izazov/novi/' })
     await expect.poll(() => wrapper!.find('[data-testid="challenge-source-set"]').exists()).toBe(true)
@@ -192,7 +213,6 @@ describe('challenge game prefill', () => {
   ] as const)('falls back from %s when its card pool becomes unavailable', async (game, topics, kind, fallback, fallbackTopic) => {
     wrapper = await mountSuspended(CreateChallenge, { route: `/izazov/novi/?igra=${game}&teme=${topics}` })
     await expect.poll(() => wrapper!.find(`input[value="${game}"]:checked`).exists()).toBe(true)
-    const { useNuxtData } = await import('#imports')
     const { data } = useNuxtData<typeof pool>('card-pool')
     data.value = { ...pool, cards: pool.cards.filter(card => card.kind !== kind) }
     await expect.poll(() => wrapper!.find(`input[value="${fallback}"]:checked`).exists()).toBe(true)

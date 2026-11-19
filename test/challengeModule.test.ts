@@ -81,11 +81,23 @@ const action = () => rpc.mock.calls[0]![1]
 
 describe('the Challenge module', () => {
   it('preserves the global completion count when reading a scoreboard page', async () => {
-    state = { rows: [], count: 70, completedCount: 60 }
+    state = { rows: [], me: null, count: 70, completedCount: 60 }
     vi.stubGlobal('getQuery', () => ({ offset: '100' }))
     const { readChallengeLeaderboard } = await challenges()
     await expect(readChallengeLeaderboard(event)).resolves.toEqual(state)
-    expect(rpc).toHaveBeenCalledWith('heritage_challenge_scoreboard', { p_code: CODE, p_offset: 100 })
+    expect(rpc).toHaveBeenCalledWith('heritage_challenge_scoreboard', { p_code: CODE, p_offset: 100, p_hash: null })
+  })
+
+  it('identifies the independent participant result using only the hashed cookie', async () => {
+    const token = 'a'.repeat(43)
+    cookies[`heritage_${CODE}`] = token
+    vi.stubGlobal('getQuery', () => ({ offset: '0', p_hash: 'untrusted', nickname: 'Somebody else' }))
+    const { createHash } = await import('node:crypto')
+    state = { rows: [], count: 70, completedCount: 60, me: { nickname: 'Ana', rank: 51, total: 800, rounds: [800], completedAt: null, sharedRank: false } }
+    const { readChallengeLeaderboard } = await challenges()
+    await expect(readChallengeLeaderboard(event)).resolves.toEqual(state)
+    expect(rpc).toHaveBeenCalledWith('heritage_challenge_scoreboard', { p_code: CODE, p_offset: 0, p_hash: createHash('sha256').update(token).digest('hex') })
+    expect(JSON.stringify(state)).not.toContain(token)
   })
 
   it('records a Quiz-result challenge already finished, with the Quiz results, in exactly one RPC call', async () => {
