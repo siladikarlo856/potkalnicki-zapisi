@@ -7,5 +7,4 @@ export interface ContributionDraft {
   placeQuery: string
   name: string
   contact: string
-  consentPublish: boolean
 }

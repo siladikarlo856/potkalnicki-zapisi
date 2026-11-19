@@ -69,8 +69,7 @@ function readDraft() {
       type: typeof draft.type === 'string' ? draft.type as SubmissionType : state.type,
       placeId: typeof draft.placeId === 'string' ? draft.placeId : state.placeId,
       name: typeof draft.name === 'string' ? draft.name : state.name,
-      contact: typeof draft.contact === 'string' ? draft.contact : state.contact,
-      consentPublish: draft.consentPublish === true
+      contact: typeof draft.contact === 'string' ? draft.contact : state.contact
     })
     if (typeof draft.placeQuery === 'string') placeQuery.value = draft.placeQuery
     draftRestored.value = true
@@ -83,7 +82,7 @@ function saveDraft() {
   if (!import.meta.client || !draftStorageKey.value || sendState.value === 'sent') return
   if (!state.text && !state.name && !state.contact && !placeQuery.value && !state.type) return
   try {
-    const draft: ContributionDraft = { text: state.text, type: state.type, placeId: state.placeId, placeQuery: placeQuery.value, name: state.name, contact: state.contact, consentPublish: state.consentPublish }
+    const draft: ContributionDraft = { text: state.text, type: state.type, placeId: state.placeId, placeQuery: placeQuery.value, name: state.name, contact: state.contact }
     window.localStorage.setItem(draftStorageKey.value, JSON.stringify(draft))
   } catch {
     // Private browsing and full storage should not interrupt typing.

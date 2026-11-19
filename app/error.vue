@@ -5,7 +5,6 @@ import { en, hr } from '@nuxt/ui/locale'
 const props = defineProps<{ error: NuxtError }>()
 const { locale, localeProperties } = useI18n()
 const localePath = useLocalePath()
-const search = ref('')
 
 const errorUrl = (props.error as { url?: unknown }).url
 const pathname = (typeof errorUrl === 'string' ? errorUrl.split('?')[0] : '') || useRequestURL().pathname
@@ -32,11 +31,6 @@ const sectionList = section && recordSections.has(section) ? `/${section}/` : pz
 
 function retry() {
   clearError({ redirect: pathname })
-}
-
-function searchArchive() {
-  const query = search.value.trim()
-  if (query) navigateTo({ path: '/', query: { q: query } })
 }
 
 useHead({
@@ -76,21 +70,6 @@ useThemeColor(isPotkalnicko ? '#FDF9F0' : undefined, isPotkalnicko ? '#14140F' :
         @retry="retry"
       >
         <template #actions>
-          <form
-            v-if="notFound"
-            class="order-first flex w-full max-w-md basis-full"
-            role="search"
-            @submit.prevent="searchArchive"
-          >
-            <UInput
-              v-model="search"
-              class="w-full"
-              icon="i-lucide-search"
-              aria-label="Traži u arhivu"
-              placeholder="Traži u arhivu"
-              type="search"
-            />
-          </form>
           <UButton
             v-if="removed"
             :to="localePath(sectionList)"
