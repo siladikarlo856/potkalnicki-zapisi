@@ -51,12 +51,26 @@ const weekdayIndex = (day: string) => (new Date(`${day}T12:00:00Z`).getUTCDay() 
 const longDate = (day: string) => `${Number(day.slice(8))}. ${MONTHS[Number(day.slice(5, 7)) - 1]} ${day.slice(0, 4)}.`
 const shortDate = (day: string) => `${Number(day.slice(8))}. ${Number(day.slice(5, 7))}.`
 
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000)
+
 interface CalendarCell { day: string, kind: 'past' | 'today' | 'pinned' | 'auto', word?: string, village?: string, weekday: string }
-/** The days from the Monday of this week for four weeks: past days muted, today outlined, pinned days with their word. */
+/** Which four-week window is drawn: 0 starts on the Monday of this week; the last one holds the pin horizon. */
+const windowIndex = ref(0)
+const firstMonday = computed(() => overview.value ? addDays(overview.value.day, -weekdayIndex(overview.value.day)) : '')
+const lastWindow = computed(() => overview.value ? Math.floor(daysBetween(firstMonday.value, maxDate.value!) / CALENDAR_DAYS) : 0)
+const windowStart = computed(() => firstMonday.value ? addDays(firstMonday.value, windowIndex.value * CALENDAR_DAYS) : '')
+const windowLabel = computed(() => windowStart.value ? `${shortDate(windowStart.value)} – ${shortDate(addDays(windowStart.value, CALENDAR_DAYS - 1))}` : '')
+function showWindow(index: number) {
+  windowIndex.value = Math.min(Math.max(index, 0), lastWindow.value)
+}
+function showDay(day: string) {
+  showWindow(Math.floor(daysBetween(firstMonday.value, day) / CALENDAR_DAYS))
+}
+/** Four weeks from a Monday: past days muted, today outlined, pinned days with their word. */
 const calendar = computed<CalendarCell[]>(() => {
   const current = overview.value
   if (!current) return []
-  const start = addDays(current.day, -weekdayIndex(current.day))
+  const start = windowStart.value
   const known = new Map([...current.recent, ...(current.today ? [current.today] : []), ...current.pins].map(item => [item.day, item]))
   return Array.from({ length: CALENDAR_DAYS }, (_, index) => {
     const day = addDays(start, index)
@@ -67,10 +81,7 @@ const calendar = computed<CalendarCell[]>(() => {
     return item ? { day, kind: 'pinned', word: item.headword, village: villageLabel(item), weekday } : { day, kind: 'auto', weekday }
   })
 })
-const coverage = computed(() => {
-  const last = overview.value?.pins.at(-1)
-  return last ? `Prikvačeno do ${longDate(last.day)}. Dani bez prikvačene riječi dobivaju riječ automatski.` : 'Nema prikvačenih riječi. Svaki dan dobiva riječ automatski.'
-})
+const lastPin = computed(() => overview.value?.pins.at(-1))
 function scheduleOn(cell: CalendarCell) {
   if (cell.kind === 'pinned') return
   date.value = cell.day
@@ -223,7 +234,19 @@ onMounted(refresh)
           class="text-muted"
           data-test="daily-coverage"
         >
-          {{ coverage }}
+          <template v-if="lastPin">
+            Prikvačeno do <UButton
+              :label="longDate(lastPin.day)"
+              color="neutral"
+              variant="link"
+              class="p-0 align-baseline"
+              data-test="daily-last-pin"
+              @click="showDay(lastPin.day)"
+            /> Dani bez prikvačene riječi dobivaju riječ automatski.
+          </template>
+          <template v-else>
+            Nema prikvačenih riječi. Svaki dan dobiva riječ automatski.
+          </template>
         </p>
         <p data-test="daily-today">
           <span class="text-muted">Danas ({{ overview.day }}): </span>
@@ -243,6 +266,37 @@ onMounted(refresh)
           variant="subtle"
           icon="i-lucide-triangle-alert"
         />
+
+        <div
+          class="flex items-center gap-2"
+          data-test="daily-window"
+        >
+          <UButton
+            icon="i-lucide-chevron-left"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            aria-label="Prethodna četiri tjedna"
+            :disabled="windowIndex === 0"
+            data-test="daily-prev"
+            @click="showWindow(windowIndex - 1)"
+          />
+          <span
+            class="text-sm text-muted"
+            aria-live="polite"
+            data-test="daily-window-label"
+          >{{ windowLabel }}</span>
+          <UButton
+            icon="i-lucide-chevron-right"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            aria-label="Sljedeća četiri tjedna"
+            :disabled="windowIndex >= lastWindow"
+            data-test="daily-next"
+            @click="showWindow(windowIndex + 1)"
+          />
+        </div>
 
         <ol
           class="grid grid-cols-1 gap-2 md:grid-cols-7"
@@ -304,7 +358,7 @@ onMounted(refresh)
               />
             </div>
             <UButton
-              v-else-if="cell.kind === 'auto'"
+              v-else-if="cell.kind === 'auto' && cell.day <= maxDate!"
               label="Rasporedi"
               size="xs"
               color="neutral"

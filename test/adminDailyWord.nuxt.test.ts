@@ -19,13 +19,15 @@ const overview: DailyAdminOverview = {
   warnings: []
 }
 registerEndpoint('/api/admin/session', () => ({ authenticated: true }))
-registerEndpoint('/api/review/daily', () => overview)
+let pins = overview.pins
+registerEndpoint('/api/review/daily', () => ({ ...overview, pins }))
 registerEndpoint('/api/admin/lookup/word', () => ({ items: [] }))
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 afterEach(() => {
   wrapper?.unmount()
   wrapper = undefined
+  pins = overview.pins
 })
 
 describe('admin daily word scheduler', () => {
@@ -46,5 +48,31 @@ describe('admin daily word scheduler', () => {
     await vi.waitFor(() => expect(wrapper!.find('[data-test="daily-calendar"]').exists()).toBe(true))
     await wrapper.get('[data-test="daily-schedule"]').trigger('click')
     await vi.waitFor(() => expect(document.body.textContent).toContain('Spremi u raspored'))
+  })
+
+  it('pages the calendar by four weeks up to the pin horizon so a far pin can be reached and removed', async () => {
+    // 2027-01-15 is 57 days after 2026-11-19; the window from Monday 2026-11-16 holding it starts 56 days later, on 2027-01-11.
+    pins = [...overview.pins, { ...day(57, 'ganc') as object, day: '2027-01-15' } as never]
+    wrapper = await mountSuspended({ setup: () => () => h(UApp, null, { default: () => h(RijecDana) }) }, { attachTo: document.body, route: '/admin/rijec-dana' })
+    await vi.waitFor(() => expect(wrapper!.find('[data-test="daily-calendar"]').exists()).toBe(true))
+    expect(wrapper.get('[data-test="daily-prev"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-test="daily-window-label"]').text()).toBe('16. 11. – 13. 12.')
+    expect(wrapper.find('time[datetime="2027-01-15"]').exists()).toBe(false)
+
+    expect(wrapper.get('[data-test="daily-coverage"]').text()).toContain('Prikvačeno do 15. siječnja 2027.')
+    await wrapper.get('[data-test="daily-last-pin"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper!.get('[data-test="daily-window-label"]').text()).toBe('11. 1. – 7. 2.'))
+    expect(wrapper.findAll('[data-test="daily-calendar"] li')).toHaveLength(28)
+    expect(wrapper.find('button[aria-label="Ukloni prikvačenu riječ ganc za 2027-01-15"]').exists()).toBe(true)
+
+    await wrapper.get('[data-test="daily-prev"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper!.get('[data-test="daily-window-label"]').text()).toBe('14. 12. – 10. 1.'))
+
+    // The horizon is 366 days after today, 2027-11-20; the last window (Monday + 13 × 28 days) starts 2027-11-15.
+    for (let step = 0; step < 20; step++) await wrapper.get('[data-test="daily-next"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper!.get('[data-test="daily-window-label"]').text()).toBe('15. 11. – 12. 12.'))
+    expect(wrapper.get('[data-test="daily-next"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('button[aria-label="Rasporedi riječ za 2027-11-20"]').exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Rasporedi riječ za 2027-11-21"]').exists()).toBe(false)
   })
 })
