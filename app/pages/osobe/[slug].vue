@@ -192,14 +192,12 @@ useHead(() => ({
       </p>
     </UPageSection>
 
-    <UPageSection
-      :title="t('pz.persons.sources')"
-      :ui="{ root: 'border-t border-default' }"
+    <section
+      class="border-t border-default pt-8"
+      data-testid="person-sources"
     >
-      <div data-testid="person-sources">
-        <PzSourceList :sources="person.sources.map(source => source.title)" />
-      </div>
-    </UPageSection>
+      <PzSourceList :sources="person.sources.map(source => source.title)" />
+    </section>
 
     <UPageSection :ui="{ root: 'border-t border-default' }">
       <div class="flex flex-wrap gap-3">

@@ -889,7 +889,7 @@
       "listLabel": "Popis osoba",
       "seoDescription": "{name}, {years}. {role}",
       "sourceFor": "Uz osobu: {name}",
-      "back": "← Sve osobe",
+      "back": "Sve osobe",
       "updatedAt": "Zadnja izmjena: {date}"
     },
     "speech": {
