@@ -280,7 +280,7 @@ watch(() => status.value, (s) => {
             class="pz-overline text-muted"
             data-testid="learn-counter"
           >
-            <span aria-hidden="true">Kartica {{ counter.i }} od {{ counter.n }}<template v-if="!reviewShown"> · Što znači?</template></span>
+            <span aria-hidden="true">Kartica {{ counter.i }} od {{ counter.n }}<template v-if="!reviewShown && currentCard?.kind === 'word'"> · Što znači?</template></span>
             <span class="sr-only">{{ t('pz.learn.counter', { i: counter.i, n: counter.n }) }}</span>
           </p>
           <LearnReviewCard
