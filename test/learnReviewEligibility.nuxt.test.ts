@@ -108,9 +108,12 @@ describe('review eligibility across learning surfaces', () => {
       localStorage.setItem(LEARN_STORAGE_KEY, JSON.stringify(state))
     }
     wrapper = await mountSuspended(LearnSetup, { route: '/uci/?mjesto=first&teme=bastina' })
-    const selector = action === 'first' ? '[data-testid="learn-setup-start"]'
-      : action === 'new' ? '[data-testid="learn-home-new-lesson"]'
-        : action === 'continue' ? '[data-testid="learn-home-continue"]'
+    const selector = action === 'first'
+      ? '[data-testid="learn-setup-start"]'
+      : action === 'new'
+        ? '[data-testid="learn-home-new-lesson"]'
+        : action === 'continue'
+          ? '[data-testid="learn-home-continue"]'
           : action === 'topic' ? '[data-testid="learn-topic-row"]' : '[data-testid="learn-home-review"]'
     await expect.poll(() => wrapper!.find(selector).exists()).toBe(true)
     const link = action === 'topic'
