@@ -2,6 +2,16 @@
 
 Potkalnički zapisi is the heritage and Digital Atlas for Potkalničko prigorje: a Croatian-first atlas of places, words, stories, people, customs, photographs and learning games. The production site is **https://prigorje.karlo-siladi.from.hr**. The portfolio lives separately at https://karlo-siladi.from.hr.
 
+## Playing games
+
+Browse `/igre/` for games grouped by subject. The chips filter by question type; select an active chip again to clear it. Links with a `tema` query still filter by topic; use **Prikaži sve teme** to clear that topic while keeping the question-type filter. Riječ dana is on the home page at `/#rijec-dana`, and learning cards are at `/uci/`; neither appears in the games list. Shared challenges have their own hub at `/izazov/`.
+
+Fixed-length multiple-choice games open with instructions and **Počni**, with a difficulty choice where available. The displayed question count is an upper limit; available content can make a round shorter. Choose an answer, press **Provjeri**, read the feedback, then press **Dalje** (or **Pogledaj rezultat** on the last question). **Preskoči** moves on without feedback: it counts as incorrect in the round but does not update that card's learning progress. The map and sorting games explain their own controls before starting.
+
+At the end of these rounds, **Igraj ponovno** starts a fresh round. You can also review missed or skipped questions, open their records where available, or practise only those questions. Practice rounds do not replace the saved best or offer sharing or challenge creation. Best scores are kept on this device, including a first completed round with zero correct answers; **Još nije igrano** means there is no saved best.
+
+Supported games offer **Izazovi prijatelje ovom igrom**, which opens challenge creation with the game and topic selected. A completed **Kaj to znači?** round can instead become a challenge using those same questions. **Podijeli rezultat** shares a score summary without the answers.
+
 ## Local setup
 
 Requirements are Node.js `^22.21.0 || ^24.11.0 || >=26.0.0`, pnpm 12.14, Docker and the Supabase CLI.

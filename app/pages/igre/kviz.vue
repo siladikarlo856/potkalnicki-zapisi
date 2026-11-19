@@ -22,7 +22,7 @@ const started = ref(false)
 const wordsById = computed(() => new Map(words.value.map(word => [word.id, word])))
 const loading = computed(() => !error.value && (status.value === 'idle' || status.value === 'pending'))
 
-// `znacenje` at Srednje starts at once, as the quiz always has: no start screen.
+// `znacenje` keeps Srednje without a difficulty picker; the player starts the prepared round with "Počni".
 function newRound() {
   return generateQuestions(game.id, pool.value, {
     topics: ['rijeci'],

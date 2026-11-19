@@ -2,7 +2,7 @@
 import type { GameQuestion } from '~~/shared/utils/games/types'
 
 // AnswerOption: the multiple-choice renderer, a radio group of full-width options (56px or more) with a letter key
-// (A–D). Pointing at one emits `select`; whether that checks the answer at once or only marks it (the round shell
+// (A–D). Activating one emits `select`; whether that checks the answer at once or only marks it (the round shell
 // waits for "Provjeri") is the parent's decision. A marked option is ink-filled. After checking every option locks
 // (aria-disabled, same look), the right one is green with a check and the player's wrong pick is a dashed, struck-
 // through outline with a cross, each with a word: never colour alone, and never the error red.

@@ -8,9 +8,6 @@ import { resultShareMessage } from '~/utils/shareResult'
 import { nounFor } from '~/utils/pzText'
 import type { DotState } from '~/utils/questionDots'
 
-// End screen of a round (ScreenResult): the score as a numeral over a row of squares, a one-line verdict, then
-// "Izazovi prijatelje s ovom rundom" as the one primary action, "Podijeli rezultat" as a secondary that opens the
-// share sheet, the misses (each with a link to its record and a correction) and the replay buttons.
 // Words and answers never go into the shared text: only the headline, the squares and an invitation.
 const props = defineProps<{
   gameId: GameId

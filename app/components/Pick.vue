@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 // Pick: the first decision of a flow, where each option needs a sentence of explanation (difficulty of a game, the
-// game of a challenge). A native radio group in a fieldset: arrows move, Space selects. Selected is a heavier ink
+// game of a challenge). Native radios: arrows move and select; Space selects the focused option. Selected is a heavier ink
 // border, a subtle fill and the radio mark, never colour alone.
 export interface PickOption {
   value: string
