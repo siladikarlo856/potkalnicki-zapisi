@@ -10,6 +10,7 @@ const router = useRouter()
 const localePath = useLocalePath()
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const submitted = ref(query.value.trim().length >= 2)
+const activeGroup = ref<string>('all')
 const { data, pending, error, refresh } = await useFetch<ArchiveSearchResponse>('/api/atlas/search', {
   query: computed(() => ({ q: query.value.trim() })),
   immediate: false,
@@ -38,6 +39,8 @@ function submit(value = query.value) {
 function verification(status?: string): 'pend' | 'ok' | 'warn' {
   return status === 'verified' ? 'ok' : status === 'needs_update' ? 'warn' : 'pend'
 }
+
+const visibleGroups = computed(() => activeGroup.value === 'all' ? groups.value : groups.value.filter(group => group.key === activeGroup.value))
 </script>
 
 <template>
@@ -147,9 +150,31 @@ function verification(status?: string): 'pend' | 'ok' | 'warn' {
         >
           {{ total }} {{ total === 1 ? 'rezultat' : 'rezultata' }} za „{{ query }}”
         </p>
+        <div
+          class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+          role="group"
+          aria-label="Suzi rezultate"
+        >
+          <PzChip
+            :selected="activeGroup === 'all'"
+            :count="total"
+            @click="activeGroup = 'all'"
+          >
+            Sve
+          </PzChip>
+          <PzChip
+            v-for="group in groups"
+            :key="group.key"
+            :selected="activeGroup === group.key"
+            :count="group.total"
+            @click="activeGroup = group.key"
+          >
+            {{ group.label }}
+          </PzChip>
+        </div>
         <div class="grid gap-8 lg:grid-cols-2">
           <section
-            v-for="group in groups"
+            v-for="group in visibleGroups"
             :key="group.key"
             class="flex flex-col gap-3"
             :aria-labelledby="`group-${group.key}`"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AtlasOverviewResponse } from '~~/shared/types/publicAtlas'
+import type { AtlasMunicipalityResponse, AtlasOverviewResponse } from '~~/shared/types/publicAtlas'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
 definePageMeta({ layout: 'potkalnicko' })
@@ -8,6 +8,8 @@ defineI18nRoute({ locales: ['hr'] })
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { municipalityPath } = useAtlas()
+const view = ref<'map' | 'list'>('map')
+const settlementQuery = ref('')
 
 useSeoMeta({
   title: () => t('pz.explore.seoTitle'),
@@ -17,6 +19,13 @@ useSeoMeta({
 })
 
 const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
+const municipalityPages = await Promise.all((overview.value?.municipalities ?? []).map(async (m) => {
+  try {
+    return await $fetch<AtlasMunicipalityResponse>(`/api/atlas/municipalities/${m.slug}`)
+  } catch {
+    return null
+  }
+}))
 
 // Four equal entries open the hub: places (the list below), Baština, Priče i običaji and Naš govor. The word and
 // record counts are not part of the overview, so those two show no number.
@@ -34,6 +43,7 @@ const municipalities = computed(() => (overview.value?.municipalities ?? []).map
   settlements: m.stats.settlements,
   items: m.stats.items
 })))
+const settlements = computed(() => municipalityPages.filter((page): page is AtlasMunicipalityResponse => !!page).flatMap(page => page.settlements.map(s => ({ ...s, municipality: page.municipality.label, to: `${page.municipality.path}${s.slug}/` }))))
 </script>
 
 <template>
@@ -46,6 +56,80 @@ const municipalities = computed(() => (overview.value?.municipalities ?? []).map
         {{ t('pz.explore.hubIntro', { municipalities: overview?.totals.municipalities ?? 5, settlements: overview?.totals.settlements ?? 0 }) }}
       </p>
     </header>
+
+    <div
+      class="flex flex-wrap gap-2"
+      role="group"
+      aria-label="Prikaz mjesta"
+    >
+      <PzChip
+        :selected="view === 'map'"
+        @click="view = 'map'"
+      >
+        <UIcon
+          name="i-lucide-map"
+          aria-hidden="true"
+        />Karta
+      </PzChip>
+      <PzChip
+        :selected="view === 'list'"
+        @click="view = 'list'"
+      >
+        <UIcon
+          name="i-lucide-list"
+          aria-hidden="true"
+        />Popis
+      </PzChip>
+    </div>
+
+    <section
+      id="opcine"
+      class="grid gap-6 lg:grid-cols-12 lg:gap-12"
+    >
+      <div
+        v-if="view === 'map'"
+        class="lg:col-span-7"
+      >
+        <PzSchematicMap
+          labels
+          label="Karta: Gornja Rijeka na zapadu, Kalnik na sjeveru, Sveti Petar Orehovec u sredini, Križevci na jugu i istoku"
+        />
+        <p class="pz-caption mt-2 text-muted">
+          Karta je shematska. Dodirni ime ili odaberi kraj s popisa.
+        </p>
+      </div>
+      <div class="flex min-w-0 flex-col gap-4 lg:col-span-5">
+        <PzSearchField
+          v-model="settlementQuery"
+          label="Nađi naselje"
+          placeholder="npr. Glogovnica"
+        />
+        <p
+          v-if="settlementQuery.trim() && !settlements.length"
+          class="pz-body-sm text-muted"
+        >
+          Nema naselja „{{ settlementQuery }}”. Arhiv pokriva općine Kalnik, Sveti Petar Orehovec i Gornja Rijeka te grad Križevci.
+        </p>
+        <PzMunicipalityList
+          v-if="!settlementQuery.trim()"
+          :rows="municipalities"
+        />
+        <ul
+          v-else
+          class="divide-y divide-default rounded-lg border border-default bg-default"
+        >
+          <li
+            v-for="settlement in settlements.filter(s => s.name.toLocaleLowerCase('hr').includes(settlementQuery.toLocaleLowerCase('hr'))).slice(0, 8)"
+            :key="settlement.id"
+          >
+            <NuxtLink
+              :to="localePath(settlement.to)"
+              class="flex min-h-11 items-center justify-between gap-3 px-4 py-3 no-underline"
+            ><span>{{ settlement.name }}</span><span class="pz-caption text-muted">{{ settlement.municipality }}</span></NuxtLink>
+          </li>
+        </ul>
+      </div>
+    </section>
 
     <section
       class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:gap-4"
@@ -69,19 +153,6 @@ const municipalities = computed(() => (overview.value?.municipalities ?? []).map
         <b class="pz-label text-default">{{ entry.label }}</b>
         <span class="pz-caption min-h-[18px] font-normal text-muted tabular-nums">{{ entry.count ?? '' }}</span>
       </NuxtLink>
-    </section>
-
-    <section
-      id="opcine"
-      class="flex flex-col gap-4 lg:scroll-mt-(--pz-header-h)"
-    >
-      <h2 class="pz-h2 text-highlighted">
-        {{ t('pz.explore.municipalitiesTitle') }}
-      </h2>
-      <PzMunicipalityList
-        :rows="municipalities"
-        class="lg:max-w-(--pz-measure)"
-      />
     </section>
   </div>
 </template>
