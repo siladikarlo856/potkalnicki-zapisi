@@ -6,8 +6,7 @@ import type { MemoryDraftKind } from '~~/shared/utils/memoryDraft'
 import type { SubmissionStatus } from '~~/shared/utils/submission'
 import { INTENT_LABELS, SUBMISSION_TYPE_LABELS } from '~/utils/inbox'
 
-// The expanded row of the inbox: what was sent, what a correction would change (current → proposed), and the
-// actions. Everything is rendered as plain text; links the sender typed are never turned into links here.
+// Sender-provided content stays plain text; links the sender typed are never turned into links here.
 const props = defineProps<{ row: InboxRow }>()
 const emit = defineEmits<{ changed: [] }>()
 
