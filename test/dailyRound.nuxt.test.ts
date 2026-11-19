@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData, clearNuxtState, useNuxtData } from '#imports'
 import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
+import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
 import { LEARN_STORAGE_KEY } from '../app/composables/useLearnState'
 import { answerInSession, createSession } from '../shared/utils/learn/learnState'
 import DailyPage from '../app/pages/rijec-dana/index.vue'
@@ -88,6 +89,46 @@ describe('Riječ dana page', () => {
     await guess(page, 'škrlak')
     expect(page.get('[data-testid="daily-answer-card"]').text()).toContain('šešir')
     expect(page.get('[data-testid="daily-sample"]').text()).toBe('Uzorak')
+  })
+
+  it.each([true, false])('excludes sample words from learning after a solved round: %s', async (solved) => {
+    current.sample = true
+    current.entry.status = 'placeholder'
+    const page = await mountPage()
+    if (solved) await guess(page, 'škrlak')
+    else for (const word of ['a1', 'b2', 'c3', 'd4', 'e5']) await guess(page, word)
+    expect(page.find('[data-testid="daily-result"]').exists()).toBe(true)
+    expect(page.find('[data-testid="daily-add-learning"]').exists()).toBe(false)
+    expect(page.text()).not.toContain('Dodano u učenje')
+    expect(localStorage.getItem(PROGRESS_STORAGE_KEY)).toBeNull()
+  })
+
+  it('does not show a sample word as enrolled when its key was previously saved', async () => {
+    current.sample = true
+    current.entry.status = 'placeholder'
+    const progress = {
+      version: 2, lastPlayed: '2026-11-15', streak: 1,
+      cards: { 'word:skrlak': { box: 0, due: '2026-11-15', seen: 1, known: 0, missed: 0, lastPlayed: '2026-11-15' } }
+    }
+    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress))
+    const page = await mountPage()
+    await guess(page, 'škrlak')
+    expect(page.find('[data-testid="daily-add-learning"]').exists()).toBe(false)
+    expect(page.text()).not.toContain('Dodano u učenje')
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!)).toEqual(progress)
+  })
+
+  it.each([true, false])('adds real words to learning once after a solved round: %s', async (solved) => {
+    const page = await mountPage()
+    if (solved) await guess(page, 'škrlak')
+    else for (const word of ['a1', 'b2', 'c3', 'd4', 'e5']) await guess(page, word)
+    const button = page.get('[data-testid="daily-add-learning"]')
+    expect(button.text()).toBe('Dodaj u učenje')
+    await button.trigger('click')
+    expect(button.text()).toBe('Dodano u učenje')
+    expect(button.attributes('disabled')).toBeDefined()
+    await button.trigger('click')
+    expect(JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)!).cards['word:skrlak']).toMatchObject({ box: 0, seen: 1 })
   })
 
   it.each(['rollover', 'replacement'])('clears round-local notes and completion state on %s', async (change) => {

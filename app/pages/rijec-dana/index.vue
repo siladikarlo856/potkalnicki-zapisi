@@ -70,7 +70,7 @@ const example = computed(() => payload.value?.entry.examples?.[0])
 const shareUrl = computed(() => `${baseUrl}${localePath(pzRoutes.daily)}`)
 const shareText = computed(() => payload.value && finished.value ? dailyWordShareMessage(payload.value.day, finished.value, solvedStreak.value) : '')
 
-const wordKey = computed(() => payload.value ? encodeCardKey({ kind: 'word', id: payload.value.entry.id }) : undefined)
+const wordKey = computed(() => payload.value && !payload.value.sample ? encodeCardKey({ kind: 'word', id: payload.value.entry.id }) : undefined)
 const inLearning = computed(() => !!wordKey.value && Object.hasOwn(cards.value, wordKey.value))
 const due = computed(() => ready.value ? dueCount() : 0)
 
@@ -291,7 +291,7 @@ function copied() {
           />
           <div class="grid gap-3 sm:grid-cols-2">
             <UButton
-              v-if="!replaced"
+              v-if="!replaced && wordKey"
               :label="inLearning ? 'Dodano u učenje' : 'Dodaj u učenje'"
               :icon="inLearning ? 'i-lucide-check' : 'i-lucide-graduation-cap'"
               color="neutral"
