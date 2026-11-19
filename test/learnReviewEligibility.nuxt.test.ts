@@ -7,6 +7,7 @@ import { PROGRESS_STORAGE_KEY } from '../app/composables/useProgress'
 import type { CardPool } from '../shared/utils/learn/types'
 import type { CardProgress } from '../shared/utils/learn/leitner'
 import type { DailyWordPayload } from '../shared/utils/dailyWord'
+import { createSession } from '../shared/utils/learn/learnState'
 import LearnSetup from '../app/pages/uci/index.vue'
 import LearnSession from '../app/pages/uci/sesija.vue'
 import PlayHub from '../app/pages/igraj/index.vue'
@@ -76,6 +77,9 @@ describe('review eligibility across learning surfaces', () => {
     expect(wrapper.get('[data-testid="learn-today"] dd').text()).toBe(String(due))
     expect(wrapper.find('[data-testid="learn-home-review"]').exists()).toBe(due > 0)
     expect(wrapper.find('[data-testid="learn-home-new-lesson"]').exists()).toBe(due === 0)
+    for (const link of wrapper.findAll('[data-testid="learn-topic-row"], [data-testid="learn-home-review"], [data-testid="learn-home-new-lesson"]')) {
+      expect(new URL(link.attributes('href')!, 'https://example.test').searchParams.get('mjesto')).toBe(place)
+    }
     wrapper.unmount()
 
     wrapper = await mountSuspended(PlayHub, { route: '/igraj/' })
@@ -94,16 +98,30 @@ describe('review eligibility across learning surfaces', () => {
     expect(wrapper.text()).not.toContain('3 riječi čeka ponavljanje')
   })
 
-  it('carries a query-place override into the runner and serves only the advertised review', async () => {
+  it.each(['review', 'topic', 'new', 'first', 'continue'])('carries a query-place override through the %s action into the runner', async (action) => {
     rememberPlace('second')
-    wrapper = await mountSuspended(LearnSetup, { route: '/uci/?mjesto=first' })
-    await expect.poll(() => wrapper!.find('[data-testid="learn-home-review"]').exists()).toBe(true)
-    const href = wrapper.get('[data-testid="learn-home-review"]').attributes('href')!
+    if (action === 'new') saveProgress({ 'word:fresh': card('2026-11-22') })
+    if (action === 'first') localStorage.removeItem(PROGRESS_STORAGE_KEY)
+    if (action === 'continue') {
+      const state = JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!)
+      state.current = createSession(['bastina'], 5, ['item:church'], 'new', 'first')
+      localStorage.setItem(LEARN_STORAGE_KEY, JSON.stringify(state))
+    }
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci/?mjesto=first&teme=bastina' })
+    const selector = action === 'first' ? '[data-testid="learn-setup-start"]'
+      : action === 'new' ? '[data-testid="learn-home-new-lesson"]'
+        : action === 'continue' ? '[data-testid="learn-home-continue"]'
+          : action === 'topic' ? '[data-testid="learn-topic-row"]' : '[data-testid="learn-home-review"]'
+    await expect.poll(() => wrapper!.find(selector).exists()).toBe(true)
+    const link = action === 'topic'
+      ? wrapper.findAll(selector).find(link => new URL(link.attributes('href')!, 'https://example.test').searchParams.get('teme') === 'bastina')!
+      : wrapper.get(selector)
+    const href = link.attributes('href')!
     expect(new URL(href, 'https://example.test').searchParams.get('mjesto')).toBe('first')
-    expect(wrapper.get('[data-testid="learn-today"] dd').text()).toBe('1')
     wrapper.unmount()
     wrapper = await mountSuspended(LearnSession, { route: href })
     await expect.poll(() => JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!).current?.queue).toEqual(['item:church'])
+    expect(JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!).current.place).toBe('first')
   })
 
   it('updates an unavailable review when the place filter is cleared', async () => {
@@ -114,6 +132,9 @@ describe('review eligibility across learning surfaces', () => {
     await wrapper.get('[data-testid="learn-place"] button').trigger('click')
     expect(wrapper.get('[data-testid="learn-today"] dd').text()).toBe('1')
     expect(wrapper.find('[data-testid="learn-home-review"]').exists()).toBe(true)
+    for (const link of wrapper.findAll('[data-testid="learn-topic-row"], [data-testid="learn-home-review"]')) {
+      expect(new URL(link.attributes('href')!, 'https://example.test').searchParams.has('mjesto')).toBe(false)
+    }
   })
 
   it('forecasts only eligible future cards and keeps a new lesson available', async () => {

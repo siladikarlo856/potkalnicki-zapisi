@@ -64,21 +64,13 @@ const topicRows = computed(() => topics.value.map((topic) => {
 }))
 
 function sessionHref(query: Record<string, string>) {
-  return localePath(`${pzRoutes.learnSession}?${new URLSearchParams(query)}`)
+  return localePath(`${pzRoutes.learnSession}?${new URLSearchParams({ ...query, ...(placeSlug.value ? { mjesto: placeSlug.value } : {}) })}`)
 }
-const reviewHref = computed(() => sessionHref({ ponovi: '1', ...(placeSlug.value ? { mjesto: placeSlug.value } : {}) }))
+const reviewHref = computed(() => sessionHref({ ponovi: '1' }))
 const continueHref = computed(() => sessionHref({ nastavi: '1' }))
-const newHref = computed(() => {
-  const query: Record<string, string> = { teme: (requestedTopics.value.length ? requestedTopics.value : learn.lastTopics.value).join(','), n: String(n.value) }
-  if (placeSlug.value) query.mjesto = placeSlug.value
-  return sessionHref(query)
-})
+const newHref = computed(() => sessionHref({ teme: (requestedTopics.value.length ? requestedTopics.value : learn.lastTopics.value).join(','), n: String(n.value) }))
 const topicHref = (id: TopicId) => sessionHref({ teme: id, n: String(n.value) })
-const startHref = computed(() => {
-  const query: Record<string, string> = { teme: firstPick.value === 'mjesto' ? 'rijeci' : firstPick.value, n: '10' }
-  if (firstPick.value === 'mjesto' && placeSlug.value) query.mjesto = placeSlug.value
-  return sessionHref(query)
-})
+const startHref = computed(() => sessionHref({ teme: firstPick.value === 'mjesto' ? 'rijeci' : firstPick.value, n: '10' }))
 
 async function onPlaceSelection(id: string | null) {
   if (!id) {
