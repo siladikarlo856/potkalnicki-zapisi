@@ -23,6 +23,7 @@ const nickname = ref('')
 const busy = ref(false)
 const error = ref('')
 const { remember } = useChallengeList()
+useHidePzTabBar(true, 'challenge')
 
 const selectedTopics = computed({
   get: () => form.value.topics,

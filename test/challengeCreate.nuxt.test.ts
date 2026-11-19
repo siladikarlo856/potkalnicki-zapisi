@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { clearNuxtData, clearNuxtState, useRouter } from '#imports'
 import CreateChallenge from '../app/pages/izazov/novi.vue'
+import BottomNav from '../app/components/BottomNav.vue'
+import { usePzTabBar } from '../app/composables/usePzTabBar'
 import type { ChallengeSetPublic, ChallengeState, GenerateChallengeInput } from '../shared/utils/challenge'
 import { computeTopicCounts } from '../shared/utils/learn/topics'
 import { fixtureCardPool } from './fixtures/gamePool'
@@ -57,6 +59,7 @@ registerEndpoint('/api/challenges', {
 })
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
+let navigation: Awaited<ReturnType<typeof mountSuspended>> | undefined
 beforeEach(() => {
   localStorage.clear()
   clearNuxtState(['pz-challenge-list', 'pz-challenge-list-loaded', 'pz-challenge-leaderboard-counts'])
@@ -64,10 +67,48 @@ beforeEach(() => {
 afterEach(async () => {
   wrapper?.unmount()
   wrapper = undefined
+  navigation?.unmount()
+  navigation = undefined
+  expect(usePzTabBar().hidden.value).toBe(false)
   clearNuxtData()
   createRequests.length = 0
   navigateToMock.mockClear()
   await useRouter().replace({ query: {} })
+})
+
+describe('challenge create action bar', () => {
+  it('keeps BottomNav hidden across nickname focus and blur, then restores it after leaving', async () => {
+    navigation = await mountSuspended(BottomNav, { route: '/izazov/novi/' })
+    expect(navigation.find('[data-testid="bottom-nav"]').exists()).toBe(true)
+    wrapper = await mountSuspended(CreateChallenge, { route: '/izazov/novi/', attachTo: document.body })
+    const { holds, hold, release } = usePzTabBar()
+    expect(holds.value).toEqual(['challenge'])
+    await expect.poll(() => navigation!.find('[data-testid="bottom-nav"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="challenge-create-submit"]').isVisible()).toBe(true)
+
+    const nickname = wrapper.get('input[name="nickname"]').element as HTMLInputElement
+    nickname.focus()
+    await expect.poll(() => holds.value).toEqual(['challenge', 'keyboard'])
+    nickname.blur()
+    await expect.poll(() => holds.value).toEqual(['challenge'])
+    expect(navigation.find('[data-testid="bottom-nav"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="challenge-create-submit"]').isVisible()).toBe(true)
+
+    await wrapper.get('[data-testid="challenge-create-form"]').trigger('submit')
+    expect(createRequests).toHaveLength(0)
+    expect(navigation.find('[data-testid="bottom-nav"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="challenge-source-set"] input').setValue(true)
+    expect(wrapper.find('[data-set-id]').exists()).toBe(true)
+    expect(navigation.find('[data-testid="bottom-nav"]').exists()).toBe(false)
+
+    hold('sheet')
+    wrapper.unmount()
+    wrapper = undefined
+    expect(holds.value).toEqual(['sheet'])
+    expect(navigation.find('[data-testid="bottom-nav"]').exists()).toBe(false)
+    release('sheet')
+    await expect.poll(() => navigation!.find('[data-testid="bottom-nav"]').exists()).toBe(true)
+  })
 })
 
 describe('challenge template chooser', () => {
