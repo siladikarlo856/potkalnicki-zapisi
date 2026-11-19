@@ -39,7 +39,7 @@ const length = computed({
 
 const liveTopics = computed(() => pool.value.topics.filter(topic => topic.status === 'live' && topic.count > 0))
 const gameOptions = challengeCreateGameOptions('hr')
-const gameChoices = computed(() => gameOptions.filter(option => ['znacenje', 'karta-koje', 'rijec'].includes(option.id)))
+const gameChoices = computed(() => gameOptions.filter(option => ['znacenje', 'karta-koje', 'rijec'].includes(option.id) || option.id === game.value))
 const gameDescription: Record<string, string> = { 'znacenje': 'Izbor odgovora', 'karta-koje': 'Karta', 'rijec': 'Pogodi riječ' }
 
 function gameEnabled(id: GenerateGameId) {
@@ -48,6 +48,7 @@ function gameEnabled(id: GenerateGameId) {
 
 function chooseGame(id: GenerateGameId) {
   source.value = 'random'
+  if (id === game.value) return
   game.value = id
   selectedTopics.value = id === 'karta-koje' ? ['mjesta'] : ['rijeci']
 }
@@ -155,7 +156,10 @@ watch(publishedSets, (sets) => {
             >
             <span class="min-w-0">
               <b class="block text-highlighted">{{ option.label }}</b>
-              <small class="text-muted">{{ gameDescription[option.id] }}</small>
+              <small
+                v-if="gameDescription[option.id]"
+                class="text-muted"
+              >{{ gameDescription[option.id] }}</small>
             </span>
           </label>
           <label
