@@ -125,7 +125,7 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi learning and challenge ch
   it('redirects legacy kartice URL to the learn setup page', async () => {
     const response = await request('/igre/kartice', { redirect: 'manual' })
     expect(response.status).toBe(301)
-    expect(response.headers.get('location')).toContain('/uci?teme=rijeci')
+    expect(response.headers.get('location')).toContain('/uci/?teme=rijeci')
   })
 })
 
@@ -142,7 +142,7 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi app home', () => {
     expect(html).toMatch(/\bUči\b/)
     expect(html).toContain('/igre')
     expect(window.document.querySelector('#doprinos')).not.toBeNull()
-    expect(window.document.querySelector('a[href="/doprinesi"]')).not.toBeNull()
+    expect(window.document.querySelector('a[href="/doprinesi/"]')).not.toBeNull()
     const scope = window.document.querySelector('[data-testid="obuhvat"]')
     expect(scope?.textContent).toContain('Pet općina')
     expect(scope?.textContent).toContain('Radni obuhvat projekta, ne službena granica prigorja.')
@@ -374,7 +374,7 @@ describe.skipIf(!harness.enabled)('word admin and public word APIs', () => {
     expect((await db.from('heritage_words').update({ slug: newSlug }).eq('id', word.entry.id)).error).toBeNull()
     const redirect = await request('/api/heritage/words/stara-arhivska')
     expect(redirect.status).toBe(200)
-    expect(await redirect.json()).toEqual({ redirect: `/govor/${newSlug}` })
+    expect(await redirect.json()).toEqual({ redirect: `/govor/${newSlug}/` })
   })
 
   it('includes public word archive paths in the sitemap', async () => {

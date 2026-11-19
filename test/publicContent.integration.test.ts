@@ -155,7 +155,7 @@ describe.skipIf(!db.enabled)('public read layer on Postgres', () => {
 
     sql(`update public.persons set slug = 'osoba-nova-${tag}' where id = '${id.person}';`)
     content = await load()
-    expect(resolvePerson(content, `osoba-${tag}`)).toEqual({ status: 'redirect', path: `/osobe/osoba-nova-${tag}` })
+    expect(resolvePerson(content, `osoba-${tag}`)).toEqual({ status: 'redirect', path: `/osobe/osoba-nova-${tag}/` })
 
     sql(`update public.persons set status = 'archived' where id = '${id.person}';`)
     content = await load()
