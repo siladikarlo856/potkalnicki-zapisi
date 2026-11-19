@@ -69,6 +69,23 @@ async function complete(player: Player, game: ChallengeState, skip = true) {
 }
 
 describe.skipIf(!db.enabled)('real challenge HTTP and Postgres behavior', () => {
+  it('returns global completion counts for every scoreboard page, including an empty page', async () => {
+    const { game } = await create()
+    sql(`insert into heritage_challenge_participants (challenge_code, nickname, token_hash, phase, question_index, completed_at)
+      select '${game.code}', 'Igrač ' || n, lpad(n::text, 64, '0'),
+        case when n <= 60 then 'finished' else 'ready' end,
+        case when n <= 60 then 15 else 0 end,
+        case when n <= 60 then now() else null end
+      from generate_series(1, 69) n;`)
+    for (const [offset, rows] of [[0, 50], [50, 20], [100, 0]]) {
+      const response = await client().request(`${path(game, 'leaderboard')}?offset=${offset}`)
+      expect(response.status).toBe(200)
+      const board = await response.json() as ChallengeLeaderboard
+      expect(board).toMatchObject({ count: 70, completedCount: 60 })
+      expect(board.rows).toHaveLength(rows!)
+    }
+  })
+
   it('creates a challenge from the played quiz round and records the creator score immediately', async () => {
     const player = client()
     // Seeded words have UUID ids; take three active ones with distinct meanings from the database.

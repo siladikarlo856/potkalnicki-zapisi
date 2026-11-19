@@ -80,6 +80,14 @@ const event = {} as never
 const action = () => rpc.mock.calls[0]![1]
 
 describe('the Challenge module', () => {
+  it('preserves the global completion count when reading a scoreboard page', async () => {
+    state = { rows: [], count: 70, completedCount: 60 }
+    vi.stubGlobal('getQuery', () => ({ offset: '100' }))
+    const { readChallengeLeaderboard } = await challenges()
+    await expect(readChallengeLeaderboard(event)).resolves.toEqual(state)
+    expect(rpc).toHaveBeenCalledWith('heritage_challenge_scoreboard', { p_code: CODE, p_offset: 100 })
+  })
+
   it('records a Quiz-result challenge already finished, with the Quiz results, in exactly one RPC call', async () => {
     body = {
       nickname: 'Ana',

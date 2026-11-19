@@ -597,7 +597,7 @@
     "newChallenge": "Novi izazov",
     "haveCode": "Imaš kôd?",
     "codeLabel": "Kôd izazova",
-    "codeHint": "Šest do osam slova i brojki. Velika i mala slova nisu važna.",
+    "codeHint": "Kôd ima 16 znakova (slova, brojke, - i _). Velika i mala slova su važna.",
     "codeRequired": "Upiši kôd izazova.",
     "codeNotFound": "Taj kôd ne postoji. Provjeri je li dobro prepisan.",
     "noChallenges": "Još nemaš izazova",

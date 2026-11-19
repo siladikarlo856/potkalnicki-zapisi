@@ -141,6 +141,39 @@ describe('challenge template chooser', () => {
 })
 
 describe('challenge game prefill', () => {
+  it.each([
+    ['', ['karta-koje', 'znacenje', 'rijec']],
+    ['?igra=karta-koje&teme=mjesta', ['znacenje', 'karta-koje', 'rijec']],
+    ['?igra=osoba&teme=osobe', ['karta-koje', 'rijec', 'znacenje']]
+  ] as const)('switches between word and map games from %s using the chosen game topics', async (query, games) => {
+    wrapper = await mountSuspended(CreateChallenge, { route: `/izazov/novi/${query}` })
+    for (const game of games) {
+      const radio = wrapper.get(`input[name="game"][value="${game}"]`)
+      await expect.poll(() => radio.attributes('disabled')).toBeUndefined()
+      await radio.setValue(true)
+      expect((radio.element as HTMLInputElement).checked).toBe(true)
+      await wrapper.get('input[name="nickname"]').setValue('Ana')
+      await wrapper.get('[data-testid="challenge-create-form"]').trigger('submit')
+      await expect.poll(() => navigateToMock.mock.calls.length).toBe(1)
+      expect(createRequests).toEqual([{ nickname: 'Ana', generate: { game, topics: [game === 'karta-koje' ? 'mjesta' : 'rijeci'], difficulty: 'srednje', length: 10 } }])
+      createRequests.length = 0
+      navigateToMock.mockClear()
+    }
+  })
+
+  it('falls back to a compatible word game when the map pool becomes unavailable', async () => {
+    wrapper = await mountSuspended(CreateChallenge, { route: '/izazov/novi/?igra=karta-koje&teme=mjesta' })
+    await expect.poll(() => wrapper!.find('input[value="karta-koje"]:checked').exists()).toBe(true)
+    const { useNuxtData } = await import('#imports')
+    const { data } = useNuxtData<typeof pool>('card-pool')
+    data.value = { ...pool, cards: pool.cards.filter(card => card.kind !== 'place') }
+    await expect.poll(() => wrapper!.find('input[value="znacenje"]:checked').exists()).toBe(true)
+    await wrapper.get('input[name="nickname"]').setValue('Ana')
+    await wrapper.get('[data-testid="challenge-create-form"]').trigger('submit')
+    await expect.poll(() => navigateToMock.mock.calls.length).toBe(1)
+    expect(createRequests[0]?.generate).toMatchObject({ game: 'znacenje', topics: ['rijeci'] })
+  })
+
   it('keeps the three default game choices when there is no incoming selection', async () => {
     wrapper = await mountSuspended(CreateChallenge, { route: '/izazov/novi/' })
     expect(wrapper.findAll('[data-game]').map(option => option.attributes('data-game'))).toEqual(['znacenje', 'rijec', 'karta-koje'])

@@ -37,7 +37,7 @@ const primaryTo = (code: string) => {
 
 function detail(item: StoredChallenge) {
   const last = item.last
-  const played = last ? `${Math.min(last.index, last.questionCount)} od ${last.questionCount}` : ''
+  const played = last ? `${Math.min(last.index + (last.phase === 'feedback' ? 1 : 0), last.questionCount)} od ${last.questionCount}` : ''
   const days = daysUntilClose(item.closesAt)
   if (last?.closed || last?.completedAt) {
     const finishedAt = last.completedAt ?? item.closesAt

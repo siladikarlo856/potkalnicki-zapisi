@@ -17,6 +17,7 @@ const snapshot = (): ChallengeState => ({
 })
 const board: ChallengeLeaderboard = {
   count: 3,
+  completedCount: 2,
   rows: [
     { nickname: 'Baka Mara', total: 1300, rank: 1, rounds: [500, 400, 400], completedAt: '2026-11-06T11:00:00Z' },
     { nickname: 'Ivek', total: 1300, rank: 1, rounds: [400, 500, 400], completedAt: '2026-11-06T12:00:00Z' },
@@ -24,7 +25,20 @@ const board: ChallengeLeaderboard = {
   ]
 }
 // The scoreboard lives at /leaderboard; the page must ask for exactly that path.
-registerEndpoint(`/api/challenges/${code}/leaderboard`, () => board)
+let paginated = false
+registerEndpoint(`/api/challenges/${code}/leaderboard`, (event) => {
+  if (!paginated) return board
+  const { path } = event as unknown as { path: string }
+  const offset = Number(new URL(path, 'http://localhost').searchParams.get('offset') ?? 0)
+  return {
+    count: 70,
+    completedCount: 60,
+    rows: Array.from({ length: Math.min(50, 70 - offset) }, (_, index) => ({
+      nickname: `Igrač ${offset + index}`, total: 0, rank: 1, rounds: [0, 0, 0],
+      completedAt: offset + index < 60 ? '2026-11-06T12:00:00Z' : null
+    }))
+  }
+})
 registerEndpoint(`/api/challenges/${code}`, () => snapshot())
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
@@ -32,6 +46,7 @@ afterEach(() => {
   wrapper?.unmount()
   wrapper = undefined
   closed = false
+  paginated = false
   expect(usePzTabBar().hidden.value).toBe(false)
 })
 
@@ -42,6 +57,18 @@ async function mountBoard() {
 }
 
 describe('challenge leaderboard page', () => {
+  it('keeps the global completion count while loading more participant rows', async () => {
+    paginated = true
+    const page = await mountBoard()
+    await expect.poll(() => page.find('[data-testid="challenge-played-count"]').text()).toBe('Odigralo 60 od 70')
+    expect(page.findAll('tbody tr')).toHaveLength(50)
+    const more = page.findAll('button').find(button => button.text() === 'Prikaži još')!
+    await more.trigger('click')
+    await expect.poll(() => page.findAll('tbody tr').length).toBe(70)
+    await expect.poll(() => page.find('[data-testid="challenge-played-count"]').text()).toBe('Odigralo 60 od 70')
+    expect(page.findAll('button').some(button => button.text() === 'Prikaži još')).toBe(false)
+  })
+
   it('lists the players in a table with th cells, ties as text ranks and the visitor\'s row marked', async () => {
     const page = await mountBoard()
     expect(page.get('h1').text()).toBe('Ljestvica')

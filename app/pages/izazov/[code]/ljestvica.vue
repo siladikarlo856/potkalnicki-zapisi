@@ -12,7 +12,7 @@ const localePath = useLocalePath()
 const route = useRoute()
 const code = String(route.params.code)
 const state = ref<ChallengeState | null>(null)
-const board = ref<ChallengeLeaderboard>({ rows: [], count: 0 })
+const board = ref<ChallengeLeaderboard>({ rows: [], count: 0, completedCount: 0 })
 const loading = ref(true)
 const error = ref(false)
 const missing = ref(false)
@@ -50,7 +50,7 @@ async function load(more = false) {
       $fetch<ChallengeLeaderboard>(`/api/challenges/${code}/leaderboard`, { query: { offset: more ? board.value.rows.length : 0 } }),
       $fetch<ChallengeState>(`/api/challenges/${code}`)
     ])
-    board.value = { count: next.count, rows: more ? [...board.value.rows, ...next.rows] : next.rows }
+    board.value = { ...next, rows: more ? [...board.value.rows, ...next.rows] : next.rows }
     state.value = challenge
     markSeen(code, next.count)
   } catch (cause) {
@@ -123,8 +123,9 @@ onMounted(() => {
         <p
           v-if="state && !loading"
           class="pz-body-sm text-muted"
+          data-testid="challenge-played-count"
         >
-          {{ t('challenge.playedCount', { played: board.rows.filter(row => row.completedAt).length, total: board.count }) }}
+          {{ t('challenge.playedCount', { played: board.completedCount, total: board.count }) }}
         </p>
       </header>
 

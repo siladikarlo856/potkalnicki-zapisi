@@ -25,14 +25,8 @@ const error = ref('')
 const { remember } = useChallengeList()
 useHidePzTabBar(true, 'challenge')
 
-const selectedTopics = computed({
-  get: () => form.value.topics,
-  set: (topics: TopicId[]) => { form.value = { ...form.value, topics } }
-})
-const game = computed({
-  get: () => form.value.game,
-  set: (value: GenerateGameId) => { form.value = { ...form.value, game: value } }
-})
+const selectedTopics = computed(() => form.value.topics)
+const game = computed(() => form.value.game)
 const length = computed({
   get: () => form.value.length,
   set: (value: GenerateChallengeInput['length']) => { form.value = { ...form.value, length: value } }
@@ -43,15 +37,18 @@ const gameOptions = challengeCreateGameOptions('hr')
 const gameChoices = computed(() => gameOptions.filter(option => ['znacenje', 'karta-koje', 'rijec'].includes(option.id) || option.id === game.value))
 const gameDescription: Record<string, string> = { 'znacenje': 'Izbor odgovora', 'karta-koje': 'Karta', 'rijec': 'Pogodi riječ' }
 
+function topicsForGame(id: GenerateGameId): TopicId[] {
+  if (id === game.value) return selectedTopics.value
+  return id === 'karta-koje' ? ['mjesta'] : ['rijeci']
+}
+
 function gameEnabled(id: GenerateGameId) {
-  return challengeCreateGameEnabled(id, selectedTopics.value, pool.value)
+  return challengeCreateGameEnabled(id, topicsForGame(id), pool.value)
 }
 
 function chooseGame(id: GenerateGameId) {
   source.value = 'random'
-  if (id === game.value) return
-  game.value = id
-  selectedTopics.value = id === 'karta-koje' ? ['mjesta'] : ['rijeci']
+  form.value = { ...form.value, game: id, topics: topicsForGame(id) }
 }
 
 watch([selectedTopics, pool], () => {

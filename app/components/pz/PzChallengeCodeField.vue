@@ -9,7 +9,7 @@ const props = withDefaults(defineProps<{
   busy: false,
   error: '',
   label: 'Kôd izazova',
-  hint: 'Šest do osam slova i brojki. Velika i mala slova nisu važna.'
+  hint: 'Kôd ima 16 znakova (slova, brojke, - i _). Velika i mala slova su važna.'
 })
 
 const emit = defineEmits<{ 'update:modelValue': [value: string], 'submit': [] }>()
@@ -33,10 +33,10 @@ const value = computed({
     >
       <UInput
         v-model="value"
-        class="min-w-0 flex-1 uppercase tracking-[0.16em] tabular-nums"
-        placeholder="npr. KALNIK7"
+        class="min-w-0 flex-1 tracking-[0.16em] tabular-nums"
+        placeholder="npr. aB3dEfGhIjK-_nO2"
         autocomplete="off"
-        autocapitalize="characters"
+        autocapitalize="none"
         spellcheck="false"
         :aria-invalid="Boolean(error)"
         data-testid="challenge-code-input"
