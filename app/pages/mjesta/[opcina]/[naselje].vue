@@ -166,6 +166,12 @@ useSeoMeta({
         </template>
       </PzFactPanel>
 
+      <PzSchematicMap
+        class="lg:col-start-2 lg:row-start-2"
+        :selected="mapAreaForMunicipality(municipality.slug)"
+        :label="`Lokator: ${settlement.name}, ${municipality.label}`"
+      />
+
       <div class="flex min-w-0 flex-col gap-8">
         <PzEmptyState
           v-if="thin"

@@ -5,6 +5,8 @@ import type {
   AtlasOverviewResponse,
   AtlasPersonListResponse,
   AtlasSettlementResponse,
+  ArchiveSearchGroup,
+  ArchiveSearchResponse,
   ContentSearchResponse,
   ContentTargetResponse,
   PublicCategoryRef,
@@ -18,13 +20,14 @@ import type {
   SuggestOptionsResponse
 } from '../../shared/types/publicAtlas'
 import { slugHistoryKey } from './publicContent'
-import { intangibleForMunicipality, intangibleForPerson, intangibleForSettlement } from './publicIntangible'
+import { intangibleForMunicipality, intangibleForPerson, intangibleForSettlement, intangibleListItem } from './publicIntangible'
 import {
   atlasMunicipalityPath, atlasPersonPath, atlasSettlementPath, heritageItemPath,
   municipalityRef, personRef, personRefs, settlementRef
 } from './publicRefs'
 import { PERSON_AREA_ROLE_LABELS } from '../../shared/utils/content/person'
 import type { PublicContent, SnapshotItem, SnapshotMunicipality, SnapshotPerson, SnapshotSettlement } from './publicContent'
+import { wordArchivePagePath } from '../../shared/utils/speech'
 
 // Pure queries over the public content snapshot: route resolution (live, moved, gone or unknown) and the
 // response shapes of the public atlas API. No database access, so a warm request never leaves the process.
@@ -373,4 +376,41 @@ export function searchContent(content: PublicContent, query: string, limit = 8):
   const settlements = content.settlements.filter(s => fold(s.name).includes(q)).slice(0, limit)
     .map(s => ({ id: s.id, name: s.name, context: content.municipalityById.get(s.municipalityId)?.label ?? '' }))
   return { items, settlements }
+}
+
+const archiveFold = (value: string) => value.toLocaleLowerCase('hr').replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+/** Search every public archive section from the already-built public snapshot. */
+export function archiveSearch(content: PublicContent, query: string, limit = 3, only?: ArchiveSearchGroup['key']): ArchiveSearchResponse {
+  const value = query.trim()
+  const q = archiveFold(value)
+  const match = (text: string) => archiveFold(text).includes(q)
+  const groups: ArchiveSearchResponse['groups'] = []
+  const places = [...content.municipalities.map(m => ({ id: m.id, title: m.label, context: 'Mjesta', path: atlasMunicipalityPath(m.slug) })),
+    ...content.settlements.map(s => ({ id: s.id, title: s.name, context: content.municipalityById.get(s.municipalityId)?.label ?? 'Mjesta', path: atlasSettlementPath(content, s) }))]
+  const placeHits = places.filter(x => match(`${x.title} ${x.context}`))
+  groups.push({ key: 'places', label: 'Mjesta', hits: placeHits.slice(0, limit).map(x => ({ ...x, kind: 'Mjesto' })), total: placeHits.length })
+
+  const heritageHits = content.items.filter(i => match(i.name)).map((i) => {
+    const settlement = i.settlementId ? content.settlementById.get(i.settlementId) : undefined
+    return { id: i.id, title: i.name, context: settlement?.name ?? content.municipalityById.get(i.municipalityId)?.label ?? '', path: settlement ? heritageItemPath(content, i)! : atlasMunicipalityPath(content.municipalityById.get(i.municipalityId)!.slug), verification: i.verification, kind: content.categories.get(i.categoryId)?.label ?? 'Baština' }
+  })
+  groups.push({ key: 'heritage', label: 'Baština', hits: heritageHits.slice(0, limit), total: heritageHits.length })
+
+  const intangibleHits = content.intangible.records.filter(r => match(`${r.title} ${r.textLocal ?? ''} ${r.textStandard ?? ''}`)).map((r) => {
+    const item = intangibleListItem(content, r)
+    return { id: item.id, title: item.title, context: item.places[0]?.name ?? item.typeLabel, path: item.path, verification: item.verification, kind: item.kindLabel }
+  })
+  groups.push({ key: 'intangible', label: 'Priče i običaji', hits: intangibleHits.slice(0, limit), total: intangibleHits.length })
+
+  const personHits = content.persons.filter(p => match(`${p.name} ${p.bio ?? ''}`)).map(p => ({ id: p.id, title: p.name, context: 'Osoba', path: atlasPersonPath(p.slug), verification: p.verification, kind: 'Osoba' }))
+  groups.push({ key: 'persons', label: 'Osobe', hits: personHits.slice(0, limit), total: personHits.length })
+
+  const words = new Map<string, { id: string, headword: string, slug: string | null }>()
+  content.intangible.records.flatMap(r => r.words).forEach(word => words.set(word.id, word))
+  const wordHits = [...words.values()].filter(w => match(w.headword) && w.slug).map(w => ({ id: w.id, title: w.headword, context: 'Riječ domaćega govora', path: wordArchivePagePath(w.slug!), kind: 'Riječ' }))
+  groups.push({ key: 'speech', label: 'Govor', hits: wordHits.slice(0, limit), total: wordHits.length })
+
+  const found = groups.filter(group => group.total > 0 && (!only || group.key === only))
+  return { query: value, total: found.reduce((sum, group) => sum + group.total, 0), groups: found }
 }

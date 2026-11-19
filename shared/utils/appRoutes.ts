@@ -11,6 +11,8 @@ export function pzPath(...segments: (string | number)[]) {
 
 export const pzRoutes = {
   home: '/',
+  archive: pzPath('arhiv'),
+  search: pzPath('trazi'),
   games: pzPath('igre'),
   cards: pzPath('igre', 'kartice'),
   learn: pzPath('uci'),

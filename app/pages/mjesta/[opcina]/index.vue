@@ -10,6 +10,7 @@ const route = useRoute()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { settlementPath } = useAtlas()
+const settlementFilter = ref('')
 
 const municipalitySlug = computed(() => String(route.params.opcina))
 const { data: page } = await useAtlasFetch<AtlasMunicipalityResponse>(
@@ -26,6 +27,13 @@ const settlements = computed(() => (page.value?.settlements ?? []).map(s => ({
   ...s,
   to: settlementPath(municipalitySlug.value, s.slug)
 })).sort((a, b) => a.name.localeCompare(b.name, 'hr')))
+const currentLetter = computed(() => typeof route.query.slovo === 'string' ? alphabetLetter(route.query.slovo) : undefined)
+const filteredSettlements = computed(() => {
+  const query = foldHr(settlementFilter.value.trim())
+  return settlements.value.filter(s => foldHr(s.name).includes(query) && (!currentLetter.value || alphabetLetter(s.name) === currentLetter.value))
+})
+const availableLetters = computed(() => [...new Set(settlements.value.flatMap(s => alphabetLetter(s.name) ?? []))])
+const letterTo = (letter: string) => `${route.path}?slovo=${encodeURIComponent(letter.toLocaleLowerCase('hr'))}#settlements-title`
 
 // "Baština" tab: the municipality's items, from the same list API the heritage list uses.
 const { data: heritage } = useLazyFetch<AtlasHeritageListResponse>('/api/atlas/heritage', {
@@ -91,6 +99,61 @@ useSeoMeta({
         </div>
       </dl>
     </header>
+
+    <div class="grid gap-6 lg:grid-cols-12 lg:gap-12">
+      <div class="lg:col-span-5">
+        <PzSchematicMap
+          labels
+          :selected="mapAreaForMunicipality(municipality.slug)"
+          :label="`Karta: ${municipality.label} istaknuta, ostala područja prigušena`"
+        />
+      </div>
+      <section
+        class="flex flex-col gap-4 lg:col-span-7"
+        aria-labelledby="settlements-title"
+      >
+        <div class="flex items-baseline justify-between gap-3">
+          <h2
+            id="settlements-title"
+            class="pz-h2 text-highlighted"
+          >
+            Naselja
+          </h2>
+          <span class="pz-body-sm text-muted">po abecedi</span>
+        </div>
+        <PzSearchField
+          v-if="settlements.length > 20"
+          v-model="settlementFilter"
+          label="Filtriraj naselja"
+          placeholder="Filtriraj naselja"
+        />
+        <PzAlphabetIndex
+          v-if="settlements.length > 20"
+          :available="availableLetters"
+          :current="currentLetter"
+          :to="letterTo"
+        />
+        <PzEmptyState
+          v-if="!filteredSettlements.length"
+          title="Nijedno naselje ne sadrži ovaj filtar"
+          description="Provjeri kako je napisano ili obriši filtar da vidiš sva naselja."
+        />
+        <ul
+          v-else
+          class="divide-y divide-default overflow-hidden rounded-lg border border-default bg-default"
+        >
+          <li
+            v-for="settlement in filteredSettlements"
+            :key="settlement.id"
+          >
+            <NuxtLink
+              :to="settlement.to"
+              class="flex min-h-11 items-center justify-between gap-3 px-4 py-3 no-underline"
+            ><span>{{ settlement.name }}</span><span class="pz-caption text-muted">{{ settlement.itemCount ? `${settlement.itemCount} zapisa` : 'Još nema zapisa' }}</span></NuxtLink>
+          </li>
+        </ul>
+      </section>
+    </div>
 
     <UTabs
       v-model="tab"

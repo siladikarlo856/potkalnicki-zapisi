@@ -5,3 +5,6 @@ export const MAP_AREAS = [
   { id: 'sveti-petar-orehovec', name: 'Sv. Petar Orehovec', fill: 'var(--pz-map-3)', d: 'M38 122 124 110 226 100 236 150 120 176 50 160Z', lx: 138, ly: 142 },
   { id: 'krizevci', name: 'Križevci', fill: 'var(--pz-map-4)', d: 'M216 32 332 50 346 150 300 196 180 199 120 176 236 150 226 100Z', lx: 278, ly: 124 }
 ] as const
+
+/** The map area a municipality slug belongs to, if the schematic map knows it. */
+export const mapAreaForMunicipality = (slug: string) => MAP_AREAS.find(area => slug.includes(area.id))?.id
