@@ -6,6 +6,7 @@ import { buildSuggestPayload, SOURCE_TYPE_LABELS, suggestSummary } from '~~/shar
 import { SUBMISSION_LIMITS, validateSubmission } from '~~/shared/utils/submission'
 import type { SubmissionIssue } from '~~/shared/utils/submission'
 import type { SuggestOptionsResponse } from '~~/shared/types/publicAtlas'
+import { CONTRIBUTION_DRAFT_STORAGE_KEY } from '~~/app/utils/contributionDraft'
 
 // The body of every suggestion: a correction of one row, or a proposal for a new one. Used in the dialog
 // (HeritageSuggestDialog) and in place on /doprinesi. Only the whitelisted fields of the kind are shown;
@@ -21,6 +22,8 @@ const props = defineProps<{
   prefill?: Record<string, string | undefined>
   /** Shows a cancel button and emits `close` instead of offering "send another". */
   dialog?: boolean
+  /** Enables device draft persistence for the public contribution page. */
+  draftKey?: string
 }>()
 const emit = defineEmits<{ close: [] }>()
 const formId = useId()
@@ -54,6 +57,55 @@ const success = useTemplateRef<{ focus: () => void }>('success')
 const sendState = ref<'idle' | 'sending' | 'sent' | 'error'>('idle')
 const sendError = ref('')
 const formToken = ref<string | null>(null)
+const draftRestored = ref(false)
+const draftStorageKey = computed(() => props.draftKey ? `${CONTRIBUTION_DRAFT_STORAGE_KEY}/${props.draftKey}` : null)
+
+function readDraft() {
+  if (!import.meta.client || !draftStorageKey.value) return
+  try {
+    const raw = window.localStorage.getItem(draftStorageKey.value)
+    if (!raw) return
+    const draft = JSON.parse(raw) as { values?: Record<string, string | undefined>, state?: Partial<typeof state>, placeQuery?: string }
+    if (draft.values && typeof draft.values === 'object') Object.assign(values, draft.values)
+    if (draft.state && typeof draft.state === 'object') {
+      const { note, name, contact } = draft.state
+      Object.assign(state, {
+        note: typeof note === 'string' ? note : state.note,
+        name: typeof name === 'string' ? name : state.name,
+        contact: typeof contact === 'string' ? contact : state.contact
+      })
+    }
+    if (typeof draft.placeQuery === 'string') placeQuery.value = draft.placeQuery
+    draftRestored.value = true
+  } catch {
+    // Ignore malformed or unavailable device storage.
+  }
+}
+
+function saveDraft() {
+  if (!import.meta.client || !draftStorageKey.value || sendState.value === 'sent') return
+  const base = startValues()
+  const changed: Record<string, string | undefined> = {}
+  for (const [key, value] of Object.entries(values)) if (value !== base[key] && (value || base[key])) changed[key] = value
+  if (!Object.keys(changed).length && !state.note && !state.name && !state.contact && !placeQuery.value) {
+    clearDraft()
+    return
+  }
+  try {
+    window.localStorage.setItem(draftStorageKey.value, JSON.stringify({ values: changed, state: { note: state.note, name: state.name, contact: state.contact }, placeQuery: placeQuery.value }))
+  } catch {
+    // Ignore private browsing and full storage.
+  }
+}
+
+function clearDraft() {
+  if (!import.meta.client || !draftStorageKey.value) return
+  try {
+    window.localStorage.removeItem(draftStorageKey.value)
+  } catch {
+    // Ignore storage failures after a successful send.
+  }
+}
 
 // The category id of the current item is known only once the options arrive; fill what the visitor has not touched.
 watch(currentValues, (next) => {
@@ -63,12 +115,16 @@ watch(currentValues, (next) => {
 
 // A signed render-time token: the server ignores forms filled in faster than a person could.
 onMounted(async () => {
+  readDraft()
   try {
     formToken.value = (await $fetch<{ token: string | null }>('/api/submission-token')).token
   } catch {
     formToken.value = null
   }
 })
+watch(values, saveDraft, { deep: true })
+watch(state, saveDraft, { deep: true })
+watch(placeQuery, saveDraft)
 
 const heading = computed(() => props.mode === 'correction'
   ? t('heritage.suggest.correctionOf', { name: props.target?.label ?? '' })
@@ -147,6 +203,8 @@ async function send() {
   sendState.value = 'sending'
   const outcome = await submit({ ...body(), formToken: formToken.value })
   if (outcome.ok) {
+    clearDraft()
+    draftRestored.value = false
     sendState.value = 'sent'
     await nextTick()
     closeButton.value?.$el?.focus()
@@ -164,6 +222,8 @@ function reset() {
   Object.assign(values, fresh)
   Object.assign(state, { note: '', consentPublish: false })
   placeQuery.value = ''
+  clearDraft()
+  draftRestored.value = false
   sendState.value = 'idle'
 }
 
@@ -178,6 +238,15 @@ defineExpose({
     class="flex flex-col gap-4"
     data-testid="suggest-form"
   >
+    <UAlert
+      v-if="draftRestored"
+      title="Vraćen je nedovršeni prilog."
+      description="Nastavi gdje si stao ili ga obriši."
+      icon="i-lucide-rotate-ccw"
+      color="neutral"
+      role="status"
+      :actions="[{ label: 'Obriši', color: 'neutral', variant: 'ghost', onClick: () => { clearDraft(); draftRestored = false } }]"
+    />
     <div
       class="rounded-lg bg-elevated px-3 py-2"
       data-testid="suggest-heading"

@@ -92,6 +92,8 @@ const proposalPrefill = computed(() => {
   return prefill
 })
 
+const proposalDraftKey = computed(() => `doprinesi/proposal/${proposalRequest.value?.kind}/${proposalRequest.value?.settlement ?? ''}/${proposalRequest.value?.municipality ?? ''}`)
+
 const selectedKind = computed(() => {
   const raw = route.query.vrsta
   if (raw === 'rijec' || raw === 'rijec-izraz') return 'word' as const
@@ -150,22 +152,15 @@ useSeoMeta({
 
 <template>
   <div class="mx-auto w-full max-w-(--pz-page-max) px-4 py-6 lg:px-12 lg:py-12">
-    <div class="flex max-w-(--pz-measure) flex-col gap-8">
-      <header
-        v-if="showPicker"
-        class="flex flex-col gap-3"
-      >
-        <h1 class="pz-h1 text-highlighted lg:pz-display">
-          {{ t('pz.contribute.title') }}
-        </h1>
-        <p class="pz-body text-muted">
-          {{ t('pz.contribute.intro') }}
-        </p>
-      </header>
+    <div class="mx-auto flex w-full max-w-[720px] flex-col gap-8">
+      <PageHead
+        :title="t('pz.contribute.title')"
+        lead="Zapiši ono što znaš o ovom kraju. Urednik svaki prilog pregleda prije objave i, ako treba, javi ti se s pitanjem."
+      />
 
       <ul
         v-if="showPicker"
-        class="grid grid-cols-2 gap-3"
+        class="grid gap-3 sm:grid-cols-2"
         data-testid="contribute-type-picker"
       >
         <li
@@ -253,19 +248,23 @@ useSeoMeta({
           mode="correction"
           :target="{ id: correction.id, label: correction.label }"
           :current="correction.current"
+          :draft-key="`doprinesi/correction/${correction.kind}/${correction.id}`"
         />
         <HeritageSuggestForm
           v-else-if="proposalRequest"
-          :key="`proposal-${proposalRequest.kind}-${JSON.stringify(proposalPrefill)}`"
+          :key="`${proposalDraftKey}-${JSON.stringify(proposalPrefill)}`"
           :kind="proposalRequest.kind"
           mode="proposal"
           :prefill="proposalPrefill"
+          :draft-key="proposalDraftKey"
         />
         <HeritageSubmissionForm
           v-else-if="selectedKind"
+          :key="`doprinesi/submission/${selectedKind}`"
           :word="prefillWord"
           :fixed-type="fixedType"
           hide-type-picker
+          :draft-key="`doprinesi/submission/${selectedKind}`"
           sticky-bar
         />
       </div>
