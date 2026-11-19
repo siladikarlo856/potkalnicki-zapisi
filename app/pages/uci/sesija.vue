@@ -136,6 +136,11 @@ function initSession() {
   learn.setCurrent(next)
 }
 
+async function restartSession(to: string) {
+  await navigateTo(to)
+  initSession()
+}
+
 const active = computed(() => session.value)
 const currentKey = computed(() => active.value?.queue[active.value.index])
 const currentCard = computed(() => {
@@ -346,8 +351,16 @@ watch(() => status.value, (s) => {
           {{ t('pz.learn.title') }}
         </PzBackPill>
 
+        <PageState
+          v-if="error"
+          kind="error"
+          title="Kartice nismo uspjeli učitati"
+          description="Tvoj je napredak sačuvan. Pokušaj ponovno."
+          @retry="refresh()"
+        />
+
         <div
-          v-if="!ready || status === 'pending'"
+          v-else-if="!ready || status === 'pending'"
           class="space-y-3"
           aria-busy="true"
         >
@@ -359,14 +372,6 @@ watch(() => status.value, (s) => {
           </p>
           <USkeleton class="h-72 w-full rounded-(--pz-radius-lg)" />
         </div>
-
-        <PageState
-          v-else-if="error"
-          kind="error"
-          title="Kartice nismo uspjeli učitati"
-          description="Tvoj je napredak sačuvan. Pokušaj ponovno."
-          @retry="refresh()"
-        />
 
         <div
           v-else-if="unavailable"
@@ -388,6 +393,7 @@ watch(() => status.value, (s) => {
           :pool="pool"
           :session="finished"
           :streak="streak"
+          @restart="restartSession"
         />
       </div>
     </UContainer>
