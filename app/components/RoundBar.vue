@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{ title: string, current: number, total: number, score?: number, exitTo?: string }>()
+const props = defineProps<{ title: string, current: number, total: number, score?: number, exitTo?: string, exit?: { label: string, title: string, description: string, stay: string, leave: string } }>()
 const open = ref(false)
 const roundShellActive = useState('pz-round-shell-active', () => false)
 onMounted(() => {
@@ -23,7 +23,7 @@ function leave() {
   >
     <UContainer class="flex min-h-14 items-center gap-3">
       <IconButton
-        label="Izađi iz igre"
+        :label="exit?.label ?? 'Izađi iz igre'"
         icon="i-lucide-x"
         variant="ghost"
         @click="open = true"
@@ -52,22 +52,22 @@ function leave() {
   </header>
   <AppSheet
     v-model:open="open"
-    title="Želiš li prekinuti igru?"
-    description="Napredak u ovoj igri neće se spremiti."
+    :title="exit?.title ?? 'Želiš li prekinuti igru?'"
+    :description="exit?.description ?? 'Napredak u ovoj igri neće se spremiti.'"
     confirmation
   >
     <p class="text-toned">
-      Napredak u ovoj igri neće se spremiti.
+      {{ exit?.description ?? 'Napredak u ovoj igri neće se spremiti.' }}
     </p>
     <template #footer>
       <div class="flex w-full justify-end gap-3">
         <UButton
-          label="Nastavi igru"
+          :label="exit?.stay ?? 'Nastavi igru'"
           color="primary"
           @click="open = false"
         />
         <UButton
-          label="Prekini"
+          :label="exit?.leave ?? 'Prekini'"
           color="neutral"
           variant="outline"
           @click="leave"

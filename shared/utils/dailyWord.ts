@@ -160,6 +160,83 @@ export function dailyWordShareText(number: number, result: Pick<DailyProgress, '
   return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://prigorje.karlo-siladi.from.hr/igre/#rijec-dana`
 }
 
+/** Typed rounds (the /rijec-dana/ page): five tries, up to three clues, one more letter after each wrong guess. */
+export const DAILY_TYPED_TRIES = 5
+export const DAILY_TYPED_CLUES = 3
+
+/** Case, spacing and diacritics folded away, so "skrlak" and "Škrlak" are the same guess. */
+export function foldDailyGuess(text: string): string {
+  return text.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/gi, 'd').normalize('NFC').toLocaleLowerCase('hr').replace(/\s+/g, ' ').trim()
+}
+
+function oneLetterApart(a: string, b: string): boolean {
+  if (Math.abs(a.length - b.length) > 1 || a === b) return false
+  let i = 0
+  while (i < a.length && i < b.length && a[i] === b[i]) i++
+  if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1)
+  return a.length > b.length ? a.slice(i + 1) === b.slice(i) : b.slice(i + 1) === a.slice(i)
+}
+
+/**
+ * The run of consecutive solved days ending today (when today is solved) or yesterday. A missed day ends the run,
+ * unlike `deriveDailyStats().streak`, which counts every played day.
+ */
+export function dailySolvedStreak(days: Readonly<Record<string, DailyProgress>>, today: string): number {
+  let day = days[today]?.done ? today : addDays(today, -1)
+  let run = 0
+  while (days[day]?.done && days[day]!.solved) {
+    run++
+    day = addDays(day, -1)
+  }
+  return run
+}
+
+/** The run that today's missed word ended (0 when today is not a finished miss). */
+export function dailyBrokenStreak(days: Readonly<Record<string, DailyProgress>>, today: string): number {
+  const record = days[today]
+  if (!record?.done || record.solved) return 0
+  return dailySolvedStreak(days, addDays(today, -1))
+}
+
+export type DailyGuessVerdict = { kind: 'wrong' } | { kind: 'right', answer: string, exact: boolean }
+
+/**
+ * A guess is right when it equals an accepted form (the headword or one of its variants) apart from case and
+ * diacritics, or differs by a single letter (the shared near-miss rule). `exact` is false for the one-letter case,
+ * so the page can show the spelling.
+ */
+export function judgeDailyGuess(guess: string, answers: readonly string[]): DailyGuessVerdict {
+  const folded = foldDailyGuess(guess)
+  if (!folded) return { kind: 'wrong' }
+  for (const answer of answers) if (foldDailyGuess(answer) === folded) return { kind: 'right', answer, exact: true }
+  if (folded.length >= 5) for (const answer of answers) if (oneLetterApart(foldDailyGuess(answer), folded)) return { kind: 'right', answer, exact: false }
+  return { kind: 'wrong' }
+}
+
+/** Letters shown in the slots: the first one at the start, one more after each wrong guess. */
+export function dailyRevealedLetters(headword: string, wrongGuesses: number): string[] {
+  const letters = [...headword]
+  let shown = 0
+  return letters.map((letter) => {
+    if (letter === ' ' || letter === '-') return letter
+    shown++
+    return shown <= 1 + wrongGuesses ? letter : ''
+  })
+}
+
+/**
+ * The message the share sheet previews (the address is added when it is sent). It carries the date, one square per
+ * try, the count and the streak, never the word or a clue.
+ */
+export function dailyWordShareMessage(day: string, result: Pick<DailyProgress, 'done' | 'solved' | 'tries' | 'maxTries'>, streak: number): string {
+  if (!result.done) return ''
+  const { solved, tries, maxTries } = result
+  const squares = '🟨'.repeat(solved ? tries - 1 : tries) + (solved ? '🟩' : '') + '⬜'.repeat(maxTries - tries)
+  const [, month, date] = day.split('-')
+  const tail = streak > 0 ? ` · niz ${streak}` : ''
+  return `Potkalnički zapisi · Riječ dana ${Number(date)}. ${Number(month)}.\n${squares} ${solved ? tries : 'X'}/${maxTries}${tail}`
+}
+
 export interface DailyReadiness {
   example: boolean
   category: boolean

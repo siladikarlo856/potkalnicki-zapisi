@@ -97,10 +97,9 @@ const scopeCount = computed(() => overview.value?.totals)
       </section>
 
       <div class="min-w-0 lg:col-span-5">
-        <HeritageDailyWord
-          compact-when-played
-          bare
-        />
+        <div data-testid="daily-word">
+          <DailyWordCard />
+        </div>
       </div>
     </div>
 

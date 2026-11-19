@@ -1,6 +1,6 @@
 import { computed, onBeforeUnmount, onMounted, readonly } from 'vue'
 import { useState } from '#imports'
-import { deriveDailyStats } from '~~/shared/utils/dailyWord'
+import { dailyBrokenStreak, dailySolvedStreak, deriveDailyStats } from '~~/shared/utils/dailyWord'
 import type { DailyProgress } from '~~/shared/utils/dailyWord'
 
 export const DAILY_STORAGE_KEY = 'ksh.heritage.daily.v1'
@@ -85,6 +85,8 @@ export function useDailyProgress() {
     loaded: computed(() => loaded.value),
     storageUnavailable: computed(() => unavailable.value),
     save,
-    statsFor: (today: string) => deriveDailyStats(store.value.days, today)
+    statsFor: (today: string) => deriveDailyStats(store.value.days, today),
+    solvedStreakFor: (today: string) => dailySolvedStreak(store.value.days, today),
+    brokenStreakFor: (today: string) => dailyBrokenStreak(store.value.days, today)
   }
 }
