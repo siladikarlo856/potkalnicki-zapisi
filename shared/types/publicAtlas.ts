@@ -252,3 +252,26 @@ export interface ContentSearchResponse {
   items: Array<{ id: string, name: string, context: string }>
   settlements: Array<{ id: string, name: string, context: string }>
 }
+
+export interface ArchiveSearchHit {
+  id: string
+  title: string
+  context: string
+  path: string
+  verification?: AtlasItemStatus
+  kind: string
+  meaning?: string
+}
+
+export interface ArchiveSearchGroup {
+  key: 'places' | 'heritage' | 'intangible' | 'persons' | 'speech'
+  label: string
+  hits: ArchiveSearchHit[]
+  total: number
+}
+
+export interface ArchiveSearchResponse {
+  query: string
+  total: number
+  groups: ArchiveSearchGroup[]
+}
