@@ -15,7 +15,7 @@ export function useDailyWord() {
   })
   const payload = computed(() => data.value ?? undefined)
   /** Only the explicit pre-launch response is exempt from outage recording. */
-  const unavailable = computed(() => error.value?.statusCode === 404 && error.value.data?.statusMessage === 'not-started')
+  const unavailable = computed(() => error.value?.statusCode === 404 && (error.value.data as { statusMessage?: string } | undefined)?.statusMessage === 'not-started')
   const progress = useDailyProgress()
   // Without a server day during a load failure, outage recording uses the device clock's Zagreb day.
   watch([error, progress.loaded], ([failure, loaded]) => {
