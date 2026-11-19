@@ -2,6 +2,16 @@
 
 Potkalnički zapisi is the heritage and Digital Atlas for Potkalničko prigorje: a Croatian-first atlas of places, words, stories, people, customs, photographs and learning games. The production site is **https://prigorje.karlo-siladi.from.hr**. The portfolio lives separately at https://karlo-siladi.from.hr.
 
+## Play and learn
+
+`/igraj/` brings together Riječ dana, learning cards, games and shared challenges. The full games catalogue remains at `/igre/`.
+
+At `/rijec-dana/`, type the local word from up to three clues in five attempts. The first letter is given; wrong guesses reveal more letters and any remaining clues. Capitalization and diacritics do not affect acceptance. A new word arrives at midnight in Europe/Zagreb. After finishing, share a result without revealing the answer or choose **Dodaj u učenje** to save the word for review.
+
+Daily results and learning progress stay on this device, without an account. The daily streak counts solved days: a recorded load-failure day preserves it without adding a day, while an ordinary missed day or completed loss breaks it. Outage protection depends on this browser retaining its local record; with storage unavailable, progress lasts only in memory.
+
+At `/uci/`, first-time visitors choose a topic or settlement and start with ten cards. Returning visitors see due reviews, known cards, an unfinished session and topic choices, with session lengths of 5, 10 or 20. Reveal each card's meaning or answer, then choose **Znam** or **Još ne znam**. Graded cards are saved as you go, and an unfinished session can be resumed after leaving.
+
 ## Local setup
 
 Requirements are Node.js `^22.21.0 || ^24.11.0 || >=26.0.0`, pnpm 12.14, Docker and the Supabase CLI.

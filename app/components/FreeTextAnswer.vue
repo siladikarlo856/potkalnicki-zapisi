@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // A typed answer: the player must recall the word, not recognise it. Enter submits the surrounding form. Comparison
-// is done by the caller (case, spaces and diacritics ignored; see judgeDailyGuess).
+// follows judgeDailyGuess in the caller.
 withDefaults(defineProps<{ label: string, hint?: string, disabled?: boolean }>(), { hint: undefined })
 const model = defineModel<string>({ default: '' })
 const id = useId()

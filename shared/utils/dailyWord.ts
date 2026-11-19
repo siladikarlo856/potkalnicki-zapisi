@@ -164,7 +164,7 @@ export function dailyWordShareText(number: number, result: Pick<DailyProgress, '
 export const DAILY_TYPED_TRIES = 5
 export const DAILY_TYPED_CLUES = 3
 
-/** Case, spacing and diacritics folded away, so "skrlak" and "Škrlak" are the same guess. */
+/** Case and diacritics folded away, with whitespace trimmed and runs collapsed. */
 export function foldDailyGuess(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/gi, 'd').normalize('NFC').toLocaleLowerCase('hr').replace(/\s+/g, ' ').trim()
 }
@@ -178,8 +178,9 @@ function oneLetterApart(a: string, b: string): boolean {
 }
 
 /**
- * The run of consecutive solved days ending today (when today is solved) or yesterday. A missed day ends the run,
- * unlike `deriveDailyStats().streak`, which counts every played day.
+ * The solved-day run ending today when completed, otherwise at the previous non-outage day.
+ * Uncompleted recorded outages neither break nor extend it; ordinary missed days and completed losses break it.
+ * Unlike `deriveDailyStats().streak`, only solved days count.
  */
 export function dailySolvedStreak(days: Readonly<Record<string, DailyProgress>>, today: string, outageDays: readonly string[] = []): number {
   return solvedRunEndingOn(days, days[today]?.done ? today : previousDailyDay(days, today, outageDays), outageDays)
@@ -212,8 +213,8 @@ export type DailyGuessVerdict = { kind: 'wrong' } | { kind: 'right', answer: str
 
 /**
  * A guess is right when it equals an accepted form (the headword or one of its variants) apart from case and
- * diacritics, or differs by a single letter (the shared near-miss rule). `exact` is false for the one-letter case,
- * so the page can show the spelling.
+ * diacritics, or, for guesses of at least five characters, differs by a single letter. `exact` is false for the
+ * one-letter case, so the page can show the spelling.
  */
 export function judgeDailyGuess(guess: string, answers: readonly string[]): DailyGuessVerdict {
   const folded = foldDailyGuess(guess)

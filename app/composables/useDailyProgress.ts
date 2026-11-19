@@ -40,8 +40,8 @@ function decode(raw: string | null): DailyStoreV1 {
 }
 
 /**
- * Browser-local daily word results. Days are keyed by the server-provided Zagreb day, never
- * the device date. Storage failures never interrupt play: the game continues in memory.
+ * Browser-local daily word results and outage markers. Results use the server-provided Zagreb
+ * day. Storage failures never interrupt play: the game continues in memory.
  */
 export function useDailyProgress() {
   const store = useState<DailyStoreV1>('heritage-daily-progress', emptyStore)

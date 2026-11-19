@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { letterCount, upperFirst } from '~/utils/dailyClues'
 // Clues, slots, earlier guesses and the answer field of the word of the day, in one column. Each wrong guess
-// reveals the next clue and one more letter; earlier guesses stay visible, dashed and struck through.
+// reveals one more letter and the next clue if any remain; earlier guesses stay visible, dashed and struck through.
 const props = defineProps<{
   /** The number of the try being played (1-based). */
   attempt: number
