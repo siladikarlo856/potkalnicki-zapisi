@@ -65,7 +65,7 @@ function count(key: string) {
           class="text-default"
         >
           <ULink
-            :to="localePath('/privatnost')"
+            :to="localePath(pzRoutes.privacy)"
             class="text-primary underline underline-offset-2"
           >
             {{ t('pz.about.privacyLink') }}
@@ -87,7 +87,7 @@ function count(key: string) {
           class="text-default"
         >
           <ULink
-            :to="localePath('/o-projektu/fotografije')"
+            :to="localePath(pzRoutes.aboutPhotos)"
             class="text-primary underline underline-offset-2"
           >
             {{ t('pz.photos.creditsLink') }}

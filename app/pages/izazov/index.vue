@@ -44,7 +44,7 @@ async function quickChallenge() {
       body: { nickname: name, generate: DEFAULT_GENERATE }
     })
     remember(state, 'creator')
-    await navigateTo(localePath(`/izazov/${state.code}`))
+    await navigateTo(localePath(pzPath(pzRoutes.challenge, state.code)))
   } catch (cause) {
     const failure = cause as { status?: number, statusCode?: number }
     error.value = (failure.status ?? failure.statusCode) === 429 ? t('challenge.limited') : t('challenge.createError')
@@ -87,7 +87,7 @@ async function quickChallenge() {
 
       <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <UButton
-          :to="localePath(`${pzRoutes.challenge}/novi`)"
+          :to="localePath(pzRoutes.challengeNew)"
           size="lg"
           icon="i-lucide-wand-sparkles"
           data-testid="challenge-hub-custom"

@@ -27,13 +27,13 @@ const sessionPath = computed(() => {
   const q = new URLSearchParams()
   q.set('teme', props.session.topics.join(','))
   q.set('n', String(props.session.n))
-  return `/uci/sesija?${q}`
+  return `${pzRoutes.learnSession}?${q}`
 })
 
 const repeatPath = computed(() => {
   const q = new URLSearchParams()
   q.set('kartice', missed.value.join(','))
-  return `/uci/sesija?${q}`
+  return `${pzRoutes.learnSession}?${q}`
 })
 
 interface ReviewRow {
@@ -57,7 +57,7 @@ function rowFor(key: string): ReviewRow | null {
     return { key, kind: kindLabel(card), label: card.headword, detail: card.meaning, to: path ? localePath(path) : undefined }
   }
   if (card.kind === 'place') {
-    return { key, kind: kindLabel(card), label: card.name, detail: municipalityLabel(props.pool, card.municipalityId), to: localePath(settlementArchivePath(card.slug)) }
+    return { key, kind: kindLabel(card), label: card.name, detail: municipalityLabel(props.pool, card.municipalityId), to: localePath(settlementArchivePath(props.pool, card)) }
   }
   if (card.kind === 'item') {
     return { key, kind: kindLabel(card), label: card.name, detail: settlementName(props.pool, card.settlementId), to: localePath(card.path) }

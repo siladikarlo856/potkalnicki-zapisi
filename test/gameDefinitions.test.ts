@@ -9,7 +9,7 @@ const igreDir = fileURLToPath(new URL('../app/pages/igre/', import.meta.url))
 const igrePages = readdirSync(igreDir).filter(file => file.endsWith('.vue') && file !== 'index.vue')
 const pageSource = (file: string) => readFileSync(`${igreDir}${file}`, 'utf8')
 /** The igre page file a catalogue path opens, if it is one. */
-const pageFileFor = (path: string) => path.startsWith(`${pzRoutes.games}/`) ? `${path.slice(pzRoutes.games.length + 1)}.vue` : null
+const pageFileFor = (path: string) => path.startsWith(pzRoutes.games) && path.length > pzRoutes.games.length ? `${path.slice(pzRoutes.games.length).replace(/\/$/, '')}.vue` : null
 
 describe('Game definitions', () => {
   it('finds each game by its own id, with a label in both languages', () => {

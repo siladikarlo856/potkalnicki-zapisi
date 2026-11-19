@@ -16,7 +16,7 @@ import { integrationDb } from './support/integrationDb'
 const db = await integrationDb()
 const { sql } = db
 const service = db.service
-const routable = (prerenderRoutes as string[]).filter(path => /\/(istrazi|naselja|bastina)\/./.test(path))
+const routable = (prerenderRoutes as string[]).filter(path => /^\/(mjesta|bastina)\/[^/]+\//.test(path))
 
 describe.skipIf(!db.enabled)('public read layer on Postgres', () => {
   it('serves the whole imported atlas', async () => {
@@ -49,9 +49,9 @@ describe.skipIf(!db.enabled)('public read layer on Postgres', () => {
     expect(routable).toHaveLength(235)
     for (const path of routable) {
       const [, section, a, b] = path.split('/')
-      const result = section === 'istrazi'
-        ? resolveMunicipality(content, a!)
-        : section === 'naselja' ? resolveSettlement(content, a!) : resolveHeritageItem(content, a!, b!)
+      const result = section === 'mjesta'
+        ? (b ? resolveSettlement(content, b) : resolveMunicipality(content, a!))
+        : resolveHeritageItem(content, a!, b!)
       expect(result.status, path).toBe('ok')
     }
   })
@@ -94,14 +94,14 @@ describe.skipIf(!db.enabled)('public read layer on Postgres', () => {
     sql(`update public.areas set slug = 'prvo-novo-${tag}' where id = '${id.a}';
       update public.heritage_items set slug = 'kapela-nova' where id = '${id.item}';`)
     content = await load()
-    const current = `/bastina/prvo-novo-${tag}/kapela-nova`
-    expect(resolveSettlement(content, `prvo-${tag}`)).toEqual({ status: 'redirect', path: `/naselja/prvo-novo-${tag}` })
+    const current = `/bastina/prvo-novo-${tag}/kapela-nova/`
+    expect(resolveSettlement(content, `prvo-${tag}`)).toEqual({ status: 'redirect', path: `/mjesta/opcina-${tag}/prvo-novo-${tag}/` })
     expect(resolveHeritageItem(content, `prvo-${tag}`, 'kapela')).toEqual({ status: 'redirect', path: current })
     expect(resolveHeritageItem(content, `prvo-novo-${tag}`, 'kapela-nova')).toMatchObject({ status: 'ok' })
 
     sql(`update public.heritage_items set settlement_id = '${id.b}' where id = '${id.item}';`)
     content = await load()
-    expect(resolveHeritageItem(content, `prvo-${tag}`, 'kapela')).toEqual({ status: 'redirect', path: `/bastina/drugo-${tag}/kapela-nova` })
+    expect(resolveHeritageItem(content, `prvo-${tag}`, 'kapela')).toEqual({ status: 'redirect', path: `/bastina/drugo-${tag}/kapela-nova/` })
 
     sql(`update public.heritage_items set status = 'archived' where id = '${id.item}';`)
     content = await load()
@@ -155,7 +155,7 @@ describe.skipIf(!db.enabled)('public read layer on Postgres', () => {
 
     sql(`update public.persons set slug = 'osoba-nova-${tag}' where id = '${id.person}';`)
     content = await load()
-    expect(resolvePerson(content, `osoba-${tag}`)).toEqual({ status: 'redirect', path: `/osobe/osoba-nova-${tag}` })
+    expect(resolvePerson(content, `osoba-${tag}`)).toEqual({ status: 'redirect', path: `/osobe/osoba-nova-${tag}/` })
 
     sql(`update public.persons set status = 'archived' where id = '${id.person}';`)
     content = await load()

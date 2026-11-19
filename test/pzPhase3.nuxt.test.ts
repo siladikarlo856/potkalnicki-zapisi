@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import Explore from '../app/pages/istrazi/index.vue'
-import Municipality from '../app/pages/istrazi/[opcina].vue'
-import Settlement from '../app/pages/naselja/[naselje].vue'
+import Explore from '../app/pages/mjesta/index.vue'
+import Municipality from '../app/pages/mjesta/[opcina]/index.vue'
+import Settlement from '../app/pages/mjesta/[opcina]/[naselje].vue'
 import HeritageList from '../app/pages/bastina/index.vue'
 import HeritageItem from '../app/pages/bastina/[naselje]/[slug].vue'
 import { heritageItemByRoute } from './helpers/atlasFixtures'
@@ -12,26 +12,26 @@ registerAtlasApiEndpoints()
 
 describe('Potkalnički zapisi phase 3 atlas routes', () => {
   it('renders the explore hub with five municipalities', async () => {
-    const page = await mountSuspended(Explore, { route: '/istrazi' })
+    const page = await mountSuspended(Explore, { route: '/mjesta/' })
     expect(page.find('[data-testid="municipality-list"]').exists()).toBe(true)
     expect(page.findAll('li').length).toBe(5)
   })
 
   it('opens the explore hub with four equal entries: places, Baština, Priče i običaji, Naš govor', async () => {
-    const page = await mountSuspended(Explore, { route: '/istrazi' })
+    const page = await mountSuspended(Explore, { route: '/mjesta/' })
     const entries = page.findAll('[data-testid="explore-entries"] a')
     expect(entries.map(entry => entry.find('b').text())).toEqual(['Mjesta', 'Baština', 'Priče i običaji', 'Naš govor'])
     expect(entries.map(entry => entry.attributes('href'))).toEqual([
-      '/istrazi#opcine',
-      '/bastina',
-      '/price-i-obicaji',
-      '/govor'
+      '/mjesta/#opcine',
+      '/bastina/',
+      '/price-i-obicaji/',
+      '/govor/'
     ])
   })
 
   it('renders a municipality settlement list', async () => {
     const page = await mountSuspended(Municipality, {
-      route: { path: '/istrazi/opcina-kalnik', params: { opcina: 'opcina-kalnik' } }
+      route: { path: '/mjesta/opcina-kalnik/', params: { opcina: 'opcina-kalnik' } }
     })
     await vi.waitFor(() => expect(page.find('[data-testid="settlement-list"]').exists()).toBe(true))
     expect(page.text()).toContain('Kalnik')
@@ -39,7 +39,7 @@ describe('Potkalnički zapisi phase 3 atlas routes', () => {
 
   it('renders a settlement heritage list', async () => {
     const page = await mountSuspended(Settlement, {
-      route: { path: '/naselja/kalnik', params: { naselje: 'kalnik' } }
+      route: { path: '/mjesta/opcina-kalnik/kalnik/', params: { opcina: 'opcina-kalnik', naselje: 'kalnik' } }
     })
     await vi.waitFor(() => expect(page.find('[data-testid="settlement-heritage-list"]').exists()).toBe(true))
     expect(page.text()).toContain('Crkva sv. Brcka')

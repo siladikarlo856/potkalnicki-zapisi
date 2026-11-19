@@ -183,7 +183,7 @@ useSeoMeta({
           >
             <template #links>
               <UButton
-                :to="localePath(`/naselja/${target.slug}`)"
+                :to="localePath(settlementArchivePath(pool, target))"
                 :label="t('pz.play.openRecord')"
                 icon="i-lucide-map-pin"
                 color="neutral"

@@ -79,7 +79,7 @@ function startNewLesson() {
   const q = new URLSearchParams()
   q.set('teme', topics.join(','))
   q.set('n', String(homeN.value))
-  navigateTo(localePath(`/uci/sesija?${q}`))
+  navigateTo(localePath(`${pzRoutes.learnSession}?${q}`))
 }
 
 const topLevelTopics = computed(() =>
@@ -87,7 +87,7 @@ const topLevelTopics = computed(() =>
 
 const sessionHref = (query: Record<string, string>) => {
   const q = new URLSearchParams(query)
-  return localePath(`/uci/sesija?${q}`)
+  return localePath(`${pzRoutes.learnSession}?${q}`)
 }
 </script>
 
@@ -197,7 +197,7 @@ const sessionHref = (query: Record<string, string>) => {
         <p class="pz-body-sm text-muted">
           {{ t('pz.learn.newLessonMeta') }}
           <ULink
-            :to="localePath('/uci')"
+            :to="localePath(pzRoutes.learn)"
             class="inline-flex min-h-(--pz-tap-min) items-center gap-1 font-semibold text-primary"
           >
             {{ t('pz.learn.moreSettings') }}

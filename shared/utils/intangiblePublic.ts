@@ -1,4 +1,4 @@
-import { pzRoutes } from './appRoutes'
+import { pzPath, pzRoutes } from './appRoutes'
 
 // The public side of intangible heritage (Priče i običaji): the three kinds, the paths of their pages and how a
 // record's date and period read. Shared by the server's public queries and the pages, so a link and a label are
@@ -7,11 +7,11 @@ import { pzRoutes } from './appRoutes'
 export const INTANGIBLE_KINDS = ['story', 'custom', 'folk_text'] as const
 export type IntangibleKind = typeof INTANGIBLE_KINDS[number]
 
-/** The path segment of each kind's detail pages: /price-i-obicaji/prica/<slug>. */
+/** The path segment of each kind's detail pages: /price-i-obicaji/price/<slug>/. */
 export const INTANGIBLE_KIND_SLUGS: Record<IntangibleKind, string> = {
-  story: 'prica',
-  custom: 'obicaj',
-  folk_text: 'usmeni-tekst'
+  story: 'price',
+  custom: 'obicaji',
+  folk_text: 'narodni-tekstovi'
 }
 
 export const INTANGIBLE_KIND_LABELS: Record<IntangibleKind, string> = {
@@ -30,9 +30,9 @@ export function intangibleKindFromSlug(slug: string): IntangibleKind | null {
   return INTANGIBLE_KINDS.find(kind => INTANGIBLE_KIND_SLUGS[kind] === slug) ?? null
 }
 
-export const intangiblePath = (kind: IntangibleKind, slug: string) => `${pzRoutes.intangible}/${INTANGIBLE_KIND_SLUGS[kind]}/${slug}`
-export const themePath = (slug: string) => `${pzRoutes.intangible}/tema/${slug}`
-export const narratorPath = (slug: string) => `${pzRoutes.intangible}/kazivac/${slug}`
+export const intangiblePath = (kind: IntangibleKind, slug: string) => pzPath(pzRoutes.intangible, INTANGIBLE_KIND_SLUGS[kind], slug)
+export const themePath = (slug: string) => pzPath(pzRoutes.intangible, 'teme', slug)
+export const narratorPath = (slug: string) => pzPath(pzRoutes.intangible, 'kazivaci', slug)
 
 export interface RecordedOnParts {
   precision: 'year' | 'month' | 'day' | null

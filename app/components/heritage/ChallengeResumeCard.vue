@@ -12,7 +12,7 @@ const props = defineProps<{
 const { t } = useI18n()
 const localePath = useLocalePath()
 
-const challengeTo = computed(() => localePath(`${pzRoutes.challenge}/${props.item.code}`))
+const challengeTo = computed(() => localePath(pzPath(pzRoutes.challenge, props.item.code)))
 
 const daysLeft = computed(() => daysUntilClose(props.item.closesAt))
 

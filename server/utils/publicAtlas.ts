@@ -65,7 +65,7 @@ export function resolveMunicipality(content: PublicContent, slug: string) {
 }
 
 export function resolveSettlement(content: PublicContent, slug: string) {
-  return resolveArea(content, 'settlement', slug, s => atlasSettlementPath(s.slug), content.settlementById)
+  return resolveArea(content, 'settlement', slug, s => atlasSettlementPath(content, s), content.settlementById)
 }
 
 /**
@@ -130,7 +130,7 @@ export function personDetail(content: PublicContent, p: SnapshotPerson): PublicP
     const places = p.areaLinks.filter(link => link.role === role).map((link) => {
       const settlement = content.settlementById.get(link.areaId)
       return settlement
-        ? { id: settlement.id, name: settlement.name, path: atlasSettlementPath(settlement.slug) }
+        ? { id: settlement.id, name: settlement.name, path: atlasSettlementPath(content, settlement) }
         : { id: link.areaId, name: areaLabel(content, link.areaId), path: atlasMunicipalityPath(content.municipalityById.get(link.areaId)!.slug) }
     })
     return places.length ? [{ role, label: PERSON_AREA_ROLE_LABELS[role], places }] : []
@@ -275,7 +275,7 @@ export function municipalityPage(content: PublicContent, m: SnapshotMunicipality
   return {
     municipality: municipalityRef(m),
     stats: placeStats(settlements, items),
-    settlements: settlements.map(s => ({ ...settlementRef(s), itemCount: items.filter(i => i.settlementId === s.id).length })),
+    settlements: settlements.map(s => ({ ...settlementRef(content, s), itemCount: items.filter(i => i.settlementId === s.id).length })),
     categories: categoryCounts(content, items),
     persons: personRefs(content, personIdsInMunicipality(content, m.id)),
     intangible: intangibleForMunicipality(content, m.id)
@@ -284,7 +284,7 @@ export function municipalityPage(content: PublicContent, m: SnapshotMunicipality
 
 export function settlementPage(content: PublicContent, s: SnapshotSettlement): AtlasSettlementResponse {
   return {
-    settlement: { ...settlementRef(s), centroid: s.centroid, credits: s.credits, updatedAt: s.updatedAt },
+    settlement: { ...settlementRef(content, s), centroid: s.centroid, credits: s.credits, updatedAt: s.updatedAt },
     municipality: municipalityRef(content.municipalityById.get(s.municipalityId)!),
     items: content.items.filter(i => i.settlementId === s.id).map(i => heritageListItem(content, i)),
     persons: personRefs(content, content.personsByArea.get(s.id) ?? []),
@@ -339,7 +339,7 @@ export function contentTarget(content: PublicContent, kind: ContentTargetKind, v
     const m = content.municipalityById.get(id)
     if (m) return { status: 'ok', value: { kind, area: { ...municipalityRef(m), areaKind: m.kind } } }
     const s = content.settlementById.get(id)
-    if (s) return { status: 'ok', value: { kind, area: { id: s.id, slug: s.slug, name: s.name, label: s.name, areaKind: 'settlement', path: atlasSettlementPath(s.slug) } } }
+    if (s) return { status: 'ok', value: { kind, area: { id: s.id, slug: s.slug, name: s.name, label: s.name, areaKind: 'settlement', path: atlasSettlementPath(content, s) } } }
   } else if (kind === 'person') {
     const person = content.personById.get(id)
     if (person) return { status: 'ok', value: { kind, person: { ...personListItem(content, person), ref: person.id } } }

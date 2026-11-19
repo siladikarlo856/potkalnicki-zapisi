@@ -11,6 +11,11 @@
       "title": "Page not found",
       "description": "This page doesn’t exist or has moved. Check the address or start from the homepage."
     },
+    "removed": {
+      "title": "This record has been removed",
+      "description": "This record is no longer part of the archive.",
+      "back": "Back to the list"
+    },
     "generic": {
       "title": "Something went wrong",
       "description": "An unexpected error occurred. Please try again in a little while."

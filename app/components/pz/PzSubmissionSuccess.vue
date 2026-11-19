@@ -33,7 +33,7 @@ defineExpose({ focus: () => closeButton.value?.$el?.focus() })
     </section>
     <div class="flex flex-wrap gap-2">
       <UButton
-        :to="localePath(pzRoutes.explore)"
+        :to="localePath(pzRoutes.places)"
         :label="t('pz.contribute.linkExplore')"
         icon="i-lucide-compass"
         color="neutral"

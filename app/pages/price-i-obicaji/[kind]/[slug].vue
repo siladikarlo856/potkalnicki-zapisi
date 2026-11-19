@@ -2,7 +2,7 @@
 import type { AtlasIntangibleResponse } from '~~/shared/types/publicIntangible'
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 
-// One Story, Custom or Folk text: /price-i-obicaji/prica/<slug>, /obicaj/<slug> or /usmeni-tekst/<slug>.
+// One Story, Custom or Folk text: /price-i-obicaji/price/<slug>/, /obicaji/<slug>/ or /narodni-tekstovi/<slug>/.
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
 

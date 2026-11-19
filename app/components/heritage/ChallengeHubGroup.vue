@@ -16,11 +16,11 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 
 function challengePath(code: string) {
-  return localePath(`${pzRoutes.challenge}/${code}`)
+  return localePath(pzPath(pzRoutes.challenge, code))
 }
 
 function leaderboardPath(code: string) {
-  return localePath(`${pzRoutes.challenge}/${code}/ljestvica`)
+  return localePath(pzPath(pzRoutes.challenge, code, 'ljestvica'))
 }
 
 const primaryLabel = computed(() => {

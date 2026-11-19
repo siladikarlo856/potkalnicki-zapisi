@@ -55,36 +55,12 @@ export default defineNuxtConfig({
     }
   },
 
-  // Static marketing and games pages are prerendered at build time; atlas and other database-backed
-  // routes render on the server per request. The /api routes run in the Node server build.
+  // Old addresses (the /potkalnicko-prigorje prefix, renamed sections, retired game topics, a missing trailing
+  // slash) are redirected by server/middleware/canonical-address.ts. Nitro serves prerendered HTML before any
+  // middleware runs, so a prerendered page could not answer 301 from its slash-less address: every public page
+  // renders on the server per request instead. The /api routes run in the Node server build.
   routeRules: {
     '/en': { redirect: { to: '/', statusCode: 301 } },
-    '/igre/kartice': { redirect: { to: '/uci?teme=rijeci', statusCode: 301 }, prerender: false },
-    '/uci': { prerender: true },
-    '/uci/sesija': { prerender: true },
-    '/igre/kviz': { prerender: true },
-    '/igre/kak-se-veli': { prerender: true },
-    '/igre/opcine': { prerender: true },
-    '/igre/sela-i-opcine': { prerender: true },
-    '/igre/nabroji': { prerender: true },
-    '/igre/grupiraj': { prerender: true },
-    '/igre/bez-greske': { prerender: true },
-    '/igre/karta': { prerender: true },
-    '/igre/koje-je-selo': { prerender: true },
-    '/igre/uci-kartu': { prerender: true },
-    '/igre/gdje-je-crkva': { prerender: true },
-    '/igre/spoji': { prerender: true },
-    '/igre/rijeci': { redirect: { to: '/igre?tema=rijeci', statusCode: 301 } },
-    '/igre/crkve': { redirect: { to: '/igre?tema=bastina', statusCode: 301 } },
-    '/igre/zemljopis': { redirect: { to: '/igre?tema=mjesta', statusCode: 301 } },
-    '/igre/poznati-ljudi': { redirect: { to: '/igre?tema=osobe', statusCode: 301 } },
-    '/igre/legende': { redirect: { to: '/igre?tema=legende', statusCode: 301 } },
-    '/igre/povijest': { redirect: { to: '/igre', statusCode: 301 } },
-    '/igre/sport': { redirect: { to: '/igre', statusCode: 301 } },
-    '/igre/**': { prerender: true },
-    '/doprinesi': { prerender: true },
-    '/o-projektu': { prerender: true },
-    '/privatnost': { prerender: true },
     '/admin/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
     // The unified inbox replaced the submissions list and the heritage corrections queue.
     '/admin/prilozi': { redirect: { to: '/admin/prijedlozi', statusCode: 301 } },
@@ -117,6 +93,8 @@ export default defineNuxtConfig({
     defaultLocale: 'hr',
     strategy: 'prefix_except_default',
     detectBrowserLanguage: false,
+    // Every public address ends in a slash; localePath builds them that way (see shared/utils/appRoutes.ts).
+    trailingSlash: true,
     locales: [
       { code: 'hr', language: 'hr-HR', name: 'Hrvatski', file: 'hr.json' },
       { code: 'en', language: 'en-GB', name: 'English', file: 'en.json' }

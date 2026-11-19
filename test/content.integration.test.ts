@@ -163,7 +163,7 @@ describe.skipIf(!db.enabled)('content tables on Postgres', () => {
 
   it('keeps public slugs and external codes unique where they are routed', () => {
     const p = place()
-    // Towns and municipalities share /istrazi/<slug>; settlements have their own namespace.
+    // Towns and municipalities share /mjesta/<slug>/; settlements have their own namespace.
     expect(failure(`insert into public.areas(kind, parent_id, name, slug) values ('town', '${p.county}', 'Grad', 'opcina-${p.id}');`)).toMatch(/areas_route_slug/)
     area('settlement', p.municipality, { slug: `opcina-${p.id}` })
     expect(failure(`insert into public.areas(kind, parent_id, name, slug) values ('settlement', '${p.municipality}', 'Isto', 'naselje-${p.id}');`)).toMatch(/areas_route_slug/)

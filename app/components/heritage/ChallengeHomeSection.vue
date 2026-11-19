@@ -62,7 +62,7 @@ onMounted(async () => {
           data-testid="challenge-all-link"
         />
         <UButton
-          :to="localePath(`${pzRoutes.challenge}/novi`)"
+          :to="localePath(pzRoutes.challengeNew)"
           :label="t('challenge.makeChallenge')"
           icon="i-lucide-plus"
           color="neutral"

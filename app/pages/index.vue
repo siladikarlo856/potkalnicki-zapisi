@@ -45,7 +45,7 @@ const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []
         </p>
         <div class="mt-2 hidden flex-wrap items-center gap-3 lg:flex">
           <UButton
-            :to="localePath(pzRoutes.explore)"
+            :to="localePath(pzRoutes.places)"
             :label="t('pz.home.exploreCta')"
             icon="i-lucide-compass"
             color="neutral"
@@ -54,7 +54,7 @@ const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []
             class="ring-(--ui-border-accented)"
           />
           <UButton
-            :to="localePath('/o-projektu')"
+            :to="localePath(pzRoutes.about)"
             :label="t('pz.home.aboutCta')"
             trailing-icon="i-lucide-arrow-right"
             color="neutral"
@@ -113,7 +113,7 @@ const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []
         </p>
       </div>
       <UButton
-        :to="localePath('/doprinesi')"
+        :to="localePath(pzRoutes.contribute)"
         :label="t('pz.home.contributeCta')"
         icon="i-lucide-pen-line"
         color="neutral"

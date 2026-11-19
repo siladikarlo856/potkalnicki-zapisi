@@ -24,7 +24,7 @@ const intangible = computed(() => page.value?.intangible ?? [])
 
 const settlements = computed(() => (page.value?.settlements ?? []).map(s => ({
   ...s,
-  to: settlementPath(s.slug)
+  to: settlementPath(municipalitySlug.value, s.slug)
 })).sort((a, b) => a.name.localeCompare(b.name, 'hr')))
 
 // "Baština" tab: the municipality's items, from the same list API the heritage list uses.
@@ -57,7 +57,7 @@ useSeoMeta({
     data-testid="municipality-page"
   >
     <header class="flex max-w-(--pz-measure) flex-col gap-3">
-      <PzBackPill :to="localePath(pzRoutes.explore)">
+      <PzBackPill :to="localePath(pzRoutes.places)">
         {{ t('pz.explore.allRegions') }}
       </PzBackPill>
       <p class="pz-overline text-muted">

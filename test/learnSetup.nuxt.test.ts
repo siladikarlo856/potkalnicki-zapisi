@@ -55,7 +55,7 @@ describe('learn setup page', () => {
     await twenty.trigger('click')
     expect(twenty.attributes('aria-pressed')).toBe('true')
     const href = wrapper!.get('[data-testid="learn-setup-start"]').attributes('href')!
-    expect(href).toContain('/uci/sesija?teme=rijeci&n=20')
+    expect(href).toContain('/uci/sesija/?teme=rijeci&n=20')
     expect(href).toContain('mjesto=sopron')
   })
 })

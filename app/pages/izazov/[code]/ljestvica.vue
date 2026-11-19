@@ -52,7 +52,7 @@ onMounted(() => void load())
   <UContainer class="max-w-3xl py-6 sm:py-10">
     <div class="flex flex-col gap-6">
       <UButton
-        :to="localePath(`/izazov/${code}`)"
+        :to="localePath(pzPath(pzRoutes.challenge, code))"
         icon="i-lucide-arrow-left"
         color="neutral"
         variant="link"
@@ -114,7 +114,7 @@ onMounted(() => void load())
           data-testid="challenge-missing"
         />
         <UButton
-          :to="localePath('/izazov')"
+          :to="localePath(pzRoutes.challenge)"
           icon="i-lucide-flag"
           size="xl"
           block
@@ -178,7 +178,7 @@ onMounted(() => void load())
 
       <template v-if="state">
         <UButton
-          :to="state.closed ? localePath('/izazov') : localePath(`/izazov/${code}${owner ? '#challenge-share' : ''}`)"
+          :to="state.closed ? localePath(pzRoutes.challenge) : localePath(`${pzPath(pzRoutes.challenge, code)}${owner ? '#challenge-share' : ''}`)"
           :label="state.closed ? t('pz.challenge.newChallenge') : owner ? t('pz.challenge.invitePlayers') : t('challenge.playChallenge')"
           :icon="state.closed ? 'i-lucide-flag' : owner ? 'i-lucide-share-2' : 'i-lucide-play'"
           size="xl"
@@ -188,7 +188,7 @@ onMounted(() => void load())
         />
         <PzStickyActionBar class="-mx-4 sm:-mx-6">
           <UButton
-            :to="state.closed ? localePath('/izazov') : localePath(`/izazov/${code}${owner ? '#challenge-share' : ''}`)"
+            :to="state.closed ? localePath(pzRoutes.challenge) : localePath(`${pzPath(pzRoutes.challenge, code)}${owner ? '#challenge-share' : ''}`)"
             :label="state.closed ? t('pz.challenge.newChallenge') : owner ? t('pz.challenge.invitePlayers') : t('challenge.playChallenge')"
             :icon="state.closed ? 'i-lucide-flag' : owner ? 'i-lucide-share-2' : 'i-lucide-play'"
             size="xl"

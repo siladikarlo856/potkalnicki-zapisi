@@ -1,4 +1,4 @@
-import { pzRoutes } from '../../appRoutes'
+import { pzRoutes, pzPath, settlementPagePath } from '../../appRoutes'
 import { cardMatchesTopicSelection } from '../../learn/topics'
 import type { CardPool, PoolCard, PoolClub, PoolItem, PoolPerson, PoolPlace, PoolWord, TopicId } from '../../learn/types'
 import { slugMap } from '../distractors'
@@ -28,8 +28,12 @@ export interface QuestionGenerator<Target extends PoolCard = PoolCard> {
   question(target: Target, context: QuestionContext): QuestionBody | null
 }
 
-export const atlasSettlementPath = (slug: string) => `/naselja/${slug}`
-export const atlasPersonPath = (slug: string) => `${pzRoutes.persons}/${slug}`
+/** The settlement's page, found through its municipality in the pool; the places list when the pool has no such municipality. */
+export function atlasSettlementPath(pool: CardPool, municipalityId: string, slug: string) {
+  const municipality = pool.municipalities.find(m => m.id === municipalityId)
+  return municipality ? settlementPagePath(municipality.slug, slug) : pzRoutes.places
+}
+export const atlasPersonPath = (slug: string) => pzPath(pzRoutes.persons, slug)
 
 function cardsOfKind<Kind extends PoolCard['kind']>(pool: CardPool, kind: Kind, topics: TopicId[]): Extract<PoolCard, { kind: Kind }>[] {
   const slugs = slugMap(pool)

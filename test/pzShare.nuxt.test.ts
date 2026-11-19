@@ -91,12 +91,12 @@ describe('PzShareResult', () => {
 describe('PzChallengeCard', () => {
   it('is the inverted slab with one wheat button', async () => {
     wrapper = await mountSuspended(PzChallengeCard, {
-      props: { overline: 'Izazovi prijatelja', title: 'Tko bolje zna naš kraj?', text: 'Isti set pitanja za sve.', cta: 'Izazovi prijatelje', to: '/izazov' }
+      props: { overline: 'Izazovi prijatelja', title: 'Tko bolje zna naš kraj?', text: 'Isti set pitanja za sve.', cta: 'Izazovi prijatelje', to: '/izazov/' }
     })
     expect(wrapper.classes()).toContain('bg-inverted')
     expect(wrapper.get('h2').text()).toBe('Tko bolje zna naš kraj?')
     expect(wrapper.findAll('a')).toHaveLength(1)
-    expect(wrapper.get('[data-testid="pz-challenge-cta"]').attributes('href')).toBe('/izazov')
+    expect(wrapper.get('[data-testid="pz-challenge-cta"]').attributes('href')).toBe('/izazov/')
   })
 
   it('replaces the copy with "Nastavi izazov · runda 2 od 3" and links to the leaderboard while waiting', async () => {
@@ -105,7 +105,7 @@ describe('PzChallengeCard', () => {
     })
     expect(wrapper.get('[data-testid="pz-challenge-resume"]').text()).toBe('Nastavi izazov · runda 2 od 3')
     expect(wrapper.text()).toContain('Čekamo 3 prijatelja')
-    expect(wrapper.get('[data-testid="pz-challenge-cta"]').attributes('href')).toBe('/izazov/abc123')
-    expect(wrapper.html()).toContain('/izazov/abc123/ljestvica')
+    expect(wrapper.get('[data-testid="pz-challenge-cta"]').attributes('href')).toBe('/izazov/abc123/')
+    expect(wrapper.html()).toContain('/izazov/abc123/ljestvica/')
   })
 })

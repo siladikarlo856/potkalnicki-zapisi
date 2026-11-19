@@ -228,7 +228,7 @@ describe('limited active words', () => {
 })
 
 describe.each([
-  { lang: 'hr' as const, summary: 'Kaj to znači? · 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: '1 od 1', copied: 'Kopirano', path: '/igre/kviz' }
+  { lang: 'hr' as const, summary: 'Kaj to znači? · 3/4', replay: 'Ponovi pogrešne (1)', noMisses: 'Bez pogreške', counter: '1 od 1', copied: 'Kopirano', path: '/igre/kviz/' }
 ])('$lang quiz result', ({ summary, replay, noMisses, counter, copied, path }) => {
   async function answerCurrent(page: Page, correct: boolean) {
     const entry = askedWord(page)

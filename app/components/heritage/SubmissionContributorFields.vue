@@ -79,7 +79,7 @@ const localePath = useLocalePath()
     >
       <template #privacy>
         <ULink
-          :to="localePath('/privatnost')"
+          :to="localePath(pzRoutes.privacy)"
           :target="privacyInNewTab ? '_blank' : undefined"
           class="text-primary underline underline-offset-2"
         >

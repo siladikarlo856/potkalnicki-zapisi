@@ -21,5 +21,5 @@ export async function useAtlasFetch<T>(path: MaybeRefOrGetter<string>) {
     const target = localePath(data.value.redirect)
     await nuxtApp.runWithContext(() => navigateTo(target, { redirectCode: 301 }))
   }
-  return { data: data as Ref<T | null> }
+  return { data: computed(() => isRedirect(data.value) ? null : data.value as T | null) }
 }

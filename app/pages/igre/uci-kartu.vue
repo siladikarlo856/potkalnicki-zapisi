@@ -88,7 +88,7 @@ useSeoMeta({
             <UButton
               block
               class="mt-3"
-              :to="localePath(`/naselja/${picked.slug}`)"
+              :to="localePath(settlementArchivePath(pool, picked))"
               :label="t('pz.map.openSettlement')"
               trailing-icon="i-lucide-arrow-right"
             />
@@ -96,7 +96,7 @@ useSeoMeta({
               block
               class="mt-2"
               variant="outline"
-              :to="localePath(`${pzRoutes.learn}/sesija?teme=${unitTopic}`)"
+              :to="localePath(`${pzRoutes.learnSession}?teme=${unitTopic}`)"
               :label="t('pz.map.learnUnitSettlements')"
             />
           </template>

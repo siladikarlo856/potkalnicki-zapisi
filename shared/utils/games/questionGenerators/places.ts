@@ -27,7 +27,7 @@ export const opcinaQuestions: QuestionGenerator<PoolPlace> = {
         hr: `${place.name} pripada ${dative}.`,
         en: `${place.name} is in ${unit.label}.`
       },
-      archivePath: atlasSettlementPath(place.slug)
+      archivePath: atlasSettlementPath(pool, place.municipalityId, place.slug)
     }
   }
 }
@@ -66,7 +66,7 @@ export const kartaKojeQuestions: QuestionGenerator<PoolPlace> = {
         hr: `To je ${place.name}${unit ? ` (${unit.label})` : ''}.`,
         en: `This is ${place.name}${unit ? ` (${unit.label})` : ''}.`
       },
-      archivePath: atlasSettlementPath(place.slug),
+      archivePath: atlasSettlementPath(pool, place.municipalityId, place.slug),
       display: { type: 'map-target', point: { lat: place.lat, lng: place.lng } }
     }
   }
@@ -114,7 +114,7 @@ export const kartaTockeQuestions: QuestionGenerator<PoolPlace> = {
         hr: `${target.name} je točka ${correct + 1}.${unit ? ` (${unit.label})` : ''}`,
         en: `${target.name} is point ${correct + 1}.${unit ? ` (${unit.label})` : ''}`
       },
-      archivePath: atlasSettlementPath(target.slug),
+      archivePath: atlasSettlementPath(pool, target.municipalityId, target.slug),
       display: { type: 'map-points', points: picked.map(p => ({ lat: p.lat, lng: p.lng })) }
     }
   }

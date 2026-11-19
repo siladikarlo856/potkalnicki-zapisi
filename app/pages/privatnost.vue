@@ -88,7 +88,7 @@ function count(key: string) {
 
       <div>
         <UButton
-          :to="localePath('/doprinesi')"
+          :to="localePath(pzRoutes.contribute)"
           :label="t('privacy.back')"
           icon="i-lucide-arrow-left"
           color="neutral"
