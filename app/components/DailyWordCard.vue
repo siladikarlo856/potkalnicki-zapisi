@@ -1,26 +1,25 @@
 <script setup lang="ts">
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 import { dailyRevealedLetters } from '~~/shared/utils/dailyWord'
-import { clueLine, dailyDateLabel } from '~/utils/dailyClues'
+import { dailyDateLabel } from '~/utils/dailyClues'
 
 // The one thing to do today, on Početna and on the play hub: the only large ochre surface on a page. Not played:
 // the first clue as the headline, the first letter, "Pogodi riječ". Solved: the word, its meaning, the streak and
 // the countdown. The word is never in the markup until the round is over.
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { payload, refresh, error, replaced, finished, solvedStreak, brokenStreak, loading, ready } = useDailyToday()
+const { payload, clues, refresh, error, unavailable, replaced, finished, solvedStreak, brokenStreak, loading, ready } = useDailyToday()
 const countdown = useDailyCountdown(() => payload.value?.nextAt)
 
 const titleId = useId()
 const done = computed(() => !!finished.value)
-const clue = computed(() => payload.value?.clues[0])
-const headline = computed(() => clue.value && payload.value ? clueLine((key, named) => t(key, named ?? {}), clue.value, payload.value.areas) : '')
+const headline = computed(() => clues.value[0] ?? '')
 const slots = computed(() => payload.value ? dailyRevealedLetters(payload.value.entry.headword, 0) : [])
 const solved = computed(() => !!finished.value?.solved)
 const overline = computed(() => payload.value
   ? solved.value ? 'Riječ dana · riješeno' : `Riječ dana · ${dailyDateLabel(payload.value.day)}`
   : 'Riječ dana')
-const cluesTotal = computed(() => Math.min(3, payload.value?.clues.length ?? 1))
+const cluesTotal = computed(() => clues.value.length)
 </script>
 
 <template>
@@ -49,7 +48,7 @@ const cluesTotal = computed(() => Math.min(3, payload.value?.clues.length ?? 1))
       Riječ dana danas nije dostupna.
     </h2>
     <UButton
-      v-if="error && error.statusCode !== 404"
+      v-if="error && !unavailable"
       class="mt-3"
       label="Pokušaj ponovno"
       color="neutral"
@@ -67,6 +66,14 @@ const cluesTotal = computed(() => Math.min(3, payload.value?.clues.length ?? 1))
     <p class="pz-overline">
       {{ overline }}
     </p>
+    <UBadge
+      v-if="payload.sample"
+      :label="t('daily.sample')"
+      color="neutral"
+      variant="outline"
+      class="self-start"
+      data-testid="daily-sample"
+    />
 
     <template v-if="!done">
       <h2

@@ -1,5 +1,6 @@
 import type { Area } from '../types/heritage'
-import type { DailyClue } from '~~/shared/utils/dailyWord'
+import { DAILY_TYPED_CLUES, foldDailyGuess } from '~~/shared/utils/dailyWord'
+import type { DailyClue, DailyWordPayload } from '~~/shared/utils/dailyWord'
 
 type Translate = (key: string, named?: Record<string, unknown>) => string
 
@@ -23,15 +24,19 @@ export function pluralForm(locale: string, n: number): 'one' | 'other' {
 
 export const upperFirst = (text: string) => text.charAt(0).toLocaleUpperCase('hr') + text.slice(1)
 
-/** One clue as a single line of copy (the card headline and the clue list of /rijec-dana/). */
-export function clueLine(t: Translate, clue: DailyClue, areas: readonly Area[]): string {
-  switch (clue.kind) {
-    case 'example': return `„${clue.text}“`
-    case 'category': return `${upperFirst(t(`daily.category.${clue.category}`))}.`
-    case 'variants': return `Čuje se i kao: ${clue.forms.join(', ')}.`
-    case 'partOfSpeech': return `Vrsta riječi: ${clue.text}.`
-    case 'areas': return `Koristi se u: ${clue.areaIds.map(id => areas.find(area => area.id === id)?.name ?? id).join(', ')}.`
-  }
+export function typedClueLines(t: Translate, payload: Pick<DailyWordPayload, 'entry' | 'areas'>): string[] {
+  const { entry, areas } = payload
+  const tokens = (text: string) => foldDailyGuess(text).replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+  const answers = [entry.headword, ...entry.variants.map(variant => variant.form)].map(tokens).filter(Boolean)
+  const placeNames = areas.filter(area => entry.variants.some(variant => variant.usages.some(usage => usage.areaId === area.id))).map(area => area.name)
+  const candidates = [
+    entry.meaning.hr.trim() ? `Znači: ${entry.meaning.hr}` : '',
+    entry.category ? `${upperFirst(t(`daily.category.${entry.category}`))}.` : '',
+    entry.partOfSpeech?.trim() ? `Vrsta riječi: ${entry.partOfSpeech}.` : '',
+    placeNames.length ? `Koristi se u: ${placeNames.join(', ')}.` : ''
+  ]
+  const clues = candidates.filter(text => text && !answers.some(answer => ` ${tokens(text)} `.includes(` ${answer} `)))
+  return clues.length ? clues.slice(0, DAILY_TYPED_CLUES) : ['□'.repeat(Math.max(1, [...entry.headword].filter(letter => letter !== ' ' && letter !== '-').length))]
 }
 
 const SLOT_NUMBERS: Record<number, string> = { 3: 'tri', 4: 'četiri', 5: 'pet', 6: 'šest', 7: 'sedam', 8: 'osam', 9: 'devet', 10: 'deset', 11: 'jedanaest', 12: 'dvanaest' }

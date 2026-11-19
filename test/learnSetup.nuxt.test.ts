@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import { clearNuxtState } from '#imports'
+import { clearNuxtData, clearNuxtState } from '#imports'
+import { LEARN_STORAGE_KEY } from '../app/composables/useLearnState'
 import type { CardPool, PoolCard } from '../shared/utils/learn/types'
 import LearnSetup from '../app/pages/uci/index.vue'
 import PzLearnPlaySwitch from '../app/components/pz/PzLearnPlaySwitch.vue'
@@ -31,18 +32,32 @@ const pool: CardPool = {
     { id: 'mjesta', label: 'Mjesta', status: 'soon', count: 0 }
   ]
 }
-registerEndpoint('/api/learn/pool', () => pool)
+let currentPool = pool
+registerEndpoint('/api/learn/pool', () => currentPool)
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 
 beforeEach(() => {
+  currentPool = pool
   localStorage.clear()
-  clearNuxtState(['pz-learn-state', 'pz-learn-loaded', 'card-pool', 'pz-home-tab', 'pz-home-loaded'])
+  clearNuxtState(['pz-learn-state', 'pz-learn-loaded', 'card-pool', 'pz-home-tab', 'pz-home-loaded', 'heritage-progress', 'heritage-progress-loaded'])
+  clearNuxtData('card-pool')
 })
 
 afterEach(() => wrapper?.unmount())
 
 describe('learn setup page', () => {
+  it.each(['osobe', 'rijeci', 'osobe,rijeci'])('preserves incoming topics %s and lets a first visitor change the choice', async (topics) => {
+    currentPool = { ...pool, topics: [...pool.topics, { id: 'osobe', label: 'Osobe', status: 'live', count: 4 }] }
+    wrapper = await mountSuspended(LearnSetup, { route: `/uci?teme=${encodeURIComponent(topics)}` })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-setup-start"]').exists()).toBe(true)
+    const startQuery = () => new URL(wrapper!.get('[data-testid="learn-setup-start"]').attributes('href')!, 'https://example.test').searchParams
+    expect(startQuery().get('teme')).toBe(topics)
+    const other = topics === 'rijeci' ? 'osobe' : 'rijeci'
+    await wrapper.get(`input[name="first-pick"][value="${other}"]`).setValue(true)
+    expect(startQuery().get('teme')).toBe(other)
+  })
+
   it('offers the first words as radios and a start link that carries the choice', async () => {
     wrapper = await mountSuspended(LearnSetup, { route: '/uci?mjesto=sopron' })
     await expect.poll(() => wrapper!.find('[data-testid="learn-setup"]').exists(), { timeout: 5000 }).toBe(true)
@@ -62,6 +77,15 @@ describe('learn hub with progress', () => {
     cards: { 'word:a': { box: 1, due, seen: 1, known: 0, missed: 1, lastPlayed: '2026-11-01' } },
     lastPlayed: '2026-11-01',
     streak: 1
+  })
+
+  it.each(['osobe', 'rijeci', 'osobe,rijeci'])('prioritizes incoming topics %s over remembered topics for a new lesson', async (topics) => {
+    localStorage.setItem('pz-progress/v2', progress('2999-01-01'))
+    localStorage.setItem(LEARN_STORAGE_KEY, JSON.stringify({ version: 1, current: null, lastTopics: ['bastina'], lastN: 10 }))
+    wrapper = await mountSuspended(LearnSetup, { route: `/uci?teme=${encodeURIComponent(topics)}` })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-home-new-lesson"]').exists()).toBe(true)
+    const query = new URL(wrapper.get('[data-testid="learn-home-new-lesson"]').attributes('href')!, 'https://example.test').searchParams
+    expect(query.get('teme')).toBe(topics)
   })
 
   it('shows the three numbers and Počni ponavljanje when a card is due', async () => {

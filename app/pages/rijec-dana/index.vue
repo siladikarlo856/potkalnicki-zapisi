@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { pzRoutes } from '~~/shared/utils/appRoutes'
 import {
-  DAILY_TYPED_CLUES,
   DAILY_TYPED_TRIES,
   dailyRevealedLetters,
   dailyWordShareMessage,
@@ -9,7 +8,7 @@ import {
   judgeDailyGuess
 } from '~~/shared/utils/dailyWord'
 import { encodeCardKey } from '~~/shared/utils/games/cardKey'
-import { clueLine, dailyDateLabel, triesOrdinal } from '~/utils/dailyClues'
+import { dailyDateLabel, triesOrdinal } from '~/utils/dailyClues'
 
 // Riječ dana: one dialect word a day, guessed from up to three clues in at most five tries. It runs in the normal
 // page shell, not the focus shell: it is one short puzzle, and people arrive from a shared link and should see where
@@ -29,7 +28,7 @@ useSeoMeta({
   ogDescription: 'Jedna riječ domaćega govora na dan, pogodi je iz tragova.'
 })
 
-const { payload, refresh, error, replaced, stored, finished, solvedStreak, brokenStreak, loading, ready, progress } = useDailyToday()
+const { payload, clues, refresh, error, replaced, stored, finished, solvedStreak, brokenStreak, loading, ready, progress } = useDailyToday()
 const countdown = useDailyCountdown(() => payload.value?.nextAt)
 const { cards, recordSeenCard, dueCount } = useProgress()
 
@@ -41,17 +40,20 @@ const sharing = ref(false)
 const guessComponent = useTemplateRef<{ focus: () => void }>('guessComponent')
 const result = useTemplateRef<HTMLElement>('result')
 
+watch([() => payload.value?.day, () => payload.value?.entry.id], () => {
+  guess.value = ''
+  announcement.value = ''
+  nearNote.value = ''
+  justPlayed.value = false
+  sharing.value = false
+})
+
 const done = computed(() => !!stored.value?.done)
 const playing = computed(() => ready.value && !error.value && !done.value)
 const guesses = computed(() => !replaced.value && stored.value?.maxTries === DAILY_TYPED_TRIES ? stored.value.guesses : [])
 const wrongGuesses = computed(() => finished.value?.solved ? guesses.value.slice(0, -1) : guesses.value)
-const hintTotal = computed(() => Math.min(DAILY_TYPED_CLUES, payload.value?.clues.length ?? 0))
-const hints = computed(() => {
-  const current = payload.value
-  if (!current) return []
-  return current.clues.slice(0, Math.min(wrongGuesses.value.length + 1, hintTotal.value))
-    .map(clue => ({ text: clueLine((key, named) => t(key, named ?? {}), clue, current.areas) }))
-})
+const hintTotal = computed(() => clues.value.length)
+const hints = computed(() => clues.value.slice(0, wrongGuesses.value.length + 1).map(text => ({ text })))
 const letters = computed(() => payload.value ? dailyRevealedLetters(payload.value.entry.headword, wrongGuesses.value.length) : [])
 const answers = computed(() => payload.value ? [payload.value.entry.headword, ...payload.value.entry.variants.map(variant => variant.form)] : [])
 const dateLabel = computed(() => payload.value ? dailyDateLabel(payload.value.day) : '')
@@ -171,6 +173,14 @@ function copied() {
           :overline="overline"
           title="Koja je ovo riječ?"
         />
+        <UBadge
+          v-if="payload.sample"
+          :label="t('daily.sample')"
+          color="neutral"
+          variant="outline"
+          class="mb-3 self-start"
+          data-testid="daily-sample"
+        />
         <DailyWordGuess
           ref="guessComponent"
           v-model="guess"
@@ -202,6 +212,14 @@ function copied() {
         <PageHead
           :overline="overline"
           :title="resultTitle"
+        />
+        <UBadge
+          v-if="payload.sample"
+          :label="t('daily.sample')"
+          color="neutral"
+          variant="outline"
+          class="mb-3 self-start"
+          data-testid="daily-sample"
         />
 
         <section

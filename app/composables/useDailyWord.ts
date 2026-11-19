@@ -15,7 +15,7 @@ export function useDailyWord() {
   })
   const payload = computed(() => data.value ?? undefined)
   /** Before the epoch the API answers 404 not-started and the section stays hidden. */
-  const unavailable = computed(() => error.value?.statusCode === 404)
+  const unavailable = computed(() => error.value?.statusCode === 404 && error.value.data?.statusMessage === 'not-started')
   const progress = useDailyProgress()
   watch([error, progress.loaded], ([failure, loaded]) => {
     if (import.meta.client && loaded && failure && !unavailable.value) progress.recordOutage(zagrebDay(new Date()))

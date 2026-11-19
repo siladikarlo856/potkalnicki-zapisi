@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import { typedClueLines } from '~/utils/dailyClues'
 
 /**
  * Today's word and this device's result for it, in one place for the card on the hubs and the /rijec-dana/ page.
@@ -7,6 +8,8 @@ import { computed } from 'vue'
 export function useDailyToday() {
   const { payload, status, error, unavailable, refresh } = useDailyWord()
   const progress = useDailyProgress()
+  const { t } = useI18n()
+  const clues = computed(() => payload.value ? typedClueLines((key, named) => t(key, named ?? {}), payload.value) : [])
 
   const stored = computed(() => payload.value ? progress.days.value[payload.value.day] : undefined)
   /** The visitor already played a different word today: it was withdrawn and replaced afterwards. */
@@ -17,5 +20,5 @@ export function useDailyToday() {
   const loading = computed(() => !error.value && (status.value === 'idle' || status.value === 'pending') && !payload.value)
   const ready = computed(() => !!payload.value && progress.loaded.value)
 
-  return { payload, status, error, unavailable, refresh, progress, stored, replaced, finished, solvedStreak, brokenStreak, loading, ready }
+  return { payload, clues, status, error, unavailable, refresh, progress, stored, replaced, finished, solvedStreak, brokenStreak, loading, ready }
 }

@@ -27,7 +27,9 @@ const stored = computed(() => ready.value ? Object.keys(cards.value).length : 0)
 const due = computed(() => ready.value ? dueCount() : 0)
 const known = computed(() => ready.value ? learnedCount() : 0)
 const returning = computed(() => stored.value > 0 || !!learn.current.value)
-const reviewHref = computed(() => localePath(due.value > 0 ? `${pzRoutes.learnSession}?ponovi=1` : pzRoutes.learn))
+const reviewHref = computed(() => localePath(learn.current.value
+  ? `${pzRoutes.learnSession}?nastavi=1`
+  : due.value > 0 ? `${pzRoutes.learnSession}?ponovi=1` : pzRoutes.learn))
 
 const games = [
   { title: 'Kviz riječi', blurb: 'Što znači domaća riječ?', icon: 'i-lucide-circle-help', to: pzRoutes.quiz },

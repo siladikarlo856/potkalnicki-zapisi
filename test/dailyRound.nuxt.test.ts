@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import { clearNuxtData, clearNuxtState } from '#imports'
+import { clearNuxtData, clearNuxtState, useNuxtData } from '#imports'
 import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
+import { LEARN_STORAGE_KEY } from '../app/composables/useLearnState'
+import { answerInSession, createSession } from '../shared/utils/learn/learnState'
 import DailyPage from '../app/pages/rijec-dana/index.vue'
 import PlayHub from '../app/pages/igraj/index.vue'
 import DailyWordCard from '../app/components/DailyWordCard.vue'
@@ -26,14 +28,16 @@ function payload(): DailyWordPayload {
 const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn() }))
 mockNuxtImport('navigateTo', () => navigateToMock)
 
-registerEndpoint('/api/heritage/daily', () => payload())
+let current = payload()
+registerEndpoint('/api/heritage/daily', () => current)
 registerEndpoint('/api/learn/pool', () => ({ version: 1, generatedAt: '', cards: [], municipalities: [], settlements: [], topics: [] }))
 
-const stateKeys = ['heritage-daily-progress', 'heritage-daily-progress-loaded', 'heritage-daily-progress-unavailable', 'heritage-progress', 'heritage-progress-loaded']
+const stateKeys = ['heritage-daily-progress', 'heritage-daily-progress-loaded', 'heritage-daily-progress-unavailable', 'heritage-progress', 'heritage-progress-loaded', 'pz-learn-state', 'pz-learn-loaded']
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 const stored = () => JSON.parse(localStorage.getItem(DAILY_STORAGE_KEY)!).days['2026-11-15']
 
 beforeEach(() => {
+  current = payload()
   localStorage.clear()
   clearNuxtState(stateKeys)
   clearNuxtData('heritage-daily-word')
@@ -65,6 +69,59 @@ describe('Riječ dana page', () => {
     expect(page.get('[data-testid="daily-check"]').attributes('disabled')).toBeDefined()
     expect(page.text()).toContain('Šest slova. Možeš pisati i bez kvačica.')
     expect(page.html()).not.toContain('škrlak')
+  })
+
+  it('has a nonempty safe clue even when the multiple-choice round supplies none', async () => {
+    current.clues = []
+    current.entry.variants.push({ id: 'v2', form: 'klobuk', status: 'community', usages: [] })
+    current.entry.examples = [{ text: 'Škrlak ili klobuk.' }]
+    const page = await mountPage()
+    expect(page.get('[data-testid="hint"]').text()).toContain('Znači: šešir')
+    expect(page.text()).not.toContain('škrlak')
+    expect(page.text()).not.toContain('klobuk')
+  })
+
+  it('labels sample content while playing and after revealing the answer', async () => {
+    current.sample = true
+    const page = await mountPage()
+    expect(page.get('[data-testid="daily-sample"]').text()).toBe('Uzorak')
+    await guess(page, 'škrlak')
+    expect(page.get('[data-testid="daily-answer-card"]').text()).toContain('šešir')
+    expect(page.get('[data-testid="daily-sample"]').text()).toBe('Uzorak')
+  })
+
+  it.each(['rollover', 'replacement'])('clears round-local notes and completion state on %s', async (change) => {
+    const page = await mountPage()
+    await guess(page, 'skrlak')
+    expect(page.get('[data-testid="daily-near-note"]').text()).toContain('škrlak')
+    const next = payload()
+    if (change === 'rollover') next.day = '2026-11-16'
+    next.entry = { ...next.entry, id: 'hiza', headword: 'hiža', meaning: { hr: 'kuća' }, variants: [], examples: [] }
+    useNuxtData<DailyWordPayload>('heritage-daily-word').data.value = next
+    if (change === 'replacement') {
+      await expect.poll(() => page.get('h1').text()).toBe('Današnja je riječ riješena')
+      expect(page.find('[data-testid="daily-near-note"]').exists()).toBe(false)
+      return
+    }
+    await expect.poll(() => page.find('[data-testid="daily-play"]').exists()).toBe(true)
+    expect(page.get('[data-testid="free-text-input"]').element).toHaveProperty('value', '')
+    expect(page.find('[data-testid="daily-near-note"]').exists()).toBe(false)
+    await guess(page, 'hiža')
+    expect(page.get('h1').text()).toBe('Točno, u prvom pokušaju')
+    expect(page.find('[data-testid="daily-near-note"]').exists()).toBe(false)
+  })
+
+  it('clears input and announcements when an unfinished word is replaced', async () => {
+    const page = await mountPage()
+    await guess(page, 'klobuk')
+    await page.get('[data-testid="free-text-input"]').setValue('pending guess')
+    const next = payload()
+    next.entry = { ...next.entry, id: 'hiza', headword: 'hiža', variants: [] }
+    useNuxtData<DailyWordPayload>('heritage-daily-word').data.value = next
+    await expect.poll(() => page.find('[data-testid="daily-guesses"]').exists()).toBe(false)
+    expect(page.get('[data-testid="free-text-input"]').element).toHaveProperty('value', '')
+    expect(page.get('[data-testid="daily-tries"]').text()).toBe('Pokušaj 1 od 5')
+    expect(page.text()).not.toContain('Netočno.')
   })
 
   it('lists a wrong guess and reveals the next clue and letter', async () => {
@@ -140,7 +197,7 @@ describe('DailyWordCard', () => {
   it('shows the first clue and first letter, then the solved word', async () => {
     wrapper = await mountSuspended(DailyWordCard)
     await expect.poll(() => wrapper!.find('[data-testid="daily-card"]').exists(), { timeout: 5000 }).toBe(true)
-    expect(wrapper.get('h2').text()).toBe('„Nosi se na glavi.“')
+    expect(wrapper.get('h2').text()).toBe('Znači: šešir')
     expect(wrapper.get('[data-testid="daily-card-play"]').attributes('href')).toBe('/rijec-dana/')
     expect(wrapper.html()).not.toContain('škrlak')
     wrapper.unmount()
@@ -150,6 +207,22 @@ describe('DailyWordCard', () => {
     await expect.poll(() => wrapper!.text(), { timeout: 5000 }).toContain('škrlak')
     expect(wrapper.text()).toContain('(šešir)')
     expect(wrapper.text()).toContain('Niz: 1 dan')
+  })
+
+  it('labels sample clues and the completed sample word', async () => {
+    current.sample = true
+    current.clues = [{ kind: 'variants', forms: ['škrlak'] }]
+    wrapper = await mountSuspended(DailyWordCard)
+    await expect.poll(() => wrapper!.find('[data-testid="daily-card"]').exists(), { timeout: 5000 }).toBe(true)
+    expect(wrapper.get('[data-testid="daily-sample"]').text()).toBe('Uzorak')
+    expect(wrapper.get('h2').text()).toBe('Znači: šešir')
+    expect(wrapper.text()).not.toContain('škrlak')
+    wrapper.unmount()
+    clearNuxtState(stateKeys)
+    localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify({ version: 1, days: { '2026-11-15': { wordId: 'skrlak', guesses: ['škrlak'], done: true, solved: true, tries: 1, maxTries: 5 } } }))
+    wrapper = await mountSuspended(DailyWordCard)
+    await expect.poll(() => wrapper!.text()).toContain('škrlak')
+    expect(wrapper.get('[data-testid="daily-sample"]').text()).toBe('Uzorak')
   })
 
   it('stays playable when an unfinished word was replaced today', async () => {
@@ -179,6 +252,29 @@ describe('DailyWordCard', () => {
 })
 
 describe('Igraj i uči hub', () => {
+  it.each([true, false])('offers the appropriate learning path without a saved session when cards are due: %s', async (hasDue) => {
+    localStorage.setItem('pz-progress/v2', JSON.stringify({
+      version: 2, lastPlayed: '2020-01-01', streak: 1,
+      cards: { 'word:a': { box: 1, due: hasDue ? '2020-01-01' : '2999-01-01', seen: 1, known: 0, missed: 1, lastPlayed: '2020-01-01' } }
+    }))
+    wrapper = await mountSuspended(PlayHub, { route: '/igraj/' })
+    await expect.poll(() => wrapper!.find('[data-testid="hub-learn-continue"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="hub-learn-continue"]').attributes('href')).toBe(hasDue ? '/uci/sesija/?ponovi=1' : '/uci/')
+  })
+
+  it.each([true, false])('resumes an unfinished session when due cards exist: %s', async (hasDue) => {
+    const session = answerInSession(createSession(['rijeci'], 5, ['word:a', 'word:b'], 'new'), false)
+    localStorage.setItem(LEARN_STORAGE_KEY, JSON.stringify({ version: 1, current: session, lastTopics: ['rijeci'], lastN: 5 }))
+    if (hasDue) localStorage.setItem('pz-progress/v2', JSON.stringify({
+      version: 2, lastPlayed: '2020-01-01', streak: 1,
+      cards: { 'word:a': { box: 1, due: '2020-01-01', seen: 1, known: 0, missed: 1, lastPlayed: '2020-01-01' } }
+    }))
+    wrapper = await mountSuspended(PlayHub, { route: '/igraj/' })
+    await expect.poll(() => wrapper!.find('[data-testid="hub-learn-continue"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="hub-learn-continue"]').attributes('href')).toBe('/uci/sesija/?nastavi=1')
+    expect(JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!).current).toEqual(session)
+  })
+
   it('lists daily word, Uči, three games with a link to all and challenges with the code field', async () => {
     wrapper = await mountSuspended(PlayHub, { route: '/igraj/' })
     expect(wrapper.get('h1').text()).toBe('Igraj i uči')

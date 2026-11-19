@@ -29,6 +29,10 @@ const ready = ref(false)
 const n = ref<LearnN>(10)
 const lengths: LearnN[] = [5, 10, 20]
 const firstPick = ref<'rijeci' | TopicId | 'mjesto'>('rijeci')
+const requestedTopics = computed(() => typeof route.query.teme === 'string' ? route.query.teme.split(',').map(topic => topic.trim()).filter(Boolean) : [])
+watch(requestedTopics, (topics) => {
+  firstPick.value = topics.length ? topics.join(',') : 'rijeci'
+}, { immediate: true })
 const placeSlug = ref<string | undefined>()
 const placeId = ref<string | null>(null)
 const placeQuery = ref('')
@@ -63,7 +67,7 @@ function sessionHref(query: Record<string, string>) {
 const reviewHref = computed(() => sessionHref({ ponovi: '1' }))
 const continueHref = computed(() => sessionHref({ nastavi: '1' }))
 const newHref = computed(() => {
-  const query: Record<string, string> = { teme: learn.lastTopics.value.join(','), n: String(n.value) }
+  const query: Record<string, string> = { teme: (requestedTopics.value.length ? requestedTopics.value : learn.lastTopics.value).join(','), n: String(n.value) }
   if (placeSlug.value) query.mjesto = placeSlug.value
   return sessionHref(query)
 })
@@ -100,7 +104,7 @@ function clearPlace() {
   learn.rememberPlace(undefined)
 }
 
-watch(n, () => learn.rememberSetup(learn.lastTopics.value, n.value))
+watch(n, () => learn.rememberSetup(requestedTopics.value.length ? requestedTopics.value : learn.lastTopics.value, n.value))
 
 onMounted(() => {
   learn.load()

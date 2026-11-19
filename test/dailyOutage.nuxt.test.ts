@@ -8,8 +8,9 @@ import { useDailyWord } from '../app/composables/useDailyWord'
 import type { DailyProgress, DailyWordPayload } from '../shared/utils/dailyWord'
 
 let failure: number | undefined
+let statusMessage: string | undefined
 registerEndpoint('/api/heritage/daily', () => {
-  if (failure) throw createError({ statusCode: failure })
+  if (failure) throw createError({ statusCode: failure, statusMessage })
   return {
     day: '2026-11-17', number: 16, nextAt: '2026-11-18T23:00:00Z', sample: false,
     entry: { id: 'word', headword: 'riječ', meaning: { hr: 'značenje' }, variants: [], status: 'verified', sources: [] },
@@ -39,6 +40,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-15T23:30:00Z'))
   failure = 503
+  statusMessage = 'unavailable'
   localStorage.clear()
   clearNuxtState(stateKeys)
   clearNuxtData('heritage-daily-word')
@@ -53,8 +55,11 @@ afterEach(() => {
 })
 
 describe('device-local daily outages', () => {
-  it('records the Zagreb outage day once and continues the streak after reloading and solving tomorrow', async () => {
+  it.each([503, 404])('records outage %s once and continues the streak after reloading and solving tomorrow', async (code) => {
+    failure = code
+    statusMessage = code === 404 ? 'no-words' : 'unavailable'
     await mountDaily()
+    expect(daily.unavailable.value).toBe(false)
     expect(stored()).toEqual({ version: 1, days: { '2026-11-15': win }, outageDays: ['2026-11-16'] })
     await daily.refresh()
     expect(stored().outageDays).toEqual(['2026-11-16'])
@@ -83,7 +88,9 @@ describe('device-local daily outages', () => {
 
   it('does not record the pre-launch not-started response as an outage', async () => {
     failure = 404
+    statusMessage = 'not-started'
     await mountDaily()
+    expect(daily.unavailable.value).toBe(true)
     expect(stored()).toEqual({ version: 1, days: { '2026-11-15': win } })
   })
 })
