@@ -20,6 +20,15 @@ const detailError = ref('')
 
 const row = computed(() => props.row)
 const applied = computed(() => !!row.value.appliedAt)
+const diffRows = computed(() => (detail.value?.changes ?? []).map(change => ({
+  key: change.field,
+  label: change.label,
+  before: change.current ?? '',
+  after: change.proposed,
+  beforeEmpty: !change.current,
+  afterEmpty: !change.proposed
+})))
+const unapplicable = computed(() => row.value.type === 'correction' ? (detail.value?.changes ?? []).filter(change => !change.applicable) : [])
 const structured = computed(() => row.value.type === 'correction' || row.value.type === 'proposal')
 
 async function loadDetail() {
@@ -151,56 +160,24 @@ function openMemoryDraft() {
 
     <div
       v-if="detail?.changes.length"
-      class="overflow-x-auto rounded-lg ring ring-default"
+      data-test="admin-inbox-changes"
     >
-      <table
-        class="w-full text-sm"
-        data-test="admin-inbox-changes"
+      <p class="mb-2 text-sm font-medium text-muted">
+        {{ row.type === 'correction' ? 'Na što se odnosi u zapisu' : 'Polja prijedloga' }}
+      </p>
+      <AdminDiffView
+        :rows="diffRows"
+        old-tag="Sada piše"
+        new-tag="Prijedlog"
+        :hide-old="row.type !== 'correction'"
+      />
+      <p
+        v-for="change in unapplicable"
+        :key="change.field"
+        class="mt-1 text-xs text-dimmed"
       >
-        <caption class="sr-only">
-          {{ row.type === 'correction' ? 'Trenutne i predložene vrijednosti' : 'Polja prijedloga' }}
-        </caption>
-        <thead class="text-left text-muted">
-          <tr>
-            <th class="p-2 font-medium">
-              Polje
-            </th>
-            <th
-              v-if="row.type === 'correction'"
-              class="p-2 font-medium"
-            >
-              Trenutno
-            </th>
-            <th class="p-2 font-medium">
-              {{ row.type === 'correction' ? 'Predloženo' : 'Vrijednost' }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="change in detail.changes"
-            :key="change.field"
-            class="border-t border-default align-top"
-          >
-            <th class="p-2 text-left font-medium">
-              {{ change.label }}
-            </th>
-            <td
-              v-if="row.type === 'correction'"
-              class="whitespace-pre-line break-words p-2 text-muted"
-            >
-              {{ change.current ?? '—' }}
-            </td>
-            <td class="whitespace-pre-line break-words p-2">
-              <mark class="rounded bg-primary/15 px-1 text-highlighted">{{ change.proposed }}</mark>
-              <span
-                v-if="row.type === 'correction' && !change.applicable"
-                class="mt-1 block text-xs text-dimmed"
-              >Samo za informaciju.</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        {{ change.label }}: samo za informaciju.
+      </p>
     </div>
     <p
       v-else-if="detailError"
@@ -326,7 +303,7 @@ function openMemoryDraft() {
     <div class="flex flex-wrap gap-2">
       <UButton
         v-if="row.type === 'correction' && !applied && row.status !== 'rejected'"
-        label="Primijeni"
+        label="Prihvati i otvori zapis"
         icon="i-lucide-git-pull-request-arrow"
         :disabled="busy || row.target?.state !== 'ok' || !row.target?.id"
         data-test="admin-inbox-apply"

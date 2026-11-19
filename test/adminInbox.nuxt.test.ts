@@ -126,7 +126,7 @@ describe('admin inbox', () => {
     expect(text).toContain('Zapis baštine · Kapela sv. Ana')
     expect(text).toContain('Primijenjeno')
     expect(text).toContain('Sjećanje ili priča')
-    expect(text).toContain('Na čekanju: 3')
+    expect(text).toContain('3 priloga čekaju pregled')
   })
 
   it('shows the diff of a correction, warns when the target changed, and applies it in the target\'s own dialog', async () => {
@@ -137,7 +137,7 @@ describe('admin inbox', () => {
     const changes = wrapper.get('[data-test="admin-inbox-changes"]').text()
     expect(changes).toContain('Kapela sv. Ana')
     expect(changes).toContain('Kapela sv. Ane')
-    expect(changes).toContain('Samo za informaciju.')
+    expect(changes).toContain('samo za informaciju.')
     expect(wrapper.find('[data-test="admin-inbox-stale"]').exists()).toBe(true)
     // The contributor's note is shown as plain text, never as a link.
     expect(wrapper.find('[data-test="admin-inbox-detail"] a[href^="http"]').exists()).toBe(false)
@@ -174,16 +174,14 @@ describe('admin inbox', () => {
   it('selects several rows and rejects them in one request after a confirmation', async () => {
     wrapper = await mountInApp(Prijedlozi, '/admin/prijedlozi')
     await vi.waitFor(() => expect(wrapper!.text()).toContain('Naziv je drugačiji.'))
-    const boxes = wrapper.findAll('button[role="checkbox"]')
-    // The first checkbox selects the whole page; two rows are then deselected.
-    await boxes[0]!.trigger('click')
+    for (const box of wrapper.findAll('button[role="checkbox"]')) await box.trigger('click')
     await vi.waitFor(() => expect(wrapper!.find('[data-test="admin-inbox-bulk"]').exists()).toBe(true))
-    expect(wrapper.get('[data-test="admin-inbox-bulk"]').text()).toContain('Odabrano: 4')
+    expect(wrapper.get('[data-test="admin-inbox-bulk"]').text()).toContain('Odabrana 4 zapisa')
+    await wrapper.findAll('button[role="checkbox"]')[2]!.trigger('click')
     await wrapper.findAll('button[role="checkbox"]')[3]!.trigger('click')
-    await wrapper.findAll('button[role="checkbox"]')[4]!.trigger('click')
-    await vi.waitFor(() => expect(wrapper!.get('[data-test="admin-inbox-bulk"]').text()).toContain('Odabrano: 2'))
+    await vi.waitFor(() => expect(wrapper!.get('[data-test="admin-inbox-bulk"]').text()).toContain('Odabrana 2 zapisa'))
 
-    buttonIn(wrapper.get('[data-test="admin-inbox-bulk"]').element, 'Odbij odabrane')!.click()
+    buttonIn(wrapper.get('[data-test="admin-inbox-bulk"]').element, 'Odbij')!.click()
     await vi.waitFor(() => expect(dialog()?.textContent).toContain('Odbiti 2 prijedloga?'))
     dialog()!.querySelector<HTMLButtonElement>('[data-test="admin-confirm-accept"]')!.click()
     await vi.waitFor(() => expect(calls.find(call => call.path === '/api/admin/inbox/bulk')?.body).toEqual({ ids: [12, 13], action: 'reject' }))
