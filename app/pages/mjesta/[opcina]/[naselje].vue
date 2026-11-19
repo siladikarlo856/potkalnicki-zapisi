@@ -167,10 +167,8 @@ useSeoMeta({
       </PzFactPanel>
 
       <PzSchematicMap
-        v-if="settlement.centroid"
         class="lg:col-start-2 lg:row-start-2"
-        :selected="municipality.slug.includes('krizevci') ? 'krizevci' : municipality.slug.includes('kalnik') ? 'kalnik' : undefined"
-        :pin="{ x: 170, y: 100, label: settlement.name }"
+        :selected="mapAreaForMunicipality(municipality.slug)"
         :label="`Lokator: ${settlement.name}, ${municipality.label}`"
       />
 

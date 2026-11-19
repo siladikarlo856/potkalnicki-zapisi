@@ -99,7 +99,7 @@ useSeoMeta({
       <div class="lg:col-span-5">
         <PzSchematicMap
           labels
-          :selected="municipality.slug.includes('krizevci') ? 'krizevci' : municipality.slug.includes('kalnik') ? 'kalnik' : municipality.slug.includes('gornja') ? 'gornja-rijeka' : 'sveti-petar-orekhovec'"
+          :selected="mapAreaForMunicipality(municipality.slug)"
           :label="`Karta: ${municipality.label} istaknuta, ostala područja prigušena`"
         />
       </div>

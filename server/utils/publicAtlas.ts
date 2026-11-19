@@ -5,6 +5,7 @@ import type {
   AtlasOverviewResponse,
   AtlasPersonListResponse,
   AtlasSettlementResponse,
+  ArchiveSearchGroup,
   ArchiveSearchResponse,
   ContentSearchResponse,
   ContentTargetResponse,
@@ -377,10 +378,10 @@ export function searchContent(content: PublicContent, query: string, limit = 8):
   return { items, settlements }
 }
 
-const archiveFold = (value: string) => value.toLocaleLowerCase('hr').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+const archiveFold = (value: string) => value.toLocaleLowerCase('hr').replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
 /** Search every public archive section from the already-built public snapshot. */
-export function archiveSearch(content: PublicContent, query: string, limit = 3): ArchiveSearchResponse {
+export function archiveSearch(content: PublicContent, query: string, limit = 3, only?: ArchiveSearchGroup['key']): ArchiveSearchResponse {
   const value = query.trim()
   const q = archiveFold(value)
   const match = (text: string) => archiveFold(text).includes(q)
@@ -410,5 +411,6 @@ export function archiveSearch(content: PublicContent, query: string, limit = 3):
   const wordHits = [...words.values()].filter(w => match(w.headword) && w.slug).map(w => ({ id: w.id, title: w.headword, context: 'Riječ domaćega govora', path: wordArchivePagePath(w.slug!), kind: 'Riječ' }))
   groups.push({ key: 'speech', label: 'Govor', hits: wordHits.slice(0, limit), total: wordHits.length })
 
-  return { query: value, total: groups.reduce((sum, group) => sum + group.total, 0), groups: groups.filter(group => group.total > 0) }
+  const found = groups.filter(group => group.total > 0 && (!only || group.key === only))
+  return { query: value, total: found.reduce((sum, group) => sum + group.total, 0), groups: found }
 }

@@ -8,6 +8,7 @@ import {
 } from '../server/utils/publicContent'
 import type { AreaRow, ItemImageRow, ItemRow, PublicContentRows } from '../server/utils/publicContent'
 import {
+  archiveSearch,
   atlasOverview,
   contentTarget,
   heritageItemDetail,
@@ -513,5 +514,25 @@ describe('derive', () => {
     await expect(derived.get()).rejects.toThrow('words unavailable')
     expect(await derived.get()).toBe('pool')
     expect(attempts).toBe(2)
+  })
+})
+
+describe('archive search folding', () => {
+  it('finds đ with d and Đ with d, and the other way round', () => {
+    const data = rows()
+    data.areas.push(area({ id: id(90), kind: 'settlement', name: 'Đurđekovec', slug: 'durdekovec', parent_id: ID.town }))
+    const built = buildPublicContent(data, { loadedAt: 0 })
+    const titles = (q: string) => archiveSearch(built, q).groups.flatMap(g => g.hits.map(h => h.title))
+    expect(titles('durdekovec')).toContain('Đurđekovec')
+    expect(titles('ĐURĐEK')).toContain('Đurđekovec')
+    expect(titles('đurđ')).toContain('Đurđekovec')
+  })
+
+  it('returns every hit of one group when asked for it', () => {
+    const all = archiveSearch(content, 'k', 1)
+    const only = archiveSearch(content, 'k', Number.MAX_SAFE_INTEGER, 'places')
+    expect(only.groups.map(g => g.key)).toEqual(['places'])
+    expect(only.groups[0]!.hits.length).toBe(only.groups[0]!.total)
+    expect(all.groups.find(g => g.key === 'places')!.total).toBe(only.total)
   })
 })

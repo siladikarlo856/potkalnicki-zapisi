@@ -11,28 +11,34 @@ const localePath = useLocalePath()
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const submitted = ref(query.value.trim().length >= 2)
 const activeGroup = ref<string>('all')
+const onlyGroup = computed(() => typeof route.query.skupina === 'string' ? route.query.skupina : undefined)
 const { data, pending, error, refresh } = await useFetch<ArchiveSearchResponse>('/api/atlas/search', {
-  query: computed(() => ({ q: query.value.trim() })),
+  query: computed(() => ({ q: query.value.trim(), skupina: onlyGroup.value })),
   immediate: false,
   watch: false
 })
+let fetchedKey = `${query.value.trim()}|${onlyGroup.value ?? ''}`
 if (submitted.value) await refresh()
 const total = computed(() => data.value?.total ?? 0)
 const groups = computed(() => data.value?.groups ?? [])
 
-watch(() => route.query.q, (value) => {
+watch(() => [route.query.q, route.query.skupina], ([value]) => {
   const next = typeof value === 'string' ? value : ''
-  if (next === query.value) return
   query.value = next
   submitted.value = next.trim().length >= 2
-  if (submitted.value) refresh()
+  const key = `${next.trim()}|${onlyGroup.value ?? ''}`
+  if (submitted.value && key !== fetchedKey) {
+    fetchedKey = key
+    refresh()
+  }
 })
 
 function submit(value = query.value) {
   const next = value.trim()
   query.value = next
   submitted.value = next.length >= 2
-  router.replace({ query: next ? { q: next } : {} })
+  fetchedKey = `${next}|${onlyGroup.value ?? ''}`
+  router.replace({ query: next ? { q: next, skupina: onlyGroup.value } : {} })
   if (submitted.value) refresh()
 }
 
@@ -217,7 +223,7 @@ const visibleGroups = computed(() => activeGroup.value === 'all' ? groups.value 
             </ul>
             <NuxtLink
               v-if="group.total > group.hits.length"
-              :to="localePath(pzRoutes.archive)"
+              :to="localePath({ path: pzRoutes.search, query: { q: query.trim(), skupina: group.key } })"
               class="self-start text-primary underline underline-offset-2"
             >Svi rezultati</NuxtLink>
           </section>
