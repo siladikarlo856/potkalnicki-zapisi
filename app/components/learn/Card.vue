@@ -94,12 +94,12 @@ const announce = computed(() => {
       >
         {{ personCard.clue }}
       </p>
-      <h1
+      <p
         v-else
         class="font-display text-[clamp(2.25rem,11vw,3.5rem)]/[1.1] font-bold tracking-tight wrap-anywhere text-highlighted"
       >
         {{ cardName }}
-      </h1>
+      </p>
       <p
         v-if="card.kind === 'word' && card.partOfSpeech"
         class="pz-body-sm text-muted"
