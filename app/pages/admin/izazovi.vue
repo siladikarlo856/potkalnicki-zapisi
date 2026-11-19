@@ -5,7 +5,7 @@ import { CHALLENGE_LIMITS, challengeSummary, validateChallengeTemplate } from '~
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
-useSeoMeta({ title: 'Izazovi', robots: 'noindex, nofollow' })
+useSeoMeta({ title: 'Predlošci izazova', robots: 'noindex, nofollow' })
 
 interface ChallengeTemplateForm {
   name: string
@@ -38,12 +38,12 @@ const resource = defineAdminResource<ChallengeTemplate, ChallengeTemplateForm>({
   kind: 'challenge_template',
   icon: 'i-lucide-trophy',
   labels: {
-    title: 'Izazovi',
-    description: 'Skupovi pitanja za izazove prijatelja. Svaki novi izazov kopira trenutni skup; već pokrenuti izazovi zadržavaju svoja pitanja.',
-    create: 'Novi izazov',
-    edit: 'Uredi izazov',
-    empty: 'Još nema izazova.',
-    search: 'Pretraži izazove'
+    title: 'Predlošci izazova',
+    description: 'Gotovi izazovi koje posjetitelji mogu odabrati pri stvaranju izazova. Svaki novi izazov kopira trenutni predložak.',
+    create: 'Novi predložak',
+    edit: 'Uredi predložak',
+    empty: 'Još nema predložaka.',
+    search: 'Pretraži predloške'
   },
   columns: [
     { key: 'name', label: 'Naziv', sort: 'name' },
@@ -127,6 +127,13 @@ function questions(template: ChallengeTemplate) {
           :disabled="entity?.isCurrent"
         />
       </UFormField>
+
+      <p
+        class="text-sm text-muted"
+        data-test="challenge-template-note"
+      >
+        Izazovi koji su već stvoreni iz ovog predloška ne mijenjaju se.
+      </p>
 
       <USeparator />
 

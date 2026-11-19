@@ -30,7 +30,7 @@ const resource = defineAdminResource<Theme, ThemeForm>({
   },
   columns: [
     { key: 'labelHr', label: 'Naziv', sort: 'labelHr' },
-    { key: 'slug', label: 'Slug', sort: 'slug', hideBelow: 'md' },
+    { key: 'slug', label: 'Adresa', sort: 'slug', hideBelow: 'md' },
     { key: 'sort', label: 'Redoslijed', sort: 'sort', hideBelow: 'lg' }
   ],
   defaultSort: 'sort',
@@ -79,9 +79,9 @@ function setLabel(form: ThemeForm, entity: Theme | null, value: string) {
       </UFormField>
       <UFormField
         name="slug"
-        label="Slug"
+        label="Adresa"
         required
-        description="Adresa javne stranice teme (mala slova, brojevi i crtice). Prazno polje se popunjava iz naziva."
+        description="Mala slova bez kvačica, riječi odvojene crticom. Prazno polje se popunjava iz naziva."
       >
         <UInput
           v-model="state.slug"
