@@ -196,6 +196,7 @@ describe('learn session page', () => {
     expect(wrapper!.find('[data-testid="learn-reveal"]').exists()).toBe(false)
     expect(wrapper!.get('[data-testid="learn-known"]').text()).toBe('Znam')
     expect(wrapper!.get('[data-testid="learn-unknown"]').text()).toBe('Još ne znam')
+    expect(wrapper!.findAll('[data-testid="word-suggest-correction"]')).toHaveLength(1)
   })
 
   it('asks Što znači? only above word cards', async () => {
@@ -205,6 +206,8 @@ describe('learn session page', () => {
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
     expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('Kartica 1 od 1')
     expect(wrapper!.get('[data-testid="learn-counter"]').text()).not.toContain('Što znači?')
+    await wrapper!.get('[data-testid="learn-reveal"]').trigger('click')
+    expect(wrapper!.findAll('[data-testid="learn-open-record"]')).toHaveLength(1)
   })
 
   it('lists the missed cards with a link and a count in the summary', async () => {

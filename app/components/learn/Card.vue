@@ -242,44 +242,6 @@ const announce = computed(() => {
             @click="correctionOpen = true"
           />
         </div>
-
-        <div class="mt-1 flex flex-col items-center border-t border-default pt-2">
-          <UButton
-            v-if="openPath"
-            :to="openPath"
-            :label="openLabel"
-            :icon="card.kind === 'place' ? 'i-lucide-map-pin' : 'i-lucide-book-open'"
-            color="neutral"
-            variant="link"
-            class="min-h-(--pz-tap-min) font-semibold"
-            data-testid="learn-open-record"
-          />
-          <HeritageWordCorrection
-            v-if="card.kind === 'word' && wordEntry"
-            v-model:open="correctionOpen"
-            :entry="wordEntry"
-          />
-          <UButton
-            v-if="card.kind === 'word' && placeSlug && wordEntry"
-            :label="t('pz.learn.localUsage')"
-            icon="i-lucide-message-circle"
-            color="neutral"
-            variant="link"
-            class="min-h-(--pz-tap-min) font-semibold"
-            aria-haspopup="dialog"
-            @click="usageOpen = true"
-          />
-          <UButton
-            v-if="card.kind !== 'word'"
-            :label="t('pz.learn.suggestCorrection')"
-            icon="i-lucide-pencil"
-            color="neutral"
-            variant="link"
-            class="min-h-(--pz-tap-min) font-semibold"
-            aria-haspopup="dialog"
-            @click="correctionOpen = true"
-          />
-        </div>
       </div>
       <UModal
         v-if="wordEntry"
