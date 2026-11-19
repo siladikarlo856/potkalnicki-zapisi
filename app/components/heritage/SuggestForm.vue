@@ -67,7 +67,14 @@ function readDraft() {
     if (!raw) return
     const draft = JSON.parse(raw) as { values?: Record<string, string | undefined>, state?: Partial<typeof state>, placeQuery?: string }
     if (draft.values && typeof draft.values === 'object') Object.assign(values, draft.values)
-    if (draft.state && typeof draft.state === 'object') Object.assign(state, draft.state)
+    if (draft.state && typeof draft.state === 'object') {
+      const { note, name, contact } = draft.state
+      Object.assign(state, {
+        note: typeof note === 'string' ? note : state.note,
+        name: typeof name === 'string' ? name : state.name,
+        contact: typeof contact === 'string' ? contact : state.contact
+      })
+    }
     if (typeof draft.placeQuery === 'string') placeQuery.value = draft.placeQuery
     draftRestored.value = true
   } catch {
@@ -78,7 +85,7 @@ function readDraft() {
 function saveDraft() {
   if (!import.meta.client || !draftStorageKey.value || sendState.value === 'sent') return
   try {
-    window.localStorage.setItem(draftStorageKey.value, JSON.stringify({ values, state, placeQuery: placeQuery.value }))
+    window.localStorage.setItem(draftStorageKey.value, JSON.stringify({ values, state: { note: state.note, name: state.name, contact: state.contact }, placeQuery: placeQuery.value }))
   } catch {
     // Ignore private browsing and full storage.
   }
