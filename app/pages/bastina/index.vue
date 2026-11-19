@@ -123,16 +123,8 @@ useSeoMeta({
         <h2 class="sr-only">
           {{ t('pz.heritage.listHeading') }}
         </h2>
-        <PzListToolbar
-          :count="filtered.length"
-          :active-filters="[]"
-          data-testid="heritage-toolbar"
-          @open-filters="undefined"
-        >
-          <template #rail />
-        </PzListToolbar>
         <p
-          class="sr-only"
+          class="font-bold tabular-nums"
           role="status"
           data-testid="heritage-count"
         >
