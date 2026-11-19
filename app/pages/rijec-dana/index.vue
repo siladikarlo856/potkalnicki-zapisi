@@ -60,7 +60,7 @@ const overline = computed(() => `Riječ dana · ${dateLabel.value}`)
 const solved = computed(() => !!finished.value?.solved)
 const resultTitle = computed(() => {
   if (!finished.value) return ''
-  if (!finished.value.solved) return 'Danas nije išlo. Riječ je bila:'
+  if (!finished.value.solved) return replaced.value ? 'Danas nije išlo' : 'Danas nije išlo. Riječ je bila:'
   return justPlayed.value ? `Točno, u ${triesOrdinal(finished.value.tries)} pokušaju` : 'Današnja je riječ riješena'
 })
 const example = computed(() => payload.value?.entry.examples?.[0])
