@@ -113,7 +113,7 @@ function initSession() {
       unavailable.value = true
       return
     }
-    const next = createSession([], 10, queue, 'list')
+    const next = createSession([], 10, queue, 'list', place)
     next.n = Math.min(queue.length, 20) as LearnN
     session.value = next
     targetN.value = queue.length

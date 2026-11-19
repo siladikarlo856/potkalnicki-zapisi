@@ -137,6 +137,40 @@ describe('review eligibility across learning surfaces', () => {
     }
   })
 
+  it.each(['more', 'more-desktop', 'repeat'])('keeps the session settlement through the %s restart and the next summary', async (action) => {
+    rememberPlace('second')
+    saveProgress({ 'word:fresh': card('2026-11-22') })
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci/?mjesto=first&teme=bastina' })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-home-new-lesson"]').exists()).toBe(true)
+    const href = wrapper.get('[data-testid="learn-home-new-lesson"]').attributes('href')!
+    wrapper.unmount()
+    wrapper = await mountSuspended(LearnSession, { route: href })
+
+    async function finishRound() {
+      await expect.poll(() => wrapper!.find('[data-testid="learn-card-front"]').exists()).toBe(true)
+      await wrapper!.get('[data-testid="learn-card-front"]').trigger('click')
+      await wrapper!.get('[data-testid="learn-unknown"]').trigger('click')
+      await wrapper!.get('[data-testid="learn-card-front"]').trigger('click')
+      await wrapper!.get('[data-testid="learn-known"]').trigger('click')
+      await expect.poll(() => wrapper!.find('[data-testid="learn-summary"]').exists()).toBe(true)
+    }
+
+    await finishRound()
+    await wrapper.get(`[data-testid="learn-summary-${action}"]`).trigger('click')
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    const restarted = JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!).current
+    expect(restarted.place).toBe('first')
+    expect(restarted.queue).toEqual(['item:church'])
+    expect(restarted.mode).toBe(action === 'repeat' ? 'list' : 'new')
+
+    await finishRound()
+    await wrapper.get('[data-testid="learn-summary-more"]').trigger('click')
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    const next = JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!).current
+    expect(next.place).toBe('first')
+    expect(next.queue).toEqual(action === 'repeat' ? ['word:fresh'] : ['item:church'])
+  })
+
   it('forecasts only eligible future cards and keeps a new lesson available', async () => {
     rememberPlace('second')
     saveProgress({

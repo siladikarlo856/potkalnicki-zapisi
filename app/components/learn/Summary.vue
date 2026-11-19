@@ -28,12 +28,14 @@ const sessionPath = computed(() => {
   const q = new URLSearchParams()
   q.set('teme', props.session.topics.join(','))
   q.set('n', String(props.session.n))
+  if (props.session.place) q.set('mjesto', props.session.place)
   return `${pzRoutes.learnSession}?${q}`
 })
 
 const repeatPath = computed(() => {
   const q = new URLSearchParams()
   q.set('kartice', missed.value.join(','))
+  if (props.session.place) q.set('mjesto', props.session.place)
   return `${pzRoutes.learnSession}?${q}`
 })
 
