@@ -49,7 +49,7 @@ const newBest = computed(() => {
 })
 const sentence = computed(() => {
   if (!total.value) return ''
-  if (correct.value === total.value) return props.previousBest === null || newBest.value ? 'Sve točno. Novi najbolji rezultat.' : 'Sve točno.'
+  if (correct.value === total.value) return !props.practice && (props.previousBest === null || newBest.value) ? 'Sve točno. Novi najbolji rezultat.' : 'Sve točno.'
   const missed = misses.value.length
   if (correct.value / total.value < 0.5) return 'Ovo nije lako ni onima koji su ovdje odrasli. Pročitaj zapise pa pokušaj ponovno.'
   return `${correct.value} od ${total.value} točno. ${missed} ${nounFor(missed, ['pitanje', 'pitanja'])} vrijedi ponoviti.${newBest.value ? ' Novi najbolji rezultat.' : ''}`

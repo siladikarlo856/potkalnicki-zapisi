@@ -19,7 +19,7 @@ const { locale } = useI18n()
 
 const answered = computed(() => props.selected !== null)
 const lang = computed(() => locale.value === 'en' ? 'en' : 'hr')
-const KEYS = ['A', 'B', 'C', 'D', 'E', 'F']
+const KEYS = ['A', 'B', 'C', 'D']
 const root = useTemplateRef<HTMLElement>('root')
 
 type OptionState = 'default' | 'chosen' | 'correct' | 'wrong' | 'locked'
@@ -58,7 +58,10 @@ function onKey(event: KeyboardEvent) {
   if (answered.value || event.ctrlKey || event.metaKey || event.altKey) return
   const target = event.target
   if (target instanceof Element && target.closest('input, textarea, select, [contenteditable], [role="dialog"]')) return
-  const index = Number(event.key) - 1
+  const digit = Number(event.key)
+  const index = Number.isInteger(digit) && digit >= 1 && digit <= 4
+    ? digit - 1
+    : KEYS.indexOf(event.key.toUpperCase())
   if (Number.isInteger(index) && index >= 0 && index < props.question.options.length) {
     event.preventDefault()
     emit('select', index)

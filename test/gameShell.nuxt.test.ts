@@ -123,11 +123,12 @@ describe('GameShell', () => {
     expect(focus.mock.contexts.some(element => (element as HTMLElement).id === 'game-question')).toBe(true)
   })
 
-  it('selects with the keys 1 to 3 and ignores 4 when there are only three options', async () => {
+  it('selects with digit and letter keys, case-insensitively, and ignores 4/D when there are only three options', async () => {
     const page = await mountShell()
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '4' }))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'D' }))
     expect(page.find('[data-testid="game-feedback"]').exists()).toBe(false)
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: String(questions[0]!.correct + 1) }))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: String.fromCharCode(97 + questions[0]!.correct) }))
     await vi.waitFor(() => expect(page.get('[data-testid="game-check"]').attributes('disabled')).toBeUndefined())
     expect(page.find('[data-testid="game-feedback"]').exists()).toBe(false)
     await page.get('[data-testid="game-check"]').trigger('click')
@@ -196,6 +197,7 @@ describe('GameShell', () => {
     expect(page.get('[data-testid="game-result-score"]').text()).toBe('Rezultat: 3/3')
     expect(page.find('[data-testid="result-share-open"]').exists()).toBe(false)
     expect(page.find('[data-testid="game-make-challenge"]').exists()).toBe(false)
+    expect(page.get('[data-testid="game-result"]').text()).not.toContain('Novi najbolji rezultat')
     // The 0/3 first round saved nothing, and the 3/3 practice round saves nothing either.
     expect(localStorage.getItem(GAME_SCORES_KEY)).toBeNull()
   })

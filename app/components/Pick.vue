@@ -7,11 +7,10 @@ export interface PickOption {
   value: string
   label: string
   description?: string
-  icon?: string
   testid?: string
 }
 
-withDefaults(defineProps<{ legend: string, options: readonly PickOption[], name: string, columns?: 1 | 2, hideLegend?: boolean }>(), { columns: 1 })
+defineProps<{ legend: string, options: readonly PickOption[], name: string }>()
 const model = defineModel<string>()
 </script>
 
@@ -22,14 +21,10 @@ const model = defineModel<string>()
   >
     <legend
       class="mb-2 p-0 text-base font-bold text-highlighted"
-      :class="{ 'sr-only': hideLegend }"
     >
       {{ legend }}
     </legend>
-    <div
-      class="grid gap-2"
-      :class="columns === 2 ? 'sm:grid-cols-2' : ''"
-    >
+    <div class="grid gap-2">
       <label
         v-for="option in options"
         :key="option.value"
@@ -43,12 +38,6 @@ const model = defineModel<string>()
           :value="option.value"
           class="size-[22px] shrink-0 accent-(--ui-primary)"
         >
-        <UIcon
-          v-if="option.icon"
-          :name="option.icon"
-          class="size-6 shrink-0 text-primary"
-          aria-hidden="true"
-        />
         <span class="min-w-0">
           <b class="block text-base text-highlighted">{{ option.label }}</b>
           <small

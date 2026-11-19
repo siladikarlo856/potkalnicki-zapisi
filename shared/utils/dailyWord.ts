@@ -1,4 +1,5 @@
 import type { Area, WordEntry } from '../../app/types/heritage'
+import { pzRoutes } from './appRoutes'
 import { pickDistractors, seededRandom } from './multipleChoice'
 import { DISTRACTOR_LIMIT, MAX_DISTRACTORS } from './word'
 
@@ -157,7 +158,7 @@ export function dailyWordShareText(number: number, result: Pick<DailyProgress, '
   if (!result.done) return ''
   const { solved, tries, maxTries } = result
   const squares = '🟥'.repeat(solved ? tries - 1 : tries) + (solved ? '🟩' : '') + '⬜'.repeat(maxTries - tries)
-  return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://prigorje.karlo-siladi.from.hr/igre/#rijec-dana`
+  return `Riječ dana #${number}: ${solved ? tries : 'X'}/${maxTries}\n${squares}\nhttps://prigorje.karlo-siladi.from.hr${pzRoutes.dailyWord}`
 }
 
 export interface DailyReadiness {

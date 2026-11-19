@@ -133,8 +133,8 @@ describe('device stats', () => {
 })
 
 describe('spoiler-free share', () => {
-  it('uses the Croatian brand and the games hub link for every interface language', () => {
-    const link = 'https://prigorje.karlo-siladi.from.hr/igre/#rijec-dana'
+  it('uses the Croatian brand and the daily word link for every interface language', () => {
+    const link = 'https://prigorje.karlo-siladi.from.hr/rijec-dana/'
     expect(dailyWordShareText(12, result(true, 2))).toBe(`Riječ dana #12: 2/3\n🟥🟩⬜\n${link}`)
     expect(dailyWordShareText(12, result(false, 3))).toBe(`Riječ dana #12: X/3\n🟥🟥🟥\n${link}`)
   })
