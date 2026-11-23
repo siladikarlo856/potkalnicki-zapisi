@@ -37,7 +37,6 @@ onMounted(() => {
           aria-label="Potkalnički zapisi, Početna"
         >
           <PzLogo />
-          <span class="hidden font-display text-lg font-bold text-highlighted sm:inline">Potkalnički zapisi</span>
         </NuxtLink>
         <nav
           class="hidden items-center gap-1 md:flex lg:hidden"

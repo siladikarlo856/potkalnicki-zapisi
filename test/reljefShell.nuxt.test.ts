@@ -20,6 +20,12 @@ describe('Reljef public shell', () => {
     expect(wrapper.find('a[aria-current="page"]').text()).toBe('Baština')
   })
 
+  it('shows the site name exactly once in the header', async () => {
+    const wrapper = await mountSuspended(AppHeader, { route: '/' })
+    expect(wrapper.text().split('Potkalnički zapisi').length - 1).toBe(1)
+    expect(wrapper.find('a[aria-label="Potkalnički zapisi, Početna"]').exists()).toBe(true)
+  })
+
   it('asks before leaving a round and uses the exact Croatian confirmation copy', async () => {
     const wrapper = await mountSuspended(RoundBar, { props: { title: 'Kviz', current: 3, total: 10 } })
     await wrapper.find('button[aria-label="Izađi iz igre"]').trigger('click')
