@@ -12,12 +12,19 @@ export function poolWordToEntry(word: PoolWord): WordEntry {
     partOfSpeech: word.partOfSpeech,
     status: word.status === 'verified' ? 'verified' : 'community',
     sources: [],
-    variants: word.variants.map((form, i) => ({
-      id: `${word.id}-v${i}`,
-      form,
-      status: word.status === 'verified' ? 'verified' : 'community',
-      usages: []
-    }))
+    variants: word.variantDetails?.length
+      ? word.variantDetails.map(variant => ({
+          id: variant.id,
+          form: variant.form,
+          status: word.status === 'verified' ? 'verified' : 'community',
+          usages: variant.usages.map(usage => ({ areaId: usage.areaId, confidence: 'confirmed' as const }))
+        }))
+      : word.variants.map((form, i) => ({
+          id: `${word.id}-v${i}`,
+          form,
+          status: word.status === 'verified' ? 'verified' : 'community',
+          usages: []
+        }))
   }
 }
 

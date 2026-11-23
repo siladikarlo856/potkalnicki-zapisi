@@ -28,10 +28,14 @@ export default defineNuxtConfig({
     }
   },
 
-  // Server-only settings. Set them with environment variables on the server, never in the repo
-  // (NUXT_SUPABASE_URL, NUXT_REVIEW_SECRET, ...). See the README.
+  // Set runtime values through environment variables, never committed credentials.
+  // The public subtree is browser-visible; see the README's Environment section.
   runtimeConfig: {
     public: {
+      supabase: {
+        url: '',
+        anonKey: ''
+      },
       cloudflareAnalyticsToken: process.env.NUXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN || '56bd22857e3547448cffa5b62e2ffa7e'
     },
     // Optional launch-day override (`NUXT_DAILY_WORD_EPOCH`); when empty the shared constant is used.
@@ -43,6 +47,8 @@ export default defineNuxtConfig({
     },
     reviewSecret: '',
     adminSessionPassword: '',
+    // Exact normalized email for the one-time first-admin bootstrap; server-only, never commit a real value.
+    accountAdminBootstrapEmail: '',
     challengeRateLimit: {
       create: 5,
       join: 20,

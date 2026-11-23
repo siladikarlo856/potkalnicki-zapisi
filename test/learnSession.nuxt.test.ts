@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import { clearNuxtState } from '#imports'
+import { clearNuxtData, clearNuxtState } from '#imports'
+import { createError } from 'h3'
 import type { CardPool, PoolCard } from '../shared/utils/learn/types'
 import { LEARN_STORAGE_KEY } from '../app/composables/useLearnState'
 import { buildLearnReviewQuestion } from '../shared/utils/learn/reviewQuestion'
@@ -24,23 +25,30 @@ function word(id: string, headword: string): PoolCard {
 }
 
 function testPool(count: number): CardPool {
-  const cards = Array.from({ length: count }, (_, i) => word(`w${i}`, `riječ${i}`))
+  const words = Array.from({ length: count }, (_, i) => word(`w${i}`, `riječ${i}`))
+  const village: PoolCard = { kind: 'place', key: 'place:p1', id: 'p1', topics: ['mjesta'], name: 'Šopron', slug: 'sopron', municipalityId: 'm1', lat: 46, lng: 16, itemCount: 1, seat: false, difficulty: 2 }
   return {
     version: 1,
     generatedAt: T,
-    cards,
+    cards: [...words, village],
     municipalities: [],
     settlements: [{ id: 's1', name: 'Šopron', slug: 'sopron', municipalityId: 'm1' }],
-    topics: [{ id: 'rijeci', label: 'Riječi', status: 'live', count: cards.length }]
+    topics: [{ id: 'rijeci', label: 'Riječi', status: 'live', count: words.length }, { id: 'mjesta', label: 'Mjesta', status: 'live', count: 1 }]
   }
 }
 
 const pool = testPool(12)
-registerEndpoint('/api/learn/pool', () => pool)
+let poolFailure = false
+registerEndpoint('/api/learn/pool', () => {
+  if (poolFailure) throw createError({ statusCode: 503, statusMessage: 'Unavailable' })
+  return pool
+})
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 
 beforeEach(() => {
+  poolFailure = false
+  clearNuxtData('card-pool')
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-04T10:00:00'))
   localStorage.clear()
@@ -66,6 +74,59 @@ async function flipAndAnswer(page: Awaited<ReturnType<typeof mountSuspended>>, k
 }
 
 describe('learn session page', () => {
+  it.each(['repeat', 'more', 'more-desktop'])('starts another round with the summary %s action', async (action) => {
+    wrapper = await mountSuspended(LearnSession, {
+      route: '/uci/sesija?kartice=word:w0,word:w1'
+    })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    await flipAndAnswer(wrapper, true)
+    await flipAndAnswer(wrapper, false)
+    await flipAndAnswer(wrapper, false)
+    await expect.poll(() => wrapper!.find('[data-testid="learn-summary"]').exists()).toBe(true)
+
+    await wrapper.get(`[data-testid="learn-summary-${action}"]`).trigger('click')
+
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="learn-summary"]').exists()).toBe(false)
+    const stored = JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!)
+    expect(stored.current.index).toBe(0)
+    expect(stored.current.results).toEqual({})
+    if (action === 'repeat') expect(stored.current.queue).toEqual(['word:w1'])
+  })
+
+  it('shows a failed pool request and retries into a learning round', async () => {
+    poolFailure = true
+    wrapper = await mountSuspended(LearnSession, {
+      route: '/uci/sesija?teme=rijeci&n=5'
+    })
+    await expect.poll(() => wrapper!.find('[data-testid="page-state"]').exists(), { timeout: 5000 }).toBe(true)
+    expect(wrapper.text()).toContain('Kartice nismo uspjeli učitati')
+    expect(wrapper.find('[aria-busy="true"]').exists()).toBe(false)
+
+    poolFailure = false
+    await wrapper.get('[data-testid="page-state"] button').trigger('click')
+
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="page-state"]').exists()).toBe(false)
+  })
+
+  it.each(['repeat', 'more'])('restarts with %s even when the destination query is unchanged', async (action) => {
+    wrapper = await mountSuspended(LearnSession, {
+      route: action === 'repeat' ? '/uci/sesija/?kartice=word%3Aw0' : '/uci/sesija/?teme=rijeci&n=5'
+    })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    if (action === 'repeat') {
+      await flipAndAnswer(wrapper, false)
+      await flipAndAnswer(wrapper, false)
+    } else {
+      for (let i = 0; i < 5; i++) await flipAndAnswer(wrapper, true)
+    }
+    await expect.poll(() => wrapper!.find('[data-testid="learn-summary"]').exists()).toBe(true)
+    await wrapper.get(`[data-testid="learn-summary-${action}"]`).trigger('click')
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    expect(JSON.parse(localStorage.getItem(LEARN_STORAGE_KEY)!).current.index).toBe(0)
+  })
+
   it('runs setup through ten answers to the summary', async () => {
     wrapper = await mountSuspended(LearnSession, {
       route: '/uci/sesija?teme=rijeci&n=10'
@@ -181,20 +242,35 @@ describe('learn session page', () => {
     }).toBe('missed')
   })
 
-  it('shows Ne znam and Znam only after the card is turned, with an explicit text position', async () => {
+  it('shows Još ne znam and Znam only after the card is turned, with an explicit text position', async () => {
     wrapper = await mountSuspended(LearnSession, {
       route: '/uci/sesija?teme=rijeci&n=5'
     })
     await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
-    expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('1 od 5')
+    expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('Kartica 1 od 5 · Što znači?')
     expect(wrapper!.find('[data-testid="learn-known"]').exists()).toBe(false)
-    const front = wrapper!.get('[data-testid="learn-card-front"]')
-    expect(front.attributes('aria-expanded')).toBe('false')
-    await front.trigger('click')
+    expect(wrapper!.get('[data-testid="learn-reveal"]').text()).toBe('Pokaži značenje')
+    expect(wrapper!.get('[data-testid="learn-card"]').attributes('data-flipped')).toBe('false')
+    expect(wrapper!.findAll('h1')).toHaveLength(1)
+    await wrapper!.get('[data-testid="learn-reveal"]').trigger('click')
     expect(wrapper!.get('[data-testid="learn-card"]').attributes('data-flipped')).toBe('true')
+    expect(wrapper!.findAll('h1')).toHaveLength(1)
+    expect(wrapper!.find('[data-testid="learn-reveal"]').exists()).toBe(false)
     expect(wrapper!.get('[data-testid="learn-known"]').text()).toBe('Znam')
-    expect(wrapper!.get('[data-testid="learn-unknown"]').text()).toBe('Ne znam')
-    expect(wrapper!.get('[data-testid="learn-known-desktop"]').exists()).toBe(true)
+    expect(wrapper!.get('[data-testid="learn-unknown"]').text()).toBe('Još ne znam')
+    expect(wrapper!.findAll('[data-testid="word-suggest-correction"]')).toHaveLength(1)
+  })
+
+  it('asks Što znači? only above word cards', async () => {
+    wrapper = await mountSuspended(LearnSession, {
+      route: '/uci/sesija?teme=mjesta&n=5'
+    })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-runner"]').exists()).toBe(true)
+    expect(wrapper!.get('[data-testid="learn-counter"]').text()).toContain('Kartica 1 od 1')
+    expect(wrapper!.get('[data-testid="learn-counter"]').text()).not.toContain('Što znači?')
+    expect(wrapper!.get('[data-testid="learn-reveal"]').text()).toBe('Pokaži odgovor')
+    await wrapper!.get('[data-testid="learn-reveal"]').trigger('click')
+    expect(wrapper!.findAll('[data-testid="learn-open-record"]')).toHaveLength(1)
   })
 
   it('lists the missed cards with a link and a count in the summary', async () => {

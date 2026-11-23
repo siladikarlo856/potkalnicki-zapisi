@@ -8,6 +8,8 @@ import { expandHistoryChange, historyFieldMeta } from '~~/shared/utils/content/h
 import type { AdminResource } from '~/composables/useAdminResource'
 import type { SaveBarAction, SaveBarState } from '~/components/admin/SaveBar.vue'
 
+const $fetch = useEditorialFetch()
+
 // Create and edit one entity. Fields come from the page's `#fields` slot; this component owns loading, the shared validator,
 // saving with the row's revision, server issues on fields, revision conflicts, the unsaved-changes guard, the copy kept in
 // the browser, the session-expired dialog and Ctrl/⌘+S.

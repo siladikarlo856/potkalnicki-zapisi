@@ -6,6 +6,8 @@ import {
   type PersonAreaLink, type PersonAreaRole, type PersonItemLink, type PersonValue
 } from '~~/shared/utils/content/person'
 
+const $fetch = useEditorialFetch()
+
 const props = defineProps<{
   state: PersonValue
   entityId?: string
@@ -80,6 +82,7 @@ const areaQuery = computed(() => ({
   ids: props.state.areaLinks.map(link => link.areaId).filter(Boolean).join(',') || undefined
 }))
 const { data: areaLookup } = useFetch<{ items: ContentLookupItem[] }>('/api/admin/lookup/area', {
+  $fetch,
   query: areaQuery,
   server: false
 })
@@ -90,6 +93,7 @@ const itemQuery = computed(() => ({
   ids: props.state.itemLinks.map(link => link.itemId).filter(Boolean).join(',') || undefined
 }))
 const { data: itemLookup } = useFetch<{ items: ContentLookupItem[] }>('/api/admin/lookup/heritage_item', {
+  $fetch,
   query: itemQuery,
   server: false
 })
@@ -100,6 +104,7 @@ const sourceQuery = computed(() => ({
   ids: props.state.sourceIds.length && !sourceSearch.value ? props.state.sourceIds.join(',') : undefined
 }))
 const { data: sourceLookup } = useFetch<{ items: ContentLookupItem[] }>('/api/admin/lookup/source', {
+  $fetch,
   query: sourceQuery,
   server: false
 })

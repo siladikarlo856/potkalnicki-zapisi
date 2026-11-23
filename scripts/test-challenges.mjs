@@ -45,6 +45,7 @@ try {
   }
   if (!ready) throw new Error('Isolated Postgres did not become ready')
   sql('create role anon; create role authenticated; create role service_role nologin bypassrls; grant usage on schema public to anon, authenticated, service_role; alter default privileges in schema public grant all on tables to service_role; alter default privileges in schema public grant all on sequences to service_role;')
+  sql('create schema auth; create table auth.users (id uuid primary key, email text); create table auth.identities (user_id uuid references auth.users(id), provider text, identity_data jsonb);')
   const migrations = new URL('../supabase/migrations/', import.meta.url)
   for (const file of readdirSync(migrations).filter(f => f.endsWith('.sql')).sort()) sql(readFileSync(new URL(file, migrations), 'utf8'))
   docker(['run', '-d', '--name', rest, '--network', `container:${name}`, '-e', `PGRST_DB_URI=postgres://postgres:${password}@127.0.0.1:5432/postgres`, '-e', 'PGRST_DB_ANON_ROLE=anon', '-e', `PGRST_JWT_SECRET=${secret}`, 'postgrest/postgrest:v16.5'])
@@ -85,6 +86,11 @@ try {
     ? process.argv.slice(2)
     : [
         'test/challenge.integration.test.ts', 'test/dailyWord.integration.test.ts', 'test/content.integration.test.ts', 'test/contentSeed.integration.test.ts',
+        'test/accounts.integration.test.ts', 'test/accountBootstrap.integration.test.ts',
+        'test/accountAdminApi.integration.test.ts', 'test/accountAdminList.integration.test.ts',
+        'test/maintainerRecordWork.integration.test.ts',
+        'test/accountManagement.integration.test.ts', 'test/accountPendingMatch.integration.test.ts',
+        'test/submissionPhotos.integration.test.ts',
         'test/wordColumns.integration.test.ts', 'test/wordAreas.integration.test.ts', 'test/adminContent.integration.test.ts', 'test/adminAreas.integration.test.ts', 'test/adminHeritage.integration.test.ts', 'test/adminWords.integration.test.ts', 'test/contentHistory.integration.test.ts',
         'test/challengeTemplates.integration.test.ts', 'test/challengeSets.integration.test.ts', 'test/publicContent.integration.test.ts', 'test/atlasPages.integration.test.ts', 'test/contractMigration.integration.test.ts',
         'test/clubs.integration.test.ts', 'test/contentApply.integration.test.ts', 'test/persons.integration.test.ts', 'test/seedPersons.integration.test.ts', 'test/intangible.integration.test.ts',
@@ -96,7 +102,7 @@ try {
   const child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--project=node', '--project=node-serial', '--project=node-last', ...testFiles], {
     cwd: root, stdio: 'inherit', env: {
       ...process.env, TEST_CHALLENGE_API_URL: `http://127.0.0.1:${proxy.address().port}`, TEST_CHALLENGE_SERVICE_KEY: jwt('service_role'),
-      TEST_CHALLENGE_PUBLIC_KEY: jwt('anon'), TEST_CHALLENGE_CONTAINER: name
+      TEST_CHALLENGE_PUBLIC_KEY: jwt('anon'), TEST_CHALLENGE_CONTAINER: name, TEST_CHALLENGE_JWT_SECRET: secret
     }
   })
   process.exitCode = await new Promise(resolve => child.on('exit', code => resolve(code ?? 1)))

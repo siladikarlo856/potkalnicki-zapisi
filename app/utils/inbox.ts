@@ -8,7 +8,8 @@ export const SUBMISSION_TYPE_LABELS: Record<SubmissionType, string> = {
   memory: 'Sjećanje ili priča',
   other: 'Nešto drugo',
   correction: 'Ispravak',
-  proposal: 'Prijedlog novog zapisa'
+  proposal: 'Prijedlog novog zapisa',
+  photo: 'Fotografija'
 }
 
 export const SUBMISSION_STATUS_LABELS: Record<SubmissionStatus | 'all', string> = {

@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { ADMIN_NAV_GROUPS } from '~/utils/adminNav'
+import { ADMIN_NAV_GROUPS, adminNavVisible } from '~/utils/adminNav'
 
 // Ctrl K / Cmd K: jump to a resource. The palette lists the navigation; it does not search records.
 const open = defineModel<boolean>('open', { default: false })
 const route = useRoute()
 
+const userManagement = useAdminUserManagement()
 const groups = computed(() => ADMIN_NAV_GROUPS.map(group => ({
   id: group.label,
   label: group.label,
-  items: group.items.map(item => ({ label: item.label, icon: item.icon, to: item.to }))
-})))
+  items: group.items
+    .filter(item => adminNavVisible(item, userManagement.data.value))
+    .map(item => ({ label: item.label, icon: item.icon, to: item.to }))
+})).filter(group => group.items.length > 0))
 
 watch(() => route.fullPath, () => {
   open.value = false

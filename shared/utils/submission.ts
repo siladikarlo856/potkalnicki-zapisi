@@ -6,7 +6,7 @@ import { CONTRIBUTION_ALLOWED, isContributionKind, validateContributionPayload }
 
 // 'proposal' is a suggestion for a new row (a heritage item, settlement, source or word); 'correction'
 // is a change to an existing one, as a `targetKind` + `targetId` with a `payload` of the proposed fields.
-export const SUBMISSION_TYPES = ['word', 'expression', 'memory', 'other', 'correction', 'proposal'] as const
+export const SUBMISSION_TYPES = ['word', 'expression', 'memory', 'other', 'correction', 'proposal', 'photo'] as const
 export const SUBMISSION_STATUSES = ['pending', 'approved', 'rejected'] as const
 export const SUBMISSION_LOCALES = ['hr', 'en'] as const
 // What a contribution from the daily word says about its word: a local form, or "it is said here too".
@@ -15,7 +15,7 @@ export const SUBMISSION_INTENTS = ['variant', 'usage'] as const
 export const WORD_ID_PATTERN = /^[\w~-]{1,200}$/
 
 // Bump when the privacy notice changes, so each stored consent says which text it was given for.
-export const PRIVACY_NOTICE_VERSION = '2026-11-02'
+export const PRIVACY_NOTICE_VERSION = '2026-11-22'
 
 export const SUBMISSION_LIMITS = {
   text: { min: 2, max: 2000 },
@@ -109,7 +109,7 @@ export function validateSubmission(input: unknown): SubmissionValidation {
 
   let type: SubmissionType | null = null
   if (body.type !== undefined && body.type !== null && body.type !== '') {
-    if (isOneOf(SUBMISSION_TYPES, body.type)) type = body.type
+    if (isOneOf(SUBMISSION_TYPES, body.type) && body.type !== 'photo') type = body.type
     else issues.push({ field: 'type', code: 'invalid' })
   }
 

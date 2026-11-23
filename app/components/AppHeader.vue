@@ -30,7 +30,7 @@ onMounted(() => {
     data-testid="app-header"
   >
     <div class="border-b border-default/70">
-      <UContainer class="flex min-h-14 items-center gap-3 py-1 md:min-h-16 lg:min-h-[68px]">
+      <UContainer class="flex min-h-14 flex-wrap items-center gap-3 py-1 md:min-h-16 lg:min-h-[68px]">
         <NuxtLink
           :to="localePath('/')"
           class="flex min-h-(--pz-tap-min) shrink-0 items-center gap-2 rounded-md"
@@ -79,6 +79,7 @@ onMounted(() => {
           variant="ghost"
           class="min-h-(--pz-tap-min)"
         />
+        <AccountMenu />
         <UButton
           class="hidden lg:inline-flex"
           :to="localePath('/doprinesi/')"

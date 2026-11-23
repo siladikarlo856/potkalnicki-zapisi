@@ -13,6 +13,7 @@ export function lookupItemLabel(item: Pick<ContentLookupItem, 'label' | 'status'
 const IDS_PER_REQUEST = 50
 
 export function useAdminLookup(endpoint: string, options: { scope?: string, selected: () => readonly string[] }) {
+  const $fetch = useEditorialFetch()
   const search = ref('')
   const known = ref<Record<string, string>>({})
 
@@ -21,7 +22,7 @@ export function useAdminLookup(endpoint: string, options: { scope?: string, sele
   }
 
   const query = computed(() => ({ q: search.value.trim() || undefined, scope: options.scope }))
-  const { data, status } = useFetch<{ items: ContentLookupItem[] }>(endpoint, { query, server: false })
+  const { data, status } = useFetch<{ items: ContentLookupItem[] }>(endpoint, { $fetch, query, server: false })
   watch(() => data.value?.items, items => remember(items ?? []), { immediate: true })
 
   // The labels of chosen rows the search does not show (the menu must still name them).

@@ -98,6 +98,12 @@ export function adminApiError(error: unknown): AdminApiError {
   const fetchError = error as { statusCode?: number, status?: number, data?: { data?: ContentErrorData } }
   const statusCode = fetchError?.statusCode ?? fetchError?.status ?? 0
   const data = fetchError?.data?.data ?? {}
+  if (statusCode === 403 && import.meta.client) {
+    const route = useRoute()
+    if (route.path.startsWith('/admin') && route.path !== '/admin/nema-pristupa' && route.path !== '/admin/prijava') {
+      navigateTo('/admin/nema-pristupa')
+    }
+  }
   if (statusCode === 401 && import.meta.client && !raiseAdminSessionExpired()) {
     const route = useRoute()
     navigateTo({ path: '/admin/prijava', query: { next: route.fullPath, razlog: 'istekla' } })
@@ -111,6 +117,7 @@ export function adminApiError(error: unknown): AdminApiError {
 
 /** Typed calls to the generic content API for one kind. */
 export function useAdminContentApi<T extends ContentEntity>(kind: ContentKind) {
+  const $fetch = useEditorialFetch()
   const base = `/api/admin/content/${kind}`
   return {
     get: (id: string) => $fetch<{ entity: T, legacyIds: string[] }>(`${base}/${id}`),
@@ -165,6 +172,7 @@ export function adminListState(query: LocationQuery, resource: AdminResource): A
  * submission in the dialog, `?povijest=<uuid>` for the history drawer).
  */
 export function useAdminResource<T extends ContentEntity, F extends object>(resource: AdminResource<T, F>) {
+  const $fetch = useEditorialFetch()
   const route = useRoute()
   const router = useRouter()
   const state = computed(() => adminListState(route.query, resource as unknown as AdminResource))
@@ -213,6 +221,7 @@ export function useAdminResource<T extends ContentEntity, F extends object>(reso
   const apiQuery = computed(() => JSON.parse(apiQueryKey.value) as Record<string, string | number>)
 
   const list = useFetch<ContentList<T>>(`/api/admin/content/${resource.kind}`, {
+    $fetch,
     query: apiQuery,
     server: false,
     // The request key must follow the kind, so two resources never share cached rows.

@@ -99,7 +99,9 @@ export interface ChallengeState {
 }
 export interface ChallengeLeaderboard {
   rows: { nickname: string, total: number, rank: number, rounds: number[], completedAt: string | null }[]
+  me: (ChallengeLeaderboard['rows'][number] & { sharedRank: boolean }) | null
   count: number
+  completedCount: number
 }
 
 export function challengeNickname(input: unknown): string | null {

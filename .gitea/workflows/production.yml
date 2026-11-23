@@ -131,3 +131,18 @@ jobs:
           # Ordinary push is fast-forward only, including if another writer raced us.
           git push origin "${GITHUB_SHA}:refs/heads/production"
           echo "::notice::Migrations succeeded and production points to $GITHUB_SHA. Check Hostinger's deployment log for the app build result."
+
+      - name: Publish flattened deploy commit to GitHub production
+        if: steps.rollout.outputs.current == 'true'
+        shell: bash
+        env:
+          # Not named GITHUB_*: Gitea/Forgejo reject secret names with that prefix.
+          GH_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          GH_DEPLOY_REPO: siladikarlo856/potkalnicki-zapisi
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          # Hostinger builds from GitHub, which cannot take this repository's history
+          # (old Playwright binaries exceed its 100 MB limit). Add one commit with exactly
+          # this tree on top of GitHub's production head, fast-forward only. Skips with a
+          # notice while GH_DEPLOY_TOKEN is not configured.
+          scripts/promote-github-production.sh

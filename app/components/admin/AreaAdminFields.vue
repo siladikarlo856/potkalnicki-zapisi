@@ -5,6 +5,8 @@ import {
   AREA_KINDS, AREA_KIND_LABELS, AREA_LIMITS, areaKindMayJoinRegion, type AreaKind, type AreaValue
 } from '~~/shared/utils/content/area'
 
+const $fetch = useEditorialFetch()
+
 type AreaForm = Omit<AreaValue, 'status'>
 
 /** Bind nullable form fields to inputs that expect `undefined` instead of `null`. */

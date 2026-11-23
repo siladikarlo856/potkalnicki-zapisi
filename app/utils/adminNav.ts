@@ -6,6 +6,8 @@ export interface AdminNavItem {
   icon: string
   to: string
   exact?: boolean
+  /** Shown only when the session may open Korisnici (Google admin). */
+  socialAdminOnly?: boolean
 }
 
 export interface AdminNavGroup {
@@ -25,7 +27,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: 'Rad',
     items: [
       { label: 'Nadzorna ploča', icon: 'i-lucide-layout-dashboard', to: '/admin', exact: true },
-      { label: 'Prijedlozi', icon: 'i-lucide-inbox', to: ADMIN_INBOX_PATH }
+      { label: 'Prijedlozi', icon: 'i-lucide-inbox', to: ADMIN_INBOX_PATH },
+      { label: 'Korisnici', icon: 'i-lucide-users', to: '/admin/korisnici', socialAdminOnly: true }
     ]
   },
   {
@@ -66,6 +69,10 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
 
 /** Every entry, in group order. */
 export const ADMIN_NAV: NavigationMenuItem[] = ADMIN_NAV_GROUPS.flatMap(group => group.items)
+
+export function adminNavVisible(item: AdminNavItem, userManagement: boolean) {
+  return !item.socialAdminOnly || userManagement
+}
 
 /** Whether `path` is inside the nav entry's section (`/admin/rijeci` for the Riječi entry; the dashboard only on `/admin`). */
 export function adminNavActive(item: AdminNavItem, path: string) {

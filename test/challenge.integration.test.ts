@@ -69,6 +69,37 @@ async function complete(player: Player, game: ChallengeState, skip = true) {
 }
 
 describe.skipIf(!db.enabled)('real challenge HTTP and Postgres behavior', () => {
+  it('returns global counts and the cookie participant result independently of every scoreboard page', async () => {
+    const { game, player } = await create()
+    sql(`insert into heritage_challenge_participants (challenge_code, nickname, token_hash, phase, question_index, completed_at, total_score)
+      select '${game.code}', 'Igrač ' || n, lpad(n::text, 64, '0'),
+        case when n <= 60 then 'finished' else 'ready' end,
+        case when n <= 60 then 15 else 0 end,
+        case when n <= 60 then now() else null end,
+        case when n <= 50 then 1000 else 0 end
+      from generate_series(1, 69) n;`)
+    for (const [offset, rows] of [[0, 50], [50, 20], [100, 0]]) {
+      const response = await client().request(`${path(game, 'leaderboard')}?offset=${offset}`)
+      expect(response.status).toBe(200)
+      const board = await response.json() as ChallengeLeaderboard
+      expect(board).toMatchObject({ count: 70, completedCount: 60 })
+      expect(board.me).toBeNull()
+      expect(board.rows).toHaveLength(rows!)
+      const ownResponse = await player.request(`${path(game, 'leaderboard')}?offset=${offset}`)
+      expect(ownResponse.status).toBe(200)
+      const own = await ownResponse.json() as ChallengeLeaderboard
+      expect(own.me).toEqual({ nickname: 'Željko', total: 0, rank: 51, rounds: [0, 0, 0], completedAt: null, sharedRank: true })
+      expect(own.rows).toHaveLength(rows!)
+      expect(JSON.stringify(own)).not.toContain('token_hash')
+      expect(JSON.stringify(own)).not.toContain(player.cookie.split('=')[1]!)
+      expect(own.me).not.toHaveProperty('id')
+      expect(own.rows.every(row => !('id' in row))).toBe(true)
+    }
+    const stranger = await fetch(path(game, 'leaderboard'), { headers: { 'cookie': `heritage_${game.code}=${'z'.repeat(43)}`, 'x-forwarded-for': '192.0.2.200' } })
+    expect(stranger.status).toBe(200)
+    expect((await stranger.json() as ChallengeLeaderboard).me).toBeNull()
+  })
+
   it('creates a challenge from the played quiz round and records the creator score immediately', async () => {
     const player = client()
     // Seeded words have UUID ids; take three active ones with distinct meanings from the database.

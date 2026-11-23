@@ -2,6 +2,8 @@ import type { H3Event } from 'h3'
 import type { ContributionKind, ContributionPayload } from '../../shared/utils/contribution'
 import { findPublished, readContent } from './content/records'
 import { placeById } from './places'
+import { deleteSubmissionData } from './submissionPhotos'
+import { withSubmissionLock } from './submissionLifecycle'
 
 const TABLE = 'heritage_submissions'
 // Supabase's API returns at most 1000 rows per request (max_rows), so the list is read in pages.
@@ -147,13 +149,7 @@ export async function setSubmissionStatus(id: number, status: SubmissionStatus) 
 }
 
 export async function deleteSubmission(id: number) {
-  const { data, error } = await useDatabaseClient()
-    .from(TABLE)
-    .delete()
-    .eq('id', id)
-    .select('id')
-  if (error) databaseError(error)
-  return data.length > 0
+  return withSubmissionLock(id, () => deleteSubmissionData(id))
 }
 
 export function submissionIdParam(event: H3Event) {

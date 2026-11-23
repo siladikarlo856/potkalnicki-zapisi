@@ -7,6 +7,8 @@ import {
   HISTORY_ACTIONS, HISTORY_ACTION_LABELS, HISTORY_ACTORS, HISTORY_ACTOR_LABELS, HISTORY_KINDS, HISTORY_KIND_META, isHistoryKind
 } from '~~/shared/utils/content/history'
 
+const $fetch = useEditorialFetch()
+
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
 useSeoMeta({ title: 'Povijest', robots: 'noindex, nofollow' })
@@ -54,7 +56,7 @@ const apiQuery = computed(() => Object.fromEntries(Object.entries({
   size: state.value.size
 }).filter(([, value]) => value !== undefined)) as Record<string, string | number>)
 
-const log = useFetch<HistoryLog>('/api/admin/history', { query: apiQuery, server: false, key: 'admin-history-log' })
+const log = useFetch<HistoryLog>('/api/admin/history', { $fetch, query: apiQuery, server: false, key: 'admin-history-log' })
 const rows = computed(() => log.data.value?.rows ?? [])
 const total = computed(() => log.data.value?.total ?? 0)
 const loading = computed(() => log.status.value === 'pending' || log.status.value === 'idle')

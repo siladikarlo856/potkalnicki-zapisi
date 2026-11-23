@@ -47,8 +47,8 @@ function forgetDeviceData() {
 useSeoMeta({
   title: () => 'Privatnost',
   ogTitle: () => 'Privatnost · Potkalnički zapisi',
-  description: () => 'Kratko i jasno: nemamo korisničke račune, ne prikazujemo oglase i ne pratimo te po internetu.',
-  ogDescription: () => 'Kratko i jasno: nemamo korisničke račune, ne prikazujemo oglase i ne pratimo te po internetu.'
+  description: () => 'Javne stranice možeš koristiti bez računa. Ako se prijaviš, ne prikazujemo oglase i ne pratimo te po internetu.',
+  ogDescription: () => 'Javne stranice možeš koristiti bez računa. Ako se prijaviš, ne prikazujemo oglase i ne pratimo te po internetu.'
 })
 </script>
 
@@ -56,7 +56,7 @@ useSeoMeta({
   <div class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-8 px-4 py-6 lg:px-12 lg:py-12">
     <PageHead
       title="Privatnost"
-      lead="Kratko i jasno: nemamo korisničke račune, ne prikazujemo oglase i ne pratimo te po internetu."
+      lead="Javne stranice možeš koristiti bez računa. Ako se prijaviš, ne prikazujemo oglase i ne pratimo te po internetu."
       meta="Ova je stranica nacrt. Pravne pojedinosti još treba potvrditi."
     />
 
@@ -108,8 +108,18 @@ useSeoMeta({
           </h2>
           <ul class="list-disc space-y-3 pl-5">
             <li><b>Prilozi.</b> Tekst i, ako ih upišeš, ime za potpis i e-pošta. E-pošta služi samo uredniku za pitanja i ne objavljuje se.</li>
+            <li><b>Fotografije u prilogu.</b> Ako si prijavljen i pošalješ fotografiju, privremeno pohranjujemo datoteku, opis (alt tekst), ime autora i tvoju potvrdu da smijemo objaviti. Urednik ih vidi u pregledu prije eventualne objave; same datoteke nisu javno dostupne.</li>
             <li><b>Izazovi.</b> Nadimak i rezultat, da ih vide oni s kojima dijeliš kôd izazova. Brišu se 30 dana nakon isteka izazova.</li>
+            <li><b>Račun.</b> Ako se prijaviš Googleom, Supabase Auth obrađuje e-mail adresu i tehničke podatke potrebne za sesiju. Javni sadržaj i dalje možeš pregledavati bez računa.</li>
+            <li>
+              <b>Glavno mjesto.</b> Ako si prijavljen/a, uz račun možeš spremiti jedno glavno mjesto na poslužitelju. Ukloni ga odabirom „Ukloni” u postavkama
+              <NuxtLink :to="localePath('/racun/glavno-mjesto/')">Glavno mjesto</NuxtLink>.
+              Brisanje podataka s uređaja ne briše glavno mjesto spremljeno uz račun.
+            </li>
           </ul>
+          <p class="mt-4">
+            Za upravljanje uredničkim pristupom spremamo e-poštu i ulogu prijavljenog računa, e-poštu koju administrator prethodno odobri prije prve prijave te revizijski zapis promjena uloga (tko je promijenio ulogu kojeg računa i kada). Ti podaci služe za dodjelu i opoziv uredničkog pristupa.
+          </p>
         </section>
 
         <section id="nema">

@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { defineComponent, h, nextTick, ref } from 'vue'
+import { useNuxtApp, useState } from '#imports'
+import { createSSRApp, defineComponent, effectScope, h, nextTick, ref } from 'vue'
+import { renderToString } from 'vue/server-renderer'
 import PzBottomNav from '../app/components/pz/PzBottomNav.vue'
 import PzHeader from '../app/components/pz/PzHeader.vue'
-import { useHidePzTabBar, usePzTabBar } from '../app/composables/usePzTabBar'
+import { useHidePzTabBar, usePzTabBar, type PzTabBarHold } from '../app/composables/usePzTabBar'
 
 beforeEach(() => {
-  usePzTabBar().holds.value = []
+  useState<Record<string, PzTabBarHold[]>>('pz-tabbar-owners', () => ({})).value = {}
 })
 
 describe('PzBottomNav', () => {
@@ -72,6 +74,85 @@ describe('PzBottomNav', () => {
 })
 
 describe('useHidePzTabBar', () => {
+  it('reuses the server-rendered owner during hydration and releases it on client unmount', async () => {
+    const nuxt = useNuxtApp()
+    const Probe = defineComponent({
+      setup() {
+        useHidePzTabBar(true, 'challenge')
+        return () => h('p', 'Challenge action')
+      }
+    })
+    const host = document.createElement('div')
+    document.body.append(host)
+    const client = createSSRApp(Probe)
+    try {
+      host.innerHTML = await nuxt.runWithContext(() => renderToString(createSSRApp(Probe)))
+      expect(usePzTabBar().hidden.value).toBe(true)
+      nuxt.runWithContext(() => client.mount(host))
+      expect(host.textContent).toBe('Challenge action')
+      expect(usePzTabBar().hidden.value).toBe(true)
+    } finally {
+      client.unmount()
+      host.remove()
+    }
+    expect(usePzTabBar().hidden.value).toBe(false)
+  })
+
+  it.each(['challenge', 'game', 'sheet', 'keyboard'] as const)('keeps independent %s holds across overlapping scopes and inactive callers', async (reason) => {
+    const nav = await mountSuspended(PzBottomNav)
+    const outgoing = effectScope()
+    const incoming = effectScope()
+    const inactive = effectScope()
+    const outgoingActive = ref(true)
+    const incomingActive = ref(true)
+    try {
+      outgoing.run(() => useHidePzTabBar(outgoingActive, reason))
+      incoming.run(() => useHidePzTabBar(incomingActive, reason))
+      inactive.run(() => useHidePzTabBar(false, reason))
+      await nextTick()
+      expect(nav.find('nav').exists()).toBe(false)
+      inactive.stop()
+      outgoingActive.value = false
+      await nextTick()
+      expect(nav.find('nav').exists()).toBe(false)
+      outgoingActive.value = true
+      await nextTick()
+      incoming.stop()
+      await nextTick()
+      expect(nav.find('nav').exists()).toBe(false)
+      outgoing.stop()
+      await nextTick()
+      expect(nav.find('nav').exists()).toBe(true)
+    } finally {
+      outgoing.stop()
+      incoming.stop()
+      inactive.stop()
+      nav.unmount()
+    }
+  })
+
+  it('makes repeated holds and releases idempotent for each caller', async () => {
+    const nav = await mountSuspended(PzBottomNav)
+    const first = usePzTabBar()
+    const second = usePzTabBar()
+    try {
+      first.hold('challenge')
+      first.hold('challenge')
+      second.hold('challenge')
+      first.release('challenge')
+      first.release('challenge')
+      await nextTick()
+      expect(nav.find('nav').exists()).toBe(false)
+      second.release('challenge')
+      await nextTick()
+      expect(nav.find('nav').exists()).toBe(true)
+    } finally {
+      first.release('challenge')
+      second.release('challenge')
+      nav.unmount()
+    }
+  })
+
   it('holds while the source is true and releases on unmount', async () => {
     const active = ref(false)
     const Probe = defineComponent({

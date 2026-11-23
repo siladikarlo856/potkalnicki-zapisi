@@ -101,7 +101,7 @@ export async function listAdminAreas() {
  * place as they wrote it is kept as `submissionPlace`.
  */
 async function wordDraftValue(submission: Row): Promise<{ value: Row, origin: Row }> {
-  if (submission.type === 'correction') throw createError({ statusCode: 400, statusMessage: 'Not a word submission' })
+  if (submission.type === 'correction' || submission.type === 'photo') throw createError({ statusCode: 400, statusMessage: 'Not a word submission' })
   // A structured proposal for a new word carries its fields in the payload; a proposal for anything else is no word.
   const proposal = submission.type === 'proposal' && submission.target_kind === 'word'
     ? (submission.payload ?? {}) as Record<string, string | undefined>

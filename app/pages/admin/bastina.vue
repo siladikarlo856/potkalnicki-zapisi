@@ -5,6 +5,8 @@ import {
 } from '~~/shared/utils/content/heritageItem'
 import type { HeritageCategory } from '~~/shared/utils/content/category'
 
+const $fetch = useEditorialFetch()
+
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
 useSeoMeta({ title: 'Baština', robots: 'noindex, nofollow' })
@@ -14,6 +16,7 @@ type ItemForm = HeritageItemValue
 const localePath = useLocalePath()
 
 const { data: categoriesData } = useFetch<{ rows: HeritageCategory[] }>('/api/admin/content/heritage_category', {
+  $fetch,
   query: { size: 100, sort: 'sort' },
   server: false
 })

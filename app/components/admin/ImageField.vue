@@ -4,6 +4,8 @@ import {
   type HeritageImageValue, type ImageLicense
 } from '#shared/utils/content/heritageImage'
 
+const $fetch = useEditorialFetch()
+
 // ImageField of the design system, for the photos of a heritage item: upload (resized in the browser first), the credit
 // each photo needs, and the order (the first one, *Naslovna*, is the main photo on cards and the item page). Uploaded files
 // only become public on the site once the item is saved with them.
@@ -17,7 +19,7 @@ interface UploadResult {
   height: number
 }
 
-const { data: storage } = useFetch<{ base: string }>('/api/admin/images', { server: false })
+const { data: storage } = useFetch<{ base: string }>('/api/admin/images', { $fetch, server: false })
 const input = ref<HTMLInputElement | null>(null)
 const uploading = ref(0)
 const failure = ref('')

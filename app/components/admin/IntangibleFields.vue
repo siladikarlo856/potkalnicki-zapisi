@@ -7,6 +7,8 @@ import {
 import { removeEntry, textOrNull } from '~/utils/intangibleForm'
 import type { IntangibleFormState } from '~/utils/intangibleForm'
 
+const $fetch = useEditorialFetch()
+
 // The editor of a Story, a Custom or a Folk text. The three share most of their form (title, type, places, people,
 // time, links, attestation and notes) and differ in their texts and one link each, so one component takes the kind.
 const props = defineProps<{

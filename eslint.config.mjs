@@ -10,7 +10,9 @@ export default withNuxt(
     '.opencode/**',
     // Vendored agent skills (mattpocock/skills, pinned in skills-lock.json); not project sources.
     '.agents/**',
-    '.claude/**'
+    '.claude/**',
+    // Playwright browser bundles and QA artifacts; not project sources.
+    '.qa/**'
   ]),
   betterTailwindcss.configs['correctness-error'],
   {

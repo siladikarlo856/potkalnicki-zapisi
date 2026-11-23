@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // One server-only secret-key client for submissions and review. The key bypasses RLS;
-// the submission route validates every field and review still requires its own password.
+// the submission route validates every field and review routes enforce requireReviewer before using it.
 
 const clients = new Map<string, SupabaseClient>()
 

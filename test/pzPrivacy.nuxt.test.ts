@@ -7,7 +7,7 @@ describe('privacy page', () => {
     localStorage.setItem('pz-learn/v1', '{"version":1}')
     const page = await mountSuspended(Privacy, { route: '/privatnost' })
 
-    expect(page.text()).toContain('Kratko i jasno: nemamo korisničke račune')
+    expect(page.text()).toContain('Javne stranice možeš koristiti bez računa')
     expect(page.text()).toContain('Što ostaje na tvom uređaju')
 
     await page.findAll('button').find(button => button.text() === 'Obriši podatke s ovog uređaja')!.trigger('click')

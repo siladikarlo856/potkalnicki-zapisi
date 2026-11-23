@@ -13,7 +13,8 @@ const TYPE_NOUNS: Record<(typeof SUBMISSION_TYPES)[number], PzNoun> = {
   memory: ['sjećanje', 'sjećanja'],
   other: ['drugo', 'drugo'],
   correction: ['ispravak', 'ispravka', 'ispravaka'],
-  proposal: ['prijedlog', 'prijedloga']
+  proposal: ['prijedlog', 'prijedloga'],
+  photo: ['fotografija', 'fotografije', 'fotografija']
 }
 
 // What "Nadzorna ploča" shows, read from the admin APIs that already exist (no new endpoint, nothing stored). Each source
@@ -42,9 +43,6 @@ export const STALE_DRAFT_DAYS = 30
 export const DAILY_HORIZON_DAYS = 14
 const DAY_MS = 86_400_000
 
-const list = (kind: ContentKind, query: Record<string, string | number>) =>
-  $fetch<ContentList<{ updatedAt: string }>>(`/api/admin/content/${kind}`, { query })
-
 /** Calendar days after `from` (a `YYYY-MM-DD` day) that have no pinned word, within the horizon. */
 export function daysWithoutPin(overview: Pick<DailyAdminOverview, 'day' | 'pins'>, horizon = DAILY_HORIZON_DAYS) {
   const pinned = new Set(overview.pins.map(pin => pin.day))
@@ -72,6 +70,9 @@ function summarize(byKind: KindCount[]) {
 }
 
 export function useAdminDashboard() {
+  const $fetch = useEditorialFetch()
+  const list = (kind: ContentKind, query: Record<string, string | number>) =>
+    $fetch<ContentList<{ updatedAt: string }>>(`/api/admin/content/${kind}`, { query })
   const opts = { server: false, lazy: true, default: () => null } as const
 
   const inbox = useAsyncData('admin-dash-inbox', async () => {

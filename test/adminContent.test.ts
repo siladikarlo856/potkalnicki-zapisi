@@ -114,6 +114,7 @@ describe('admin guard scope', () => {
     }
     expect(adminRouteScope('/api/admin/session')).toBe('session')
     expect(adminRouteScope('/api/admin/session/')).toBe('session')
+    expect(adminRouteScope('/api/admin/social-session')).toBe('session')
     for (const path of ['/api/submissions', '/api/heritage/words', '/api/administrator', '/admin/izvori', '/api/reviewers']) {
       expect(adminRouteScope(path), path).toBeNull()
     }

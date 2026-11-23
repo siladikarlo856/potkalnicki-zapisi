@@ -7,6 +7,8 @@ import type { SubmissionStatus, SubmissionType } from '~~/shared/utils/submissio
 import { isMemoryDraftKind, MEMORY_DRAFT_KIND_LABELS } from '~~/shared/utils/memoryDraft'
 import { INTENT_LABELS, SUBMISSION_STATUS_COLORS, SUBMISSION_STATUS_LABELS, SUBMISSION_TYPE_LABELS } from '~/utils/inbox'
 
+const $fetch = useEditorialFetch()
+
 // The unified inbox: word and memory contributions, corrections and proposals for new rows. Corrections are
 // applied in the target's own edit dialog, proposals become drafts in it (both reuse the content dialogs).
 // List state lives in the URL, so every view can be linked and survives a reload.
@@ -51,7 +53,7 @@ const apiQuery = computed(() => ({
   page: state.value.page,
   size: CONTENT_PAGE_SIZES[0]
 }))
-const list = useFetch<InboxList>('/api/admin/inbox', { query: apiQuery, server: false, key: 'admin-inbox' })
+const list = useFetch<InboxList>('/api/admin/inbox', { $fetch, query: apiQuery, server: false, key: 'admin-inbox' })
 const rows = computed(() => list.data.value?.rows ?? [])
 const total = computed(() => list.data.value?.total ?? 0)
 const loading = computed(() => list.status.value === 'pending' || list.status.value === 'idle')

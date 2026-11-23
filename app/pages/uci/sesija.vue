@@ -11,7 +11,9 @@ import { buildSession } from '~~/shared/utils/learn/session'
 import { buildLearnReviewQuestion, shouldAskReviewQuestion } from '~~/shared/utils/learn/reviewQuestion'
 import type { CardKey, PoolItem, PoolPerson, PoolPlace, PoolWord, TopicId } from '~~/shared/utils/learn/types'
 import type { GameQuestion } from '~~/shared/utils/games/types'
-import { cardByKey, isDisplayCard, topicLabels } from '~/utils/learnUi'
+import { cardByKey, isDisplayCard } from '~/utils/learnUi'
+import { settlementSlugForPlace } from '~/utils/learnPlace'
+import type { MainPlacePreference } from '~~/server/utils/accountMainPlace'
 
 type DisplayCardType = PoolWord | PoolPlace | PoolItem | PoolPerson
 
@@ -39,6 +41,26 @@ const session = ref<LearnCurrent | null>(null)
 const targetN = ref(10)
 const placeSlug = ref<string | undefined>()
 const sessionDay = ref('')
+const { session: authSession } = useAuthSession()
+const mainPlaceSlug = ref<string | undefined>()
+
+watch([() => authSession.value?.access_token, () => status.value], async ([token, poolStatus], _old, onCleanup) => {
+  mainPlaceSlug.value = undefined
+  if (!token || poolStatus !== 'success') return
+  let active = true
+  onCleanup(() => {
+    active = false
+  })
+  try {
+    const pref = await $fetch<MainPlacePreference>('/api/account/main-place', {
+      headers: { Authorization: `Bearer ${token}` },
+      retry: 0
+    })
+    if (active && pref.place) mainPlaceSlug.value = settlementSlugForPlace(pool.value, pref.place)
+  } catch {
+    mainPlaceSlug.value = undefined
+  }
+}, { immediate: true })
 
 const poolKeySet = computed(() => new Set(pool.value.cards.map(c => c.key)))
 
@@ -113,7 +135,7 @@ function initSession() {
       unavailable.value = true
       return
     }
-    const next = createSession([], 10, queue, 'list')
+    const next = createSession([], 10, queue, 'list', place)
     next.n = Math.min(queue.length, 20) as LearnN
     session.value = next
     targetN.value = queue.length
@@ -134,6 +156,11 @@ function initSession() {
   session.value = next
   targetN.value = queue.length
   learn.setCurrent(next)
+}
+
+async function restartSession(to: string) {
+  await navigateTo(to)
+  initSession()
 }
 
 const active = computed(() => session.value)
@@ -227,26 +254,21 @@ async function grade(knew: boolean) {
   card.value?.focus()
 }
 
-const marks = computed(() => {
-  const current = shownSession.value
-  if (!current) return []
-  const seenKeys = new Set<string>()
-  const done: ('known' | 'missed')[] = []
-  for (const key of current.queue.slice(0, current.index)) {
-    if (seenKeys.has(key)) continue
-    seenKeys.add(key)
-    const result = current.results[key]
-    if (result) done.push(result)
-  }
-  return done
-})
-
-const topicsLine = computed(() => shownSession.value ? topicLabels(pool.value, shownSession.value.topics) : '')
-
 // The sticky action bar (Znam / Dalje / Nova sesija) takes the tab bar's place while a session runs and at its end.
 useHidePzTabBar(() => ready.value && !unavailable.value && !error.value && !!(reviewShown.value || currentCard.value || finished.value), 'game')
 
 const card = useTemplateRef<{ focus: () => void }>('card')
+
+const running = computed(() => ready.value && !unavailable.value && !error.value && !!(reviewShown.value || (currentCard.value && active.value)))
+const roundTitle = computed(() => active.value?.mode === 'review' || reviewShown.value ? 'Ponavljanje' : 'Učenje')
+const rated = computed(() => Object.keys(shownSession.value?.results ?? {}).length)
+const exitCopy = computed(() => ({
+  label: 'Izađi iz učenja',
+  title: 'Želiš li završiti za danas?',
+  description: `${rated.value === 0 ? 'Još nijedna kartica nije ocijenjena.' : `Ocijenjene kartice (${rated.value}) ostaju spremljene.`} Preostale čekat će te sljedeći put.`,
+  stay: 'Nastavi učiti',
+  leave: 'Završi'
+}))
 
 onMounted(() => {
   if (status.value === 'success' || pool.value.cards.length) {
@@ -264,109 +286,139 @@ watch(() => status.value, (s) => {
 </script>
 
 <template>
-  <UContainer class="py-4 lg:py-6">
-    <div class="mx-auto flex w-full max-w-(--pz-game-col) flex-col gap-4">
-      <h1
-        v-if="!finished || reviewShown"
-        class="sr-only"
-      >
-        {{ t('pz.learn.title') }}
-      </h1>
-      <PzBackPill :to="localePath(pzRoutes.learn)">
-        {{ t('pz.learn.title') }}
-      </PzBackPill>
-
-      <div
-        v-if="!ready || status === 'pending'"
-        class="space-y-3"
-      >
-        <USkeleton class="h-8 w-48" />
-        <USkeleton class="h-64 w-full" />
-      </div>
-
-      <UAlert
-        v-else-if="error"
-        color="error"
-        variant="subtle"
-        :title="t('pz.learn.loadError')"
-      >
-        <UButton
-          :label="t('game.retry')"
-          variant="link"
-          @click="refresh()"
-        />
-      </UAlert>
-
-      <div
-        v-else-if="unavailable"
-        class="rounded-(--pz-radius-lg) border border-default bg-default p-6"
-        data-testid="learn-unavailable"
-      >
-        <p class="pz-body text-highlighted">
-          {{ t('pz.learn.sessionUnavailable') }}
-        </p>
-        <UButton
-          :to="localePath(pzRoutes.learn)"
-          :label="t('pz.learn.title')"
-          class="mt-4"
-        />
-      </div>
-
-      <div
-        v-else-if="reviewShown"
-        class="flex min-w-0 flex-col gap-4"
-        data-testid="learn-runner"
-      >
-        <LearnProgress
-          :current="counter.i"
-          :total="counter.n"
-          :marks="marks"
-          :topics="topicsLine"
-        />
-        <LearnReviewCard
-          :key="`${reviewShown.key}-${reviewStep}`"
-          :card="reviewShown.card"
-          :pool="pool"
-          :question="reviewShown.question"
-          :last="finished !== null"
-          @answer="scoreReview"
-          @next="reviewNext"
-        />
-      </div>
-
-      <LearnSummary
-        v-else-if="finished"
-        :pool="pool"
-        :session="finished"
-        :streak="streak"
+  <div>
+    <template v-if="running">
+      <RoundBar
+        :title="roundTitle"
+        :current="Math.max(counter.i, 1)"
+        :total="Math.max(counter.n, 1)"
+        :exit-to="pzRoutes.learn"
+        :exit="exitCopy"
       />
+      <UContainer class="py-4 lg:py-6">
+        <div
+          class="mx-auto flex w-full max-w-(--pz-game-col) flex-col gap-4"
+          data-testid="learn-runner"
+        >
+          <h1 class="sr-only">
+            {{ t('pz.learn.title') }}
+          </h1>
+          <p
+            class="pz-overline text-muted"
+            data-testid="learn-counter"
+          >
+            <span aria-hidden="true">Kartica {{ counter.i }} od {{ counter.n }}<template v-if="!reviewShown && currentCard?.kind === 'word'"> · Što znači?</template></span>
+            <span class="sr-only">{{ t('pz.learn.counter', { i: counter.i, n: counter.n }) }}</span>
+          </p>
+          <LearnReviewCard
+            v-if="reviewShown"
+            :key="`${reviewShown.key}-${reviewStep}`"
+            :card="reviewShown.card"
+            :pool="pool"
+            :question="reviewShown.question"
+            :last="finished !== null"
+            @answer="scoreReview"
+            @next="reviewNext"
+          />
+          <LearnCard
+            v-else-if="currentCard"
+            :key="currentKey"
+            ref="card"
+            v-model:flipped="flipped"
+            :card="currentCard"
+            :pool="pool"
+            :place-slug="placeSlug"
+            :place-is-main="Boolean(placeSlug) && placeSlug === mainPlaceSlug"
+          />
+        </div>
+      </UContainer>
+      <ActionBar v-if="!reviewShown">
+        <div class="grid w-full grid-cols-2 gap-3">
+          <UButton
+            v-if="!seen"
+            class="col-span-2"
+            :label="currentCard?.kind === 'word' ? 'Pokaži značenje' : 'Pokaži odgovor'"
+            size="xl"
+            block
+            data-testid="learn-reveal"
+            @click="flipped = true"
+          />
+          <template v-else>
+            <UButton
+              label="Još ne znam"
+              color="neutral"
+              variant="outline"
+              size="xl"
+              block
+              data-testid="learn-unknown"
+              @click="grade(false)"
+            />
+            <UButton
+              :label="t('pz.learn.known')"
+              size="xl"
+              block
+              data-testid="learn-known"
+              @click="grade(true)"
+            />
+          </template>
+        </div>
+      </ActionBar>
+    </template>
 
-      <div
-        v-else-if="currentCard && active"
-        class="flex min-w-0 flex-col gap-4"
-        data-testid="learn-runner"
-      >
-        <LearnProgress
-          :current="counter.i"
-          :total="counter.n"
-          :marks="marks"
-          :topics="topicsLine"
+    <UContainer
+      v-else
+      class="py-4 lg:py-6"
+    >
+      <div class="mx-auto flex w-full max-w-(--pz-game-col) flex-col gap-4">
+        <PzBackPill :to="localePath(pzRoutes.learn)">
+          {{ t('pz.learn.title') }}
+        </PzBackPill>
+
+        <PageState
+          v-if="error"
+          kind="error"
+          title="Kartice nismo uspjeli učitati"
+          description="Tvoj je napredak sačuvan. Pokušaj ponovno."
+          @retry="refresh()"
         />
 
-        <LearnCard
-          :key="currentKey"
-          ref="card"
-          v-model:flipped="flipped"
-          :card="currentCard"
+        <div
+          v-else-if="!ready || status === 'pending'"
+          class="space-y-3"
+          aria-busy="true"
+        >
+          <p
+            class="sr-only"
+            role="status"
+          >
+            Pripremamo kartice…
+          </p>
+          <USkeleton class="h-72 w-full rounded-(--pz-radius-lg)" />
+        </div>
+
+        <div
+          v-else-if="unavailable"
+          class="rounded-(--pz-radius-lg) border border-default bg-default p-6"
+          data-testid="learn-unavailable"
+        >
+          <p class="pz-body text-highlighted">
+            {{ t('pz.learn.sessionUnavailable') }}
+          </p>
+          <UButton
+            :to="localePath(pzRoutes.learn)"
+            :label="t('pz.learn.title')"
+            class="mt-4"
+          />
+        </div>
+
+        <LearnSummary
+          v-else-if="finished"
           :pool="pool"
-          :place-slug="placeSlug"
-        />
-
-        <LearnGrade
-          v-if="seen"
-          @score="grade"
+          :session="finished"
+          :streak="streak"
+          @restart="restartSession"
         />
       </div>
-    </div>
-  </UContainer>
+    </UContainer>
+  </div>
 </template>

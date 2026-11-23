@@ -5,6 +5,8 @@ import type { KeyedListEntry } from '#shared/utils/content/intangibleList'
 import { MEMORY_DRAFT_ADMIN_PATHS, MEMORY_DRAFT_KINDS, MEMORY_DRAFT_KIND_LABELS } from '#shared/utils/memoryDraft'
 import type { MemoryDraftKind } from '#shared/utils/memoryDraft'
 
+const $fetch = useEditorialFetch()
+
 // "Započni skicu" on a Memory: the editor chooses what the Memory becomes (a Story, a Custom or a Folk text) and its
 // type, and the server starts the Draft from the sender's text. The editor then finishes it in the kind's own page;
 // publishing it applies the Memory and thanks a named, consenting sender.

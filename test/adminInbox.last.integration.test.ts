@@ -78,6 +78,33 @@ async function latestSubmissionId(type: string) {
 }
 
 describe.skipIf(!db.enabled)('corrections and proposals inbox over real Postgres', () => {
+  it('refuses anonymous photo contributions through the JSON endpoint', async () => {
+    const count = submissionCount()
+    const response = await submit({ text: 'xx', type: 'photo' }, { token: null })
+    expect(response.status).toBe(400)
+    expect(response.body.data?.issues).toContainEqual({ field: 'type', code: 'invalid' })
+    expect(submissionCount()).toBe(count)
+  })
+
+  it('keeps photo contributions reviewable without offering or creating word drafts', async () => {
+    const id = sql(`insert into public.heritage_submissions(text, type, consent_publish, consent_version, locale)
+      values ('Crkva u Glogovnici.', 'photo', true, '2026-11-02', 'hr') returning id;`)
+    try {
+      const list = await inbox('&type=photo')
+      expect(list.status).toBe(200)
+      expect(list.body.rows.find(row => row.id === Number(id))).toMatchObject({ type: 'photo', canDraft: false })
+      const shown = await detail(id)
+      expect(shown.status).toBe(200)
+      expect(shown.body.submission).toMatchObject({ type: 'photo', canDraft: false })
+      for (const path of [`/api/admin/inbox/${id}/draft`, `/api/review/submissions/${id}/word`]) {
+        expect((await admin(path, { method: 'POST', body: {} })).status).toBe(400)
+      }
+      expect(sql(`select count(*) from public.heritage_words where submission_id = ${id};`)).toBe('0')
+    } finally {
+      sql(`delete from public.heritage_submissions where id = ${id};`)
+    }
+  })
+
   it('guards the inbox like every other admin route', async () => {
     expect((await fetch('/api/admin/inbox')).status).toBe(401)
     expect((await fetch('/api/admin/inbox/summary')).status).toBe(401)

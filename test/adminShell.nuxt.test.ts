@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { UApp } from '#components'
@@ -13,7 +13,9 @@ import { daysWithoutPin } from '../app/composables/useAdminDashboard'
 // The admin shell (navigation, pending badge), the dashboard and the sign-in page.
 
 let pending = 7
-registerEndpoint('/api/admin/session', () => ({ authenticated: true }))
+let authenticated = true
+let sessionExtras: Record<string, unknown> = {}
+registerEndpoint('/api/admin/session', () => ({ authenticated, ...sessionExtras }))
 registerEndpoint('/api/admin/inbox/summary', () => ({ pending }))
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
@@ -21,6 +23,8 @@ afterEach(async () => {
   wrapper?.unmount()
   wrapper = undefined
   pending = 7
+  authenticated = true
+  sessionExtras = {}
   await useRouter().replace({ path: '/', query: {} })
 })
 
@@ -34,6 +38,7 @@ describe('admin navigation', () => {
     const paths = ADMIN_NAV.map(item => item.to)
     expect(new Set(paths).size).toBe(paths.length)
     expect(paths).toContain('/admin/prijedlozi')
+    expect(paths).toContain('/admin/korisnici')
     expect(paths).toContain('/admin/povijest')
   })
 
@@ -43,6 +48,14 @@ describe('admin navigation', () => {
     expect(adminNavActive(dashboard, '/admin/bastina')).toBe(false)
     expect(adminNavActive(baština!, '/admin/osobe')).toBe(false)
     expect(adminNavActive(ADMIN_NAV_GROUPS[1]!.items[1]!, '/admin/bastina/')).toBe(true)
+  })
+
+  it('hides Korisnici for maintainer sessions while keeping editorial resources', async () => {
+    sessionExtras = { role: 'maintainer', userManagement: false }
+    wrapper = await mountInApp(AdminNavList)
+    await vi.waitFor(() => expect(wrapper!.text()).toContain('Prijedlozi'))
+    expect(wrapper!.text()).not.toContain('Korisnici')
+    expect(wrapper!.text()).toContain('Riječi')
   })
 
   it('shows the pending count beside the inbox with the full phrase as its accessible text, in every group list', async () => {
@@ -199,6 +212,9 @@ describe('Nadzorna ploča', () => {
 })
 
 describe('Prijava', () => {
+  beforeEach(() => {
+    authenticated = false
+  })
   const posts: unknown[] = []
   let status = 0
   registerEndpoint('/api/admin/session', {

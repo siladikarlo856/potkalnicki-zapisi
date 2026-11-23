@@ -192,7 +192,9 @@ describe.skipIf(!harness.enabled)('Potkalnički zapisi games SSR', () => {
     window.document.body.innerHTML = html
     expect(window.document.querySelector('[data-testid="play-loading"]')).not.toBeNull()
     expect(window.document.querySelector('[data-testid="play-catalog"]')).toBeNull()
-    expect(window.document.querySelector('#rijec-dana')).toBeNull()
+    const daily = window.document.querySelector('#rijec-dana')
+    expect(daily).not.toBeNull()
+    expect(window.document.querySelector('#rijec-dana a[href="/rijec-dana/"]')).not.toBeNull()
     expect(window.document.querySelector('[data-testid="game-tile-znacenje"]')).toBeNull()
     expect(window.document.querySelector('[data-testid="game-tile-kartice"]')).toBeNull()
     await window.happyDOM.close()
@@ -1021,9 +1023,9 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
     { path: '/igre/', title: 'Igre · Potkalnički zapisi', description: 'Trinaest kratkih igara', image: 'og.svg' },
     { path: '/doprinesi/', title: 'Doprinesi · Potkalnički zapisi', description: 'Zapiši ono što znaš', image: 'og.svg' },
     { path: '/o-projektu/', title: 'O projektu · Potkalnički zapisi', description: 'Digitalni arhiv kraja pod Kalnikom.', image: 'og.svg' },
-    { path: '/uci/', title: 'Uči · Potkalnički zapisi', description: 'Odaberi teme', image: 'og.svg' },
+    { path: '/uci/', title: 'Uči · Potkalnički zapisi', description: 'Kartice s riječima domaćega govora.', image: 'og.svg' },
     { path: '/igre/kviz/', title: 'Ponuđeni odgovori · Potkalnički zapisi', description: 'Pročitaj riječ', image: 'og.svg' },
-    { path: '/privatnost/', title: 'Privatnost · Potkalnički zapisi', description: 'Kratko i jasno', image: 'og.svg' }
+    { path: '/privatnost/', title: 'Privatnost · Potkalnički zapisi', description: 'Javne stranice možeš koristiti bez računa', image: 'og.svg' }
   ])('sets localized sharing metadata on $path', async ({ path, title, description, image }) => {
     const response = await fetch(path)
     expect(response.status).toBe(200)
@@ -1056,7 +1058,7 @@ describe.skipIf(!harness.enabled)('public discovery, sharing metadata and error 
 
   it('states the privacy policy on the privacy notice', async () => {
     const html = await (await fetch('/privatnost/', { headers: { accept: 'text/html' } })).text()
-    expect(html).toContain('Kratko i jasno: nemamo korisničke račune')
+    expect(html).toContain('Javne stranice možeš koristiti bez računa')
     expect(html).toContain('Nema oglasa ni oglasnih kolačića.')
     expect(html).toContain('Nema praćenja među stranicama.')
   })

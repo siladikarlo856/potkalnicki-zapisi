@@ -4,6 +4,8 @@ import { DAILY_PIN_HORIZON_DAYS } from '~~/shared/utils/dailyAdmin'
 import type { DailyAdminDay, DailyAdminOverview, DailyPinResult } from '~~/shared/utils/dailyAdmin'
 import type { Word } from '~~/shared/utils/content/word'
 
+const $fetch = useEditorialFetch()
+
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
 useSeoMeta({ title: 'Riječ dana', robots: 'noindex, nofollow' })
@@ -30,6 +32,7 @@ const maxDate = computed(() => overview.value ? addDays(overview.value.day, DAIL
 
 const lookupQuery = computed(() => wordSearch.value.trim())
 const { data: lookup, status: lookupStatus } = useFetch<{ items: Array<{ id: string, label: string }> }>('/api/admin/lookup/word', {
+  $fetch,
   query: computed(() => (lookupQuery.value ? { q: lookupQuery.value } : {})),
   watch: [lookupQuery],
   server: false

@@ -3,6 +3,8 @@ import { atlasSlug } from '~~/shared/utils/atlasSlug'
 import type { ContentLookupItem } from '~~/shared/utils/content/common'
 import { HERITAGE_ITEM_LIMITS, type HeritageItemValue } from '~~/shared/utils/content/heritageItem'
 
+const $fetch = useEditorialFetch()
+
 const props = defineProps<{
   state: HeritageItemValue
   entityId?: string
@@ -91,6 +93,7 @@ const municipalityQuery = computed(() => ({
   ids: props.state.municipalityId && !municipalitySearch.value ? props.state.municipalityId : undefined
 }))
 const { data: municipalityLookup } = useFetch<{ items: ContentLookupItem[] }>('/api/admin/lookup/area', {
+  $fetch,
   query: municipalityQuery,
   server: false
 })
@@ -104,6 +107,7 @@ const settlementQuery = computed(() => ({
 }))
 const settlementEnabled = computed(() => !!props.state.municipalityId)
 const { data: settlementLookup, refresh: refreshSettlements } = useFetch<{ items: ContentLookupItem[] }>('/api/admin/lookup/area', {
+  $fetch,
   query: settlementQuery,
   server: false
 })
@@ -119,6 +123,7 @@ const sourceQuery = computed(() => ({
   ids: props.state.sourceIds.length && !sourceSearch.value ? props.state.sourceIds.join(',') : undefined
 }))
 const { data: sourceLookup } = useFetch<{ items: ContentLookupItem[] }>('/api/admin/lookup/source', {
+  $fetch,
   query: sourceQuery,
   server: false
 })

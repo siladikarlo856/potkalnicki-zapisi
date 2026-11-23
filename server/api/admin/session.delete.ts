@@ -1,5 +1,4 @@
-export default defineEventHandler(async (event) => {
-  requireAdminSessionConfig(event)
+export default defineEventHandler((event) => {
   deleteCookie(event, 'admin-session', {
     path: '/',
     httpOnly: true,

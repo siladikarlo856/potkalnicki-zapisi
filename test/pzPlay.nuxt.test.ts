@@ -80,7 +80,7 @@ describe('Igre list', () => {
     expect(page.text()).toContain('Igre se još pripremaju')
     expect(page.find('[data-testid="game-tile-znacenje"]').exists()).toBe(false)
     expect(page.get('[data-testid="play-active-topic"]').text()).toContain('Tema: Mjesta')
-    expect(page.get('[data-testid="play-empty-state"] a[href="/#rijec-dana"]').text()).toBe('Riječ dana')
+    expect(page.get('[data-testid="play-empty-state"] a[href="/rijec-dana/"]').text()).toBe('Riječ dana')
     await page.get('[data-testid="play-clear-topic"]').trigger('click')
     await expect.poll(() => page.find('[data-testid="game-tile-znacenje"]').exists()).toBe(true)
     expect(page.find('[data-testid="play-active-topic"]').exists()).toBe(false)

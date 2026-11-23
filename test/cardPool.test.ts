@@ -104,6 +104,8 @@ describe('buildCardPool', () => {
       word({ id: 'w2', headword: 'uzorak', meaning: { hr: 'primjer' }, status: 'placeholder' })
     ]
     const pool = buildCardPool(content, words)
+    const krumper = pool.cards.find(c => c.kind === 'word' && c.id === 'w1') as import('../shared/utils/learn/types').PoolWord | undefined
+    expect(krumper?.variantDetails).toEqual([{ id: 'v1', form: 'krumper', usages: [] }])
     expect(pool.cards.some(c => c.kind === 'word' && c.id === 'w1')).toBe(true)
     expect(pool.cards.some(c => c.kind === 'word' && c.id === 'w2')).toBe(false)
     for (const card of pool.cards) expect(card.key).toMatch(CARD_KEY)

@@ -4,6 +4,8 @@ import { WORD_STATUSES, SOURCE_KINDS, MAX_DISTRACTORS, NOTE_LIMIT, DISTRACTOR_LI
 import { DAILY_CATEGORIES } from '~~/shared/utils/dailyWord'
 import type { Area } from '~~/app/types/heritage'
 
+const $fetch = useEditorialFetch()
+
 const model = defineModel<WordInput>({ required: true })
 const props = defineProps<{ busy: boolean }>()
 const emit = defineEmits<{ save: [active: boolean], cancel: [] }>()
@@ -21,7 +23,7 @@ const tags = computed({ get: () => model.value.entry.tags?.join(', ') ?? '', set
 const sourceOptions = computed(() => [{ label: 'Bez izvora', value: '__none__' }, ...model.value.entry.sources.map(source => ({ label: source.credit || source.id, value: source.id }))])
 
 // Published areas from the database, used as the area picker source.
-const { data: dbAreas } = await useFetch<Area[]>('/api/review/areas', { default: () => [] as Area[] })
+const { data: dbAreas } = await useFetch<Area[]>('/api/review/areas', { $fetch, default: () => [] as Area[] })
 // All areas available for selection: the DB list is the authoritative source.
 const allAreas = computed(() => dbAreas.value ?? [])
 const areaOptions = computed(() => allAreas.value.map(area => ({ label: `${area.name} · ${area.kind}`, value: area.id })))

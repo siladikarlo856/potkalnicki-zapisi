@@ -4,6 +4,8 @@ import { addDays } from '~~/shared/utils/dailyWord'
 import { DAILY_PIN_HORIZON_DAYS } from '~~/shared/utils/dailyAdmin'
 import type { DailyAdminDay, DailyAdminOverview, DailyPinResult } from '~~/shared/utils/dailyAdmin'
 
+const $fetch = useEditorialFetch()
+
 // Admin card "Riječ dana": today's word, the pinned days, the runway and the pin form.
 // Everything is counted on the server over all active words, not over the loaded table page.
 const props = defineProps<{

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import { clearNuxtState } from '#imports'
+import { clearNuxtData, clearNuxtState } from '#imports'
+import { LEARN_STORAGE_KEY } from '../app/composables/useLearnState'
 import type { CardPool, PoolCard } from '../shared/utils/learn/types'
 import LearnSetup from '../app/pages/uci/index.vue'
 import PzLearnPlaySwitch from '../app/components/pz/PzLearnPlaySwitch.vue'
@@ -31,32 +32,101 @@ const pool: CardPool = {
     { id: 'mjesta', label: 'Mjesta', status: 'soon', count: 0 }
   ]
 }
-registerEndpoint('/api/learn/pool', () => pool)
+let currentPool = pool
+registerEndpoint('/api/learn/pool', () => currentPool)
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 
 beforeEach(() => {
+  currentPool = pool
   localStorage.clear()
-  clearNuxtState(['pz-learn-state', 'pz-learn-loaded', 'card-pool', 'pz-home-tab', 'pz-home-loaded'])
+  clearNuxtState(['pz-learn-state', 'pz-learn-loaded', 'card-pool', 'pz-home-tab', 'pz-home-loaded', 'heritage-progress', 'heritage-progress-loaded'])
+  clearNuxtData('card-pool')
 })
 
 afterEach(() => wrapper?.unmount())
 
 describe('learn setup page', () => {
-  it('shows topics and lengths as pressed-state chips and a start link that carries the choice', async () => {
+  it.each(['osobe', 'rijeci', 'osobe,rijeci'])('preserves incoming topics %s and lets a first visitor change the choice', async (topics) => {
+    currentPool = { ...pool, topics: [...pool.topics, { id: 'osobe', label: 'Osobe', status: 'live', count: 4 }] }
+    wrapper = await mountSuspended(LearnSetup, { route: `/uci?teme=${encodeURIComponent(topics)}` })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-setup-start"]').exists()).toBe(true)
+    const startQuery = () => new URL(wrapper!.get('[data-testid="learn-setup-start"]').attributes('href')!, 'https://example.test').searchParams
+    expect(startQuery().get('teme')).toBe(topics)
+    const other = topics === 'rijeci' ? 'osobe' : 'rijeci'
+    await wrapper.get(`input[name="first-pick"][value="${other}"]`).setValue(true)
+    expect(startQuery().get('teme')).toBe(other)
+  })
+
+  it('offers the first words as radios and a start link that carries the choice', async () => {
     wrapper = await mountSuspended(LearnSetup, { route: '/uci?mjesto=sopron' })
     await expect.poll(() => wrapper!.find('[data-testid="learn-setup"]').exists(), { timeout: 5000 }).toBe(true)
-    const chips = wrapper!.findAll('[data-testid="learn-chip"]')
-    const rijeci = chips.find(chip => chip.text().includes('Riječi'))!
-    expect(rijeci.attributes('aria-pressed')).toBe('true')
-    const soon = chips.find(chip => chip.text().includes('Mjesta'))!
-    expect(soon.attributes('disabled')).toBeDefined()
-    const twenty = chips.find(chip => chip.text() === '20')!
-    await twenty.trigger('click')
-    expect(twenty.attributes('aria-pressed')).toBe('true')
-    const href = wrapper!.get('[data-testid="learn-setup-start"]').attributes('href')!
-    expect(href).toContain('/uci/sesija/?teme=rijeci&n=20')
-    expect(href).toContain('mjesto=sopron')
+    const start = () => wrapper!.get('[data-testid="learn-setup-start"]')
+    expect(start().text()).toBe('Počni s 10 kartica')
+    expect(start().attributes('href')).toContain('/uci/sesija/?teme=rijeci&n=10')
+    const radios = wrapper!.findAll('input[name="first-pick"]')
+    expect(radios.map(radio => radio.attributes('value'))).toContain('mjesto')
+    await radios.find(radio => radio.attributes('value') === 'mjesto')!.setValue(true)
+    expect(start().attributes('href')).toContain('mjesto=sopron')
+  })
+})
+
+describe('learn hub with progress', () => {
+  const progress = (due: string) => JSON.stringify({
+    version: 2,
+    cards: { 'word:a': { box: 1, due, seen: 1, known: 0, missed: 1, lastPlayed: '2026-11-01' } },
+    lastPlayed: '2026-11-01',
+    streak: 1
+  })
+
+  it.each(['osobe', 'rijeci', 'osobe,rijeci'])('prioritizes incoming topics %s over remembered topics for a new lesson', async (topics) => {
+    localStorage.setItem('pz-progress/v2', progress('2999-01-01'))
+    localStorage.setItem(LEARN_STORAGE_KEY, JSON.stringify({ version: 1, current: null, lastTopics: ['bastina'], lastN: 10 }))
+    wrapper = await mountSuspended(LearnSetup, { route: `/uci?teme=${encodeURIComponent(topics)}` })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-home-new-lesson"]').exists()).toBe(true)
+    const query = new URL(wrapper.get('[data-testid="learn-home-new-lesson"]').attributes('href')!, 'https://example.test').searchParams
+    expect(query.get('teme')).toBe(topics)
+  })
+
+  it('shows the three numbers and Počni ponavljanje when a card is due', async () => {
+    localStorage.setItem('pz-progress/v2', progress('2020-01-01'))
+    clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci' })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-hub"]').exists(), { timeout: 5000 }).toBe(true)
+    const review = wrapper.get('[data-testid="learn-home-review"]')
+    expect(review.text()).toBe('Počni ponavljanje')
+    expect(review.attributes('href')).toContain('/uci/sesija/?ponovi=1')
+    expect(wrapper.get('[data-testid="learn-today"]').text()).toContain('za ponavljanje')
+    expect(wrapper.findAll('[data-testid="learn-topic-row"]')).toHaveLength(1)
+  })
+
+  it('says everything is repeated and offers new words when nothing is due', async () => {
+    localStorage.setItem('pz-progress/v2', progress('2999-01-01'))
+    clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci' })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-hub"]').exists(), { timeout: 5000 }).toBe(true)
+    expect(wrapper.text()).toContain('Za danas je sve ponovljeno.')
+    expect(wrapper.get('[data-testid="learn-home-new-lesson"]').text()).toBe('Nauči nove riječi')
+  })
+
+  it('names the next review day and how many cards fall on it when nothing is due', async () => {
+    const localDay = (offset: number) => {
+      const date = new Date()
+      date.setDate(date.getDate() + offset)
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    }
+    const card = (due: string) => ({ box: 2, due, seen: 1, known: 1, missed: 0, lastPlayed: localDay(0) })
+    localStorage.setItem('pz-progress/v2', JSON.stringify({
+      version: 2,
+      cards: { 'word:a': card(localDay(1)), 'word:b': card(localDay(1)), 'word:c': card(localDay(5)) },
+      lastPlayed: localDay(0),
+      streak: 1
+    }))
+    clearNuxtState(['heritage-progress', 'heritage-progress-loaded'])
+    wrapper = await mountSuspended(LearnSetup, { route: '/uci' })
+    await expect.poll(() => wrapper!.find('[data-testid="learn-hub"]').exists(), { timeout: 5000 }).toBe(true)
+    expect(wrapper.get('[data-testid="learn-home-next-review"]').text()).toBe('Sljedeće ponavljanje: sutra, 2 kartice.')
+    expect(wrapper.get('[data-testid="learn-topic-row"]').text()).toContain('2 kartice ·')
   })
 })
 

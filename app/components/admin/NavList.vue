@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ADMIN_INBOX_PATH, ADMIN_NAV_GROUPS, adminNavActive } from '~/utils/adminNav'
+import { ADMIN_INBOX_PATH, ADMIN_NAV_GROUPS, type AdminNavItem, adminNavActive, adminNavVisible } from '~/utils/adminNav'
 
 // The four navigation groups as links, with the pending badge on the inbox. The sidebar (full or rail) and the phone's
 // "Sadržaj" sheet render it. Inside the sidebar the `group/side` ancestor decides, by CSS alone, whether labels and group
@@ -13,7 +13,13 @@ const props = withDefaults(defineProps<{
 
 const route = useRoute()
 const { pending } = useAdminPending()
-const shown = computed(() => props.groups ? ADMIN_NAV_GROUPS.filter(group => props.groups!.includes(group.label)) : ADMIN_NAV_GROUPS)
+const userManagement = useAdminUserManagement()
+function visibleItems(items: AdminNavItem[]) {
+  return items.filter(item => adminNavVisible(item, userManagement.data.value))
+}
+const shown = computed(() => (props.groups ? ADMIN_NAV_GROUPS.filter(group => props.groups!.includes(group.label)) : ADMIN_NAV_GROUPS)
+  .map(group => ({ ...group, items: visibleItems(group.items) }))
+  .filter(group => group.items.length > 0))
 const headingId = (label: string) => `admin-nav-${label.toLowerCase().normalize('NFD').replace(/[^a-z]+/g, '-')}`
 </script>
 

@@ -68,6 +68,10 @@ describe('validateSubmission', () => {
     ])
   })
 
+  it('refuses photo contributions through the JSON submission contract', () => {
+    expect(issuesOf({ ...valid, type: 'photo' })).toEqual([{ field: 'type', code: 'invalid' }])
+  })
+
   it('requires a target for corrections and no longer takes the retired targetRef', () => {
     expect(issuesOf({ ...valid, type: 'correction' })).toEqual([{ field: 'targetKind', code: 'required' }])
     expect(issuesOf({ ...valid, type: 'correction', targetRef: 'kalnik-crkva-sv-brcka' })).toEqual([{ field: 'targetKind', code: 'required' }])

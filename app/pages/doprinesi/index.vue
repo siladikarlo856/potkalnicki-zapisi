@@ -13,7 +13,7 @@ const route = useRoute()
 const NuxtLink = resolveComponent('NuxtLink')
 const { words } = useHeritage()
 
-type PickerKind = 'word' | 'memory' | 'heritage_item' | 'area' | 'source' | 'correction' | 'photo'
+type PickerKind = 'word' | 'memory' | 'photo' | 'heritage_item' | 'area' | 'source' | 'correction'
 
 // Word and memory keep the free-text form; the other cards open the structured corrections and proposals.
 const pickerCards: { kind: PickerKind, icon: string, soon?: boolean }[] = [
@@ -23,7 +23,7 @@ const pickerCards: { kind: PickerKind, icon: string, soon?: boolean }[] = [
   { kind: 'area', icon: 'i-lucide-map-pin' },
   { kind: 'source', icon: 'i-lucide-book-plus' },
   { kind: 'correction', icon: 'i-lucide-pencil' },
-  { kind: 'photo', icon: 'i-lucide-camera', soon: true }
+  { kind: 'photo', icon: 'i-lucide-camera' }
 ]
 
 const suggest = computed(() => parseSuggestQuery(route.query))
@@ -98,6 +98,7 @@ const selectedKind = computed(() => {
   const raw = route.query.vrsta
   if (raw === 'rijec' || raw === 'rijec-izraz') return 'word' as const
   if (raw === 'sjecanje' || raw === 'prica') return 'memory' as const
+  if (raw === 'fotografija') return 'photo' as const
   return undefined
 })
 
@@ -120,7 +121,7 @@ function cardTo(kind: PickerKind) {
   const path = pzRoutes.contribute
   if (kind === 'word' || kind === 'memory') return localePath({ path, query: { ...route.query, vrsta: kind === 'word' ? 'rijec' : 'sjecanje' } })
   if (kind === 'correction') return localePath({ path, query: { vrsta: 'ispravak' } })
-  if (kind === 'photo') return undefined
+  if (kind === 'photo') return localePath({ path, query: { ...route.query, vrsta: 'fotografija' } })
   return localePath({ path, query: suggestQuery('proposal', kind as ContributionKind) })
 }
 
@@ -257,6 +258,10 @@ useSeoMeta({
           mode="proposal"
           :prefill="proposalPrefill"
           :draft-key="proposalDraftKey"
+        />
+        <HeritagePhotoSubmissionForm
+          v-else-if="selectedKind === 'photo'"
+          :key="'doprinesi/submission/photo'"
         />
         <HeritageSubmissionForm
           v-else-if="selectedKind"

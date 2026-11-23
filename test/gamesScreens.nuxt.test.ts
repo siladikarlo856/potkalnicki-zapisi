@@ -11,6 +11,7 @@ import ResultSummary from '../app/components/ResultSummary.vue'
 import { GAME_CATALOGUE, GAME_GROUPS, gameGroupOf, gameTypeOf, isListedGame } from '../shared/utils/games/catalogue'
 import type { GameQuestion } from '../shared/utils/games/types'
 import { applyChallengeCreateQuery } from '../shared/utils/challengeCreateForm'
+import { pzRoutes } from '../shared/utils/appRoutes'
 
 let wrapper: Awaited<ReturnType<typeof mountSuspended>> | undefined
 afterEach(() => {
@@ -28,7 +29,7 @@ describe('games catalogue grouping', () => {
       expect(gameTypeOf(game)).not.toBeNull()
     }
     expect(GAME_CATALOGUE.filter(game => !isListedGame(game)).map(game => game.id).sort()).toEqual(['kartice', 'rijec-dana'])
-    expect(GAME_CATALOGUE.find(game => game.id === 'rijec-dana')!.path).toBe('/#rijec-dana')
+    expect(GAME_CATALOGUE.find(game => game.id === 'rijec-dana')!.path).toBe(pzRoutes.daily)
   })
 })
 

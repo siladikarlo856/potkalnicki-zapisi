@@ -9,6 +9,12 @@ export type TopicId = string
 
 interface CardBase { key: CardKey, id: string, topics: TopicId[] }
 
+export interface PoolWordVariant {
+  id: string
+  form: string
+  usages: { areaId: string }[]
+}
+
 export interface PoolWord extends CardBase {
   kind: 'word'
   headword: string
@@ -17,6 +23,8 @@ export interface PoolWord extends CardBase {
   partOfSpeech?: string
   category?: DailyCategory
   variants: string[]
+  /** Forms with settlement usages for preferred-variant ordering in learn. */
+  variantDetails: PoolWordVariant[]
   status: 'community' | 'verified'
   transparency: number
   difficulty: 1 | 2 | 3

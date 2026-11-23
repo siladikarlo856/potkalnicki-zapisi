@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'admin-auth' })
+definePageMeta({ layout: 'admin-auth', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
 
 useSeoMeta({ title: 'Prijava', robots: 'noindex, nofollow' })
@@ -7,7 +7,6 @@ const localePath = useLocalePath()
 const route = useRoute()
 const online = useOnlineState()
 
-// The sign-in is the server's single password (`POST /api/admin/session`); the page restyles it and adds no method.
 const password = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
@@ -53,122 +52,129 @@ const COPY: Record<Failure, { title: string, description: string, icon: string, 
 
 <template>
   <div class="mx-auto flex w-full max-w-[400px] flex-col px-4 py-10 sm:py-20">
-    <form
-      class="flex flex-col gap-5 rounded-lg bg-default p-5 ring-1 ring-default sm:p-6"
-      novalidate
-      data-testid="admin-login"
-      @submit.prevent="signIn"
-    >
-      <div class="flex items-center gap-3">
-        <svg
-          viewBox="0 0 36 36"
-          width="36"
-          height="36"
-          aria-hidden="true"
-          class="shrink-0"
-        >
-          <rect
+    <ClientOnly>
+      <form
+        class="flex flex-col gap-5 rounded-lg bg-default p-5 ring-1 ring-default sm:p-6"
+        novalidate
+        data-testid="admin-login"
+        @submit.prevent="signIn"
+      >
+        <div class="flex items-center gap-3">
+          <svg
+            viewBox="0 0 36 36"
             width="36"
             height="36"
-            rx="10"
-            fill="var(--ui-primary)"
-          />
-          <path
-            d="M6 23.5 12 15l3 4 4-8.5 4 7.5 3-3 4 8.5"
-            fill="none"
-            stroke="var(--ui-text-inverted)"
-            stroke-width="2.2"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-          />
-        </svg>
-        <span class="pz-overline text-muted">Potkalnički zapisi · urednik</span>
-      </div>
-      <h1 class="pz-h2 text-highlighted">
-        Prijava
-      </h1>
-
-      <div
-        ref="alert"
-        tabindex="-1"
-        class="focus:outline-none"
-        data-testid="admin-login-message"
-      >
-        <UAlert
-          v-if="!online"
-          color="warning"
-          variant="subtle"
-          icon="i-lucide-wifi-off"
-          title="Nema veze"
-          description="Za prijavu treba veza s internetom."
-          role="status"
-        />
-        <UAlert
-          v-else-if="failure"
-          :color="COPY[failure].color"
-          variant="subtle"
-          :icon="COPY[failure].icon"
-          :title="COPY[failure].title"
-          :description="COPY[failure].description"
-          role="alert"
-        />
-        <UAlert
-          v-else-if="expired"
-          color="neutral"
-          variant="subtle"
-          icon="i-lucide-clock"
-          title="Sesija je istekla"
-          description="Prijavi se ponovno. Vratit ćemo te na stranicu na kojoj je rad stao."
-          role="status"
-        />
-      </div>
-
-      <UFormField
-        label="Lozinka"
-        name="password"
-        :error="fieldError || undefined"
-      >
-        <UInput
-          v-model="password"
-          :type="showPassword ? 'text' : 'password'"
-          autocomplete="current-password"
-          autofocus
-          class="w-full"
-          :ui="{ trailing: 'pe-1' }"
-          data-testid="admin-login-password"
-        >
-          <template #trailing>
-            <UButton
-              color="neutral"
-              variant="link"
-              size="sm"
-              :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-              :aria-label="showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'"
-              :aria-pressed="showPassword"
-              @click="showPassword = !showPassword"
+            aria-hidden="true"
+            class="shrink-0"
+          >
+            <rect
+              width="36"
+              height="36"
+              rx="10"
+              fill="var(--ui-primary)"
             />
-          </template>
-        </UInput>
-      </UFormField>
+            <path
+              d="M6 23.5 12 15l3 4 4-8.5 4 7.5 3-3 4 8.5"
+              fill="none"
+              stroke="var(--ui-text-inverted)"
+              stroke-width="2.2"
+              stroke-linejoin="round"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span class="pz-overline text-muted">Potkalnički zapisi · urednik</span>
+        </div>
+        <h1 class="pz-h2 text-highlighted">
+          Prijava
+        </h1>
 
-      <UButton
-        type="submit"
-        block
-        :loading="loading"
-        :disabled="!online"
-        :aria-busy="loading"
-      >
-        {{ loading ? 'Prijavljujem…' : 'Prijavi se' }}
-      </UButton>
-
-      <p class="pz-caption text-muted">
-        Urednički dio nije javan. Tražiš arhiv? <NuxtLink
-          :to="localePath('/')"
-          class="text-primary underline underline-offset-2"
+        <div
+          ref="alert"
+          tabindex="-1"
+          class="focus:outline-none"
+          data-testid="admin-login-message"
         >
-          Na početnu
-        </NuxtLink>
-      </p>
-    </form>
+          <UAlert
+            v-if="!online"
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-wifi-off"
+            title="Nema veze"
+            description="Za prijavu treba veza s internetom."
+            role="status"
+          />
+          <UAlert
+            v-else-if="failure"
+            :color="COPY[failure].color"
+            variant="subtle"
+            :icon="COPY[failure].icon"
+            :title="COPY[failure].title"
+            :description="COPY[failure].description"
+            role="alert"
+          />
+          <UAlert
+            v-else-if="expired"
+            color="neutral"
+            variant="subtle"
+            icon="i-lucide-clock"
+            title="Sesija je istekla"
+            description="Prijavi se ponovno. Vratit ćemo te na stranicu na kojoj je rad stao."
+            role="status"
+          />
+        </div>
+
+        <UFormField
+          label="Lozinka"
+          name="password"
+          :error="fieldError || undefined"
+        >
+          <UInput
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            autofocus
+            class="w-full"
+            :ui="{ trailing: 'pe-1' }"
+            data-testid="admin-login-password"
+          >
+            <template #trailing>
+              <UButton
+                color="neutral"
+                variant="link"
+                size="sm"
+                :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                :aria-label="showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              />
+            </template>
+          </UInput>
+        </UFormField>
+
+        <UButton
+          type="submit"
+          block
+          :loading="loading"
+          :disabled="!online"
+          :aria-busy="loading"
+        >
+          {{ loading ? 'Prijavljujem…' : 'Prijavi se' }}
+        </UButton>
+
+        <p class="pz-caption text-muted">
+          Urednički dio nije javan. Tražiš arhiv? <NuxtLink
+            :to="localePath('/')"
+            class="text-primary underline underline-offset-2"
+          >
+            Na početnu
+          </NuxtLink>
+        </p>
+      </form>
+      <template #fallback>
+        <p role="status">
+          Provjeravamo prijavu…
+        </p>
+      </template>
+    </ClientOnly>
   </div>
 </template>

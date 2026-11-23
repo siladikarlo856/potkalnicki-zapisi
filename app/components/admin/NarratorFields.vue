@@ -5,6 +5,8 @@ import { NARRATOR_LIMITS } from '#shared/utils/content/narrator'
 import type { NarratorValue } from '#shared/utils/content/narrator'
 import { numberOrNull, textOrNull } from '~/utils/intangibleForm'
 
+const $fetch = useEditorialFetch()
+
 // The editor of a Narrator (Kazivač). The rule it must make impossible to miss: without a recorded consent the public
 // sees only the public description, never the name, and the name also stays out of the page address and the search.
 const props = defineProps<{

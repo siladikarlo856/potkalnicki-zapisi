@@ -6,6 +6,8 @@ import {
   type ClubSeasonValue, type ClubValue
 } from '~~/shared/utils/content/club'
 
+const $fetch = useEditorialFetch()
+
 const props = defineProps<{
   state: ClubValue
   entityId?: string
@@ -68,6 +70,7 @@ const settlementQuery = computed(() => ({
   ids: props.state.settlementId || undefined
 }))
 const { data: settlementLookup } = useFetch<{ items: ContentLookupItem[] }>('/api/admin/lookup/area', {
+  $fetch,
   query: settlementQuery,
   server: false
 })
@@ -78,6 +81,7 @@ const sourceQuery = computed(() => ({
   ids: props.state.sourceIds.length && !sourceSearch.value ? props.state.sourceIds.join(',') : undefined
 }))
 const { data: sourceLookup } = useFetch<{ items: ContentLookupItem[] }>('/api/admin/lookup/source', {
+  $fetch,
   query: sourceQuery,
   server: false
 })

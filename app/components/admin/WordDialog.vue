@@ -7,6 +7,8 @@ import { validateWord } from '~~/shared/utils/word'
 import type { WordInput } from '~~/shared/utils/word'
 import type { AdminResource } from '~/composables/useAdminResource'
 
+const $fetch = useEditorialFetch()
+
 const props = defineProps<{
   resource: AdminResource<Word, WordValue>
   entityId?: string

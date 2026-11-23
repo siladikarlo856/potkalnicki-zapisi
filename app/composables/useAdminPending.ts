@@ -8,6 +8,7 @@ export const PENDING_NOUN: PzNoun = ['prilog čeka pregled', 'priloga čekaju pr
  * usable when the count cannot be read, so a failed request is just no badge.
  */
 export function useAdminPending() {
-  const { data, refresh } = useFetch<{ pending: number }>('/api/admin/inbox/summary', { server: false, key: 'admin-inbox-summary' })
+  const $fetch = useEditorialFetch()
+  const { data, refresh } = useFetch<{ pending: number }>('/api/admin/inbox/summary', { $fetch, server: false, key: 'admin-inbox-summary' })
   return { pending: computed(() => data.value?.pending ?? 0), refresh }
 }

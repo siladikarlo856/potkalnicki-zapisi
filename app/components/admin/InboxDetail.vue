@@ -6,6 +6,8 @@ import type { MemoryDraftKind } from '~~/shared/utils/memoryDraft'
 import type { SubmissionStatus } from '~~/shared/utils/submission'
 import { INTENT_LABELS, SUBMISSION_TYPE_LABELS } from '~/utils/inbox'
 
+const $fetch = useEditorialFetch()
+
 // Sender-provided content stays plain text; links the sender typed are never turned into links here.
 const props = defineProps<{ row: InboxRow }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -16,6 +18,16 @@ const busy = ref(false)
 const error = ref('')
 const detail = ref<InboxDetail | null>(null)
 const detailError = ref('')
+interface InboxPhoto {
+  id: string
+  position: number
+  alt: string
+  author: string
+  publishPermission: boolean
+  url: string | null
+}
+const photos = ref<InboxPhoto[]>([])
+const photosError = ref('')
 
 const row = computed(() => props.row)
 const applied = computed(() => !!row.value.appliedAt)
@@ -31,15 +43,29 @@ const unapplicable = computed(() => row.value.type === 'correction' ? (detail.va
 const structured = computed(() => row.value.type === 'correction' || row.value.type === 'proposal')
 
 async function loadDetail() {
-  if (!structured.value) return
+  if (!structured.value) detail.value = null
+  else {
+    try {
+      detail.value = await $fetch<InboxDetail>(`/api/admin/inbox/${row.value.id}`)
+    } catch (e) {
+      detailError.value = adminApiError(e).message
+    }
+  }
+  if (row.value.type !== 'photo') {
+    photos.value = []
+    return
+  }
+  photosError.value = ''
   try {
-    detail.value = await $fetch<InboxDetail>(`/api/admin/inbox/${row.value.id}`)
+    const response = await $fetch<{ photos: InboxPhoto[] }>(`/api/admin/inbox/${row.value.id}/photos`)
+    photos.value = response.photos
   } catch (e) {
-    detailError.value = adminApiError(e).message
+    photosError.value = adminApiError(e).message
+    photos.value = []
   }
 }
 onMounted(loadDetail)
-watch(() => [row.value.id, row.value.status, row.value.appliedAt], loadDetail)
+watch(() => [row.value.id, row.value.status, row.value.appliedAt, row.value.type], loadDetail)
 
 function formatDate(value: string) {
   return new Date(`${value.replace(' ', 'T')}Z`).toLocaleString('hr-HR')
@@ -156,6 +182,60 @@ function openMemoryDraft() {
     <p class="whitespace-pre-line text-highlighted">
       {{ row.text }}
     </p>
+
+    <div
+      v-if="row.type === 'photo'"
+      data-test="admin-inbox-photos"
+    >
+      <p class="mb-2 text-sm font-medium text-muted">
+        Fotografije
+      </p>
+      <p
+        v-if="photosError"
+        class="text-sm text-error"
+      >
+        {{ photosError }}
+      </p>
+      <ul
+        v-else-if="photos.length"
+        class="grid gap-4 sm:grid-cols-2"
+      >
+        <li
+          v-for="photo in photos"
+          :key="photo.id"
+          class="flex flex-col gap-2 rounded-(--pz-radius-md) border border-default p-3"
+        >
+          <img
+            v-if="photo.url"
+            :src="photo.url"
+            :alt="photo.alt"
+            class="max-h-48 w-full rounded-(--pz-radius-sm) object-contain"
+            loading="lazy"
+          >
+          <p
+            v-else
+            class="text-sm text-muted"
+          >
+            Pregled fotografije trenutačno nije dostupan.
+          </p>
+          <p class="text-sm text-default">
+            <span class="text-muted">Alt:</span> {{ photo.alt }}
+          </p>
+          <p class="text-sm text-default">
+            <span class="text-muted">Autor:</span> {{ photo.author }}
+          </p>
+          <p class="text-sm text-default">
+            <span class="text-muted">Objava:</span> {{ photo.publishPermission ? 'dopušteno' : '—' }}
+          </p>
+        </li>
+      </ul>
+      <p
+        v-else
+        class="text-sm text-muted"
+      >
+        Nema priloženih fotografija.
+      </p>
+    </div>
 
     <div
       v-if="detail?.changes.length"

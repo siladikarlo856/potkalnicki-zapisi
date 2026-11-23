@@ -13,6 +13,8 @@ export const pzRoutes = {
   home: '/',
   archive: pzPath('arhiv'),
   search: pzPath('trazi'),
+  play: pzPath('igraj'),
+  daily: pzPath('rijec-dana'),
   games: pzPath('igre'),
   dailyWord: '/#rijec-dana',
   cards: pzPath('igre', 'kartice'),

@@ -44,7 +44,10 @@ export function useAdminSessionState() {
 }
 
 export function useAdminSignOut() {
+  const auth = useAuthSession()
   return async function signOut() {
+    const failure = await auth.signOut()
+    if (failure) return failure
     await $fetch('/api/admin/session', { method: 'DELETE' })
     await navigateTo('/admin/prijava')
   }

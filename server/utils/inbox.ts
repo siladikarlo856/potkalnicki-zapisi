@@ -60,7 +60,7 @@ function inboxRows(submissions: Awaited<ReturnType<typeof listSubmissionRows>>, 
       ?? { kind: submission.targetKind, id: submission.targetId, label: '', state: 'missing' as const, status: null, revision: null }
       : null
     const made = created.get(submission.id) ?? null
-    const plain = submission.type !== 'correction' && submission.type !== 'proposal'
+    const plain = submission.type !== 'correction' && submission.type !== 'proposal' && submission.type !== 'photo'
     return {
       ...submission,
       target,
@@ -324,8 +324,8 @@ async function existing(kind: 'area' | 'heritage_category', id: string | undefin
 export async function draftFromProposal(id: number): Promise<InboxDraftResult> {
   const row = await readSubmissionRow(id)
   const kind = row.target_kind
-  const plain = row.type !== 'correction' && row.type !== 'proposal'
-  if (row.type === 'correction' || (!plain && !isContributionKind(kind))) fail(400, 'Not a proposal', { message: 'Samo se prijedlozi pretvaraju u skice.' })
+  const plain = row.type !== 'correction' && row.type !== 'proposal' && row.type !== 'photo'
+  if (!plain && (row.type !== 'proposal' || !isContributionKind(kind))) fail(400, 'Not a proposal', { message: 'Samo se prijedlozi pretvaraju u skice.' })
   if (row.status === 'rejected') fail(409, 'Rejected', { message: 'Odbijeni prijedlog se ne može pretvoriti u skicu.' })
 
   const draftKind = plain ? 'word' : kind as ContributionKind

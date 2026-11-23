@@ -52,10 +52,10 @@ export async function readJsonObject(event: H3Event, limit: number) {
   return body as Record<string, unknown>
 }
 
-const ADMIN_SESSION_PATH = '/api/admin/session'
+const ADMIN_OPEN_PATHS = new Set(['/api/admin/session', '/api/admin/social-session'])
 
 /**
- * Which admin gate applies to a path: 'session' for the login route, 'protected' for every other
+ * Which admin gate applies to a path: 'session' for the session endpoints, 'protected' for every other
  * /api/admin and /api/review path, null elsewhere. The path is decoded and normalized first, so an
  * encoded or doubled spelling of a protected path cannot slip past the gate.
  */
@@ -67,7 +67,7 @@ export function adminRouteScope(pathname: string): 'session' | 'protected' | nul
     path = pathname
   }
   path = path.replace(/\/{2,}/g, '/').replace(/\/+$/, '').toLowerCase()
-  if (path === ADMIN_SESSION_PATH) return 'session'
+  if (ADMIN_OPEN_PATHS.has(path)) return 'session'
   if (/^\/api\/(admin|review)(\/|$)/.test(path)) return 'protected'
   return null
 }

@@ -21,6 +21,7 @@ defineI18nRoute({ locales: ['hr'] })
 const GAMES_DESCRIPTION = 'Trinaest kratkih igara o riječima, mjestima, baštini i ljudima ovoga kraja.'
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 const { pool, status, error, refresh } = useCardPool()
 
 const loading = computed(() => !error.value && (status.value === 'idle' || status.value === 'pending'))
@@ -74,6 +75,32 @@ useSeoMeta({
       :lead="`${GAMES_DESCRIPTION} Svaka traje nekoliko minuta.`"
     />
 
+    <section
+      id="rijec-dana"
+      class="mb-6 rounded-(--pz-radius-lg) border border-default p-4 sm:p-5"
+      aria-labelledby="igre-rijec-dana"
+      data-testid="igre-daily-link"
+    >
+      <h2
+        id="igre-rijec-dana"
+        class="pz-h3 text-highlighted"
+      >
+        Riječ dana
+      </h2>
+      <p class="mt-1 text-muted">
+        Jedna riječ domaćega govora na dan, pogodi je iz tragova.
+      </p>
+      <UButton
+        class="mt-3"
+        :to="localePath(pzRoutes.daily)"
+        label="Igraj riječ dana"
+        icon="i-lucide-arrow-right"
+        trailing
+        color="neutral"
+        variant="outline"
+      />
+    </section>
+
     <div
       v-if="activeTopic"
       class="mb-6 flex flex-wrap items-center gap-3"
@@ -119,7 +146,7 @@ useSeoMeta({
           label="Uči riječi"
         />
         <UButton
-          :to="pzRoutes.dailyWord"
+          :to="pzRoutes.daily"
           label="Riječ dana"
           color="neutral"
           variant="outline"

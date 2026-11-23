@@ -26,6 +26,7 @@ const { t } = useI18n()
 const { locale, toFormErrors, submit } = useSubmissionRequest()
 
 const typeItems = computed<SelectItem[]>(() => SUBMISSION_TYPES
+  .filter(type => type !== 'photo')
   .map(type => ({ label: t(`heritage.form.types.${type}`), value: type })))
 
 const state = reactive({

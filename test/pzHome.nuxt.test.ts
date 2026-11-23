@@ -2,11 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createError } from 'h3'
 import { clearNuxtData, clearNuxtState } from '#imports'
-import { DAILY_STORAGE_KEY } from '../app/composables/useDailyProgress'
 import { PZ_HOME_STORAGE_KEY } from '../app/composables/usePzHome'
 import { CHALLENGE_LIST_STORAGE_KEY } from '../shared/utils/challengeList'
 import Home from '../app/pages/index.vue'
-import DailyWord from '../app/components/heritage/DailyWord.vue'
 import type { DailyWordPayload } from '../shared/utils/dailyWord'
 import type { ChallengeState } from '../shared/utils/challenge'
 import { registerAtlasApiEndpoints } from './helpers/registerAtlasApi'
@@ -162,40 +160,5 @@ describe('Potkalnički zapisi home (WP1)', () => {
     expect(page.text()).toContain('pitanje 4 od 10')
     expect(page.text()).toContain('Nastavi izazov')
     page.unmount()
-  })
-
-  it('shows the compact daily row only with a finished result on the home page', async () => {
-    localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify({
-      version: 1,
-      days: { '2026-11-11': { wordId: 'hiza', guesses: ['c'], done: true, solved: true, tries: 1, maxTries: 3 } }
-    }))
-    const page = await mountSuspended(DailyWord, {
-      route: '',
-      props: { compactWhenPlayed: true }
-    })
-    await expect.poll(() => page.find('[data-testid="daily-compact-row"]').exists(), { timeout: 5000 }).toBe(true)
-    expect(page.text()).toContain('Riječ dana #12')
-    expect(page.text()).toContain('niz')
-    expect(page.find('[data-option-id]').exists()).toBe(false)
-  })
-
-  it('keeps every compact-row button in one wrapping, shrinkable group of the same size', async () => {
-    localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify({
-      version: 1,
-      days: { '2026-11-11': { wordId: 'hiza', guesses: ['c'], done: true, solved: true, tries: 1, maxTries: 3 } }
-    }))
-    const page = await mountSuspended(DailyWord, {
-      route: '',
-      props: { compactWhenPlayed: true }
-    })
-    await expect.poll(() => page.find('[data-testid="daily-compact-row"]').exists(), { timeout: 5000 }).toBe(true)
-    const row = page.find('[data-testid="daily-compact-row"]')
-    const copy = row.find('[data-testid="daily-compact-copy"]')
-    const buttons = Array.from(copy.element.parentElement!.children).filter(el => el.matches('a, button'))
-    expect(buttons.length).toBeGreaterThanOrEqual(4)
-    expect(buttons.at(-1)!.textContent).toContain('Prikaži')
-    expect(copy.element.parentElement!.className).toContain('flex-wrap')
-    expect(copy.element.parentElement!.parentElement!.className).not.toContain('shrink-0')
-    expect(new Set(buttons.map(el => el.className.match(/\b(?:text-(?:xs|sm)|px-\d|py-\d)\S*/g)?.join(' ')))).toHaveLength(1)
   })
 })

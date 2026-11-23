@@ -5,6 +5,8 @@ import {
 } from '~~/shared/utils/content/area'
 import { municipalityPagePath, pzPath, settlementPagePath } from '~~/shared/utils/appRoutes'
 
+const $fetch = useEditorialFetch()
+
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 defineI18nRoute({ locales: ['hr'] })
 useSeoMeta({ title: 'Mjesta', robots: 'noindex, nofollow' })
@@ -140,6 +142,7 @@ async function loadParentOptions(kind: AreaKind, q: string) {
 }
 
 const { data: regionRows } = useFetch<{ rows: Area[] }>('/api/admin/content/area', {
+  $fetch,
   query: { kind: 'region', size: 100, sort: 'name' },
   server: false,
   key: 'admin-area-regions'

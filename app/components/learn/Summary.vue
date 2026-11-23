@@ -12,6 +12,7 @@ const props = defineProps<{
   session: LearnCurrent
   streak: number
 }>()
+const emit = defineEmits<{ restart: [to: string] }>()
 
 const { t } = useI18n()
 const localePath = useLocalePath()
@@ -27,12 +28,14 @@ const sessionPath = computed(() => {
   const q = new URLSearchParams()
   q.set('teme', props.session.topics.join(','))
   q.set('n', String(props.session.n))
+  if (props.session.place) q.set('mjesto', props.session.place)
   return `${pzRoutes.learnSession}?${q}`
 })
 
 const repeatPath = computed(() => {
   const q = new URLSearchParams()
   q.set('kartice', missed.value.join(','))
+  if (props.session.place) q.set('mjesto', props.session.place)
   return `${pzRoutes.learnSession}?${q}`
 })
 
@@ -172,16 +175,15 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
 
     <div class="flex flex-col gap-2">
       <UButton
-        :to="localePath(sessionPath)"
         :label="t('pz.learn.newSession')"
         size="xl"
         block
         class="hidden lg:flex"
         data-testid="learn-summary-more-desktop"
+        @click="emit('restart', localePath(sessionPath))"
       />
       <UButton
         v-if="missed.length"
-        :to="localePath(repeatPath)"
         :label="repeatLabel"
         icon="i-lucide-rotate-ccw"
         color="neutral"
@@ -189,6 +191,7 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
         size="lg"
         block
         data-testid="learn-summary-repeat"
+        @click="emit('restart', localePath(repeatPath))"
       />
       <UButton
         :to="localePath(gamesHrefWithTopic(session.topics))"
@@ -204,11 +207,11 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
 
     <PzStickyActionBar class="-mx-4 sm:-mx-6">
       <UButton
-        :to="localePath(sessionPath)"
         :label="t('pz.learn.newSession')"
         size="xl"
         block
         data-testid="learn-summary-more"
+        @click="emit('restart', localePath(sessionPath))"
       />
     </PzStickyActionBar>
   </div>

@@ -63,7 +63,7 @@ export interface WordEntry {
   sources: SourceRef[]
   /** Daily-word hint: a slug from DAILY_CATEGORIES. */
   category?: DailyCategory
-  /** Explanation or fun fact shown after the daily word is revealed. */
+  /** Explanation or fun fact shown on the word's dictionary page. */
   note?: { hr: string, en?: string }
   /** Up to three hand-written wrong meanings; they replace automatic distractors. */
   distractors?: { hr: string, en?: string }[]

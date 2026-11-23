@@ -6,6 +6,8 @@ import type { AdminFilter, AdminResource, AdminListState } from '~/composables/u
 import type { BulkAction } from '~/components/admin/BulkActionBar.vue'
 import type { PzFilterValue } from '~/components/pz/PzFilterBar.vue'
 
+const $fetch = useEditorialFetch()
+
 // One admin list page for a content resource (Popis resursa): filter bar, a table with selection and bulk actions,
 // empty/loading/error states and the row menu, with create/edit and delete as the design describes them. List state and open
 // editors live in the URL, so every view can be linked and survives a reload. The 15 resources differ only in columns and fields.

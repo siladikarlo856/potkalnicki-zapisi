@@ -62,6 +62,11 @@ function buildWordCard(entry: PublicWordEntry): PoolWord | null {
     ...(entry.partOfSpeech ? { partOfSpeech: entry.partOfSpeech } : {}),
     ...(entry.category ? { category: entry.category } : {}),
     variants: wordVariants(entry),
+    variantDetails: entry.variants.map(variant => ({
+      id: variant.id,
+      form: variant.form,
+      usages: variant.usages.map(usage => ({ areaId: usage.areaId }))
+    })),
     status: entry.status === 'verified' ? 'verified' : 'community',
     transparency: t,
     difficulty: wordDifficulty(t),

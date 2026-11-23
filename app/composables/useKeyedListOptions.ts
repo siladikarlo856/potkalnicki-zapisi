@@ -6,7 +6,9 @@ import type { KeyedListEntry } from '#shared/utils/content/intangibleList'
  * own order. An entry that is not Published says so; an archived one is left out, so it cannot be chosen again.
  */
 export function useKeyedListOptions(kind: Extract<ContentKind, 'story_type' | 'custom_type' | 'folk_text_type'>) {
+  const $fetch = useEditorialFetch()
   const { data } = useFetch<ContentList<KeyedListEntry>>(`/api/admin/content/${kind}`, {
+    $fetch,
     query: { size: 100, sort: 'sort' },
     server: false,
     key: `admin-options-${kind}`
