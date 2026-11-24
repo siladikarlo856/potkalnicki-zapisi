@@ -50,15 +50,15 @@ const description = computed(() => {
         :d="area.d"
         :fill="area.fill"
         stroke-linejoin="round"
-        :stroke="selected === area.id ? 'var(--ui-text)' : 'var(--ui-bg)'"
-        :stroke-width="selected === area.id ? 3 : 2.5"
-        :opacity="selected && selected !== area.id ? 0.45 : 1"
+        :stroke="selected === area.id ? 'var(--ui-text)' : 'var(--ui-text-muted)'"
+        :stroke-width="selected === area.id ? 3.5 : 1.5"
+        :opacity="selected && selected !== area.id ? 0.6 : 1"
       />
       <g
         fill="none"
         stroke="var(--pz-map-line)"
         stroke-width="1.2"
-        opacity=".45"
+        opacity=".35"
       >
         <path
           v-for="c in CONTOURS"
@@ -77,24 +77,34 @@ const description = computed(() => {
           :x="area.lx"
           :y="area.ly"
           text-anchor="middle"
-          class="fill-default text-[11px] font-bold"
+          class="text-[12px] font-bold"
+          fill="var(--ui-text-highlighted)"
+          stroke="var(--ui-bg)"
+          stroke-width="3.5"
+          stroke-linejoin="round"
+          paint-order="stroke fill"
         >{{ area.name }}</text>
       </template>
       <template v-if="pin">
         <circle
           :cx="pin.x"
           :cy="pin.y"
-          r="8"
+          r="9"
           fill="var(--pz-accent)"
           stroke="var(--pz-on-accent)"
-          stroke-width="2"
+          stroke-width="2.5"
           data-testid="map-pin"
         />
         <text
           v-if="pin.label"
-          :x="pin.x + 14"
+          :x="pin.x + 15"
           :y="pin.y + 4"
-          class="fill-default text-[11px] font-bold"
+          class="text-[12px] font-bold"
+          fill="var(--ui-text-highlighted)"
+          stroke="var(--ui-bg)"
+          stroke-width="3.5"
+          stroke-linejoin="round"
+          paint-order="stroke fill"
         >{{ pin.label }}</text>
       </template>
     </svg>

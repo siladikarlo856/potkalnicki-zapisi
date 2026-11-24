@@ -102,10 +102,10 @@ useSeoMeta({
       data-testid="bez-greske"
     >
       <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
+        <p class="pz-overline mb-1 text-primary">
           {{ t('pz.play.bezTitle') }}
         </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
+        <h1 class="pz-h1 text-highlighted">
           {{ t('pz.play.bezDescription') }}
         </h1>
         <p
@@ -179,7 +179,7 @@ useSeoMeta({
         class="rounded-xl bg-default p-4 ring ring-default"
         data-testid="bez-result"
       >
-        <h2 class="text-lg font-bold text-highlighted">
+        <h2 class="pz-h3 text-highlighted">
           {{ t('pz.play.done') }}
         </h2>
         <p class="mt-2 text-base text-highlighted">

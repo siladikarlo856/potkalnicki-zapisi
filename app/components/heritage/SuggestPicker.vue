@@ -82,7 +82,7 @@ onMounted(() => input.value?.inputRef?.focus())
         v-for="group in groups"
         :key="group.kind"
       >
-        <h3 class="mb-1 text-xs font-semibold text-muted">
+        <h3 class="pz-overline mb-1 text-muted">
           {{ t(`heritage.suggest.kinds.${group.kind}`) }}
         </h3>
         <ul class="divide-y divide-default rounded-lg ring ring-default">

@@ -45,7 +45,7 @@ defineProps<{ word: AdminWord }>()
       </dt><dd>{{ word.updatedAt }}</dd>
     </dl>
     <div>
-      <h3 class="font-semibold text-highlighted">
+      <h3 class="pz-label text-highlighted">
         Primjeri
       </h3>
       <p v-if="!word.entry.examples?.length">
@@ -60,7 +60,7 @@ defineProps<{ word: AdminWord }>()
       </p>
     </div>
     <div>
-      <h3 class="font-semibold text-highlighted">
+      <h3 class="pz-label text-highlighted">
         Inačice i upotreba
       </h3>
       <div
@@ -88,7 +88,7 @@ defineProps<{ word: AdminWord }>()
       </div>
     </div>
     <div>
-      <h3 class="font-semibold text-highlighted">
+      <h3 class="pz-label text-highlighted">
         Izvori i zasluge
       </h3>
       <p v-if="!word.entry.sources.length">
@@ -102,7 +102,7 @@ defineProps<{ word: AdminWord }>()
       </p>
     </div>
     <div>
-      <h3 class="font-semibold text-highlighted">
+      <h3 class="pz-label text-highlighted">
         Područja · svi parametri
       </h3>
       <pre class="mt-2 max-h-64 overflow-auto rounded-lg bg-elevated p-3 text-xs whitespace-pre-wrap">{{ JSON.stringify(word.areas, null, 2) }}</pre>

@@ -45,7 +45,7 @@ useHead({
   link: [{ rel: 'icon', href: '/favicon.svg' }]
 })
 
-useThemeColor(isPotkalnicko ? '#FDF9F0' : undefined, isPotkalnicko ? '#14140F' : undefined)
+useThemeColor(isPotkalnicko ? '#F3F4EE' : undefined, isPotkalnicko ? '#0F1512' : undefined)
 </script>
 
 <template>

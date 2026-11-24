@@ -24,7 +24,7 @@ function leaderboardPath(code: string) {
     class="space-y-3"
     data-testid="active-challenges-strip"
   >
-    <h2 class="text-lg font-semibold text-highlighted">
+    <h2 class="pz-h3 text-highlighted">
       {{ t('challenge.activeTitle') }}
     </h2>
     <ul class="divide-y divide-default rounded-lg ring ring-default">

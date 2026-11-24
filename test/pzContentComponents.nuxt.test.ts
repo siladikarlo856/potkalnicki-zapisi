@@ -573,8 +573,8 @@ describe('PzSchematicMap', () => {
     const map = await mountSuspended(PzSchematicMap, { props: { selected: 'kalnik' } })
     const kalnik = map.find('[data-area="kalnik"]')
     const other = map.find('[data-area="krizevci"]')
-    expect(kalnik.attributes('stroke-width')).toBe('3')
-    expect(other.attributes('opacity')).toBe('0.45')
+    expect(kalnik.attributes('stroke-width')).toBe('3.5')
+    expect(other.attributes('opacity')).toBe('0.6')
     expect(map.find('svg').attributes('aria-label')).toContain('Kalnik')
   })
 

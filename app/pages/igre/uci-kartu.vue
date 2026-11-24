@@ -41,13 +41,13 @@ useSeoMeta({
   <UContainer class="py-3 sm:py-5 lg:py-6">
     <div class="mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3">
       <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
+        <p class="pz-overline mb-1 text-primary">
           {{ t('pz.map.learnTitle') }}
         </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
+        <h1 class="pz-h1 text-highlighted">
           {{ t('pz.map.learnTitle') }}
         </h1>
-        <p class="mt-1 text-sm text-muted">
+        <p class="pz-body-sm mt-1 text-muted">
           {{ t('pz.map.learnBlurb') }}
         </p>
       </header>

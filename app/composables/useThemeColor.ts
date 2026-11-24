@@ -1,6 +1,6 @@
-// Mobile browser bars match the page background: white, or slate-900 in dark mode.
-const defaultLightBg = '#ffffff'
-const defaultDarkBg = '#0f172b'
+// Mobile browser bars match the page background (--pz-bg), in light and dark mode.
+const defaultLightBg = '#F3F4EE'
+const defaultDarkBg = '#0F1512'
 
 /** Sets the theme-color meta tag. app.vue and error.vue both call it, because error.vue replaces app.vue. */
 export function useThemeColor(lightBg = defaultLightBg, darkBg = defaultDarkBg) {

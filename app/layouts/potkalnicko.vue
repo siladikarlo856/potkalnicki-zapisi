@@ -6,7 +6,7 @@ const roundActive = useState('pz-round-shell-active', () => false)
 const baseUrl = useRuntimeConfig().public.i18n.baseUrl
 const cloudflareAnalyticsToken = useRuntimeConfig().public.cloudflareAnalyticsToken
 
-useThemeColor('#FDF9F0', '#14140F')
+useThemeColor('#F3F4EE', '#0F1512')
 useHead({
   htmlAttrs: { 'data-site': 'pz' },
   titleTemplate: title => !title || title === 'Potkalnički zapisi' ? 'Potkalnički zapisi' : `${title} · Potkalnički zapisi`,

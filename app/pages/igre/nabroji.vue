@@ -144,13 +144,13 @@ useSeoMeta({
       data-testid="game-nabroji"
     >
       <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
+        <p class="pz-overline mb-1 text-primary">
           {{ t('pz.play.nabrojiEyebrow') }}
         </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
+        <h1 class="pz-h1 text-highlighted">
           {{ t('pz.play.nabrojiTitle') }}
         </h1>
-        <p class="mt-1 text-sm text-muted">
+        <p class="pz-body-sm mt-1 text-muted">
           {{ t('pz.play.nabrojiDescription') }}
         </p>
       </header>
@@ -173,10 +173,10 @@ useSeoMeta({
         class="rounded-xl bg-default p-4 text-center ring ring-default"
         role="status"
       >
-        <h2 class="text-xl font-bold text-highlighted">
+        <h2 class="pz-h2 text-highlighted">
           {{ t('quiz.emptyTitle') }}
         </h2>
-        <p class="mt-1 text-sm text-muted">
+        <p class="pz-body-sm mt-1 text-muted">
           {{ t('quiz.emptyDescription') }}
         </p>
       </div>

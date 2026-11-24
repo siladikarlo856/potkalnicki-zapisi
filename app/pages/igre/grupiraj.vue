@@ -19,9 +19,10 @@ definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
 
 const GROUP_BAND = [
-  'bg-emerald-600 text-white',
-  'bg-sky-600 text-white',
-  'bg-amber-500 text-neutral-900',
+  'bg-bukva-700 text-white',
+  'bg-plava-600 text-white',
+  'bg-oker-400 text-(--pz-on-accent)',
+  // Deliberate palette exception: no design-system token is purple, and this band must match its 🟪 share square.
   'bg-violet-600 text-white'
 ] as const
 
@@ -170,15 +171,15 @@ useSeoMeta({
   <UContainer class="py-3 sm:py-5 lg:py-6">
     <div class="mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3">
       <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
+        <p class="pz-overline mb-1 text-primary">
           {{ t('pz.play.groupTitle') }}
         </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
+        <h1 class="pz-h1 text-highlighted">
           {{ t('pz.play.groupSubtitle') }}
         </h1>
         <p
           v-if="puzzle"
-          class="mt-1 text-xs text-muted"
+          class="pz-caption mt-1 text-muted"
         >
           {{ puzzle.mode === 'words' ? t('pz.play.groupModeWords') : t('pz.play.groupModePlaces') }}
           · {{ daily ? t('pz.play.groupDaily') : t('pz.play.groupNewGame') }}
@@ -289,7 +290,7 @@ useSeoMeta({
           class="rounded-xl bg-default p-4 ring ring-default"
           data-testid="grouping-result"
         >
-          <h2 class="text-lg font-bold text-highlighted">
+          <h2 class="pz-h3 text-highlighted">
             {{ won ? t('pz.play.done') : t('pz.play.wrong') }}
           </h2>
           <div class="mt-3 flex flex-col gap-2">

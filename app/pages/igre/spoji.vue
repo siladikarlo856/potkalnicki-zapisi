@@ -70,13 +70,13 @@ useSeoMeta({
   <UContainer class="py-3 sm:py-5 lg:py-6">
     <div class="mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3">
       <header>
-        <p class="mb-1 text-xs font-semibold text-primary">
+        <p class="pz-overline mb-1 text-primary">
           {{ t('pz.play.matchEyebrow') }}
         </p>
-        <h1 class="text-2xl font-bold tracking-tight text-highlighted sm:text-3xl">
+        <h1 class="pz-h1 text-highlighted">
           {{ t('pz.play.matchTitle') }}
         </h1>
-        <p class="mt-1 text-sm text-muted">
+        <p class="pz-body-sm mt-1 text-muted">
           {{ t('pz.play.matchDescription') }}
         </p>
       </header>
@@ -99,10 +99,10 @@ useSeoMeta({
         class="rounded-xl bg-default p-4 text-center ring ring-default"
         role="status"
       >
-        <h2 class="text-xl font-bold text-highlighted">
+        <h2 class="pz-h2 text-highlighted">
           {{ t('quiz.emptyTitle') }}
         </h2>
-        <p class="mt-1 text-sm text-muted">
+        <p class="pz-body-sm mt-1 text-muted">
           {{ t('pz.play.emptyBastina') }}
         </p>
       </div>
@@ -135,7 +135,7 @@ useSeoMeta({
         class="flex flex-col items-center gap-3 rounded-xl bg-default p-4 text-center ring ring-default sm:p-6"
         data-testid="match-result"
       >
-        <h2 class="text-xl font-bold text-highlighted">
+        <h2 class="pz-h2 text-highlighted">
           {{ t('pz.play.done') }}
         </h2>
         <p

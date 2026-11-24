@@ -133,7 +133,7 @@ function addVariant() {
     </div>
 
     <section class="flex flex-col gap-3">
-      <h3 class="text-lg font-semibold text-highlighted">
+      <h3 class="pz-h3 text-highlighted">
         Riječ dana
       </h3>
       <p class="text-sm text-muted">
@@ -203,7 +203,7 @@ function addVariant() {
     </section>
 
     <section class="flex flex-col gap-3">
-      <h3 class="text-lg font-semibold text-highlighted">
+      <h3 class="pz-h3 text-highlighted">
         Primjeri
       </h3>
       <div
@@ -252,7 +252,7 @@ function addVariant() {
     </section>
 
     <section class="flex flex-col gap-3">
-      <h3 class="text-lg font-semibold text-highlighted">
+      <h3 class="pz-h3 text-highlighted">
         Inačice i upotreba
       </h3>
       <div
@@ -363,7 +363,7 @@ function addVariant() {
     </section>
 
     <section class="flex flex-col gap-3">
-      <h3 class="text-lg font-semibold text-highlighted">
+      <h3 class="pz-h3 text-highlighted">
         Izvori i zasluge
       </h3>
       <p class="text-sm text-muted">

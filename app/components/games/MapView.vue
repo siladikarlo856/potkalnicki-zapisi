@@ -119,31 +119,38 @@ const boundaries = computed(() =>
 const orderedBoundaries = computed(() => [...boundaries.value].sort((a, b) => Number(a.highlighted) - Number(b.highlighted)))
 
 /**
- * Both basemaps are pale, in dark mode too, so the outlines have to be dark in both: the accented border
- * colour, pulled towards the text colour (light mode) or towards black (dark mode, where that colour is light).
+ * Both basemaps are pale, in dark mode too, so everything drawn on them is tuned for a pale ground whatever the
+ * theme: dark outlines, dark label ink on a white halo, and the stronger (light-theme) dot colours.
  */
 const mapColours = computed(() => dark.value
   ? {
-      '--map-boundary': 'color-mix(in oklab, var(--ui-border-accented) 25%, #000)',
-      '--map-highlight': 'color-mix(in oklab, var(--ui-primary) 40%, #000)'
+      '--map-boundary': 'color-mix(in oklab, var(--ui-border-accented) 15%, #000)',
+      '--map-highlight': 'color-mix(in oklab, var(--ui-primary) 40%, #000)',
+      '--map-hover': 'rgb(0 0 0 / .14)',
+      '--map-ink': '#10170f',
+      '--map-halo': '#ffffff',
+      '--map-marker': 'var(--ui-color-primary-700)'
     }
   : {
-      '--map-boundary': 'color-mix(in oklab, var(--ui-border-accented) 35%, var(--ui-text-muted))',
-      '--map-highlight': 'var(--ui-primary)'
+      '--map-boundary': 'color-mix(in oklab, var(--ui-text-muted) 80%, #000)',
+      '--map-highlight': 'var(--ui-primary)',
+      '--map-hover': 'rgb(0 0 0 / .14)',
+      '--map-ink': '#10170f',
+      '--map-halo': '#ffffff',
+      '--map-marker': 'var(--ui-color-primary-700)'
     })
 
 const legendUnits = computed(() => sortedMunicipalities(props.municipalities))
 
 function dotStyle(place: PoolPlace) {
   const { x, y } = project(place.lat, place.lng)
-  const fill = municipalityColor(place.municipalityId, props.municipalities, dark.value)
-  const stroke = dark.value ? '#0a0a0a' : '#ffffff'
-  return { cx: x, cy: y, fill, stroke }
+  const fill = municipalityColor(place.municipalityId, props.municipalities, false)
+  return { cx: x, cy: y, fill }
 }
 
 function seatLabel(unit: PoolMunicipality) {
   const { x, y } = project(unit.lat, unit.lng)
-  return { x, y, label: unit.label, fill: municipalityColor(unit.id, props.municipalities, dark.value) }
+  return { x, y, label: unit.label, fill: municipalityColor(unit.id, props.municipalities, false) }
 }
 
 function clampTransform() {
@@ -501,9 +508,9 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               :data-highlighted="boundary.highlighted ? 'true' : undefined"
               stroke-linejoin="round"
               :fill="boundary.highlighted ? 'var(--map-highlight)' : 'none'"
-              :fill-opacity="boundary.highlighted ? 0.14 : undefined"
+              :fill-opacity="boundary.highlighted ? 0.2 : undefined"
               :stroke="boundary.highlighted ? 'var(--map-highlight)' : 'var(--map-boundary)'"
-              :stroke-width="px(boundary.highlighted ? 3 : 1.75)"
+              :stroke-width="px(boundary.highlighted ? 3.5 : 2.25)"
               :stroke-dasharray="boundary.highlighted ? undefined : `${px(7)} ${px(4)}`"
             />
           </g>
@@ -524,8 +531,8 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               :cy="feedback.tap.y"
               :r="px(7)"
               fill="var(--ui-error)"
-              stroke="var(--ui-bg)"
-              :stroke-width="px(2)"
+              stroke="var(--map-halo)"
+              :stroke-width="px(2.5)"
             />
             <circle
               :cx="feedback.target.x"
@@ -539,10 +546,12 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               :x="feedback.target.x"
               :y="feedback.target.y - px(20)"
               text-anchor="middle"
-              class="fill-current font-semibold text-highlighted"
-              :style="{ fontSize: `${px(12)}px` }"
-              stroke="var(--ui-bg)"
+              class="font-bold"
+              fill="var(--map-ink)"
+              :style="{ fontSize: `${px(13)}px` }"
+              stroke="var(--map-halo)"
               :stroke-width="px(4)"
+              stroke-linejoin="round"
               paint-order="stroke fill"
             >
               ✓ {{ t('pz.play.mapHit') }}
@@ -557,7 +566,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               :cy="dotStyle(place).cy"
               :r="hitRadius"
               fill="transparent"
-              class="pointer-events-auto cursor-pointer outline-none focus-visible:stroke-(--focus-ring) focus-visible:stroke-[3px]"
+              class="pointer-events-auto cursor-pointer outline-none hover:fill-(--map-hover) focus-visible:fill-(--map-hover) focus-visible:stroke-(--focus-ring) focus-visible:stroke-[3px]"
               role="button"
               tabindex="0"
               data-dot
@@ -569,21 +578,23 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="dotStyle(place).cx"
               :cy="dotStyle(place).cy"
-              :r="px(3.5)"
+              :r="px(5.5)"
               :fill="dotStyle(place).fill"
-              :stroke="dotStyle(place).stroke"
-              :stroke-width="px(1.5)"
+              stroke="var(--map-halo)"
+              :stroke-width="px(2.5)"
               class="pointer-events-none"
             />
             <text
               v-if="showSettlementNames"
               :x="dotStyle(place).cx"
-              :y="dotStyle(place).cy - px(10)"
+              :y="dotStyle(place).cy - px(11)"
               text-anchor="middle"
-              class="pointer-events-none fill-current text-highlighted font-semibold"
-              :style="{ fontSize: `${px(11)}px` }"
-              stroke="var(--ui-bg)"
-              :stroke-width="px(3)"
+              class="pointer-events-none font-bold"
+              fill="var(--map-ink)"
+              :style="{ fontSize: `${px(12)}px` }"
+              stroke="var(--map-halo)"
+              :stroke-width="px(4)"
+              stroke-linejoin="round"
               paint-order="stroke fill"
             >
               {{ place.name }}
@@ -604,19 +615,20 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="marker.x"
               :cy="marker.y"
-              :r="px(5)"
-              fill="var(--ui-primary)"
-              stroke="var(--ui-bg)"
-              :stroke-width="px(1.5)"
+              :r="px(marker.label ? 11 : 7)"
+              fill="var(--map-marker)"
+              stroke="var(--map-halo)"
+              :stroke-width="px(2.5)"
               class="pointer-events-none"
             />
             <text
               v-if="marker.label"
               :x="marker.x"
-              :y="marker.y + px(4)"
+              :y="marker.y + px(4.5)"
               text-anchor="middle"
-              class="pointer-events-none fill-inverted font-bold"
-              :style="{ fontSize: `${px(10)}px` }"
+              fill="var(--map-halo)"
+              class="pointer-events-none font-bold"
+              :style="{ fontSize: `${px(13)}px` }"
             >
               {{ marker.label }}
             </text>
@@ -626,12 +638,14 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               v-for="seat in legendUnits.map(seatLabel)"
               :key="seat.label"
               :x="seat.x"
-              :y="seat.y - px(12)"
+              :y="seat.y - px(14)"
               text-anchor="middle"
-              class="fill-current text-highlighted font-bold"
-              :style="{ fontSize: `${px(12)}px` }"
-              stroke="var(--ui-bg)"
-              :stroke-width="px(3)"
+              class="font-bold"
+              fill="var(--map-ink)"
+              :style="{ fontSize: `${px(13)}px` }"
+              stroke="var(--map-halo)"
+              :stroke-width="px(4)"
+              stroke-linejoin="round"
               paint-order="stroke fill"
             >
               {{ seat.label }}
@@ -647,7 +661,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
 
     <ul
       v-if="mode === 'learn'"
-      class="flex flex-wrap gap-2 text-xs"
+      class="flex flex-wrap gap-x-3 gap-y-2 text-sm text-default"
       aria-label="Legenda"
     >
       <li
@@ -656,8 +670,8 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
         class="inline-flex items-center gap-1"
       >
         <span
-          class="inline-block size-2.5 rounded-full"
-          :style="{ background: municipalityColor(unit.id, municipalities, dark) }"
+          class="inline-block size-3.5 rounded-full border-2 border-white ring-1 ring-(--ui-border-accented)"
+          :style="{ background: municipalityColor(unit.id, municipalities, false) }"
         />
         {{ unit.label }}
       </li>
