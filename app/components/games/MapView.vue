@@ -114,43 +114,73 @@ const highlightedSlug = computed(() => {
   return props.municipalities.find(m => m.id === place?.municipalityId)?.slug
 })
 const boundaries = computed(() =>
-  Object.entries(MUNICIPALITY_BOUNDARIES).map(([slug, { d }]) => ({ slug, d, highlighted: slug === highlightedSlug.value })))
+  Object.entries(MUNICIPALITY_BOUNDARIES).map(([slug, { d }]) => ({
+    slug,
+    d,
+    highlighted: slug === highlightedSlug.value,
+    // Each municipality gets its own soft wash, the same colour as its settlement dots.
+    fill: unitColour(props.municipalities.find(m => m.slug === slug)?.id)
+  })))
 // Draw the highlighted outline last so it sits on top of its neighbours' edges.
 const orderedBoundaries = computed(() => [...boundaries.value].sort((a, b) => Number(a.highlighted) - Number(b.highlighted)))
 
 /**
- * Both basemaps are pale, in dark mode too, so everything drawn on them is tuned for a pale ground whatever the
- * theme: dark outlines, dark label ink on a white halo, and the stronger (light-theme) dot colours.
+ * The basemap is re-toned per theme (see `basemapFilter`), so everything drawn on it follows the theme: strong outlines
+ * with a contrasting casing, label ink on a halo, municipality washes and dots in the theme's palette.
  */
 const mapColours = computed(() => dark.value
   ? {
-      '--map-boundary': 'color-mix(in oklab, var(--ui-border-accented) 15%, #000)',
-      '--map-highlight': 'color-mix(in oklab, var(--ui-primary) 40%, #000)',
-      '--map-hover': 'rgb(0 0 0 / .14)',
-      '--map-ink': '#10170f',
-      '--map-halo': '#ffffff',
-      '--map-marker': 'var(--ui-color-primary-700)'
+      '--map-boundary': '#f1f6f2',
+      '--map-casing': '#0b110e',
+      '--map-highlight': 'var(--ui-color-primary-200)',
+      '--map-hover': 'rgb(255 255 255 / .22)',
+      '--map-ink': '#ffffff',
+      '--map-halo': '#0b110e',
+      '--map-dot-ring': '#ffffff',
+      '--map-marker': 'var(--ui-color-primary-300)',
+      '--map-marker-ink': '#0b110e'
     }
   : {
-      '--map-boundary': 'color-mix(in oklab, var(--ui-text-muted) 80%, #000)',
-      '--map-highlight': 'var(--ui-primary)',
-      '--map-hover': 'rgb(0 0 0 / .14)',
+      '--map-boundary': '#10170f',
+      '--map-casing': '#ffffff',
+      '--map-highlight': 'var(--ui-color-primary-800)',
+      '--map-hover': 'rgb(0 0 0 / .16)',
       '--map-ink': '#10170f',
       '--map-halo': '#ffffff',
-      '--map-marker': 'var(--ui-color-primary-700)'
+      '--map-dot-ring': '#10170f',
+      '--map-marker': 'var(--ui-color-primary-700)',
+      '--map-marker-ink': '#ffffff'
     })
+
+/**
+ * Light: a touch darker and less saturated so washes and dots stand out. Dark: only 'karta' is inverted onto a dark
+ * ground; 'reljef' (and any other layer) is dimmed without inversion so hillshade light and shadow keep their direction.
+ */
+const basemapFilter = computed(() => {
+  if (!dark.value) return 'grayscale(.4) brightness(.86) contrast(1.08)'
+  return layerId.value === 'karta'
+    ? 'invert(1) hue-rotate(180deg) grayscale(.5) brightness(.72) contrast(.95)'
+    : 'grayscale(.4) brightness(.55) contrast(1.1)'
+})
+
+/** Soft enough to leave roads and labels readable, strong enough to tell the five municipalities apart. */
+const washOpacity = computed(() => dark.value ? 0.3 : 0.24)
+
+function unitColour(municipalityId: string | undefined) {
+  return municipalityId ? municipalityColor(municipalityId, props.municipalities, dark.value) : 'none'
+}
 
 const legendUnits = computed(() => sortedMunicipalities(props.municipalities))
 
 function dotStyle(place: PoolPlace) {
   const { x, y } = project(place.lat, place.lng)
-  const fill = municipalityColor(place.municipalityId, props.municipalities, false)
+  const fill = unitColour(place.municipalityId)
   return { cx: x, cy: y, fill }
 }
 
 function seatLabel(unit: PoolMunicipality) {
   const { x, y } = project(unit.lat, unit.lng)
-  return { x, y, label: unit.label, fill: municipalityColor(unit.id, props.municipalities, false) }
+  return { x, y, label: unit.label, fill: unitColour(unit.id) }
 }
 
 function clampTransform() {
@@ -284,19 +314,25 @@ function pickPlaceAt(imageX: number, imageY: number): PoolPlace | undefined {
 }
 
 function pickNumberedAt(imageX: number, imageY: number): number | undefined {
+  let best: number | undefined
+  let bestDistance = hitRadius.value
   for (const marker of challengeMarkers.value) {
     if (marker.index === undefined) continue
-    if (Math.hypot(imageX - marker.x, imageY - marker.y) <= hitRadius.value) return marker.index
+    const distance = Math.hypot(imageX - marker.x, imageY - marker.y)
+    if (distance <= bestDistance) {
+      best = marker.index
+      bestDistance = distance
+    }
   }
-  return undefined
+  return best
 }
 
 /**
- * Sizes are drawn in screen pixels whatever the zoom: a dot is 6px wide inside an invisible hit circle of
- * 44px, so `px(n)` turns n screen pixels into frame units.
+ * Sizes are drawn in screen pixels whatever the zoom: a dot is 13px wide inside an invisible hit circle of
+ * 56px, so `px(n)` turns n screen pixels into frame units.
  */
 const px = (n: number) => n / scale.value
-const hitRadius = computed(() => px(22))
+const hitRadius = computed(() => px(28))
 
 /** Dots in reading order (top to bottom, then left to right) for the arrow keys. */
 function readingOrder(places: PoolPlace[]) {
@@ -485,6 +521,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
           :height="MAP_FRAME.height"
           alt=""
           class="block max-w-none select-none"
+          :style="{ filter: basemapFilter }"
           draggable="false"
         >
         <svg
@@ -500,19 +537,32 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             class="pointer-events-none"
             data-testid="map-boundaries"
           >
-            <path
+            <g
               v-for="boundary in orderedBoundaries"
               :key="boundary.slug"
-              :d="boundary.d"
               :data-municipality="boundary.slug"
               :data-highlighted="boundary.highlighted ? 'true' : undefined"
               stroke-linejoin="round"
-              :fill="boundary.highlighted ? 'var(--map-highlight)' : 'none'"
-              :fill-opacity="boundary.highlighted ? 0.2 : undefined"
-              :stroke="boundary.highlighted ? 'var(--map-highlight)' : 'var(--map-boundary)'"
-              :stroke-width="px(boundary.highlighted ? 3.5 : 2.25)"
-              :stroke-dasharray="boundary.highlighted ? undefined : `${px(7)} ${px(4)}`"
-            />
+              fill="none"
+            >
+              <path
+                :d="boundary.d"
+                :fill="boundary.fill"
+                :fill-opacity="boundary.highlighted ? 0.4 : washOpacity"
+              />
+              <!-- Casing under the line keeps it readable on any ground. -->
+              <path
+                :d="boundary.d"
+                stroke="var(--map-casing)"
+                stroke-opacity="0.75"
+                :stroke-width="px(boundary.highlighted ? 8 : 5.5)"
+              />
+              <path
+                :d="boundary.d"
+                :stroke="boundary.highlighted ? 'var(--map-highlight)' : 'var(--map-boundary)'"
+                :stroke-width="px(boundary.highlighted ? 4.5 : 2.5)"
+              />
+            </g>
           </g>
           <g v-if="feedback">
             <!-- A miss: the right place in teal with a check, the pick in brick, a dashed line between them. -->
@@ -548,9 +598,9 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               text-anchor="middle"
               class="font-bold"
               fill="var(--map-ink)"
-              :style="{ fontSize: `${px(13)}px` }"
+              :style="{ fontSize: `${px(14)}px` }"
               stroke="var(--map-halo)"
-              :stroke-width="px(4)"
+              :stroke-width="px(5)"
               stroke-linejoin="round"
               paint-order="stroke fill"
             >
@@ -578,22 +628,22 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="dotStyle(place).cx"
               :cy="dotStyle(place).cy"
-              :r="px(5.5)"
+              :r="px(6.5)"
               :fill="dotStyle(place).fill"
-              stroke="var(--map-halo)"
+              stroke="var(--map-dot-ring)"
               :stroke-width="px(2.5)"
               class="pointer-events-none"
             />
             <text
               v-if="showSettlementNames"
               :x="dotStyle(place).cx"
-              :y="dotStyle(place).cy - px(11)"
+              :y="dotStyle(place).cy - px(13)"
               text-anchor="middle"
               class="pointer-events-none font-bold"
               fill="var(--map-ink)"
-              :style="{ fontSize: `${px(12)}px` }"
+              :style="{ fontSize: `${px(14)}px` }"
               stroke="var(--map-halo)"
-              :stroke-width="px(4)"
+              :stroke-width="px(5)"
               stroke-linejoin="round"
               paint-order="stroke fill"
             >
@@ -615,20 +665,20 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <circle
               :cx="marker.x"
               :cy="marker.y"
-              :r="px(marker.label ? 11 : 7)"
+              :r="px(marker.label ? 13 : 8)"
               fill="var(--map-marker)"
-              stroke="var(--map-halo)"
+              stroke="var(--map-dot-ring)"
               :stroke-width="px(2.5)"
               class="pointer-events-none"
             />
             <text
               v-if="marker.label"
               :x="marker.x"
-              :y="marker.y + px(4.5)"
+              :y="marker.y + px(5)"
               text-anchor="middle"
-              fill="var(--map-halo)"
+              fill="var(--map-marker-ink)"
               class="pointer-events-none font-bold"
-              :style="{ fontSize: `${px(13)}px` }"
+              :style="{ fontSize: `${px(15)}px` }"
             >
               {{ marker.label }}
             </text>
@@ -638,13 +688,13 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               v-for="seat in legendUnits.map(seatLabel)"
               :key="seat.label"
               :x="seat.x"
-              :y="seat.y - px(14)"
+              :y="seat.y - px(16)"
               text-anchor="middle"
               class="font-bold"
               fill="var(--map-ink)"
-              :style="{ fontSize: `${px(13)}px` }"
+              :style="{ fontSize: `${px(14)}px` }"
               stroke="var(--map-halo)"
-              :stroke-width="px(4)"
+              :stroke-width="px(5)"
               stroke-linejoin="round"
               paint-order="stroke fill"
             >
@@ -671,7 +721,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
       >
         <span
           class="inline-block size-3.5 rounded-full border-2 border-white ring-1 ring-(--ui-border-accented)"
-          :style="{ background: municipalityColor(unit.id, municipalities, false) }"
+          :style="{ background: unitColour(unit.id) }"
         />
         {{ unit.label }}
       </li>

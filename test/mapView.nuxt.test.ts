@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import MapView from '../app/components/games/MapView.vue'
-import { MAP_FRAME, project } from '../shared/utils/games/mapFrame'
+import { MAP_FRAME, project, unproject } from '../shared/utils/games/mapFrame'
 import type { PoolMunicipality, PoolPlace } from '../shared/utils/learn/types'
 
 const municipalities: PoolMunicipality[] = [{
@@ -150,6 +150,24 @@ describe('GamesMapView', () => {
       expect(view(page).scale).toBeCloseTo(fit, 5)
     })
 
+    it('selects the numbered marker that was tapped when a neighbour is within reach', async () => {
+      const centre = { x: MAP_FRAME.width / 2, y: MAP_FRAME.height / 2 }
+      const first = unproject(centre.x, centre.y)
+      const second = unproject(centre.x + 25 / fit, centre.y)
+      const page = await mountSuspended(MapView, {
+        props: { places: [], municipalities, difficulty: 'srednje', mode: 'target', layerLocked: 'karta', numberedPoints: [first, second] }
+      })
+      const v = view(page)
+      const rect = page.get('[data-testid="map-viewport"]').element.getBoundingClientRect()
+      const marker = project(second.lat, second.lng)
+      const clientX = rect.left + marker.x * v.scale + v.translate.x
+      const clientY = rect.top + marker.y * v.scale + v.translate.y
+      const viewportEl = page.get('[data-testid="map-viewport"]')
+      await viewportEl.trigger('pointerdown', { pointerId: 1, clientX, clientY })
+      await viewportEl.trigger('pointerup', { pointerId: 1, clientX, clientY })
+      expect(page.emitted('selectIndex')).toEqual([[1]])
+    })
+
     it('keeps surroundings when the pick is far away or almost on the answer', async () => {
       const page = await mountSuspended(MapView, {
         props: { places: [sopron], municipalities, difficulty: 'srednje', mode: 'find' }
@@ -180,10 +198,17 @@ describe('GamesMapView', () => {
         const group = page.get('[data-testid="map-boundaries"]')
         expect(group.attributes('aria-hidden')).toBe('true')
         expect(group.classes()).toContain('pointer-events-none')
-        const paths = group.findAll('path')
-        expect(paths).toHaveLength(5)
-        expect(paths.map(p => p.attributes('data-municipality')).sort()).toEqual(five)
-        for (const path of paths) expect(path.attributes('d')).toMatch(/^M[-\d. L]+Z$/)
+        const units = group.findAll('g[data-municipality]')
+        expect(units).toHaveLength(5)
+        expect(units.map(u => u.attributes('data-municipality')).sort()).toEqual(five)
+        for (const unit of units) {
+          // wash, casing and line share one outline; the wash carries the municipality's own colour
+          const paths = unit.findAll('path')
+          expect(paths).toHaveLength(3)
+          for (const path of paths) expect(path.attributes('d')).toMatch(/^M[-\d. L]+Z$/)
+          expect(paths[0]!.attributes('fill')).toMatch(/^#[0-9a-f]{6}$/)
+        }
+        expect(new Set(units.map(u => u.get('path').attributes('fill'))).size).toBe(5)
         expect(group.find('[data-highlighted]').exists()).toBe(false)
       }
     })
