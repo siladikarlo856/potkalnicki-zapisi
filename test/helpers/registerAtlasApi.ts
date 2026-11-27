@@ -16,6 +16,7 @@ import {
   resolveMunicipality,
   resolveSettlement,
   searchContent,
+  settlementIndex,
   settlementPage,
   suggestOptions
 } from '../../server/utils/publicAtlas'
@@ -93,6 +94,7 @@ export function registerAtlasApiEndpoints() {
     if (result.status !== 'ok') throw createError({ statusCode: 404, statusMessage: 'Municipality not found' })
     return municipalityPage(content(), result.value)
   })
+  registerEndpoint('/api/atlas/settlements', () => settlementIndex(content()))
   registerEndpoint('/api/atlas/settlements/:slug', (event) => {
     const slug = getRouterParam(event, 'slug') ?? ''
     const result = resolveSettlement(content(), slug)

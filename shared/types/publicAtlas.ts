@@ -31,6 +31,12 @@ export interface PublicSettlementRef {
   path: string
 }
 
+/** A WGS84 point, e.g. a settlement's centroid. */
+export interface PublicPoint {
+  lat: number
+  lng: number
+}
+
 export interface PublicPlaceStats {
   settlements: number
   items: number
@@ -167,7 +173,8 @@ export interface AtlasOverviewResponse {
 export interface AtlasMunicipalityResponse {
   municipality: PublicMunicipalityRef
   stats: PublicPlaceStats
-  settlements: Array<PublicSettlementRef & { itemCount: number }>
+  /** `centroid` places the settlement on the area map; null when it has none yet */
+  settlements: Array<PublicSettlementRef & { itemCount: number, centroid: PublicPoint | null }>
   categories: Array<PublicCategoryRef & { count: number }>
   /** Persons linked to the unit or to one of its settlements */
   persons: PublicPersonRef[]
@@ -175,9 +182,18 @@ export interface AtlasMunicipalityResponse {
   intangible: PublicIntangibleRef[]
 }
 
+/** GET /api/atlas/settlements: every live settlement, compact, for place search on the area map. */
+export interface AtlasSettlementIndexResponse {
+  settlements: Array<PublicSettlementRef & {
+    municipality: Pick<PublicMunicipalityRef, 'id' | 'slug' | 'label'>
+    itemCount: number
+    centroid: PublicPoint | null
+  }>
+}
+
 export interface AtlasSettlementResponse {
   settlement: PublicSettlementRef & {
-    centroid: { lat: number, lng: number } | null
+    centroid: PublicPoint | null
     /** Consenting named contributors ("Zahvaljujemo") and the last edit date ("Zadnja izmjena") */
     credits: PublicCredit[]
     updatedAt: string

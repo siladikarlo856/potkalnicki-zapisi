@@ -2,6 +2,10 @@
 
 Potkalnički zapisi is the heritage and Digital Atlas for Potkalničko prigorje: a Croatian-first atlas of places, words, stories, people, customs, photographs and learning games. The production site is **https://prigorje.karlo-siladi.from.hr**. The portfolio lives separately at https://karlo-siladi.from.hr.
 
+## Places
+
+The home page's **Pet općina** section, `/mjesta/` and each town or municipality page (`/mjesta/[opcina]/`) share one layout: a map of the real municipal boundaries beside a search field and a scrollable list of cards; on a phone the list follows the map. Pointing at a card outlines its area or settlement on the map, and pointing at the map marks the card. Everything on the map is also reachable from the list. On the home page and `/mjesta/`, search finds towns, municipalities and settlements across the region and places matching settlements on the map. A town or municipality page lists its settlements and links to its records on **Baština**; `/bastina/?opcina=<slug>` opens that list already filtered to the unit.
+
 ## Play and learn
 
 `/igraj/` brings together Riječ dana, learning cards, games and shared challenges. The full games catalogue remains at `/igre/`.

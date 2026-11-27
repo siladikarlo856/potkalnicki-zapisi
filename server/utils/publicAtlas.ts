@@ -4,6 +4,7 @@ import type {
   AtlasMunicipalityResponse,
   AtlasOverviewResponse,
   AtlasPersonListResponse,
+  AtlasSettlementIndexResponse,
   AtlasSettlementResponse,
   ArchiveSearchGroup,
   ArchiveSearchResponse,
@@ -278,10 +279,34 @@ export function municipalityPage(content: PublicContent, m: SnapshotMunicipality
   return {
     municipality: municipalityRef(m),
     stats: placeStats(settlements, items),
-    settlements: settlements.map(s => ({ ...settlementRef(content, s), itemCount: items.filter(i => i.settlementId === s.id).length })),
+    settlements: settlements.map(s => ({
+      ...settlementRef(content, s),
+      itemCount: items.filter(i => i.settlementId === s.id).length,
+      centroid: s.centroid
+    })),
     categories: categoryCounts(content, items),
     persons: personRefs(content, personIdsInMunicipality(content, m.id)),
     intangible: intangibleForMunicipality(content, m.id)
+  }
+}
+
+/** Every live settlement with its unit, record count and centroid: what place search on the area map looks through. */
+export function settlementIndex(content: PublicContent): AtlasSettlementIndexResponse {
+  const itemCounts = new Map<string, number>()
+  for (const item of content.items) {
+    if (item.settlementId) itemCounts.set(item.settlementId, (itemCounts.get(item.settlementId) ?? 0) + 1)
+  }
+  return {
+    settlements: content.settlements.flatMap((s) => {
+      const m = content.municipalityById.get(s.municipalityId)
+      if (!m) return []
+      return [{
+        ...settlementRef(content, s),
+        municipality: { id: m.id, slug: m.slug, label: m.label },
+        itemCount: itemCounts.get(s.id) ?? 0,
+        centroid: s.centroid
+      }]
+    })
   }
 }
 

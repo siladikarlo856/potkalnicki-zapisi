@@ -288,6 +288,16 @@ describe('PzTile', () => {
     expect(surface.classes()).toContain('bg-default')
     const row = await mountSuspended(PzTile, { props: { to: '/', icon: 'i-lucide-church', name: 'x', variant: 'row' } })
     expect(row.classes()).toContain('items-center')
+    expect(row.find('[data-testid="pz-tile-arrow"]').exists()).toBe(false)
+  })
+
+  it('has a link variant that reads as a link at rest: bordered, the name in link colour and an arrow', async () => {
+    const link = await mountSuspended(PzTile, { props: { to: '/bastina/?opcina=grad-krizevci', icon: 'i-lucide-church', name: 'Baština ovog područja', line: 'Popis na stranici Baština', variant: 'link' } })
+    expect(link.element.tagName).toBe('A')
+    expect(link.attributes('href')).toBe('/bastina/?opcina=grad-krizevci')
+    expect(link.classes()).toEqual(expect.arrayContaining(['border-accented', 'bg-default', 'items-center']))
+    expect(link.find('.text-primary.underline-offset-4').text()).toBe('Baština ovog područja')
+    expect(link.find('[data-testid="pz-tile-arrow"]').attributes('aria-hidden')).toBe('true')
   })
 })
 

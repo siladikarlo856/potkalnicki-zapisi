@@ -4,13 +4,21 @@ import type { AtlasHeritageListResponse } from '~~/shared/types/publicAtlas'
 definePageMeta({ layout: 'potkalnicko' })
 defineI18nRoute({ locales: ['hr'] })
 
+const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { municipalityPath } = useAtlas()
 const count = usePzCount()
 
 const proposalOpen = ref(false)
-const municipalityFilter = ref('all')
+// The unit filter lives in the address (?opcina=, as on Osobe), so a town or municipality page links to its heritage.
+const municipalityFilter = computed({
+  get: () => typeof route.query.opcina === 'string' && route.query.opcina ? route.query.opcina : 'all',
+  set: (value: string) => {
+    router.replace({ query: { ...route.query, opcina: value === 'all' ? undefined : value } })
+  }
+})
 const categoryFilter = ref('all')
 
 const listQuery = computed(() => {
@@ -21,15 +29,18 @@ const listQuery = computed(() => {
 })
 
 const { data: list, error: listError } = await useFetch<AtlasHeritageListResponse>('/api/atlas/heritage', { query: listQuery })
-watchEffect(() => {
-  if (listError.value) {
-    throw createError({
-      statusCode: listError.value.statusCode ?? 500,
-      statusMessage: listError.value.statusMessage ?? 'Request failed',
-      fatal: true
-    })
+watch(listError, (error) => {
+  if (!error) return
+  if (error.statusCode === 400 && municipalityFilter.value !== 'all') {
+    navigateTo({ query: { ...route.query, opcina: undefined }, replace: true })
+    return
   }
-})
+  throw createError({
+    statusCode: error.statusCode ?? 500,
+    statusMessage: error.statusMessage ?? 'Request failed',
+    fatal: true
+  })
+}, { immediate: true })
 
 const filtered = computed(() => list.value?.items ?? [])
 

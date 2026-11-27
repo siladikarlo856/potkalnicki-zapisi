@@ -167,11 +167,8 @@
       "entrySpeech": "Our speech",
       "municipalitiesTitle": "Municipalities",
       "entriesLabel": "Ways into the atlas",
-      "municipalityOverline": "Municipality",
       "statSettlements": "Settlements",
       "statItems": "Records",
-      "tabSettlements": "Settlements",
-      "tabHeritage": "Heritage",
       "settlementNoRecords": "no records yet",
       "emptyHeritageTitle": "We are still collecting heritage records.",
       "contributeWord": "Word",
@@ -189,7 +186,19 @@
       "nearbyTitle": "Nearby",
       "correctShort": "Suggest a correction",
       "addRecord": "Add a record",
-      "thinTitle": "We are still collecting records for {name}."
+      "thinTitle": "We are still collecting records for {name}.",
+      "findPlace": "Find a settlement or municipality",
+      "findSettlement": "Find a settlement",
+      "placesList": "Municipalities and settlements",
+      "settlementsList": "Settlements",
+      "placesLoading": "Loading settlements…",
+      "noPlaceMatch": "No settlement or municipality matches “{query}”.",
+      "noSettlementMatch": "No settlement “{query}” in this area.",
+      "regionMapLabel": "Map of the area: {names}. Every place also opens from the list beside the map.",
+      "unitMapLabel": "Map: {name} highlighted with its settlements, neighbouring areas dimmed.",
+      "heritageTileTitle": "Heritage in this area",
+      "heritageTileLine": "Churches, chapels and crosses: the list on the Heritage page",
+      "showAllSettlements": "Show all settlements ({count})"
     },
     "kit": {
       "sheet": {
@@ -238,8 +247,7 @@
       "challengeTitle": "Who knows our region better?",
       "friendChallengeBlurb": "The same questions for everyone. Send the link and compare results.",
       "scopeTitle": "Five municipalities",
-      "scopeDescription": "The working scope of the project, not the official border of the region.",
-      "scopeCounts": "{settlements} settlements · {items} records"
+      "scopeDescription": "The working scope of the project, not the official border of the region."
     },
     "heritage": {
       "filtersLabel": "Filters",

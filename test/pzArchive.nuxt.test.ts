@@ -74,6 +74,10 @@ describe('Home', () => {
     expect(page.find('[data-testid="doprinos"]').classes()).not.toContain('bg-inverted')
     expect(page.find('[data-testid="obuhvat"] h2').text()).toBe('Pet općina')
     expect(page.findAll('[data-testid="municipality-list"] li').length).toBe(5)
+    // One map, merged into the Pet općina section below the hero (no separate map card above it).
+    expect(page.find('[data-testid="home-map-card"]').exists()).toBe(false)
+    expect(page.findAll('[data-testid="area-map"]').length).toBe(1)
+    expect(page.find('[data-testid="obuhvat"] [data-testid="area-map"]').exists()).toBe(true)
   })
 })
 

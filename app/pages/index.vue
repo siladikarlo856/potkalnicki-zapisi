@@ -7,7 +7,6 @@ defineI18nRoute({ locales: ['hr'] })
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { municipalityPath } = useAtlas()
 
 useSeoMeta({
   title: () => t('pz.home.seoTitle'),
@@ -17,50 +16,10 @@ useSeoMeta({
 })
 
 const { data: overview } = await useAtlasFetch<AtlasOverviewResponse>('/api/atlas/overview')
-
-const scopeMunicipalities = computed(() => (overview.value?.municipalities ?? []).map(m => ({
-  id: m.id,
-  label: m.label,
-  to: municipalityPath(m.slug),
-  settlements: m.stats.settlements,
-  items: m.stats.items
-})))
-const scopeCount = computed(() => overview.value?.totals)
 </script>
 
 <template>
   <div class="mx-auto flex w-full max-w-(--pz-page-max) flex-col gap-8 px-4 py-6 lg:gap-12 lg:px-12 lg:py-12">
-    <section
-      class="grid gap-4 rounded-lg border border-default bg-default p-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:p-6"
-      data-testid="home-map-card"
-      aria-labelledby="home-map-title"
-    >
-      <div class="flex min-w-0 flex-col gap-3">
-        <h2
-          id="home-map-title"
-          class="pz-h2 text-highlighted"
-        >
-          Istraži Potkalnički kraj
-        </h2>
-        <PzSchematicMap
-          labels
-          label="Shematska karta triju općina i grada Križevaca s grebenom Kalnika"
-        />
-        <p class="pz-body-sm text-muted">
-          {{ scopeCount ? `${scopeCount.municipalities} područja · ${scopeCount.settlements} naselja` : 'Mjesta, naselja i priče podno Kalnika' }}
-        </p>
-      </div>
-      <div class="grid grid-cols-2 gap-2">
-        <PzChip
-          v-for="row in scopeMunicipalities.slice(0, 4)"
-          :key="row.id"
-          :to="row.to"
-          :count="row.settlements"
-        >
-          <span class="wrap-anywhere">{{ row.label }}</span>
-        </PzChip>
-      </div>
-    </section>
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start lg:gap-12">
       <section
         class="relative flex flex-col gap-3 pt-2 lg:col-span-7 lg:pt-12"
@@ -112,17 +71,21 @@ const scopeCount = computed(() => overview.value?.totals)
 
     <section
       class="flex flex-col gap-4"
+      aria-labelledby="obuhvat-title"
       data-testid="obuhvat"
     >
       <div class="flex flex-col gap-1 lg:flex-row lg:items-baseline lg:justify-between lg:gap-6">
-        <h2 class="pz-h2 text-highlighted">
+        <h2
+          id="obuhvat-title"
+          class="pz-h2 text-highlighted"
+        >
           {{ t('pz.home.scopeTitle') }}
         </h2>
         <p class="pz-body-sm text-muted">
           {{ t('pz.home.scopeDescription') }}
         </p>
       </div>
-      <PzMunicipalityList :rows="scopeMunicipalities" />
+      <PlacesRegionExplorer :overview="overview" />
     </section>
 
     <section

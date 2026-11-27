@@ -20,6 +20,7 @@ import {
   resolveHeritageItem,
   resolveMunicipality,
   resolveSettlement,
+  settlementIndex,
   settlementPage
 } from '../server/utils/publicAtlas'
 import { settlementAnswer } from '../server/utils/addressLookup'
@@ -270,8 +271,20 @@ describe('public atlas API shapes', () => {
 
   it('builds the municipality page with settlement counts and filterable categories only', () => {
     const page = municipalityPage(content, content.municipalityById.get(ID.kalnik)!)
-    expect(page.settlements).toEqual([{ id: ID.kalnikSettlement, slug: 'kalnik', name: 'Kalnik', code: null, path: '/mjesta/opcina-kalnik/kalnik/', itemCount: 1 }])
+    expect(page.settlements).toEqual([{ id: ID.kalnikSettlement, slug: 'kalnik', name: 'Kalnik', code: null, path: '/mjesta/opcina-kalnik/kalnik/', itemCount: 1, centroid: null }])
     expect(page.categories).toEqual([{ key: 'chapel', label: 'Kapela', count: 1 }])
+  })
+
+  it('indexes every live settlement with its unit, record count and centroid for place search', () => {
+    const index = settlementIndex(content)
+    expect(index.settlements.map(s => s.name).sort()).toEqual(['Apatovec', 'Kalnik', 'Križevci'])
+    expect(index.settlements.find(s => s.id === ID.krizevci)).toEqual({
+      id: ID.krizevci, slug: 'krizevci', name: 'Križevci', code: '032379', path: '/mjesta/grad-krizevci/krizevci/',
+      municipality: { id: ID.town, slug: 'grad-krizevci', label: 'Grad Križevci' },
+      itemCount: 1,
+      centroid: { lat: 46.02, lng: 16.54 }
+    })
+    expect(index.settlements.find(s => s.id === ID.kalnikSettlement)).toMatchObject({ itemCount: 1, centroid: null })
   })
 
   it('builds the settlement page with its item list', () => {

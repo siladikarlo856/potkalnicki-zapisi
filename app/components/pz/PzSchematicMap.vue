@@ -1,9 +1,10 @@
 <script setup lang="ts">
-// A schematic map of the three municipalities and the town: a stand-in until real boundaries are loaded. Fills only
-// tell areas apart; names and outlines carry the meaning, and the map is never the only way to reach a place.
+// A schematic map of the three municipalities and the town: a stand-in until real boundaries are loaded. The place
+// pages (Početna, Mjesta, a town or municipality) already draw the real ones with PzAreaMap. Fills only tell areas
+// apart; names and outlines carry the meaning, and the map is never the only way to reach a place.
 // `selected` outlines one area in ink and dims the others; `crop` + `pin` make the locator in the facts panel.
 const props = defineProps<{
-  /** Write the area names on the map (Početna, Mjesta). */
+  /** Write the area names on the map (O projektu). */
   labels?: boolean
   /** One of the area ids. */
   selected?: string
