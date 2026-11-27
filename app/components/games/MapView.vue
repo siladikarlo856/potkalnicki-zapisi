@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { MAP_FRAME, MAP_LAYERS, project, unproject, type MapLayerId } from '#shared/utils/games/mapFrame'
 import { MUNICIPALITY_BOUNDARIES } from '#shared/utils/games/mapBoundaries'
+import { placeLabels, LABEL_RISE_PX } from '#shared/utils/games/mapLabels'
 import { municipalityColor, sortedMunicipalities } from '#shared/utils/games/mapUnits'
 import type { Difficulty } from '#shared/utils/games/types'
 import type { PoolMunicipality, PoolPlace } from '#shared/utils/learn/types'
@@ -171,6 +172,27 @@ function unitColour(municipalityId: string | undefined) {
 }
 
 const legendUnits = computed(() => sortedMunicipalities(props.municipalities))
+
+/**
+ * Labels that fit at the current zoom: seats first, then settlements with more to read about, so the crowded corner
+ * thins out when zoomed out and fills in as the player zooms in.
+ */
+const shownLabels = computed(() => {
+  const candidates = [
+    ...(showSeatLabels.value
+      ? legendUnits.value.map(unit => ({ key: `seat-${unit.id}`, ...project(unit.lat, unit.lng), text: unit.label, priority: 1000, overDots: true }))
+      : []),
+    ...(showSettlementNames.value
+      ? visibleDots.value.map(place => ({
+          key: place.id,
+          ...project(place.lat, place.lng),
+          text: place.name,
+          priority: (place.seat ? 500 : 0) + place.itemCount
+        }))
+      : [])
+  ]
+  return placeLabels(candidates, scale.value, visibleDots.value.map(p => project(p.lat, p.lng)), LABEL_RISE_PX)
+})
 
 function dotStyle(place: PoolPlace) {
   const { x, y } = project(place.lat, place.lng)
@@ -635,7 +657,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
               class="pointer-events-none"
             />
             <text
-              v-if="showSettlementNames"
+              v-if="showSettlementNames && shownLabels.has(place.id)"
               :x="dotStyle(place).cx"
               :y="dotStyle(place).cy - px(13)"
               text-anchor="middle"
@@ -685,7 +707,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
           </g>
           <g v-if="showSeatLabels">
             <text
-              v-for="seat in legendUnits.map(seatLabel)"
+              v-for="seat in legendUnits.filter(u => shownLabels.has(`seat-${u.id}`)).map(seatLabel)"
               :key="seat.label"
               :x="seat.x"
               :y="seat.y - px(16)"
