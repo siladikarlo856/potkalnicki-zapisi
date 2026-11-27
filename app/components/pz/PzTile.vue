@@ -16,11 +16,12 @@ defineProps<{
 <template>
   <NuxtLink
     :to="to"
-    class="group flex min-h-23 gap-1.5 rounded-md border-[1.5px] p-3 text-[0.96875rem]/[1.25] font-bold text-default no-underline"
+    class="group flex gap-1.5 rounded-md border-[1.5px] p-3 text-[0.96875rem]/[1.25] font-bold text-default no-underline"
     :class="[
       variant === 'link'
         ? 'items-center gap-3 border-accented bg-default hover:bg-muted'
         : variant === 'surface' ? 'border-default bg-default hover:border-accented' : 'border-transparent bg-elevated hover:border-accented',
+      variant !== 'link' && 'min-h-23',
       variant === 'row' && 'min-h-16 items-center gap-3',
       (variant === 'row' || variant === 'link') ? '' : 'flex-col'
     ]"

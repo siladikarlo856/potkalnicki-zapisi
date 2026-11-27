@@ -113,6 +113,7 @@ useSeoMeta({
         :name="t('pz.explore.heritageTileTitle')"
         :line="t('pz.explore.heritageTileLine')"
         variant="link"
+        class="self-start"
         data-testid="municipality-heritage-link"
       />
       <PzEmptyState

@@ -1,4 +1,4 @@
--- Seed the reviewed Mama WhatsApp batch as public intangible heritage.
+-- Seed the reviewed Mama batch (an imported family conversation) as public intangible heritage.
 -- Conversation/meta lines stay out; source wording is kept in text_local or a Custom description.
 begin;
 set local app.actor = 'import';

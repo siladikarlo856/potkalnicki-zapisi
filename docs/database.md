@@ -386,13 +386,14 @@ After rollout, verify that `select proname from pg_proc where proname like 'cont
 
 ## Intangible heritage (Story, Custom, Folk text)
 
-Five migrations add the database foundation and first seed for intangible heritage ([ADR 0001](adr/0001-intangible-heritage-content-kinds.md), vocabulary in `GLOSSARY.md`). Apply them in this order, before deploying the matching app (`supabase db push --linked` applies all in timestamp order):
+Six migrations add the database foundation, first seed and a seed copy fix for intangible heritage ([ADR 0001](adr/0001-intangible-heritage-content-kinds.md), vocabulary in `GLOSSARY.md`). Apply them in this order, before deploying the matching app (`supabase db push --linked` applies all in timestamp order):
 
 1. `20261108000000_intangible_heritage.sql`: the tables, triggers, constraints, RLS and the Memory plumbing below.
 2. `20261108010000_intangible_heritage_save.sql`: the save functions.
 3. `20261108020000_seed_intangible_types.sql`: the type lists.
-4. `20261118000000_seed_mamine_poruke.sql`: adds `customs.steps` and `folk_texts.sensitive` (below) and seeds the reviewed Mama WhatsApp batch (the Igre na dlanu theme, source, two Narrators with no public name, Customs and Folk texts).
+4. `20261118000000_seed_mamine_poruke.sql`: adds `customs.steps` and `folk_texts.sensitive` (below) and seeds the reviewed Mama batch (the Igre na dlanu theme, source, two Narrators with no public name, Customs and Folk texts).
 5. `20261118000001_custom_steps_save.sql`: `content_custom_save` writes `steps`.
+6. `20261127000000_mamine_poruke_drop_whatsapp.sql`: rewrites the Mama Source title and the Folk texts' provenance notes so they say "razgovor" instead of "WhatsApp" (replay-safe, touches only that Source and its Folk texts).
 
 **Tables.** Everything is server-only: RLS on, nothing granted to `public`, `anon` or `authenticated`, `service_role` only.
 

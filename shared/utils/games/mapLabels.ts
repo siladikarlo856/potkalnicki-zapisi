@@ -67,3 +67,21 @@ export function placeLabels(
   }
   return shown
 }
+
+const EDGE_PAD_PX = 4
+
+/**
+ * The frame x a centred label is drawn at so its whole box stays inside the viewport while its anchor is in view.
+ * `scale` is screen pixels per frame pixel, `translateX` the frame's screen offset and `viewportWidth` the screen width;
+ * a label wider than the viewport is centred on it, and a label whose anchor is off-screen stays put to be clipped.
+ */
+export function clampLabelX(x: number, text: string, scale: number, translateX: number, viewportWidth: number): number {
+  if (!viewportWidth) return x
+  const half = (text.length * GLYPH_PX + LABEL_GAP_PX * 2) / 2
+  const min = half + EDGE_PAD_PX
+  const max = viewportWidth - half - EDGE_PAD_PX
+  const screen = x * scale + translateX
+  if (screen < 0 || screen > viewportWidth) return x
+  if (min > max) return (viewportWidth / 2 - translateX) / scale
+  return (Math.min(max, Math.max(min, screen)) - translateX) / scale
+}

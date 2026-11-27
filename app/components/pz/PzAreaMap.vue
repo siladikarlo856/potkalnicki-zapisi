@@ -121,6 +121,12 @@ const dots = computed(() => (props.points ?? []).map((point) => {
   return { ...point, pos: place(x, y), active: point.id === props.active }
 }).sort((a, b) => Number(a.active) - Number(b.active)))
 
+/** Keeps a centred name's whole box inside the map: its half width (about 7px a glyph, capped at max-w-28) from each edge. */
+function nameLeft(name: string, left: number) {
+  const half = Math.min(112, name.length * 7 + 12) / 2 + 2
+  return `clamp(${half}px, ${left}%, calc(100% - ${half}px))`
+}
+
 function open(to?: string) {
   if (to) navigateTo(to)
 }
@@ -167,7 +173,7 @@ function open(to?: string) {
         :class="area.slug === active
           ? 'bg-inverted text-inverted'
           : selected && area.slug !== selected ? 'bg-default/80 text-muted' : 'bg-default/90 text-highlighted'"
-        :style="{ left: `${area.pos.left}%`, top: `${area.pos.top}%` }"
+        :style="{ left: nameLeft(area.name, area.pos.left), top: `${area.pos.top}%` }"
       >{{ area.name }}</span>
       <span
         v-for="dot in dots"

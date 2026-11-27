@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { MAP_FRAME, MAP_LAYERS, project, unproject, type MapLayerId } from '#shared/utils/games/mapFrame'
 import { MUNICIPALITY_BOUNDARIES } from '#shared/utils/games/mapBoundaries'
-import { placeLabels, LABEL_RISE_PX } from '#shared/utils/games/mapLabels'
+import { placeLabels, clampLabelX, LABEL_RISE_PX } from '#shared/utils/games/mapLabels'
 import { municipalityColor, sortedMunicipalities } from '#shared/utils/games/mapUnits'
 import type { Difficulty } from '#shared/utils/games/types'
 import type { PoolMunicipality, PoolPlace } from '#shared/utils/learn/types'
@@ -55,6 +55,9 @@ const FALLBACK_SCALE = 0.25
 const MAX_ZOOM_IN = 4
 const scale = ref(FALLBACK_SCALE)
 const translate = ref({ x: 0, y: 0 })
+/** Viewport width in CSS pixels, so labels near an edge can be kept inside it. */
+const viewportWidth = ref(0)
+const labelX = (x: number, text: string) => clampLabelX(x, text, scale.value, translate.value.x, viewportWidth.value)
 /** True while the view moves by itself (reset, fit after an answer), so it glides instead of jumping. */
 const gliding = ref(false)
 /** Once the player zooms or pans, a resize keeps their view instead of re-fitting the whole area. */
@@ -209,6 +212,7 @@ function clampTransform() {
   const el = viewport.value
   if (!el) return
   const vw = el.clientWidth
+  viewportWidth.value = vw
   const vh = el.clientHeight
   const sw = MAP_FRAME.width * scale.value
   const sh = MAP_FRAME.height * scale.value
@@ -658,7 +662,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             />
             <text
               v-if="showSettlementNames && shownLabels.has(place.id)"
-              :x="dotStyle(place).cx"
+              :x="labelX(dotStyle(place).cx, place.name)"
               :y="dotStyle(place).cy - px(13)"
               text-anchor="middle"
               class="pointer-events-none font-bold"
@@ -709,7 +713,7 @@ defineExpose({ screenToImage, pickFromList, projectPlace: (place: PoolPlace) => 
             <text
               v-for="seat in legendUnits.filter(u => shownLabels.has(`seat-${u.id}`)).map(seatLabel)"
               :key="seat.label"
-              :x="seat.x"
+              :x="labelX(seat.x, seat.label)"
               :y="seat.y - px(16)"
               text-anchor="middle"
               class="font-bold"

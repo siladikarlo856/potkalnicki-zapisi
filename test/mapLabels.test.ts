@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { placeLabels, type LabelCandidate } from '../shared/utils/games/mapLabels'
+import { clampLabelX, placeLabels, type LabelCandidate } from '../shared/utils/games/mapLabels'
 
 const label = (key: string, x: number, y: number, priority = 0, text = key): LabelCandidate => ({ key, x, y, text, priority })
 
@@ -38,5 +38,38 @@ describe('placeLabels', () => {
     expect(placeLabels([seat], 1, [dot]).has('Seat')).toBe(true)
     const shown = placeLabels([seat, label('Kalnik', 102, 101, 5)], 1, [dot])
     expect([...shown]).toEqual(['Seat'])
+  })
+})
+
+describe('clampLabelX', () => {
+  const seat = 'Općina Gornja Rijeka'
+
+  it('leaves a label whose anchor is well inside the viewport where it is', () => {
+    expect(clampLabelX(500, 'Kalnik', 1, 0, 1000)).toBe(500)
+    expect(clampLabelX(100, 'Kalnik', 2, 300, 1000)).toBe(100)
+  })
+
+  it('shifts a label near the left edge right, and less the further in its anchor is', () => {
+    const near = clampLabelX(2, seat, 1, 0, 400)
+    const further = clampLabelX(20, seat, 1, 0, 400)
+    expect(near).toBeGreaterThan(2)
+    expect(further).toBeGreaterThan(20)
+    expect(further - 20).toBeLessThan(near - 2)
+  })
+
+  it('shifts a label near the right edge left', () => {
+    expect(clampLabelX(398, seat, 1, 0, 400)).toBeLessThan(398)
+  })
+
+  it('works in frame units when the map is zoomed and panned', () => {
+    const unzoomed = clampLabelX(20, seat, 1, 0, 400)
+    expect(clampLabelX(10, seat, 2, 0, 400) * 2).toBeCloseTo(unzoomed)
+    expect(clampLabelX(60, seat, 2, -100, 400) * 2 - 100).toBeCloseTo(unzoomed)
+  })
+
+  it('leaves a label whose anchor is off-screen to be clipped', () => {
+    expect(clampLabelX(-500, seat, 1, 0, 400)).toBe(-500)
+    expect(clampLabelX(900, seat, 1, 0, 400)).toBe(900)
+    expect(clampLabelX(10, seat, 4, -200, 400)).toBe(10)
   })
 })
