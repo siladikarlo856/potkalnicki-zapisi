@@ -40,6 +40,20 @@ const finished = ref(false)
 const won = computed(() => solved.value.length === 4)
 const attempts = ref(0)
 
+const tileLabelById = computed(() => new Map((puzzle.value?.tiles ?? []).map(tile => [tile.id, tile.label])))
+const lost = computed(() => finished.value && !won.value)
+/** On failure, the groups the player never found, shown as answer rows in the board's own band colours. */
+const revealedGroups = computed(() => {
+  const p = puzzle.value
+  if (!p || !lost.value) return [] as GroupingGroup[]
+  const solvedIds = new Set(solved.value.map(g => g.id))
+  return p.groups.filter(g => !solvedIds.has(g.id))
+})
+
+function groupWords(group: GroupingGroup): string {
+  return group.tileIds.map(id => tileLabelById.value.get(id) ?? '').join(' · ')
+}
+
 const unsolvedTiles = computed(() => {
   const p = puzzle.value
   if (!p) return [] as GroupingTile[]
@@ -215,18 +229,47 @@ useSeoMeta({
           {{ t('pz.play.groupAttempts', { n: lives }) }}
         </p>
 
-        <div class="flex flex-col gap-2">
+        <div
+          v-if="solved.length || revealedGroups.length"
+          class="flex flex-col gap-2"
+          data-testid="grouping-rows"
+        >
           <div
             v-for="group in solved"
             :key="group.id"
-            class="rounded-lg px-3 py-2 text-center text-sm font-semibold"
+            class="rounded-lg px-3 py-2 text-center"
             :class="GROUP_BAND[group.colorIndex]"
+            data-testid="grouping-row-solved"
           >
-            {{ group.label }}
+            <p class="text-sm font-semibold">
+              {{ group.label }}
+            </p>
+            <p class="text-xs">
+              {{ groupWords(group) }}
+            </p>
+          </div>
+          <div
+            v-for="(group, index) in revealedGroups"
+            :key="group.id"
+            class="pz-group-reveal rounded-lg px-3 py-2 text-center outline-2 -outline-offset-4 outline-dashed outline-current/70"
+            :class="GROUP_BAND[group.colorIndex]"
+            :style="{ '--reveal-i': index }"
+            data-testid="grouping-row-revealed"
+          >
+            <p class="text-xs font-medium tracking-wide uppercase">
+              {{ t('pz.play.groupRevealed') }}
+            </p>
+            <p class="text-sm font-semibold">
+              {{ group.label }}
+            </p>
+            <p class="text-xs">
+              {{ groupWords(group) }}
+            </p>
           </div>
         </div>
 
         <div
+          v-if="!lost"
           class="grid grid-cols-2 gap-2 sm:grid-cols-4"
           data-testid="grouping-grid"
         >
@@ -245,13 +288,13 @@ useSeoMeta({
         </div>
 
         <UAlert
-          v-if="feedback === 'almost'"
+          v-if="!lost && feedback === 'almost'"
           :title="t('pz.play.groupAlmost')"
           color="warning"
           variant="subtle"
         />
         <UAlert
-          v-else-if="feedback === 'wrong'"
+          v-else-if="!lost && feedback === 'wrong'"
           :title="t('pz.play.wrong')"
           color="error"
           variant="subtle"
@@ -291,19 +334,15 @@ useSeoMeta({
           data-testid="grouping-result"
         >
           <h2 class="pz-h3 text-highlighted">
-            {{ won ? t('pz.play.done') : t('pz.play.wrong') }}
+            {{ won ? t('pz.play.done') : t('pz.play.groupLost') }}
           </h2>
-          <div class="mt-3 flex flex-col gap-2">
-            <div
-              v-for="group in puzzle.groups"
-              :key="group.id"
-              class="rounded-lg px-3 py-2 text-center text-sm font-semibold"
-              :class="GROUP_BAND[group.colorIndex]"
-            >
-              {{ group.label }}
-            </div>
-          </div>
-          <div class="mt-4 flex flex-wrap gap-2 print:hidden">
+          <p
+            v-if="lost"
+            class="mt-1 text-sm text-muted"
+          >
+            {{ t('pz.play.groupLostHint') }}
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2 print:hidden">
             <UButton
               v-if="won"
               :label="t('pz.play.groupShare')"
